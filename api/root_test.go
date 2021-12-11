@@ -5,20 +5,7 @@ import (
 	"testing"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/pb"
-	"google.golang.org/grpc"
 )
-
-func getClient(t *testing.T) (c pb.RootClient, cc *grpc.ClientConn) {
-	opts := grpc.WithInsecure()
-
-	cc, err := grpc.Dial("localhost:50051", opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	c = pb.NewRootClient(cc)
-	return
-}
 
 func TestRootOff(t *testing.T) {
 	c := Root{}

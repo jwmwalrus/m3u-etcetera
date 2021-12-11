@@ -5,12 +5,15 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/api"
 	"github.com/jwmwalrus/m3u-etcetera/api/pb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 func main() {
+	base.Load()
+
 	log.Info("Starting server...")
 
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
