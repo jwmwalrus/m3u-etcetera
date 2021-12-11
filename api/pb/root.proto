@@ -1,0 +1,21 @@
+syntax = 'proto3';
+
+package pb;
+
+option go_package = './pb';
+
+import 'api/pb/common.proto';
+
+service Root {
+    rpc Status(Empty) returns(StatusResponse);
+    rpc Off(Empty) returns(OffResponse);
+}
+
+message StatusResponse {
+    bool alive = 1;
+}
+
+message OffResponse {
+    bool going_off = 1;
+    string reason = 2;
+}
