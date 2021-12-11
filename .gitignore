@@ -1,3 +1,8 @@
+/m3uetc-server
+/m3uetc-task
+/m3uetc-gtk
+
+
 # Binaries for programs and plugins
 *.exe
 *.exe~

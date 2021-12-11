@@ -1,0 +1,77 @@
+# https://taskfile.dev
+
+---
+version: '3'
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+
+  build:
+    cmds:
+      - task: build-server
+      - task: build-task
+      - task: build-gtk
+  build-server:
+    cmds:
+      - go build -v -o ./m3uetc-server{{exeExt}} ./cmd/m3uetc-server
+    silent: true
+  build-task:
+    cmds:
+      - go build -v -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
+    silent: true
+  build-gtk:
+    cmds:
+      - go build -v -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
+    silent: true
+
+  clean:
+    cmds:
+      - rm m3uetc-server > /dev/null 2>&1
+      - rm m3uetc-task > /dev/null 2>&1
+      - rm m3uetc-gtk > /dev/null 2>&1
+    silent: true
+
+  dev-server:
+    cmds:
+      - go run ./cmd/m3uetc-server
+    silent: true
+  dev-task:
+    cmds:
+      - go run ./cmd/m3uetc-task
+    silent: true
+  dev-gtk:
+    cmds:
+      - go run ./cmd/m3uetc-gtk
+    silent: true
+
+  test:
+    cmds:
+      - go test -v -p 1 ./...
+    silent: true
+
+  bump-min:
+    cmds:
+      - task: bump-minor
+    silent: true
+  bump-p:
+    cmds:
+      - task: bump-patch
+    silent: true
+  bump-minor:
+    cmds:
+      - bumpy bump --minor
+    silent: true
+  bump-patch:
+    cmds:
+      - bumpy bump --patch
+    silent: true
+  tag:
+    cmds:
+      - bumpy tag
+    silent: true
