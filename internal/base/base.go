@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -50,6 +51,8 @@ var (
 	// RuntimeDir Run (volatile) directory
 	RuntimeDir string
 
+	flagHelp bool
+
 	// FlagDry Dry run
 	FlagDry bool
 
@@ -80,13 +83,15 @@ func Idle(force bool) {
 }
 
 // Load Loads application's configuration
-func Load() (args []string) {
-	args = env.ParseArgs(
-		logFile,
-		&FlagEchoLogging,
-		&FlagVerbose,
-		&FlagSeverity,
-	)
+func Load(noParseArgs ...bool) (args []string) {
+	noParse := false
+	if len(noParseArgs) > 0 {
+		noParse = noParseArgs[0]
+	}
+
+	if !noParse {
+		args = parseArgs()
+	}
 
 	configFile = filepath.Join(ConfigDir, configFilename)
 	lockFile = filepath.Join(RuntimeDir, lockFilename)
@@ -105,6 +110,51 @@ func Load() (args []string) {
 	return
 }
 
+func parseArgs() (args []string) {
+	getopt.Parse()
+	args = getopt.Args()
+	arg0 := []string{os.Args[0]}
+	args = append(arg0, args...)
+
+	if flagHelp {
+		getopt.Usage()
+		os.Exit(0)
+	}
+
+	resolveSeverity()
+
+	if FlagEchoLogging {
+		mw := io.MultiWriter(os.Stderr, logFile)
+		log.SetOutput(mw)
+	}
+
+	return
+}
+
+func resolveSeverity() {
+	givenSeverity := FlagSeverity
+
+	if givenSeverity == "" {
+		if FlagVerbose {
+			FlagSeverity = "info"
+		} else {
+			FlagSeverity = "error"
+		}
+	} else {
+		if _, err := log.ParseLevel(givenSeverity); err != nil {
+			FlagSeverity = "error"
+		} else {
+			FlagSeverity = givenSeverity
+		}
+	}
+
+	level, _ := log.ParseLevel(FlagSeverity)
+	log.SetLevel(level)
+	log.SetReportCaller(FlagSeverity == "debug")
+
+	return
+}
+
 // Unload Cleans up server before exit
 func Unload() {}
 
@@ -118,10 +168,11 @@ func init() {
 	RuntimeDir = filepath.Join(xdg.RuntimeDir, AppDirName)
 
 	// Define global flags
+	getopt.FlagLong(&flagHelp, "help", 'h', "Display this help")
 	getopt.FlagLong(&FlagDry, "dry", 'n', "Dry run")
-	getopt.FlagLong(&FlagTestingMode, "testing", 't', "Start in testing mode")
+	getopt.FlagLong(&FlagTestingMode, "testing", 0, "Start in testing mode")
 	getopt.FlagLong(&FlagVerbose, "verbose", 'v', "Bump logging severity")
-	getopt.FlagLong(&FlagSeverity, "severity", 0, "Logging severity")
+	getopt.FlagLong(&FlagSeverity, "severity", 0, "Logging severity (trace|debug|info|warn|error|fatal|panic)")
 	getopt.FlagLong(&FlagEchoLogging, "echo-logging", 'e', "Echo logs to stderr")
 
 	// log-related

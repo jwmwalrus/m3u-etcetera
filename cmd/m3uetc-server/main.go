@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/jwmwalrus/m3u-etcetera/api"
@@ -16,11 +17,12 @@ func main() {
 
 	log.Info("Starting server...")
 
-	lis, err := net.Listen("tcp", "0.0.0.0:50051")
+	port := base.Conf.Server.Port
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
-	log.Info("Listening on port 50051")
+	log.Infof("Listening on port %v", port)
 
 	opts := getServerOpts()
 	s := grpc.NewServer(opts...)

@@ -3,8 +3,11 @@ package config
 import "strconv"
 
 const (
-	// DefaultServerBaseURL idem
-	DefaultServerBaseURL = "http://localhost"
+	// DefaultServerScheme idem
+	DefaultServerScheme = "http"
+
+	// DefaultServerHost idem
+	DefaultServerHost = "localhost"
 
 	// DefaultServerPort idem
 	DefaultServerPort = 50099
@@ -15,15 +18,20 @@ const (
 
 // ServerSpec Server-related config
 type ServerSpec struct {
-	BaseURL    string `json:"baseUrl"`
+	Scheme     string `json:"scheme"`
+	Host       string `json:"host"`
 	Port       int    `json:"port"`
 	APIVersion string `json:"apiVersion"`
 }
 
 // SetDefaults provides default settings
 func (s *ServerSpec) SetDefaults() {
-	if s.BaseURL == "" {
-		s.BaseURL = DefaultServerBaseURL
+	if s.Scheme == "" {
+		s.Scheme = DefaultServerScheme
+	}
+
+	if s.Host == "" {
+		s.Host = DefaultServerHost
 	}
 
 	if s.Port == 0 {
@@ -35,8 +43,12 @@ func (s *ServerSpec) SetDefaults() {
 	}
 }
 
-// GetURL Returns the playback URL
-func (s ServerSpec) GetURL() (url string) {
-	url = s.BaseURL + ":" + strconv.Itoa(s.Port)
-	return
+// GetAuthority returns the authority portion of the playback URI
+func (s *ServerSpec) GetAuthority() string {
+	return s.Host + ":" + strconv.Itoa(s.Port)
+}
+
+// GetURI returns the playback URI
+func (s *ServerSpec) GetURI() string {
+	return s.Scheme + "://" + s.GetAuthority()
 }
