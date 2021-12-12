@@ -1,0 +1,6 @@
+{
+  "noFetch": false,
+  "noCommit": false,
+  "versionPrefix": ".",
+  "npmPrefixes": []
+}
