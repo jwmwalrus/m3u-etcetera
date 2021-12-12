@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/jwmwalrus/m3u-etcetera/api"
-	"github.com/jwmwalrus/m3u-etcetera/api/pb"
+	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -26,7 +26,7 @@ func main() {
 
 	opts := getServerOpts()
 	s := grpc.NewServer(opts...)
-	pb.RegisterRootServer(s, &api.Root{})
+	m3uetcpb.RegisterRootServer(s, &api.Root{})
 	reflection.Register(s)
 
 	if err := s.Serve(lis); err != nil {

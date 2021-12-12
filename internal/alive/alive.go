@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jwmwalrus/m3u-etcetera/api/pb"
+	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -100,8 +100,8 @@ func isServerAlive() bool {
 	}
 	defer cc.Close()
 
-	c := pb.NewRootClient(cc)
-	res, err := c.Status(context.Background(), &pb.Empty{})
+	c := m3uetcpb.NewRootClient(cc)
+	res, err := c.Status(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		log.Info(err)
 		return false
@@ -184,8 +184,8 @@ func stopServer() (err error) {
 	}
 	defer cc.Close()
 
-	c := pb.NewRootClient(cc)
-	res, err := c.Off(context.Background(), &pb.Empty{})
+	c := m3uetcpb.NewRootClient(cc)
+	res, err := c.Off(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		log.Error(err)
 		return

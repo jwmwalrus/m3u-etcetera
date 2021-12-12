@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jwmwalrus/m3u-etcetera/api/pb"
+	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 )
 
 func TestRootOff(t *testing.T) {
 	c := Root{}
 
-	req := &pb.Empty{}
+	req := &m3uetcpb.Empty{}
 	res, err := c.Off(context.Background(), req)
 	if err != nil {
 		t.Fatal(err)
@@ -23,7 +23,7 @@ func TestRootOff(t *testing.T) {
 func TestRootStatus(t *testing.T) {
 	c := Root{}
 
-	req := &pb.Empty{}
+	req := &m3uetcpb.Empty{}
 	res, err := c.Status(context.Background(), req)
 	if err != nil {
 		t.Fatal(err)
