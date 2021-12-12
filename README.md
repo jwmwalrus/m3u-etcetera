@@ -1,2 +1,4 @@
-# m3u-etcetera
-A playlist-centric music player
+M3U Etcétera
+============
+
+A playlist-centric music player.
