@@ -21,7 +21,12 @@ type Playback struct { // too transient
 
 // AddToHistory adds unplayed playback to history and marks it as played
 func (pb *Playback) AddToHistory(duration int64) {
-	log.Info("Adding playback to history")
+	log.WithFields(log.Fields{
+		"pb":       *pb,
+		"duration": duration,
+	}).
+		Info("Adding playback to history")
+
 	pb.Played = true
 	db.Save(&pb)
 	go func() {
@@ -53,11 +58,13 @@ func (pb *Playback) ClearPending() {
 
 // FindTrack attempts to find track from location
 func (pb *Playback) FindTrack() {
-	log.Info("Finding track for current playback")
 	if pb.TrackID > 0 {
-		log.Info("Already found!")
 		return
 	}
+
+	log.WithField("pb", *pb).
+		Info("Finding track for current playback")
+
 	t := Track{}
 	if err := db.Where("location = ?", pb.Location).First(&t).Error; err != nil {
 		return
@@ -120,6 +127,9 @@ func (h *PlaybackHistory) ReadLast() (err error) {
 
 // AddPlaybackLocation adds a playback entry by location
 func AddPlaybackLocation(location string) (pb *Playback) {
+	log.WithField("location", location).
+		Info("Adding playback entry by location")
+
 	pb = &Playback{Location: location}
 	if err := db.Create(pb).Error; err != nil {
 		log.Error(err)
@@ -131,6 +141,9 @@ func AddPlaybackLocation(location string) (pb *Playback) {
 
 // AddPlaybackTrack adds a playback entry by track
 func AddPlaybackTrack(t Track) (pb *Playback) {
+	log.WithField("t", t).
+		Info("Adding playback entry by track")
+
 	pb = &Playback{Location: t.Location, TrackID: t.ID}
 	err := db.Create(pb).Error
 	onerror.Log(err)

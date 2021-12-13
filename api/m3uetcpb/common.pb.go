@@ -20,6 +20,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Perspective int32
+
+const (
+	Perspective_MUSIC      Perspective = 0
+	Perspective_RADIO      Perspective = 1
+	Perspective_PODCAST    Perspective = 2
+	Perspective_AUDIOBOOKS Perspective = 3
+)
+
+// Enum value maps for Perspective.
+var (
+	Perspective_name = map[int32]string{
+		0: "MUSIC",
+		1: "RADIO",
+		2: "PODCAST",
+		3: "AUDIOBOOKS",
+	}
+	Perspective_value = map[string]int32{
+		"MUSIC":      0,
+		"RADIO":      1,
+		"PODCAST":    2,
+		"AUDIOBOOKS": 3,
+	}
+)
+
+func (x Perspective) Enum() *Perspective {
+	p := new(Perspective)
+	*p = x
+	return p
+}
+
+func (x Perspective) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Perspective) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_m3uetcpb_common_proto_enumTypes[0].Descriptor()
+}
+
+func (Perspective) Type() protoreflect.EnumType {
+	return &file_api_m3uetcpb_common_proto_enumTypes[0]
+}
+
+func (x Perspective) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Perspective.Descriptor instead.
+func (Perspective) EnumDescriptor() ([]byte, []int) {
+	return file_api_m3uetcpb_common_proto_rawDescGZIP(), []int{0}
+}
+
 type Empty struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -63,9 +115,13 @@ var File_api_m3uetcpb_common_proto protoreflect.FileDescriptor
 var file_api_m3uetcpb_common_proto_rawDesc = []byte{
 	0x0a, 0x19, 0x61, 0x70, 0x69, 0x2f, 0x6d, 0x33, 0x75, 0x65, 0x74, 0x63, 0x70, 0x62, 0x2f, 0x63,
 	0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x08, 0x6d, 0x33, 0x75,
-	0x65, 0x74, 0x63, 0x70, 0x62, 0x22, 0x07, 0x0a, 0x05, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x42, 0x0c,
-	0x5a, 0x0a, 0x2e, 0x2f, 0x6d, 0x33, 0x75, 0x65, 0x74, 0x63, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x74, 0x63, 0x70, 0x62, 0x22, 0x07, 0x0a, 0x05, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x2a, 0x40,
+	0x0a, 0x0b, 0x50, 0x65, 0x72, 0x73, 0x70, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x12, 0x09, 0x0a,
+	0x05, 0x4d, 0x55, 0x53, 0x49, 0x43, 0x10, 0x00, 0x12, 0x09, 0x0a, 0x05, 0x52, 0x41, 0x44, 0x49,
+	0x4f, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x4f, 0x44, 0x43, 0x41, 0x53, 0x54, 0x10, 0x02,
+	0x12, 0x0e, 0x0a, 0x0a, 0x41, 0x55, 0x44, 0x49, 0x4f, 0x42, 0x4f, 0x4f, 0x4b, 0x53, 0x10, 0x03,
+	0x42, 0x0c, 0x5a, 0x0a, 0x2e, 0x2f, 0x6d, 0x33, 0x75, 0x65, 0x74, 0x63, 0x70, 0x62, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -80,9 +136,11 @@ func file_api_m3uetcpb_common_proto_rawDescGZIP() []byte {
 	return file_api_m3uetcpb_common_proto_rawDescData
 }
 
+var file_api_m3uetcpb_common_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_m3uetcpb_common_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_m3uetcpb_common_proto_goTypes = []interface{}{
-	(*Empty)(nil), // 0: m3uetcpb.Empty
+	(Perspective)(0), // 0: m3uetcpb.Perspective
+	(*Empty)(nil),    // 1: m3uetcpb.Empty
 }
 var file_api_m3uetcpb_common_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -116,13 +174,14 @@ func file_api_m3uetcpb_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_m3uetcpb_common_proto_rawDesc,
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_api_m3uetcpb_common_proto_goTypes,
 		DependencyIndexes: file_api_m3uetcpb_common_proto_depIdxs,
+		EnumInfos:         file_api_m3uetcpb_common_proto_enumTypes,
 		MessageInfos:      file_api_m3uetcpb_common_proto_msgTypes,
 	}.Build()
 	File_api_m3uetcpb_common_proto = out.File

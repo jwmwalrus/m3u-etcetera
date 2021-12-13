@@ -9,6 +9,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database"
+	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -17,6 +18,7 @@ import (
 func main() {
 	base.Load()
 	database.Open()
+	playback.StartEngine()
 
 	log.Info("Starting server...")
 

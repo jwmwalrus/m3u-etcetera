@@ -31,7 +31,7 @@ func DSN(prod bool) string {
 func Open() *gorm.DB {
 	var err error
 
-	conn, err = gorm.Open(sqlite.Open(DSN(true)), &gorm.Config{
+	conn, err = gorm.Open(sqlite.Open(DSN(!base.FlagTestingMode)), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},
@@ -53,9 +53,11 @@ func Open() *gorm.DB {
 
 	go func() {
 		conn.Where("played = 1").Delete(models.Playback{})
+		conn.Where("played = 1").Delete(models.Queue{})
 	}()
 
-	log.Info("Database loaded")
+	log.WithField("dsn", DSN(!base.FlagTestingMode)).
+		Info("Database loaded")
 
 	return conn
 }

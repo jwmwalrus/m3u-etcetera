@@ -30,12 +30,11 @@ message GetResponse {
     }
 }
 
-
 message ExecuteActionRequest {
     PlaybackAction action = 1;
     bool force = 2;
     int64 seek = 3;
-    int32 perspective = 4;
+    Perspective perspective = 4;
     repeated int64 ids = 5;
     repeated string locations = 6;
 }

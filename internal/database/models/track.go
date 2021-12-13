@@ -39,8 +39,28 @@ type Track struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
+func (t *Track) Create() (err error) {
+	err = db.Create(t).Error
+	return
+}
+
+func (t *Track) Delete() {
+	err := db.Delete(&Track{}, t.ID).Error
+	onerror.Log(err)
+}
+
+func (t *Track) FindBy(query interface{}) (err error) {
+	err = db.Where(query).First(t).Error
+	return
+}
+
 func (t *Track) Read(id int64) (err error) {
 	err = db.First(t, id).Error
+	return
+}
+
+func (t *Track) Save() (err error) {
+	err = db.Save(t).Error
 	return
 }
 

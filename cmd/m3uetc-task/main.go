@@ -44,6 +44,7 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			task.Serve(),
+			task.Playback(),
 		},
 	}
 
