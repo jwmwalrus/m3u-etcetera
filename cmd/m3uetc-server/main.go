@@ -6,6 +6,7 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/api"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database"
 	log "github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ func main() {
 	}
 	log.Infof("Listening on port %v", port)
 
-	opts := getServerOpts()
+	opts := middleware.GetServerOpts()
 	s := grpc.NewServer(opts...)
 
 	m3uetcpb.RegisterRootSvcServer(s, &api.RootSvc{})
@@ -37,7 +38,4 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
-}
-func getServerOpts() (opts []grpc.ServerOption) {
-	return
 }
