@@ -1,6 +1,7 @@
 package base
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -121,6 +122,7 @@ func RegisterUnloader(u Unloader) {
 // Unload Cleans up server before exit
 func Unload() {
 	log.Info("Unloading application")
+
 	if Conf.FirstRun {
 		Conf.FirstRun = false
 
@@ -129,7 +131,7 @@ func Unload() {
 	}
 
 	for _, u := range unloadRegistry {
-		log.Infof("Calling finalizer: %v", u.Description)
+		log.Infof("Calling unloader: %v", u.Description)
 		err := u.Callback()
 		onerror.Log(err)
 	}
@@ -160,13 +162,16 @@ func resolveSeverity() {
 	givenSeverity := FlagSeverity
 
 	if givenSeverity == "" {
-		if FlagVerbose {
+		if FlagTestingMode {
+			FlagSeverity = "debug"
+		} else if FlagVerbose {
 			FlagSeverity = "info"
 		} else {
 			FlagSeverity = "error"
 		}
 	} else {
 		if _, err := log.ParseLevel(givenSeverity); err != nil {
+			fmt.Printf("Unsupported severity level: %v\n", givenSeverity)
 			FlagSeverity = "error"
 		} else {
 			FlagSeverity = givenSeverity
@@ -194,7 +199,7 @@ func init() {
 	getopt.FlagLong(&FlagDry, "dry", 'n', "Dry run")
 	getopt.FlagLong(&FlagTestingMode, "testing", 0, "Start in testing mode")
 	getopt.FlagLong(&FlagVerbose, "verbose", 'v', "Bump logging severity")
-	getopt.FlagLong(&FlagSeverity, "severity", 0, "Logging severity (trace|debug|info|warn|error|fatal|panic)")
+	getopt.FlagLong(&FlagSeverity, "severity", 0, "Logging severity (debug|info|warn|error|fatal)")
 	getopt.FlagLong(&FlagEchoLogging, "echo-logging", 'e', "Echo logs to stderr")
 
 	// log-related

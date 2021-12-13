@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
@@ -146,7 +147,6 @@ func startServer() (err error) {
 	cmd.Stderr = nil
 	err = cmd.Start()
 	if err != nil {
-		log.Error(err)
 		return
 	}
 
@@ -179,7 +179,6 @@ func stopServer() (err error) {
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts)
 	if err != nil {
-		log.Error(err)
 		return
 	}
 	defer cc.Close()
@@ -187,7 +186,6 @@ func stopServer() (err error) {
 	c := m3uetcpb.NewRootSvcClient(cc)
 	res, err := c.Off(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
-		log.Error(err)
 		return
 	}
 
@@ -223,7 +221,7 @@ func writeServerAliveFile() {
 	defer f.Close()
 
 	_, err = f.WriteString("1")
-
+	onerror.Log(err)
 	return
 }
 

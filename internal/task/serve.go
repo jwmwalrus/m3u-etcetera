@@ -33,8 +33,15 @@ func Serve() *cli.Command {
 	}
 }
 
-func checkServerStatus(c *cli.Context) error {
-	return alive.CheckServerStatus()
+func checkServerStatus(c *cli.Context) (err error) {
+	err = alive.CheckServerStatus()
+	switch err.(type) {
+	case *alive.ServerAlreadyRunning,
+		*alive.ServerStarted:
+		err = nil
+	default:
+	}
+	return
 }
 
 func serveAction(c *cli.Context) error {

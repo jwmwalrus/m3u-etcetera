@@ -6,6 +6,7 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/task"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
@@ -37,6 +38,7 @@ func main() {
 		UsageText: "m3uetc-task - control M3U Etcétera from the terminal",
 		ExitErrHandler: func(c *cli.Context, err error) {
 			if err != nil {
+				log.Error(err)
 				fmt.Fprintf(c.App.ErrWriter, err.Error()+"\n")
 			}
 		},

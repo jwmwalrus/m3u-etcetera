@@ -31,8 +31,14 @@ func GetFree() {
 
 // Idle exits the server if it has been idle for a while and no long-term processes are pending
 func Idle(force bool) {
+	log.WithFields(log.Fields{
+		"force":        force,
+		"serverIsBusy": serverIsBusy,
+	}).
+		Info("Server has been idle for a while, and that's gotta stop!")
+
 	if force || serverIsBusy <= 0 {
-		log.Info("Server has been idle for a while, and that's gotta stop!")
+		log.Info("Server seems to have been idle for a while, and that's gotta stop!")
 		Unload()
 		fmt.Printf("Bye %v from %v\n", OS, filepath.Base(os.Args[0]))
 		os.Exit(0)

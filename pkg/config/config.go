@@ -54,7 +54,7 @@ func (c *Config) Save(path, lockFile string) (err error) {
 
 	defer func() {
 		if err := lock.Unlock(); err != nil {
-			fmt.Printf("Cannot unlock %q, reason: %v", lock, err)
+			fmt.Printf("Cannot unlock %q, reason: %v\n", lock, err)
 		}
 	}()
 
