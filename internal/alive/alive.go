@@ -100,7 +100,7 @@ func isServerAlive() bool {
 	}
 	defer cc.Close()
 
-	c := m3uetcpb.NewRootClient(cc)
+	c := m3uetcpb.NewRootSvcClient(cc)
 	res, err := c.Status(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		log.Info(err)
@@ -184,7 +184,7 @@ func stopServer() (err error) {
 	}
 	defer cc.Close()
 
-	c := m3uetcpb.NewRootClient(cc)
+	c := m3uetcpb.NewRootSvcClient(cc)
 	res, err := c.Off(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		log.Error(err)

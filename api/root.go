@@ -8,13 +8,13 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 )
 
-// Root defines the root service
-type Root struct {
-	m3uetcpb.UnimplementedRootServer
+// RootSvc defines the root service
+type RootSvc struct {
+	m3uetcpb.UnimplementedRootSvcServer
 }
 
 // Off initiates the process to unload the server
-func (r *Root) Off(_ context.Context, req *m3uetcpb.Empty) (*m3uetcpb.OffResponse, error) {
+func (*RootSvc) Off(_ context.Context, req *m3uetcpb.Empty) (*m3uetcpb.OffResponse, error) {
 	go func() {
 		time.Sleep(5 * time.Second)
 		base.Idle(true)
@@ -23,6 +23,6 @@ func (r *Root) Off(_ context.Context, req *m3uetcpb.Empty) (*m3uetcpb.OffRespons
 }
 
 // Status returns the status of the server
-func (r *Root) Status(_ context.Context, req *m3uetcpb.Empty) (*m3uetcpb.StatusResponse, error) {
+func (*RootSvc) Status(_ context.Context, req *m3uetcpb.Empty) (*m3uetcpb.StatusResponse, error) {
 	return &m3uetcpb.StatusResponse{Alive: true}, nil
 }

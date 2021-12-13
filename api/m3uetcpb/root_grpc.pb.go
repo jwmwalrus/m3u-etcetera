@@ -14,122 +14,122 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// RootClient is the client API for Root service.
+// RootSvcClient is the client API for RootSvc service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RootClient interface {
+type RootSvcClient interface {
 	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
 	Off(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*OffResponse, error)
 }
 
-type rootClient struct {
+type rootSvcClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRootClient(cc grpc.ClientConnInterface) RootClient {
-	return &rootClient{cc}
+func NewRootSvcClient(cc grpc.ClientConnInterface) RootSvcClient {
+	return &rootSvcClient{cc}
 }
 
-func (c *rootClient) Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error) {
+func (c *rootSvcClient) Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error) {
 	out := new(StatusResponse)
-	err := c.cc.Invoke(ctx, "/m3uetcpb.Root/Status", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/m3uetcpb.RootSvc/Status", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rootClient) Off(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*OffResponse, error) {
+func (c *rootSvcClient) Off(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*OffResponse, error) {
 	out := new(OffResponse)
-	err := c.cc.Invoke(ctx, "/m3uetcpb.Root/Off", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/m3uetcpb.RootSvc/Off", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// RootServer is the server API for Root service.
-// All implementations must embed UnimplementedRootServer
+// RootSvcServer is the server API for RootSvc service.
+// All implementations must embed UnimplementedRootSvcServer
 // for forward compatibility
-type RootServer interface {
+type RootSvcServer interface {
 	Status(context.Context, *Empty) (*StatusResponse, error)
 	Off(context.Context, *Empty) (*OffResponse, error)
-	mustEmbedUnimplementedRootServer()
+	mustEmbedUnimplementedRootSvcServer()
 }
 
-// UnimplementedRootServer must be embedded to have forward compatible implementations.
-type UnimplementedRootServer struct {
+// UnimplementedRootSvcServer must be embedded to have forward compatible implementations.
+type UnimplementedRootSvcServer struct {
 }
 
-func (UnimplementedRootServer) Status(context.Context, *Empty) (*StatusResponse, error) {
+func (UnimplementedRootSvcServer) Status(context.Context, *Empty) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
 }
-func (UnimplementedRootServer) Off(context.Context, *Empty) (*OffResponse, error) {
+func (UnimplementedRootSvcServer) Off(context.Context, *Empty) (*OffResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Off not implemented")
 }
-func (UnimplementedRootServer) mustEmbedUnimplementedRootServer() {}
+func (UnimplementedRootSvcServer) mustEmbedUnimplementedRootSvcServer() {}
 
-// UnsafeRootServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RootServer will
+// UnsafeRootSvcServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RootSvcServer will
 // result in compilation errors.
-type UnsafeRootServer interface {
-	mustEmbedUnimplementedRootServer()
+type UnsafeRootSvcServer interface {
+	mustEmbedUnimplementedRootSvcServer()
 }
 
-func RegisterRootServer(s grpc.ServiceRegistrar, srv RootServer) {
-	s.RegisterService(&Root_ServiceDesc, srv)
+func RegisterRootSvcServer(s grpc.ServiceRegistrar, srv RootSvcServer) {
+	s.RegisterService(&RootSvc_ServiceDesc, srv)
 }
 
-func _Root_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RootSvc_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RootServer).Status(ctx, in)
+		return srv.(RootSvcServer).Status(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/m3uetcpb.Root/Status",
+		FullMethod: "/m3uetcpb.RootSvc/Status",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RootServer).Status(ctx, req.(*Empty))
+		return srv.(RootSvcServer).Status(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Root_Off_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RootSvc_Off_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RootServer).Off(ctx, in)
+		return srv.(RootSvcServer).Off(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/m3uetcpb.Root/Off",
+		FullMethod: "/m3uetcpb.RootSvc/Off",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RootServer).Off(ctx, req.(*Empty))
+		return srv.(RootSvcServer).Off(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Root_ServiceDesc is the grpc.ServiceDesc for Root service.
+// RootSvc_ServiceDesc is the grpc.ServiceDesc for RootSvc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Root_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "m3uetcpb.Root",
-	HandlerType: (*RootServer)(nil),
+var RootSvc_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "m3uetcpb.RootSvc",
+	HandlerType: (*RootSvcServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Status",
-			Handler:    _Root_Status_Handler,
+			Handler:    _RootSvc_Status_Handler,
 		},
 		{
 			MethodName: "Off",
-			Handler:    _Root_Off_Handler,
+			Handler:    _RootSvc_Off_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

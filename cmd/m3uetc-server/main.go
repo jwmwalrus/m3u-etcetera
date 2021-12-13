@@ -26,7 +26,8 @@ func main() {
 
 	opts := getServerOpts()
 	s := grpc.NewServer(opts...)
-	m3uetcpb.RegisterRootServer(s, &api.Root{})
+
+	m3uetcpb.RegisterRootSvcServer(s, &api.RootSvc{})
 	reflection.Register(s)
 
 	if err := s.Serve(lis); err != nil {

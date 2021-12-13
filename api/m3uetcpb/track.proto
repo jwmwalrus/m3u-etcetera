@@ -1,0 +1,37 @@
+syntax = 'proto3';
+
+package m3uetcpb;
+
+option go_package = './m3uetcpb';
+
+message Track {
+    int64 id = 1;
+    string location = 2;
+    string format = 3;
+    string type = 4;
+    string title = 5;
+    string album = 6;
+    string artist = 7;
+    string albumartist = 8;
+    string composer = 9;
+    string genre = 10;
+
+    int32 year = 11;
+    int32 tracknumber = 12;
+    int32 tracktotal = 13;
+    int32 discnumber = 14;
+    int32 disctotal = 15;
+    string lyrics = 16;
+    string comment = 17;
+    string tags = 18;
+    string sum = 19;
+    int32 playcount = 20;
+
+    int32 rating = 21;
+    int64 duration = 22;
+    bool remote = 23;
+    int64 lastplayed = 24;
+    int64 created_at = 101;
+    int64 updated_at = 102;
+}
+
