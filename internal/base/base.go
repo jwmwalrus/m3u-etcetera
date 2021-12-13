@@ -1,7 +1,6 @@
 package base
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -25,16 +24,21 @@ const (
 
 	// AppName Application name
 	AppName = "M3U Etcétera"
+
+	// DatabaseFilename defines the name of the music database
+	DatabaseFilename = "music.db"
+
+	// ServerWaitTimeout Maximum amount of seconds the server will wait for an event to sync up
+	ServerWaitTimeout = 60
 )
 
 var (
-	configFile string
-	lockFile   string
-	logFile    *lumberjack.Logger
+	configFile     string
+	lockFile       string
+	logFile        *lumberjack.Logger
+	unloadRegistry []Unloader
 
 	logFilename = "app.log"
-
-	serverIsBusy = 0
 
 	// OS Operating system's name
 	OS string
@@ -72,15 +76,14 @@ var (
 	Conf config.Config
 )
 
-// Idle exits the server if it has been idle for a while and no long-term processes are pending
-func Idle(force bool) {
-	if force || serverIsBusy <= 0 {
-		log.Info("Server has been idle for a while, and that's gotta stop!")
-		Unload()
-		fmt.Printf("Bye %v from %v\n", OS, filepath.Base(os.Args[0]))
-		os.Exit(0)
-	}
+// Unloader defines a method to be called when unloading the application
+type Unloader struct {
+	Description string
+	Callback    UnloaderCallback
 }
+
+// UnloaderCallback defines the signature of the method to be called when unloading the application
+type UnloaderCallback func() error
 
 // Load Loads application's configuration
 func Load(noParseArgs ...bool) (args []string) {
@@ -108,6 +111,28 @@ func Load(noParseArgs ...bool) (args []string) {
 	onerror.Panic(err)
 
 	return
+}
+
+// RegisterUnloader registers an Unloader, to be invoked before stopping the app
+func RegisterUnloader(u Unloader) {
+	unloadRegistry = append(unloadRegistry, u)
+}
+
+// Unload Cleans up server before exit
+func Unload() {
+	log.Info("Unloading application")
+	if Conf.FirstRun {
+		Conf.FirstRun = false
+
+		// NOTE: ignore error
+		Conf.Save(configFile, lockFile)
+	}
+
+	for _, u := range unloadRegistry {
+		log.Infof("Calling finalizer: %v", u.Description)
+		err := u.Callback()
+		onerror.Log(err)
+	}
 }
 
 func parseArgs() (args []string) {
@@ -154,9 +179,6 @@ func resolveSeverity() {
 
 	return
 }
-
-// Unload Cleans up server before exit
-func Unload() {}
 
 func init() {
 	OS = runtime.GOOS
