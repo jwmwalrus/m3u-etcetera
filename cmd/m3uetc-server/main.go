@@ -7,6 +7,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/m3u-etcetera/internal/database"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -14,6 +15,7 @@ import (
 
 func main() {
 	base.Load()
+	database.Open()
 
 	log.Info("Starting server...")
 
@@ -28,6 +30,8 @@ func main() {
 	s := grpc.NewServer(opts...)
 
 	m3uetcpb.RegisterRootSvcServer(s, &api.RootSvc{})
+	m3uetcpb.RegisterPlaybackSvcServer(s, &api.PlaybackSvc{})
+
 	reflection.Register(s)
 
 	if err := s.Serve(lis); err != nil {
