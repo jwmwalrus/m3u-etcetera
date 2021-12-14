@@ -14,29 +14,29 @@ type PlaybackSvc struct {
 	m3uetcpb.UnimplementedPlaybackSvcServer
 }
 
-func (*PlaybackSvc) Get(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.GetResponse, error) {
+func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
 
 	pb := playback.GetPlayback()
 	if pb != nil {
 		if pb.TrackID > 0 {
 			if t, err := pb.GetTrack(); err == nil {
-				res := &m3uetcpb.GetResponse_Track{Track: t.ToProtobuf()}
-				return &m3uetcpb.GetResponse{Playing: res}, nil
+				res := &m3uetcpb.GetPlaybackResponse_Track{Track: t.ToProtobuf()}
+				return &m3uetcpb.GetPlaybackResponse{Playing: res}, nil
 			}
 		}
-		res := &m3uetcpb.GetResponse_Playback{Playback: pb.ToProtobuf()}
-		return &m3uetcpb.GetResponse{Playing: res}, nil
+		res := &m3uetcpb.GetPlaybackResponse_Playback{Playback: pb.ToProtobuf()}
+		return &m3uetcpb.GetPlaybackResponse{Playing: res}, nil
 	}
 
-	res := &m3uetcpb.GetResponse_Empty{Empty: &m3uetcpb.Empty{}}
-	return &m3uetcpb.GetResponse{Playing: res}, nil
+	res := &m3uetcpb.GetPlaybackResponse_Empty{Empty: &m3uetcpb.Empty{}}
+	return &m3uetcpb.GetPlaybackResponse{Playing: res}, nil
 }
 
-func (*PlaybackSvc) ExecuteAction(_ context.Context, req *m3uetcpb.ExecuteActionRequest) (*m3uetcpb.Empty, error) {
+func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
 
 	go func() {
 		go func() {
-			if !slice.Contains([]m3uetcpb.PlaybackAction{m3uetcpb.PlaybackAction_PLAY, m3uetcpb.PlaybackAction_SEEK}, req.Action) &&
+			if !slice.Contains([]m3uetcpb.PlaybackAction{m3uetcpb.PlaybackAction_PB_PLAY, m3uetcpb.PlaybackAction_PB_SEEK}, req.Action) &&
 				(len(req.Locations) > 0 || len(req.Ids) > 0) {
 				for _, v := range req.Locations {
 					log.Warnf("Ignoring given location: %v", v)
@@ -48,13 +48,13 @@ func (*PlaybackSvc) ExecuteAction(_ context.Context, req *m3uetcpb.ExecuteAction
 		}()
 
 		switch req.Action {
-		case m3uetcpb.PlaybackAction_SEEK:
+		case m3uetcpb.PlaybackAction_PB_SEEK:
 			playback.SeekInStream(req.Seek)
-		case m3uetcpb.PlaybackAction_NEXT:
+		case m3uetcpb.PlaybackAction_PB_NEXT:
 			playback.NextStream()
-		case m3uetcpb.PlaybackAction_PAUSE:
+		case m3uetcpb.PlaybackAction_PB_PAUSE:
 			playback.PauseStream(false)
-		case m3uetcpb.PlaybackAction_PLAY:
+		case m3uetcpb.PlaybackAction_PB_PLAY:
 			if len(req.Locations) > 0 || len(req.Ids) > 0 {
 				if req.Force {
 					playback.PlayStreams(req.Force, req.Locations, req.Ids)
@@ -65,9 +65,9 @@ func (*PlaybackSvc) ExecuteAction(_ context.Context, req *m3uetcpb.ExecuteAction
 			} else {
 				playback.PauseStream(true)
 			}
-		case m3uetcpb.PlaybackAction_PREVIOUS:
+		case m3uetcpb.PlaybackAction_PB_PREVIOUS:
 			playback.PreviousStream()
-		case m3uetcpb.PlaybackAction_STOP:
+		case m3uetcpb.PlaybackAction_PB_STOP:
 			playback.StopAll()
 		default:
 		}

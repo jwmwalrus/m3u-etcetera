@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"strings"
 
-	"github.com/jwmwalrus/bnp/isformat"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/rodaine/table"
@@ -34,7 +32,7 @@ func Playback() *cli.Command {
 						Usage: "add to playback instead of queueing",
 					},
 				},
-				Usage:       "playback play [ [--force] location|payload ] ...",
+				Usage:       "playback play [ [--force] location ... ]",
 				Description: "Plays the given payload or resumes a paused playback",
 				Action:      playbackPlayAction,
 			},
@@ -95,22 +93,22 @@ func Playback() *cli.Command {
 }
 
 func playbackAction(c *cli.Context) (err error) {
-	opts := grpc.WithInsecure()
+	opts := getGrpcOpts()
 
 	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts)
+	cc, err := grpc.Dial(auth, opts...)
 	if err != nil {
 		return
 	}
 	defer cc.Close()
 
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
-	res, err := cl.Get(context.Background(), &m3uetcpb.Empty{})
+	res, err := cl.GetPlayback(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		return
 	}
 
-	if _, ok := res.Playing.(*m3uetcpb.GetResponse_Empty); ok {
+	if _, ok := res.Playing.(*m3uetcpb.GetPlaybackResponse_Empty); ok {
 		fmt.Printf("\nThere is no active playback\n")
 		return
 	}
@@ -129,10 +127,10 @@ func playbackAction(c *cli.Context) (err error) {
 		}
 		j := jt{}
 		switch res.Playing.(type) {
-		case *m3uetcpb.GetResponse_Playback:
+		case *m3uetcpb.GetPlaybackResponse_Playback:
 			pb := res.GetPlayback()
 			j = jt{pb.Id, pb.Location}
-		case *m3uetcpb.GetResponse_Track:
+		case *m3uetcpb.GetPlaybackResponse_Track:
 			t := res.GetTrack()
 			j = jt{t.Id, t.Location}
 		default:
@@ -147,34 +145,27 @@ func playbackAction(c *cli.Context) (err error) {
 }
 
 func playbackPlayAction(c *cli.Context) (err error) {
-	opts := grpc.WithInsecure()
+	const actionPrefix = "PB_"
+	opts := getGrpcOpts()
 
 	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts)
+	cc, err := grpc.Dial(auth, opts...)
 	if err != nil {
 		return
 	}
 	defer cc.Close()
 
-	action := m3uetcpb.PlaybackAction_value[strings.ToUpper(c.Command.Name)]
-	req := &m3uetcpb.ExecuteActionRequest{
+	action := m3uetcpb.PlaybackAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	req := &m3uetcpb.ExecutePlaybackActionRequest{
 		Action: m3uetcpb.PlaybackAction(action),
 	}
 
 	rest := c.Args().Slice()
 	if c.Command.Name == "play" {
-		if len(rest) == 1 && isformat.JSON(rest[0]) {
-			_ = json.Unmarshal([]byte(rest[0]), &req)
-		} else if len(rest) > 0 {
-			for _, v := range rest {
-				var u *url.URL
-				if u, err = url.Parse(v); err != nil {
-					return
-				}
-				if u.Scheme == "" {
-					u.Scheme = "file"
-				}
-				req.Locations = append(req.Locations, u.String())
+		if len(rest) > 0 {
+			req.Locations, err = parseLocations(rest)
+			if err != nil {
+				return
 			}
 		}
 		req.Force = c.Bool("force")
@@ -186,7 +177,7 @@ func playbackPlayAction(c *cli.Context) (err error) {
 	}
 
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
-	_, err = cl.ExecuteAction(context.Background(), req)
+	_, err = cl.ExecutePlaybackAction(context.Background(), req)
 	if err != nil {
 		return
 	}

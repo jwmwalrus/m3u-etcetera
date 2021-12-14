@@ -9,6 +9,6 @@ message Empty {}
 enum Perspective {
     MUSIC = 0;
     RADIO = 1;
-    PODCAST = 2;
+    PODCASTS = 2;
     AUDIOBOOKS = 3;
 }

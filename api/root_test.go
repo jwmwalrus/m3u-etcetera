@@ -8,7 +8,7 @@ import (
 )
 
 func TestRootOff(t *testing.T) {
-	c := Root{}
+	c := RootSvc{}
 
 	req := &m3uetcpb.Empty{}
 	res, err := c.Off(context.Background(), req)
@@ -21,7 +21,7 @@ func TestRootOff(t *testing.T) {
 }
 
 func TestRootStatus(t *testing.T) {
-	c := Root{}
+	c := RootSvc{}
 
 	req := &m3uetcpb.Empty{}
 	res, err := c.Status(context.Background(), req)

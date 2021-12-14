@@ -8,21 +8,21 @@ import 'api/m3uetcpb/common.proto';
 import 'api/m3uetcpb/track.proto';
 
 service PlaybackSvc {
-    rpc Get(Empty) returns (GetResponse);
-    rpc ExecuteAction(ExecuteActionRequest) returns (Empty);
+    rpc GetPlayback(Empty) returns (GetPlaybackResponse);
+    rpc ExecutePlaybackAction(ExecutePlaybackActionRequest) returns (Empty);
 }
 
 message Playback {
-	int64 id = 1;
+    int64 id = 1;
     string location = 2;
-	bool played = 3;
-	int64 skip   = 4;
+    bool played = 3;
+    int64 skip = 4;
     int64 track_id = 5;
-	int64 created_at = 101;
-	int64 updated_at = 102;
+    int64 created_at = 101;
+    int64 updated_at = 102;
 }
 
-message GetResponse {
+message GetPlaybackResponse {
     oneof playing {
         Empty empty = 1;
         Playback playback = 2;
@@ -30,7 +30,7 @@ message GetResponse {
     }
 }
 
-message ExecuteActionRequest {
+message ExecutePlaybackActionRequest {
     PlaybackAction action = 1;
     bool force = 2;
     int64 seek = 3;
@@ -40,11 +40,11 @@ message ExecuteActionRequest {
 }
 
 enum PlaybackAction {
-    NONE = 0;
-    PLAY = 1;
-    NEXT = 2;
-    PREVIOUS = 3;
-    SEEK = 4;
-    PAUSE = 5;
-    STOP = 6;
+    PB_NONE = 0;
+    PB_PLAY = 1;
+    PB_NEXT = 2;
+    PB_PREVIOUS = 3;
+    PB_SEEK = 4;
+    PB_PAUSE = 5;
+    PB_STOP = 6;
 }
