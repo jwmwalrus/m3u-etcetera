@@ -1,0 +1,49 @@
+syntax = 'proto3';
+
+package m3uetcpb;
+
+option go_package = './m3uetcpb';
+
+import 'api/m3uetcpb/common.proto';
+
+service QueueSvc {
+    rpc GetQueue(GetQueueRequest) returns (GetQueueResponse);
+    rpc ExecuteQueueAction(ExecuteQueueActionRequest) returns (Empty);
+}
+
+message GetQueueRequest {
+    Perspective perspective = 1;
+    int32 limit = 2;
+}
+
+message GetQueueResponse {
+    repeated QueueTrack queue_tracks = 1;
+}
+
+message ExecuteQueueActionRequest {
+    QueueAction action = 1;
+    int32 position = 2;
+    Perspective perspective = 3;
+    repeated int64 ids = 4;
+    repeated string locations = 5;
+}
+
+message QueueTrack {
+    int64 id = 1;
+    int32 position = 2;
+    bool played = 3;
+    string location = 4;
+    int64 created_at = 5;
+    int64 updated_at = 6;
+    int64 track_id = 7;
+    int64 queue_id = 8;
+}
+
+enum QueueAction {
+    Q_NONE = 0;
+    Q_APPEND = 1;
+    Q_INSERT = 2;
+    Q_PREPPEND = 3;
+    Q_DELETE = 4;
+    Q_CLEAR = 5;
+}

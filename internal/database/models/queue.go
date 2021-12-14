@@ -1,7 +1,10 @@
 package models
 
 import (
+	"encoding/json"
+
 	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -227,7 +230,7 @@ func (q *Queue) reorder() {
 
 // QueueTrack defines a track in the queue
 type QueueTrack struct { // too transient
-	ID        int    `json:"id" gorm:"primaryKey"`
+	ID        int64  `json:"id" gorm:"primaryKey"`
 	Position  int    `json:"position"`
 	Played    bool   `json:"played"`
 	Location  string `json:"location" gorm:"not null"`
@@ -238,9 +241,43 @@ type QueueTrack struct { // too transient
 	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`
 }
 
-func GetAllQueueTracks() (s []QueueTrack) {
-	db.Joins("JOIN ").Where("played = 0").Order("queue_id,position").Find(&s)
+func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []QueueTrack) {
+	log.WithFields(log.Fields{
+		"idx":   idx,
+		"limit": limit,
+	}).
+		Info("Getting all queue tracks")
+
+	q, err := idx.GetPerspectiveQueue()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	query := db.
+		Where("played = 0 AND queue_id = ?", q.ID).
+		Order("position ASC")
+
+	if limit > 9 {
+		query = query.
+			Limit(limit)
+	}
+
+	query.Find(&s)
 	return
+}
+
+func (qt *QueueTrack) ToProtobuf() *m3uetcpb.QueueTrack {
+	bv, err := json.Marshal(qt)
+	if err != nil {
+		log.Error(err)
+		return &m3uetcpb.QueueTrack{}
+	}
+
+	out := &m3uetcpb.QueueTrack{}
+	err = json.Unmarshal(bv, out)
+	onerror.Log(err)
+	return out
 }
 
 // findQueueTrack attempts to find track from location

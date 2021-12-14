@@ -147,7 +147,7 @@ func PlayStreams(force bool, locations []string, ids []int64) {
 	}
 	for _, v := range ids {
 		t := models.Track{}
-		err := t.Read(v).Error
+		err := t.Read(v)
 		if err != nil {
 			log.Error(err)
 			continue
