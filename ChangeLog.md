@@ -9,6 +9,10 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] 2021-12-13
+
+Complete queue implementation
+
 ## [0.2.0] 2021-12-13
 
 Implement basic playback
