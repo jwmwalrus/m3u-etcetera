@@ -9,6 +9,10 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] 2021-12-14
+
+Implement collection
+
 ## [0.3.0] 2021-12-13
 
 Complete queue implementation
