@@ -13,8 +13,9 @@ type RootSvc struct {
 	m3uetcpb.UnimplementedRootSvcServer
 }
 
-// Off initiates the process to unload the server
-func (*RootSvc) Off(_ context.Context, req *m3uetcpb.Empty) (*m3uetcpb.OffResponse, error) {
+// Off implements RootSvcServer
+// Initiates the process to unload the server
+func (*RootSvc) Off(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.OffResponse, error) {
 	go func() {
 		time.Sleep(5 * time.Second)
 		base.Idle(true)
@@ -22,7 +23,8 @@ func (*RootSvc) Off(_ context.Context, req *m3uetcpb.Empty) (*m3uetcpb.OffRespon
 	return &m3uetcpb.OffResponse{GoingOff: true}, nil
 }
 
-// Status returns the status of the server
-func (*RootSvc) Status(_ context.Context, req *m3uetcpb.Empty) (*m3uetcpb.StatusResponse, error) {
+// Status implements RootSvcServer
+// Returns the status of the server
+func (*RootSvc) Status(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.StatusResponse, error) {
 	return &m3uetcpb.StatusResponse{Alive: true}, nil
 }

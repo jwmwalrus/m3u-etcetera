@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GetPerspectiveQueue returns the queue associated to the perspective index
 func (idx PerspectiveIndex) GetPerspectiveQueue() (q *Queue, err error) {
 	q = &Queue{}
 	err = db.Joins("JOIN perspective ON queue.perspective_id = perspective.id AND perspective.idx = ?", int(idx)).First(q).Error
@@ -56,7 +57,7 @@ func (q *Queue) Add(locations []string, ids []int64) {
 	return
 }
 
-// Clearremoves all entries from the queue
+// Clear removes all entries from the queue
 func (q *Queue) Clear() {
 	log.WithField("q", *q).
 		Info("Clearing queue")
@@ -241,6 +242,7 @@ type QueueTrack struct { // too transient
 	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`
 }
 
+// GetAllQueueTracks returns all queue tracks for the given perspective, constrained by a limit
 func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []QueueTrack) {
 	log.WithFields(log.Fields{
 		"idx":   idx,
@@ -254,19 +256,19 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []QueueTrack) {
 		return
 	}
 
-	query := db.
+	tx := db.
 		Where("played = 0 AND queue_id = ?", q.ID).
 		Order("position ASC")
 
 	if limit > 9 {
-		query = query.
-			Limit(limit)
+		tx.Limit(limit)
 	}
 
-	query.Find(&s)
+	tx.Find(&s)
 	return
 }
 
+// ToProtobuf converter
 func (qt *QueueTrack) ToProtobuf() *m3uetcpb.QueueTrack {
 	bv, err := json.Marshal(qt)
 	if err != nil {

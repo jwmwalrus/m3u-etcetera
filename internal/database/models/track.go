@@ -39,33 +39,39 @@ type Track struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
+// Create inserts a track into the DB
 func (t *Track) Create() (err error) {
 	err = db.Create(t).Error
 	return
 }
 
+// Delete deletes a track from the DB
 func (t *Track) Delete() {
 	err := db.Delete(&Track{}, t.ID).Error
 	onerror.Log(err)
 }
 
+// FindBy finds a track in the DB, according to the given query
 func (t *Track) FindBy(query interface{}) (err error) {
 	err = db.Where(query).First(t).Error
 	return
 }
 
+// Read selects a track from the DB, with the given id
 func (t *Track) Read(id int64) (err error) {
 	err = db.First(t, id).Error
 	return
 }
 
+// Save persists a track in the DB
 func (t *Track) Save() (err error) {
 	err = db.Save(t).Error
 	return
 }
 
-func (pb *Track) ToProtobuf() *m3uetcpb.Track {
-	bv, err := json.Marshal(pb)
+// ToProtobuf converter
+func (t *Track) ToProtobuf() *m3uetcpb.Track {
+	bv, err := json.Marshal(t)
 	if err != nil {
 		log.Error(err)
 		return &m3uetcpb.Track{}

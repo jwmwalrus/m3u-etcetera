@@ -51,6 +51,7 @@ func (pb *Playback) AddToHistory(duration int64) {
 	return
 }
 
+// ClearPending removes all pending playback entries
 func (pb *Playback) ClearPending() {
 	err := db.Model(&Playback{}).Where("played = 0 AND id <> ?", pb.ID).Update("played", 1).Error
 	onerror.Warn(err)
@@ -75,11 +76,13 @@ func (pb *Playback) FindTrack() {
 	return
 }
 
+// GetNextToPlay returns the next playback entry to play
 func (pb *Playback) GetNextToPlay() (err error) {
 	err = db.Where("played = 0").First(pb).Error
 	return
 }
 
+// GetTrack returns the track for the given playback
 func (pb *Playback) GetTrack() (t *Track, err error) {
 	t = &Track{}
 	err = db.First(&t, pb.TrackID).Error
@@ -87,11 +90,13 @@ func (pb *Playback) GetTrack() (t *Track, err error) {
 
 }
 
+// Read selects a playback from the DB, with the given id
 func (pb *Playback) Read(id int64) (err error) {
 	err = db.First(pb, id).Error
 	return
 }
 
+// ToProtobuf converter
 func (pb *Playback) ToProtobuf() *m3uetcpb.Playback {
 	bv, err := json.Marshal(pb)
 	if err != nil {
@@ -115,11 +120,13 @@ type PlaybackHistory struct {
 	TrackID   int64  `json:"trackId" gorm:"index:idx_playback_history_track_id"`
 }
 
+// FindLastBy returns the newest entry in the playback history, according to the given query
 func (h *PlaybackHistory) FindLastBy(query interface{}) (err error) {
 	err = db.Where(query).Last(h).Error
 	return
 }
 
+// ReadLast returns the newest entry in the playback history
 func (h *PlaybackHistory) ReadLast() (err error) {
 	err = db.Last(&h).Error
 	return

@@ -1,12 +1,11 @@
 package task
 
 import (
+	"errors"
 	"fmt"
-	"net/url"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/grpc"
 )
 
 // Serve serve task
@@ -35,11 +34,6 @@ func Serve() *cli.Command {
 	}
 }
 
-func getGrpcOpts() (opts []grpc.DialOption) {
-	opts = append(opts, grpc.WithInsecure())
-	return
-}
-
 func checkServerStatus(c *cli.Context) (err error) {
 	err = alive.CheckServerStatus()
 	switch err.(type) {
@@ -51,20 +45,13 @@ func checkServerStatus(c *cli.Context) (err error) {
 	return
 }
 
-func parseLocations(locations []string) (parsed []string, err error) {
-	for _, v := range locations {
-		var u *url.URL
-		if u, err = url.Parse(v); err != nil {
-			return
-		}
-		if u.Scheme == "" {
-			u.Scheme = "file"
-		}
-		parsed = append(parsed, u.String())
+func serveAction(c *cli.Context) (err error) {
+	rest := c.Args().Slice()
+	if len(rest) > 0 {
+		err = errors.New("Too many values in command")
+		return
 	}
-	return
-}
 
-func serveAction(c *cli.Context) error {
-	return alive.Serve(c.Bool("off"))
+	err = alive.Serve(c.Bool("off"))
+	return
 }

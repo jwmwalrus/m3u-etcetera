@@ -25,8 +25,15 @@ func Queue() *cli.Command {
 		Description: "Control the application's queue according to the given subcommand. When no subcommand is given, display current queue",
 		Subcommands: []*cli.Command{
 			{
-				Name:        "append",
-				Usage:       "queue append location ...",
+				Name:    "append",
+				Aliases: []string{"app"},
+				Flags: []cli.Flag{
+					&cli.IntFlag{
+						Name:  "ids",
+						Usage: "Use IDs instead of locations",
+					},
+				},
+				Usage:       "queue append [location ... | --ids id ...]",
 				Description: "Append to queue",
 				Action:      queueCreateAction,
 			},
@@ -37,7 +44,8 @@ func Queue() *cli.Command {
 				Action:      queueDestroyAction,
 			},
 			{
-				Name: "delete",
+				Name:    "delete",
+				Aliases: []string{"del"},
 				Flags: []cli.Flag{
 					&cli.IntFlag{
 						Name:     "position",
@@ -51,7 +59,8 @@ func Queue() *cli.Command {
 				Action:      queueDestroyAction,
 			},
 			{
-				Name: "insert",
+				Name:    "insert",
+				Aliases: []string{"ins"},
 				Flags: []cli.Flag{
 					&cli.IntFlag{
 						Name:        "position",
@@ -60,14 +69,25 @@ func Queue() *cli.Command {
 						Value:       1,
 						DefaultText: "1",
 					},
+					&cli.IntFlag{
+						Name:  "ids",
+						Usage: "Use IDs instead of locations",
+					},
 				},
-				Usage:       "queue insert --position POS location|payload ...",
+				Usage:       "queue insert --position POS [location ... | --ids id ...]",
 				Description: "Insert into queue at the queven position",
 				Action:      queueCreateAction,
 			},
 			{
-				Name:        "preppend",
-				Usage:       "queue preppend location|payload ...",
+				Name:    "preppend",
+				Aliases: []string{"prep"},
+				Flags: []cli.Flag{
+					&cli.IntFlag{
+						Name:  "ids",
+						Usage: "Use IDs instead of locations",
+					},
+				},
+				Usage:       "queue preppend [location ... | --ids id ...]",
 				Description: "Preppend to queue",
 				Action:      queueCreateAction,
 			},
@@ -109,6 +129,12 @@ func Queue() *cli.Command {
 }
 
 func queueAction(c *cli.Context) (err error) {
+	rest := c.Args().Slice()
+	if len(rest) > 0 {
+		err = errors.New("Too many values in command")
+		return
+	}
+
 	opts := getGrpcOpts()
 
 	auth := base.Conf.Server.GetAuthority()
@@ -143,18 +169,19 @@ func queueAction(c *cli.Context) (err error) {
 
 	if c.Bool("json") {
 		var bv []byte
-		bv, err = json.MarshalIndent(res.QueueTracks, "", "  ")
+		bv, err = json.MarshalIndent(res, "", "  ")
 		if err != nil {
 			return
 		}
 		fmt.Printf("\n%v\n", string(bv))
-	} else {
-		tbl := table.New("Position", "Location")
-		for _, qt := range res.QueueTracks {
-			tbl.AddRow(qt.Position, qt.Location)
-		}
-		tbl.Print()
+		return
 	}
+
+	tbl := table.New("Position", "Location")
+	for _, qt := range res.QueueTracks {
+		tbl.AddRow(qt.Position, qt.Location)
+	}
+	tbl.Print()
 
 	return
 }
@@ -182,7 +209,15 @@ func queueCreateAction(c *cli.Context) (err error) {
 		Action: m3uetcpb.QueueAction(action),
 	}
 
-	req.Locations, err = parseLocations(rest)
+	if c.Bool("ids") {
+		if req.Ids, err = parseIDs(rest); err != nil {
+			return
+		}
+	} else {
+		if req.Locations, err = parseLocations(rest); err != nil {
+			return
+		}
+	}
 
 	if req.Action == m3uetcpb.QueueAction_Q_INSERT {
 		req.Position = int32(c.Int("position"))
@@ -204,6 +239,11 @@ func queueDestroyAction(c *cli.Context) (err error) {
 	rest := c.Args().Slice()
 	if len(rest) > 0 {
 		err = errors.New("Too many values in command")
+		return
+	}
+
+	if c.Command.Name == "delete" && c.Int("position") < 1 {
+		err = errors.New("I need a position to delete")
 		return
 	}
 

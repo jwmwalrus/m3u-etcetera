@@ -7,10 +7,12 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 )
 
+// QueueSvc defines the queue server
 type QueueSvc struct {
 	m3uetcpb.UnimplementedQueueSvcServer
 }
 
+// GetQueue implements m3uetcpb.QueueSvcServer
 func (*QueueSvc) GetQueue(_ context.Context, req *m3uetcpb.GetQueueRequest) (*m3uetcpb.GetQueueResponse, error) {
 
 	res := &m3uetcpb.GetQueueResponse{}
@@ -27,6 +29,7 @@ func (*QueueSvc) GetQueue(_ context.Context, req *m3uetcpb.GetQueueRequest) (*m3
 	return res, nil
 }
 
+// ExecuteQueueAction implements m3uetcpb.QueueSvcServer
 func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueueActionRequest) (*m3uetcpb.Empty, error) {
 
 	q, _ := models.PerspectiveIndex(req.Perspective).GetPerspectiveQueue()

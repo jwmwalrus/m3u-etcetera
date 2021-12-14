@@ -10,10 +10,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// PlaybackSvc defines the playback service
 type PlaybackSvc struct {
 	m3uetcpb.UnimplementedPlaybackSvcServer
 }
 
+// GetPlayback implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
 
 	pb := playback.GetPlayback()
@@ -32,6 +34,7 @@ func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb
 	return &m3uetcpb.GetPlaybackResponse{Playing: res}, nil
 }
 
+// ExecutePlaybackAction implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
 
 	go func() {

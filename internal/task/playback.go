@@ -31,13 +31,18 @@ func Playback() *cli.Command {
 						Name:  "force",
 						Usage: "add to playback instead of queueing",
 					},
+					&cli.BoolFlag{
+						Name:  "ids",
+						Usage: "Use IDs instead of locations",
+					},
 				},
-				Usage:       "playback play [ [--force] location ... ]",
+				Usage:       "playback play [ [--force] [location ... | --ids id ... ]",
 				Description: "Plays the given payload or resumes a paused playback",
 				Action:      playbackPlayAction,
 			},
 			{
 				Name:        "pause",
+				Aliases:     []string{"pa"},
 				Usage:       "playback pause",
 				Description: "pauses the playback",
 				Action:      playbackPlayAction,
@@ -56,6 +61,7 @@ func Playback() *cli.Command {
 			},
 			{
 				Name:        "previous",
+				Aliases:     []string{"prev"},
 				Usage:       "playback previous",
 				Description: "plays previous track",
 				Action:      playbackPlayAction,
@@ -93,6 +99,12 @@ func Playback() *cli.Command {
 }
 
 func playbackAction(c *cli.Context) (err error) {
+	rest := c.Args().Slice()
+	if len(rest) > 0 {
+		err = errors.New("Too many values in command")
+		return
+	}
+
 	opts := getGrpcOpts()
 
 	auth := base.Conf.Server.GetAuthority()
@@ -120,26 +132,27 @@ func playbackAction(c *cli.Context) (err error) {
 			return
 		}
 		fmt.Printf("\n%v\n", string(bv))
-	} else {
-		type jt struct {
-			TrackID  int64
-			Location string
-		}
-		j := jt{}
-		switch res.Playing.(type) {
-		case *m3uetcpb.GetPlaybackResponse_Playback:
-			pb := res.GetPlayback()
-			j = jt{pb.Id, pb.Location}
-		case *m3uetcpb.GetPlaybackResponse_Track:
-			t := res.GetTrack()
-			j = jt{t.Id, t.Location}
-		default:
-		}
-
-		tbl := table.New("ID", "Location")
-		tbl.AddRow(j.TrackID, j.Location)
-		tbl.Print()
+		return
 	}
+
+	type jt struct {
+		TrackID  int64
+		Location string
+	}
+	j := jt{}
+	switch res.Playing.(type) {
+	case *m3uetcpb.GetPlaybackResponse_Playback:
+		pb := res.GetPlayback()
+		j = jt{pb.Id, pb.Location}
+	case *m3uetcpb.GetPlaybackResponse_Track:
+		t := res.GetTrack()
+		j = jt{t.Id, t.Location}
+	default:
+	}
+
+	tbl := table.New("ID", "Location")
+	tbl.AddRow(j.TrackID, j.Location)
+	tbl.Print()
 
 	return
 }
@@ -163,9 +176,14 @@ func playbackPlayAction(c *cli.Context) (err error) {
 	rest := c.Args().Slice()
 	if c.Command.Name == "play" {
 		if len(rest) > 0 {
-			req.Locations, err = parseLocations(rest)
-			if err != nil {
-				return
+			if c.Bool("ids") {
+				if req.Ids, err = parseIDs(rest); err != nil {
+					return
+				}
+			} else {
+				if req.Locations, err = parseLocations(rest); err != nil {
+					return
+				}
 			}
 		}
 		req.Force = c.Bool("force")
