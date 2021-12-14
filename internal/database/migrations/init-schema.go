@@ -11,7 +11,9 @@ import (
 func InitSchema(db *gorm.DB) (err error) {
 	err = db.AutoMigrate(
 		// no foreign keys
+		&models.Collection{},
 		&models.Track{},
+		&models.Query{},
 		&models.Perspective{},
 
 		// soft reference
@@ -23,6 +25,10 @@ func InitSchema(db *gorm.DB) (err error) {
 
 		// foreign key in previous group
 		&models.QueueTrack{},
+
+		// two foreign keys
+		&models.CollectionQuery{},
+		&models.CollectionTrack{},
 	)
 	onerror.Panic(err)
 

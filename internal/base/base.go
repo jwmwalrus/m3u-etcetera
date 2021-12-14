@@ -31,6 +31,18 @@ const (
 
 	// ServerWaitTimeout Maximum amount of seconds the server will wait for an event to sync up
 	ServerWaitTimeout = 60
+
+	// SupportedFileExtensionMP3 supported mp3
+	SupportedFileExtensionMP3 = ".mp3"
+
+	// SupportedFileExtensionM4A supported m4a
+	SupportedFileExtensionM4A = ".m4a"
+
+	// SupportedFileExtensionOGG supported ogg
+	SupportedFileExtensionOGG = ".ogg"
+
+	// SupportedFileExtensionFLAC supported flac
+	SupportedFileExtensionFLAC = ".flac"
 )
 
 var (
@@ -75,6 +87,24 @@ var (
 
 	// Conf global configuration
 	Conf config.Config
+
+	// SupportedFileExtensions supported file extensons
+	SupportedFileExtensions = []string{
+		SupportedFileExtensionMP3,
+		SupportedFileExtensionM4A,
+		SupportedFileExtensionOGG,
+		SupportedFileExtensionFLAC,
+	}
+
+	// IgnoredFileExtensions supported file extensons
+	IgnoredFileExtensions = []string{
+		".bmp",
+		".db",
+		".gif",
+		".jpeg",
+		".jpg",
+		".png",
+	}
 )
 
 // Unloader defines a method to be called when unloading the application

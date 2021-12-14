@@ -2,8 +2,11 @@ package models
 
 import (
 	"encoding/json"
+	"os"
 
+	"github.com/dhowden/tag"
 	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 
 	log "github.com/sirupsen/logrus"
@@ -81,4 +84,67 @@ func (t *Track) ToProtobuf() *m3uetcpb.Track {
 	err = json.Unmarshal(bv, out)
 	onerror.Log(err)
 	return out
+}
+
+func (t *Track) updateTags() (err error) {
+	var path string
+	path, err = urlstr.URLToPath(t.Location)
+
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	m, err := tag.ReadFrom(f)
+	if err != nil {
+		return err
+	}
+
+	t.Format = string(m.Format())
+	t.Type = string(m.FileType())
+	t.Title = m.Title()
+	t.Album = m.Album()
+	t.Artist = m.Artist()
+	t.Albumartist = m.AlbumArtist()
+	t.Composer = m.Composer()
+	t.Genre = m.Genre()
+	t.Year = m.Year()
+	t.Tracknumber, t.Tracktotal = m.Track()
+	t.Discnumber, t.Disctotal = m.Disc()
+	t.Lyrics = m.Lyrics()
+	t.Comment = m.Comment()
+
+	return
+}
+
+// AddTrackFromLocation adds a track, given its location
+func AddTrackFromLocation(location string, withTags bool) (t *Track, err error) {
+	doTag := false
+	t = &Track{}
+	if err := db.Where("location = ?", location).First(t).Error; err != nil {
+		t = &Track{
+			Location: location,
+		}
+		doTag = true
+	}
+
+	if withTags || doTag {
+		err = t.updateTags()
+		onerror.Log(err)
+	}
+
+	err = db.Save(t).Error
+	return
+}
+
+// AddTrackFromPath adds a track, given its location
+func AddTrackFromPath(path string, withTags bool) (t *Track, err error) {
+	var u string
+	if u, err = urlstr.PathToURL(path); err != nil {
+		return
+	}
+
+	t, err = AddTrackFromLocation(u, withTags)
+	return
 }

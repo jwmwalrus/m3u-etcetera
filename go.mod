@@ -4,7 +4,9 @@ go 1.17
 
 require (
 	github.com/adrg/xdg v0.4.0
+	github.com/dhowden/tag v0.0.0-20201120070457-d52dcb253c63
 	github.com/go-gormigrate/gormigrate/v2 v2.0.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/jwmwalrus/bnp v1.6.0
 	github.com/jwmwalrus/seater v0.1.1
 	github.com/nightlyone/lockfile v1.0.0
@@ -23,7 +25,6 @@ require (
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.3 // indirect
 	github.com/mattn/go-sqlite3 v1.14.9 // indirect

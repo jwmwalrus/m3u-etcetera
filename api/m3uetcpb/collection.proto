@@ -1,0 +1,73 @@
+syntax = 'proto3';
+
+package m3uetcpb;
+
+option go_package = './m3uetcpb';
+
+import 'api/m3uetcpb/common.proto';
+
+service CollectionSvc {
+    rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse);
+    rpc GetAllCollections(Empty) returns (GetAllCollectionsResponse);
+    rpc AddCollection(AddCollectionRequest) returns (AddCollectionResponse);
+    rpc RemoveCollection(RemoveCollectionRequest) returns (Empty);
+    rpc UpdateCollection(UpdateCollectionRequest) returns (Empty);
+    rpc ScanCollection(ScanCollectionRequest) returns (Empty);
+    rpc DiscoverCollections(Empty) returns (Empty);
+}
+
+message GetCollectionRequest {
+    int64 id = 1;
+}
+
+message GetCollectionResponse {
+    Collection collection = 1;
+}
+
+message GetAllCollectionsResponse {
+    repeated Collection collections = 1;
+}
+
+message AddCollectionRequest {
+    string name = 1;
+    string description = 2;
+    string location = 3;
+    bool disabled = 4;
+    bool remote = 5;
+}
+
+message AddCollectionResponse {
+    int64 id = 1;
+}
+
+message RemoveCollectionRequest {
+    int64 id = 1;
+}
+
+message UpdateCollectionRequest {
+    int64 id = 1;
+    string new_name = 2;
+    string new_description = 3;
+    bool enable = 4;
+    bool disable = 5;
+    bool make_remote = 6;
+    bool make_local = 7;
+}
+
+message ScanCollectionRequest {
+    int64 id = 1;
+    bool update_tags = 2;
+}
+
+message Collection {
+    int64 id = 1;
+    string name = 2;
+    string description = 3;
+    string location = 4;
+    bool disabled = 5;
+    bool remote = 6;
+    int32 scanned = 7;
+    int64 tracks = 8;
+    int64 created_at = 101;
+    int64 updated_at = 102;
+}
