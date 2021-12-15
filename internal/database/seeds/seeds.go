@@ -9,6 +9,10 @@ import (
 // All seeds all initial data
 func All(db *gorm.DB) {
 	h := seater.SeedHandlerNew(db)
+	h.Add(seater.Seed{
+		Name: "collection",
+		Run:  seedCollection,
+	})
 	h.AddSome([]seater.Seed{
 		seater.Seed{
 			Name: "perspective",
