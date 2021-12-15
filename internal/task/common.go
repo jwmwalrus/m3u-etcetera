@@ -1,15 +1,48 @@
 package task
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
 
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 )
 
+func getAuthority() string {
+	return base.Conf.Server.GetAuthority()
+}
+
 func getGrpcOpts() (opts []grpc.DialOption) {
 	opts = append(opts, grpc.WithInsecure())
+	return
+}
+
+func mustNotParseExtraArgs(c *cli.Context) (err error) {
+	rest := c.Args().Slice()
+	if len(rest) > 0 {
+		err = errors.New("Too many values in command")
+		return
+	}
+	return
+}
+func mustParseSingleID(c *cli.Context) (id int64, err error) {
+	rest := c.Args().Slice()
+	if len(rest) != 1 {
+		err = errors.New("I need one ID")
+		return
+	}
+
+	id, err = strconv.ParseInt(rest[0], 10, 64)
+	if err != nil {
+		return
+	}
+	if id < 1 {
+		err = errors.New("I need one ID greater than zero")
+		return
+	}
 	return
 }
 

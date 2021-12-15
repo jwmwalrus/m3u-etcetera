@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
@@ -129,20 +128,9 @@ func Queue() *cli.Command {
 }
 
 func queueAction(c *cli.Context) (err error) {
-	rest := c.Args().Slice()
-	if len(rest) > 0 {
-		err = errors.New("Too many values in command")
+	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
-
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
-		return
-	}
-	defer cc.Close()
 
 	req := &m3uetcpb.GetQueueRequest{}
 
@@ -160,6 +148,12 @@ func queueAction(c *cli.Context) (err error) {
 	if c.Int("limit") > 0 {
 		req.Limit = int32(c.Int("limit"))
 	}
+
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+		return
+	}
+	defer cc.Close()
 
 	cl := m3uetcpb.NewQueueSvcClient(cc)
 	res, err := cl.GetQueue(context.Background(), req)
@@ -195,14 +189,10 @@ func queueCreateAction(c *cli.Context) (err error) {
 		return
 	}
 
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
+	if c.Command.Name == "insert" && c.Int("position") < 1 {
+		err = errors.New("I need a position to insert")
 		return
 	}
-	defer cc.Close()
 
 	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
 	req := &m3uetcpb.ExecuteQueueActionRequest{
@@ -223,6 +213,12 @@ func queueCreateAction(c *cli.Context) (err error) {
 		req.Position = int32(c.Int("position"))
 	}
 
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+		return
+	}
+	defer cc.Close()
+
 	cl := m3uetcpb.NewQueueSvcClient(cc)
 	_, err = cl.ExecuteQueueAction(context.Background(), req)
 	if err != nil {
@@ -236,9 +232,7 @@ func queueCreateAction(c *cli.Context) (err error) {
 func queueDestroyAction(c *cli.Context) (err error) {
 	const actionPrefix = "Q_"
 
-	rest := c.Args().Slice()
-	if len(rest) > 0 {
-		err = errors.New("Too many values in command")
+	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
 
@@ -246,15 +240,6 @@ func queueDestroyAction(c *cli.Context) (err error) {
 		err = errors.New("I need a position to delete")
 		return
 	}
-
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
-		return
-	}
-	defer cc.Close()
 
 	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
 	req := &m3uetcpb.ExecuteQueueActionRequest{
@@ -264,6 +249,12 @@ func queueDestroyAction(c *cli.Context) (err error) {
 	if req.Action == m3uetcpb.QueueAction_Q_DELETE {
 		req.Position = int32(c.Int("position"))
 	}
+
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+		return
+	}
+	defer cc.Close()
 
 	cl := m3uetcpb.NewQueueSvcClient(cc)
 	_, err = cl.ExecuteQueueAction(context.Background(), req)

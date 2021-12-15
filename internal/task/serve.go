@@ -1,7 +1,6 @@
 package task
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
@@ -46,9 +45,7 @@ func checkServerStatus(c *cli.Context) (err error) {
 }
 
 func serveAction(c *cli.Context) (err error) {
-	rest := c.Args().Slice()
-	if len(rest) > 0 {
-		err = errors.New("Too many values in command")
+	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
 

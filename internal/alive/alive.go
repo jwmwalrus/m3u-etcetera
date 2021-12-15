@@ -89,7 +89,6 @@ func findBinary(bin string) (path string, err error) {
 
 func isServerAlive() bool {
 	opts := grpc.WithInsecure()
-
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts)
 	if err != nil {
@@ -175,7 +174,6 @@ func startServer() (err error) {
 
 func stopServer() (err error) {
 	opts := grpc.WithInsecure()
-
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts)
 	if err != nil {

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
@@ -99,17 +98,12 @@ func Playback() *cli.Command {
 }
 
 func playbackAction(c *cli.Context) (err error) {
-	rest := c.Args().Slice()
-	if len(rest) > 0 {
-		err = errors.New("Too many values in command")
+	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
 
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -159,14 +153,6 @@ func playbackAction(c *cli.Context) (err error) {
 
 func playbackPlayAction(c *cli.Context) (err error) {
 	const actionPrefix = "PB_"
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
-		return
-	}
-	defer cc.Close()
 
 	action := m3uetcpb.PlaybackAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
 	req := &m3uetcpb.ExecutePlaybackActionRequest{
@@ -193,6 +179,12 @@ func playbackPlayAction(c *cli.Context) (err error) {
 			return
 		}
 	}
+
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+		return
+	}
+	defer cc.Close()
 
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
 	_, err = cl.ExecutePlaybackAction(context.Background(), req)

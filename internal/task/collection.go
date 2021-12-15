@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
@@ -29,7 +28,14 @@ func Collection() *cli.Command {
 				Aliases:     []string{"i"},
 				Usage:       "collection show [--raw] ID",
 				Description: "Show all the fields/properties for the collection defined by the given ID",
-				Action:      collectionInfoAction,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "json",
+						Aliases: []string{"j"},
+						Usage:   "Output JSON",
+					},
+				},
+				Action: collectionInfoAction,
 			},
 			{
 				Name: "add",
@@ -79,12 +85,12 @@ func Collection() *cli.Command {
 					},
 					&cli.StringFlag{
 						Name:  "name",
-						Usage: "rename collection with the given `NAME` (shall be unique)",
+						Usage: "Rename collection with the given `NAME` (shall be unique)",
 					},
 					&cli.StringFlag{
 						Name:    "description",
 						Aliases: []string{"descr"},
-						Usage:   "rename collection's description with the given `DESCRIPTIOn`",
+						Usage:   "Change collection's description with the given `DESCRIPTIOn`",
 					},
 				},
 				Usage:       "collection update [<flags> ...] ID",
@@ -126,11 +132,6 @@ func Collection() *cli.Command {
 				Aliases: []string{"j"},
 				Usage:   "Output JSON",
 			},
-			&cli.BoolFlag{
-				Name:    "raw",
-				Aliases: []string{"r"},
-				Usage:   "Output raw JSON",
-			},
 		},
 		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
 			fmt.Fprintf(c.App.Writer, "for shame\n")
@@ -140,17 +141,12 @@ func Collection() *cli.Command {
 }
 
 func collectionAction(c *cli.Context) (err error) {
-	rest := c.Args().Slice()
-	if len(rest) > 0 {
-		err = errors.New("Too many values in command")
+	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
 
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -187,28 +183,18 @@ func collectionAction(c *cli.Context) (err error) {
 }
 
 func collectionInfoAction(c *cli.Context) (err error) {
-	rest := c.Args().Slice()
-	if len(rest) != 1 {
-		err = errors.New("I need one collection ID")
+	var id int64
+	if id, err = mustParseSingleID(c); err != nil {
 		return
 	}
 
-	id, err := strconv.ParseInt(rest[0], 10, 64)
-	if id < 1 {
-		err = errors.New("I need one collection ID greater than zero")
-		return
-	}
+	req := &m3uetcpb.GetCollectionRequest{Id: id}
 
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
 		return
 	}
 	defer cc.Close()
-
-	req := &m3uetcpb.GetCollectionRequest{Id: id}
 
 	cl := m3uetcpb.NewCollectionSvcClient(cc)
 	res, err := cl.GetCollection(context.Background(), req)
@@ -246,6 +232,7 @@ func collectionAddAction(c *cli.Context) (err error) {
 		err = errors.New("I need name and path")
 		return
 	}
+
 	req := &m3uetcpb.AddCollectionRequest{
 		Name:     rest[0],
 		Location: rest[1],
@@ -253,11 +240,8 @@ func collectionAddAction(c *cli.Context) (err error) {
 		Remote:   c.Bool("remote"),
 	}
 
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -273,28 +257,18 @@ func collectionAddAction(c *cli.Context) (err error) {
 }
 
 func collectionRemoveAction(c *cli.Context) (err error) {
-	rest := c.Args().Slice()
-	if len(rest) != 1 {
-		err = errors.New("I need one collection ID")
+	var id int64
+	if id, err = mustParseSingleID(c); err != nil {
 		return
 	}
 
-	id, err := strconv.ParseInt(rest[0], 10, 64)
-	if id < 1 {
-		err = errors.New("I need one collection ID greater than zero")
-		return
-	}
+	req := &m3uetcpb.RemoveCollectionRequest{Id: id}
 
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
 		return
 	}
 	defer cc.Close()
-
-	req := &m3uetcpb.RemoveCollectionRequest{Id: id}
 
 	cl := m3uetcpb.NewCollectionSvcClient(cc)
 	_, err = cl.RemoveCollection(context.Background(), req)
@@ -307,28 +281,18 @@ func collectionRemoveAction(c *cli.Context) (err error) {
 }
 
 func collectionUpdateAction(c *cli.Context) (err error) {
-	rest := c.Args().Slice()
-	if len(rest) != 1 {
-		err = errors.New("I need one collection ID")
+	var id int64
+	if id, err = mustParseSingleID(c); err != nil {
 		return
 	}
 
-	id, err := strconv.ParseInt(rest[0], 10, 64)
-	if id < 1 {
-		err = errors.New("I need one collection ID greater than zero")
-		return
-	}
+	req := &m3uetcpb.UpdateCollectionRequest{Id: id}
 
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
 		return
 	}
 	defer cc.Close()
-
-	req := &m3uetcpb.UpdateCollectionRequest{Id: id}
 
 	if c.String("name") != "" {
 		req.NewName = c.String("name")
@@ -360,31 +324,21 @@ func collectionUpdateAction(c *cli.Context) (err error) {
 }
 
 func collectionScanAction(c *cli.Context) (err error) {
-	rest := c.Args().Slice()
-	if len(rest) != 1 {
-		err = errors.New("I need one collection ID")
+	var id int64
+	if id, err = mustParseSingleID(c); err != nil {
 		return
 	}
-
-	id, err := strconv.ParseInt(rest[0], 10, 64)
-	if id < 1 {
-		err = errors.New("I need one collection ID greater than zero")
-		return
-	}
-
-	opts := getGrpcOpts()
-
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
-		return
-	}
-	defer cc.Close()
 
 	req := &m3uetcpb.ScanCollectionRequest{
 		Id:         id,
 		UpdateTags: c.Bool("update-tags"),
 	}
+
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+		return
+	}
+	defer cc.Close()
 
 	cl := m3uetcpb.NewCollectionSvcClient(cc)
 	_, err = cl.ScanCollection(context.Background(), req)
@@ -397,11 +351,12 @@ func collectionScanAction(c *cli.Context) (err error) {
 }
 
 func collectionDiscoverActiion(c *cli.Context) (err error) {
-	opts := getGrpcOpts()
+	if err = mustNotParseExtraArgs(c); err != nil {
+		return
+	}
 
-	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts...)
-	if err != nil {
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
 		return
 	}
 	defer cc.Close()
