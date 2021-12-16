@@ -200,6 +200,7 @@ func StartEngine() {
 	log.Info("Starting playback engine")
 
 	go eng.engineLoop()
+	models.PlaybackChanged <- struct{}{}
 
 	base.RegisterUnloader(base.Unloader{
 		Description: "StopEngine",

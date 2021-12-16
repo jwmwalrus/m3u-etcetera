@@ -10,6 +10,9 @@ var (
 
 	// DbgChan is a debug channel
 	DbgChan chan string
+
+	// PlaybackChanged is the AfterCreate-hook channel for QueueTrack and Playback
+	PlaybackChanged chan struct{}
 )
 
 // SetConnection sets the database connection for the whole package
@@ -20,4 +23,5 @@ func SetConnection(conn *gorm.DB) {
 func init() {
 	DbgChan = make(chan string)
 	storageGuard = make(chan struct{}, 1)
+	PlaybackChanged = make(chan struct{}, 1)
 }

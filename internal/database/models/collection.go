@@ -178,8 +178,8 @@ func (c *Collection) Scan(withTags bool) {
 		}
 	}
 
-	base.GetBusy()
-	defer func() { base.GetFree() }()
+	base.GetBusy(base.IdleStatusDbOperations)
+	defer func() { base.GetFree(base.IdleStatusDbOperations) }()
 
 	var iTrack, nTrack, unsupp, scanErr int
 	err = filepath.Walk(d, func(path string, i os.FileInfo, err error) error {

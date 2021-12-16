@@ -9,6 +9,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -66,21 +67,8 @@ func (e *engine) debugChannel(msg string) {
 func (e *engine) engineLoop() {
 	log.Info("Starting engine loop")
 
-	idleCount := 0
-	shouldBreak := func() bool {
-		log.WithField("idleCount", idleCount).
-			Info("Checking if I should break from engineLoop")
-
-		if idleCount >= base.ServerIdleTimeout {
-			if !base.IsItBusy() {
-				e.debugChannel("It's been about 5 minutes already, so I'm off for now")
-				return true
-			}
-		}
-		time.Sleep(1 * time.Second)
-		idleCount++
-		return false
-	}
+	idleCtx, cancelIdle := context.WithCancel(context.Background())
+	cancelIdle()
 
 loop:
 	for {
@@ -91,14 +79,12 @@ loop:
 			break loop
 		case <-prevInHistory:
 			pb = e.getPrevInHistory()
-		default:
+			break
+		case <-models.PlaybackChanged:
 			switch e.lastEvent {
 			case stopAllEvent:
-				if shouldBreak() {
-					idleCount = 0
-					go base.Idle(false)
-				}
-				continue
+				pb = &models.Playback{}
+				break
 			default:
 			}
 
@@ -110,18 +96,22 @@ loop:
 					pb = e.addPlaybackFromQueue(qt)
 				}
 			}
+			break
 		}
 
 		if pb.ID > 0 && pb.Location != "" {
 			e.debugChannel("There is a playback")
+			cancelIdle()
 			e.playStream(pb)
-			idleCount = 0
+			go func() {
+				models.PlaybackChanged <- struct{}{}
+			}()
 			continue
 		}
 
-		if shouldBreak() {
-			idleCount = 0
-			go base.Idle(false)
+		if !base.IsAppIdling() {
+			idleCtx, cancelIdle = context.WithCancel(context.Background())
+			go base.Idle(idleCtx)
 		}
 	}
 
@@ -163,8 +153,8 @@ func (e *engine) playStream(pb *models.Playback) {
 	e.pb = pb
 	e.terminate = false
 
-	base.GetBusy()
-	defer func() { base.GetFree() }()
+	base.GetBusy(base.IdleStatusEngineLoop)
+	defer func() { base.GetFree(base.IdleStatusEngineLoop) }()
 
 	// check if playback is valid
 	if e.pb == nil || pb.Location == "" {

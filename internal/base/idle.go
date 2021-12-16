@@ -1,10 +1,13 @@
 package base
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/jwmwalrus/bnp/slice"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -13,39 +16,120 @@ const (
 	ServerIdleTimeout = 300
 )
 
+// IdleStatus defines the idle status type
+type IdleStatus int
+
+const (
+	// IdleStatusIdle Server is idle
+	IdleStatusIdle IdleStatus = iota
+
+	// IdleStatusEngineLoop The engine loop is working
+	IdleStatusEngineLoop
+
+	// IdleStatusDbOperations A DB-related operation is in progress
+	IdleStatusDbOperations
+
+	// IdleStatusFileOperations A file-related operation is in progress
+	IdleStatusFileOperations
+)
+
+func (is IdleStatus) String() string {
+	return []string{"idle", "engine-loop", "db-operations", "file-operations"}[is]
+}
+
 var (
-	serverIsBusy = 0
+	forceExit       = false
+	idleStatusStack = []IdleStatus{IdleStatusIdle}
+	doneEmmitted    = 0
+	idleGotCalled   = false
 )
 
 // GetBusy registers a process as busy, to prevent idle timeout
-func GetBusy() {
+func GetBusy(is IdleStatus) {
+	if is == IdleStatusIdle {
+		return
+	}
+
 	log.Info("server got a lot busier")
-	serverIsBusy++
+	idleStatusStack = append(idleStatusStack, is)
 }
 
 // GetFree registers a process as less busy
-func GetFree() {
-	log.Info("server got a little less busy")
-	serverIsBusy--
-}
+func GetFree(is IdleStatus) {
+	if is == IdleStatusIdle {
+		return
+	}
 
-// Idle exits the server if it has been idle for a while and no long-term processes are pending
-func Idle(force bool) {
-	log.WithFields(log.Fields{
-		"force":        force,
-		"serverIsBusy": serverIsBusy,
-	}).
-		Info("Server has been idle for a while, and that's gotta stop!")
+	log.WithField("is", is).
+		Info("server got a little less busy")
 
-	if force || serverIsBusy <= 0 {
-		log.Info("Server seems to have been idle for a while, and that's gotta stop!")
-		Unload()
-		fmt.Printf("Bye %v from %v\n", OS, filepath.Base(os.Args[0]))
-		os.Exit(0)
+	for i := len(idleStatusStack) - 1; i >= 0; i-- {
+		if is == idleStatusStack[i] {
+			idleStatusStack[i] = idleStatusStack[len(idleStatusStack)-1]
+			idleStatusStack = idleStatusStack[:len(idleStatusStack)-1]
+			break
+		}
 	}
 }
 
-// IsItBusy returns true if some process has registered as busy
-func IsItBusy() bool {
-	return serverIsBusy > 0
+// Idle exits the server if it has been idle for a while and no long-term processes are pending
+func Idle(ctx context.Context) {
+	log.WithFields(log.Fields{
+		"forceExit":            forceExit,
+		"len(idleStatusStack)": len(idleStatusStack) - 1,
+	}).
+		Info("Entering idle status")
+
+	if len(idleStatusStack) > 1 {
+		log.Info("Server is busy, so cancelling request")
+		<-ctx.Done()
+		return
+	}
+
+	idleGotCalled = true
+
+	if !forceExit {
+		select {
+		case <-time.After(time.Duration(ServerIdleTimeout) * time.Second):
+			break
+		case <-ctx.Done():
+			idleGotCalled = false
+			return
+		}
+	}
+
+	if doneEmmitted > 0 {
+		log.WithField("doneEmmitted", doneEmmitted).
+			Warn("ignoring further attempt at ctx.Done()")
+
+		doneEmmitted++
+		return
+	}
+
+	doneEmmitted++
+
+	log.Info("Server seems to have been idle for a while, and that's gotta stop!")
+	Unload()
+	fmt.Printf("Bye %v from %v\n", OS, filepath.Base(os.Args[0]))
+	os.Exit(0)
+}
+
+// IsAppBusy returns true if some process has registered as busy
+func IsAppBusy() bool {
+	return len(idleStatusStack) > 1
+}
+
+// IsAppBusyBy returns true if some process has registered as busy
+func IsAppBusyBy(is IdleStatus) bool {
+	return slice.Contains(idleStatusStack, is)
+}
+
+// IsAppIdling returns true if the Idle method is active
+func IsAppIdling() bool {
+	return idleGotCalled //&& len(idleStatusStack) == 1
+}
+
+// DoTerminate forces immediate termination of the application
+func DoTerminate() {
+	forceExit = true
 }

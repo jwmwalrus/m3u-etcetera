@@ -5,7 +5,9 @@ import (
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // Playback defines a playback row
@@ -49,6 +51,16 @@ func (pb *Playback) AddToHistory(duration int64) {
 		}
 	}()
 	return
+}
+
+// AfterCreate is a GORM hook
+func (pb *Playback) AfterCreate(tx *gorm.DB) error {
+	go func() {
+		if !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
+			PlaybackChanged <- struct{}{}
+		}
+	}()
+	return nil
 }
 
 // ClearPending removes all pending playback entries

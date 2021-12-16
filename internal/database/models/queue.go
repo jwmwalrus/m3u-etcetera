@@ -5,7 +5,9 @@ import (
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // GetPerspectiveQueue returns the queue associated to the perspective index
@@ -241,6 +243,16 @@ type QueueTrack struct { // too transient
 	TrackID   int64  `json:"trackId" gorm:"index:idx_queue_track_track_id"`
 	QueueID   int64  `json:"queueId" gorm:"index:idx_queue_track_queue_id,not null"`
 	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`
+}
+
+// AfterCreate is a GORM hook
+func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
+	go func() {
+		if !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
+			PlaybackChanged <- struct{}{}
+		}
+	}()
+	return nil
 }
 
 // GetAllQueueTracks returns all queue tracks for the given perspective, constrained by a limit
