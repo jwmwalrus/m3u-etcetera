@@ -47,6 +47,7 @@ func main() {
 			task.Playback(),
 			task.Queue(),
 			task.Collection(),
+			task.Query(),
 		},
 	}
 

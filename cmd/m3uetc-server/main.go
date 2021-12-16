@@ -36,6 +36,7 @@ func main() {
 	m3uetcpb.RegisterPlaybackSvcServer(s, &api.PlaybackSvc{})
 	m3uetcpb.RegisterQueueSvcServer(s, &api.QueueSvc{})
 	m3uetcpb.RegisterCollectionSvcServer(s, &api.CollectionSvc{})
+	m3uetcpb.RegisterQuerySvcServer(s, &api.QuerySvc{})
 
 	reflection.Register(s)
 

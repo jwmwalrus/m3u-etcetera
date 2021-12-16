@@ -8,6 +8,7 @@ import (
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -87,6 +88,9 @@ func (t *Track) ToProtobuf() *m3uetcpb.Track {
 }
 
 func (t *Track) updateTags() (err error) {
+	base.GetBusy(base.IdleStatusFileOperations)
+	defer base.GetFree(base.IdleStatusFileOperations)
+
 	var path string
 	path, err = urlstr.URLToPath(t.Location)
 
@@ -146,5 +150,10 @@ func AddTrackFromPath(path string, withTags bool) (t *Track, err error) {
 	}
 
 	t, err = AddTrackFromLocation(u, withTags)
+	return
+}
+
+func removeDuplicateTracks(ts []*Track) (err error) {
+	//TODO: implement
 	return
 }

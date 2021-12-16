@@ -1,126 +1,273 @@
 package models
 
 import (
-	"net/url"
-	"strconv"
+	"encoding/json"
+	"strings"
 	"time"
+
+	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/bnp/slice"
+	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
+	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
+
+// QueryBoundaryTx defines the transactional query boundary interface
+type QueryBoundaryTx interface {
+	DeleteWithTx(*gorm.DB) error
+	FindTracksWithTx(*gorm.DB) []*Track
+	SaveWithTx(*gorm.DB) error
+}
+
+// QueryBoundaryID defines the query boundary ID interface
+type QueryBoundaryID interface {
+	GetQueryID() int64
+}
+
+var supportedParams = []string{"title", "artist", "album", "albumartist", "genre"}
+
+// SupportedParams returns the list of supported string parameters
+func SupportedParams() []string {
+	return supportedParams
+}
+
+// CountSupportedParams returns the count of supported parameters in a slice
+func CountSupportedParams(qp []qparams.QParam) (n int) {
+	for _, x := range qp {
+		if !slice.Contains(supportedParams, x.Key) {
+			continue
+		}
+		n++
+	}
+	return
+}
 
 // Query Defines a query
 type Query struct {
-	ID        int64     `json:"id" gorm:"primaryKey"`
-	Random    bool      `json:"random"` // query allows random results
-	Rating    int       `json:"rating"` // minimum rating to consider, from 1 to 10
-	Limit     int       `json:"limit"`  // maximum number of tracks permitted
-	Genre     string    `json:"genre"`
-	Pattern   string    `json:"pattern"` // string to look for in track's indexed columns
-	From      time.Time `json:"from"`    // from datetime in range
-	To        time.Time `json:"to"`      // to datetime in range
-	CreatedAt int64     `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt int64     `json:"updatedAt" gorm:"autoUpdateTime"`
+	ID          int64  `json:"id" gorm:"primaryKey"`
+	Name        string `json:"name"`        // query name
+	Description string `json:"description"` // query description
+	Random      bool   `json:"random"`      // query allows random results
+	Rating      int    `json:"rating"`      // minimum rating to consider, from 1 to 10
+	Limit       int    `json:"limit"`       // maximum number of tracks permitted
+	Params      string `json:"params"`      // patterns to look for in track's indexed columns
+	From        int64  `json:"from"`        // from datetime in range
+	To          int64  `json:"to"`          // to datetime in range
+	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
-func (q *Query) String() (str string) {
-	params := url.Values{}
+// Delete deletes a query from the DB
+func (q *Query) Delete(qbs ...QueryBoundaryTx) (err error) {
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, b := range qbs {
+			if err := b.DeleteWithTx(tx); err != nil {
+				return err
+			}
+		}
+		if err := tx.Delete(q).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
 
-	if q.Random {
-		params.Add("random", "1")
+// FindTracks return the list of tracks that match the query
+func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
+	log.WithFields(log.Fields{
+		"q":        q,
+		"len(qbs)": len(qbs),
+	}).
+		Info("Finding tracks")
+
+	tx := db.Where("1 = 1")
+
+	if q.Params != "" {
+		parsed, _ := qparams.ParseParams(q.Params)
+		for _, x := range parsed {
+			if !slice.Contains(supportedParams, strings.ToLower(x.Key)) {
+				continue
+			}
+			y := x.ToFuzzy().ToSQL()
+			if y.Or {
+				tx.Or(y.Key+" LIKE ?", y.Val)
+			} else if y.Not {
+				tx.Not(y.Key+" LIKE ?", y.Val)
+			} else {
+				tx.Where(y.Key+" LIKE ?", y.Val)
+			}
+		}
 	}
+
 	if q.Rating > 0 {
-		params.Add("rating", strconv.Itoa(q.Rating))
+		tx.Where("rating = ?", q.Rating)
 	}
 	if q.Limit > 0 {
-		params.Add("limit", strconv.Itoa(q.Limit))
+		tx.Limit(q.Limit)
 	}
-	if q.Genre != "" {
-		params.Add("genre", q.Genre)
+	if q.From > 0 {
+		fromYear := time.Unix(q.From, 0).Year()
+		tx.Where("year >= ?", fromYear)
 	}
-	if q.Pattern != "" {
-		params.Add("pattern", q.Pattern)
-	}
-	if !q.From.IsZero() {
-		params.Add("from", q.From.Format(time.RFC3339))
-	}
-	if !q.To.IsZero() {
-		params.Add("to", q.To.Format(time.RFC3339))
+	if q.To > 0 {
+		toYear := time.Unix(q.To, 0).Year()
+		tx.Where("year <= ?", toYear)
 	}
 
-	str = params.Encode()
-
+	if len(qbs) > 0 {
+		for _, x := range qbs {
+			ts = append(ts, x.FindTracksWithTx(tx)...)
+		}
+		removeDuplicateTracks(ts)
+	} else {
+		err := tx.Debug().Find(&ts).Error
+		onerror.Log(err)
+	}
 	return
 }
 
-// Populate parses a query string and populates the struct
-func (q *Query) Populate(str string) (err error) {
-	v, err := url.ParseQuery(str)
+// FromProtobuf returns a Query type populated from the given m3uetcpb.Query
+func (q *Query) FromProtobuf(in *m3uetcpb.Query) {
+	protobufToQuery(in, q)
+	return
+}
+
+// GetCollections adds forward support for CollectionQuery
+// This is required for ToProtobuf
+func (q *Query) GetCollections() (cqs []*CollectionQuery) {
+	cqs = []*CollectionQuery{}
+
+	list := []CollectionQuery{}
+	err := db.Where("query_id = ?", q.ID).Find(&list).Error
 	if err != nil {
+		log.Error(err)
 		return
 	}
 
-	fields := []string{"random", "rating", "limit", "genre", "pattern", "from", "to"}
-
-	for _, f := range fields {
-		fv := v.Get(f)
-		if fv == "" {
-			continue
-		}
-		var i int64
-		switch f {
-		case "random":
-			q.Random = fv == "true"
-		case "rating":
-			i, err = strconv.ParseInt(fv, 10, 64)
-			if err != nil {
-				return
-			}
-			q.Rating = int(i)
-		case "limit":
-			i, err = strconv.ParseInt(fv, 10, 64)
-			if err != nil {
-				return
-			}
-			q.Limit = int(i)
-		case "genre":
-			q.Genre = fv
-		case "pattern":
-			q.Pattern = fv
-		case "from":
-			// TODO: parse datetime
-		case "to":
-			// TODO: parse datetime
-		default:
-		}
+	for i := range list {
+		cqs = append(cqs, &list[i])
 	}
-
 	return
 }
 
-// ReplaceWith replaces the values of query q by those of query r
-func (q *Query) ReplaceWith(r *Query, save bool) (err error) {
-
-	q.Random = r.Random
-	q.Rating = r.Rating
-	q.Limit = r.Limit
-	q.Genre = r.Genre
-	q.Pattern = r.Pattern
-	q.From = r.From
-	q.To = r.To
-
-	if save {
-		err = db.Save(q).Error
-	}
-
+// Read selects a query from the DB, with the given id
+func (q *Query) Read(id int64) (err error) {
+	err = db.First(q, id).Error
 	return
 }
 
-// GetQueryStringByID returns the query string associated with the given id
-func GetQueryStringByID(id int64) (str string, err error) {
-	q := Query{}
+// Save persists a query in the DB
+func (q *Query) Save() (err error) {
+	err = db.Save(q).Error
+	return
+}
 
-	if err = db.Find(&q, id).Error; err != nil {
+// SaveBound persists a query in the DB and bounds it to a list of collections
+func (q *Query) SaveBound(qbs []QueryBoundaryTx) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(q).Error; err != nil {
+			return err
+		}
+
+		for _, b := range qbs {
+			if err := b.SaveWithTx(tx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// ToProtobuf converter
+func (q *Query) ToProtobuf() *m3uetcpb.Query {
+	bv, err := json.Marshal(q)
+	if err != nil {
+		log.Error(err)
+		return &m3uetcpb.Query{}
+	}
+
+	out := &m3uetcpb.Query{}
+	err = json.Unmarshal(bv, out)
+	onerror.Log(err)
+
+	cqs := q.GetCollections()
+	for _, x := range cqs {
+		out.CollectionIds = append(out.CollectionIds, x.CollectionID)
+	}
+	return out
+}
+
+// CollectionsToBoundaries adds forward support for CollectionQuery
+func CollectionsToBoundaries(cts []*CollectionQuery) (qbs []QueryBoundaryTx) {
+	for _, x := range cts {
+		var i interface{} = x
+		qbs = append(qbs, i.(QueryBoundaryTx))
+	}
+	return
+}
+
+// FromProtobuf returns a Query type populated from the given m3uetcpb.Query
+func FromProtobuf(in *m3uetcpb.Query) (q *Query) {
+	q = &Query{}
+	protobufToQuery(in, q)
+	return
+}
+
+// GetAllQueries returns all queries, constrained by a limit and collections
+func GetAllQueries(limit int, qbs ...QueryBoundaryID) (s []*Query) {
+	log.WithFields(log.Fields{
+		"limit":    limit,
+		"len(qbs)": len(qbs),
+	}).
+		Info("Getting all queries")
+
+	s = []*Query{}
+
+	qs := []Query{}
+	if err := db.Find(&qs).Error; err != nil {
+		log.Error(err)
 		return
 	}
 
-	str = q.String()
+	for _, x := range qs {
+		if len(qbs) > 0 {
+			match := false
+			for _, i := range qbs {
+				if x.ID == i.GetQueryID() {
+					match = true
+					break
+				}
+			}
+			if !match {
+				continue
+			}
+		}
+		s = append(s, &x)
+		if limit > 0 && len(s) == limit {
+			break
+		}
+	}
 	return
+}
+
+// RemoveCollections adds forward support for CollectionQuery
+func RemoveCollections(cqs []*CollectionQuery) (err error) {
+	for _, x := range cqs {
+		if err = db.Where("id > 0").Delete(x).Error; err != nil {
+			return
+		}
+	}
+	return
+}
+
+func protobufToQuery(in *m3uetcpb.Query, out *Query) {
+	out.Name = in.Name
+	out.Description = in.Description
+	out.Random = in.Random
+	out.Rating = int(in.Rating)
+	out.Limit = int(in.Limit)
+	out.Params = in.Params
+	out.From = in.From
+	out.To = in.To
 }

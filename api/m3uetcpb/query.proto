@@ -1,0 +1,80 @@
+syntax = 'proto3';
+
+package m3uetcpb;
+
+option go_package = './m3uetcpb';
+
+import 'api/m3uetcpb/common.proto';
+import 'api/m3uetcpb/track.proto';
+
+service QuerySvc {
+    rpc GetQuery(GetQueryRequest) returns (GetQueryResponse);
+    rpc GetQueries(GetQueriesRequest) returns (GetQueriesResponse);
+    rpc AddQuery(AddQueryRequest) returns (AddQueryResponse);
+    rpc UpdateQuery(UpdateQueryRequest) returns (Empty);
+    rpc RemoveQuery(RemoveQueryRequest) returns (Empty);
+
+    rpc ApplyQuery(ApplyQueryRequest) returns (ApplyQueryResponse);
+    rpc QueryBy(QueryByRequest) returns (QueryByResponse);
+}
+
+message GetQueryRequest {
+    int64 id = 1;
+}
+message GetQueryResponse {
+    Query query = 1;
+}
+
+message GetQueriesRequest {
+    int32 limit = 1;
+    repeated int64 collection_ids = 2;
+}
+
+message GetQueriesResponse {
+    repeated Query queries = 1;
+}
+
+message AddQueryRequest {
+    Query query = 1;
+}
+
+message AddQueryResponse {
+    int64 id = 1;
+}
+
+message UpdateQueryRequest {
+    Query query = 1;
+}
+
+message RemoveQueryRequest {
+    int64 id = 1;
+}
+
+message ApplyQueryRequest {
+    int64 id = 1;
+}
+message ApplyQueryResponse {
+    repeated Track tracks = 1;
+}
+
+message QueryByRequest {
+    Query query = 1;
+}
+message QueryByResponse {
+    repeated Track tracks = 1;
+}
+
+message Query {
+    int64 id = 1;
+    string name = 2;
+    string description = 3;
+    bool random = 4;
+    int32 rating = 5;
+    int32 limit = 6;
+    string params = 7;
+    int64 from = 8;
+    int64 to = 9;
+    repeated int64 collection_ids = 10;
+    int64 created_at = 101;
+    int64 updated_at = 102;
+}

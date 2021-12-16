@@ -12,6 +12,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // CollectionIndex defines indexes for collections
@@ -348,6 +349,60 @@ type CollectionQuery struct {
 	Query        Query      `json:"query" gorm:"foreignKey:QueryID"`
 }
 
+// DeleteWithTx implements QueryBoundaryTx interface
+func (cq *CollectionQuery) DeleteWithTx(tx *gorm.DB) error {
+	return tx.Delete(cq).Error
+}
+
+// FindTracksWithTx implements QueryBoundaryTx interface
+func (cq *CollectionQuery) FindTracksWithTx(tx *gorm.DB) (ts []*Track) {
+	ts = []*Track{}
+
+	list := []Track{}
+	err := tx.
+		Joins("JOIN collection_track ON collection_track.track_id = track.id").
+		Find(&list).
+		Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	for i := range list {
+		ts = append(ts, &list[i])
+	}
+	return
+}
+
+// GetQueryID implements QueryBoundaryID interface
+func (cq *CollectionQuery) GetQueryID() int64 {
+	return cq.QueryID
+}
+
+// Save persists a collection query in the DB
+func (cq *CollectionQuery) Save() error {
+	return db.Save(cq).Error
+}
+
+// SaveWithTx implements QueryBoundaryTx interface
+func (cq *CollectionQuery) SaveWithTx(tx *gorm.DB) error {
+	return tx.Save(cq).Error
+}
+
+// CreateCollectionQueryBoundaries implements QueryBoundary interface
+func CreateCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryTx) {
+	cqs := []CollectionQuery{}
+	for _, id := range ids {
+		c := CollectionQuery{CollectionID: id}
+		cqs = append(cqs, c)
+	}
+
+	for _, x := range cqs {
+		var i interface{} = &x
+		qbs = append(qbs, i.(QueryBoundaryTx))
+	}
+	return
+}
+
 // GetAllCollections returns all valid collections
 func GetAllCollections() (s []*Collection) {
 	s = []*Collection{}
@@ -360,6 +415,20 @@ func GetAllCollections() (s []*Collection) {
 	}
 	for i := range list {
 		s = append(s, &list[i])
+	}
+	return
+}
+
+// FilterCollectionQueryBoundaries implements QueryBoundary interface
+func FilterCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryID) {
+	cqs := []CollectionQuery{}
+	if err := db.Where("collection_id in ?", ids).Find(&cqs).Error; err != nil {
+		return
+	}
+
+	for _, x := range cqs {
+		var i interface{} = &x
+		qbs = append(qbs, i.(QueryBoundaryID))
 	}
 	return
 }
