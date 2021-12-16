@@ -31,12 +31,12 @@ type engine struct {
 	pb *models.Playback
 }
 
-func (e *engine) addPlaybackFromQueue(qt models.QueueTrack) (pb *models.Playback) {
+func (e *engine) addPlaybackFromQueue(qt *models.QueueTrack) (pb *models.Playback) {
 	log.WithField("qt", qt).
 		Info("Adding playback from queue")
 
 	if qt.TrackID > 0 {
-		t := models.Track{}
+		t := &models.Track{}
 		if err := t.Read(qt.TrackID); err != nil {
 			pb = models.AddPlaybackTrack(t)
 			return
@@ -145,7 +145,7 @@ func (e *engine) getPrevInHistory() (pb *models.Playback) {
 	}
 
 	if h.TrackID > 0 {
-		t := models.Track{}
+		t := &models.Track{}
 		if err := t.Read(h.TrackID); err != nil {
 			pb = models.AddPlaybackTrack(t)
 			return

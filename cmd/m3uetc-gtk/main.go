@@ -8,5 +8,5 @@ import (
 
 func main() {
 	base.Load()
-	fmt.Println("Hello from m3uetc-gtk")
+	fmt.Printf("Hello from m3uetc-gtk\n")
 }

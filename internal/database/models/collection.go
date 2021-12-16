@@ -349,13 +349,30 @@ type CollectionQuery struct {
 }
 
 // GetAllCollections returns all valid collections
-func GetAllCollections() (s []Collection) {
-	db.Where("hidden = 0 AND disabled = 0").Find(&s)
+func GetAllCollections() (s []*Collection) {
+	s = []*Collection{}
+
+	list := []Collection{}
+	err := db.Where("hidden = 0 AND disabled = 0").Find(&list).Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	for i := range list {
+		s = append(s, &list[i])
+	}
 	return
 }
 
 // GetCollectionTree returns all valid collection tracks
-func GetCollectionTree() (cts []CollectionTrack) {
-	db.Preload("track").Joins("JOIN collection ON collection_track.collection_id = collection.id AND collection.hidden = 0 AND collection.disabled = 0").Find(&cts)
+func GetCollectionTree() (cts []*CollectionTrack) {
+	cts = []*CollectionTrack{}
+
+	list := []CollectionTrack{}
+	db.Preload("track").Joins("JOIN collection ON collection_track.collection_id = collection.id AND collection.hidden = 0 AND collection.disabled = 0").Find(&list)
+
+	for i := range list {
+		cts = append(cts, &list[i])
+	}
 	return
 }

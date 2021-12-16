@@ -18,7 +18,6 @@ type RootSvc struct {
 func (*RootSvc) Off(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.OffResponse, error) {
 	go func() {
 		time.Sleep(5 * time.Second)
-		base.Idle(true)
 	}()
 	return &m3uetcpb.OffResponse{GoingOff: true}, nil
 }

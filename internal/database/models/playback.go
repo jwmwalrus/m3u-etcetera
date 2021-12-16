@@ -147,7 +147,7 @@ func AddPlaybackLocation(location string) (pb *Playback) {
 }
 
 // AddPlaybackTrack adds a playback entry by track
-func AddPlaybackTrack(t Track) (pb *Playback) {
+func AddPlaybackTrack(t *Track) (pb *Playback) {
 	log.WithField("t", t).
 		Info("Adding playback entry by track")
 

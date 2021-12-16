@@ -123,19 +123,20 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 }
 
 // Pop returns the next entry to be played from the queue
-func (q *Queue) Pop() (qt QueueTrack, err error) {
+func (q *Queue) Pop() (qt *QueueTrack, err error) {
 	log.WithField("q", *q).
 		Info("Popping from queue")
 
 	q.reorder()
 
-	if err = db.Where("queue_id = ? AND played = 0 AND position = 1", q.ID).First(&qt).Error; err != nil {
+	qt = &QueueTrack{}
+	if err = db.Where("queue_id = ? AND played = 0 AND position = 1", q.ID).First(qt).Error; err != nil {
 		log.Info("Nothing to pop!")
 		return
 	}
 	log.Info("Found location to pop from queue:", qt.Location)
 	qt.Played = true
-	err = db.Save(&qt).Error
+	err = db.Save(qt).Error
 
 	go q.reorder()
 	return
@@ -243,7 +244,7 @@ type QueueTrack struct { // too transient
 }
 
 // GetAllQueueTracks returns all queue tracks for the given perspective, constrained by a limit
-func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []QueueTrack) {
+func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []*QueueTrack) {
 	log.WithFields(log.Fields{
 		"idx":   idx,
 		"limit": limit,
@@ -264,7 +265,14 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []QueueTrack) {
 		tx.Limit(limit)
 	}
 
-	tx.Find(&s)
+	list := []QueueTrack{}
+	tx.Find(&list)
+
+	s = []*QueueTrack{}
+	for i := range list {
+		s = append(s, &list[i])
+	}
+
 	return
 }
 

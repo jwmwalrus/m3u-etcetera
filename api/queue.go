@@ -20,6 +20,7 @@ func (*QueueSvc) GetQueue(_ context.Context, req *m3uetcpb.GetQueueRequest) (*m3
 		models.PerspectiveIndex(req.Perspective),
 		int(req.Limit),
 	)
+
 	list := []*m3uetcpb.QueueTrack{}
 	for _, qt := range s {
 		list = append(list, qt.ToProtobuf())

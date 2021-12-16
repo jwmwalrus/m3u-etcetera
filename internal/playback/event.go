@@ -146,7 +146,7 @@ func PlayStreams(force bool, locations []string, ids []int64) {
 		models.AddPlaybackLocation(v)
 	}
 	for _, v := range ids {
-		t := models.Track{}
+		t := &models.Track{}
 		err := t.Read(v)
 		if err != nil {
 			log.Error(err)
