@@ -9,6 +9,21 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.0] 2021-12-16
+
+### Fixed
+
+* Added missing seed
+
+### Added
+
+* Query task for searching tracks in collections
+
+### Modified
+
+* Display related enhancements to the playback and query tasks
+* Reimplemented base.Idle by cancellable context
+
 ## [0.4.0] 2021-12-14
 
 Implement collection
