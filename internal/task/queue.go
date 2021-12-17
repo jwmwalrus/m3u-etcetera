@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -173,7 +174,11 @@ func queueAction(c *cli.Context) (err error) {
 
 	tbl := table.New("Position", "Location")
 	for _, qt := range res.QueueTracks {
-		tbl.AddRow(qt.Position, qt.Location)
+		un, _ := url.QueryUnescape(qt.Location)
+		if un == "" {
+			un = qt.Location
+		}
+		tbl.AddRow(qt.Position, un)
 	}
 	tbl.Print()
 

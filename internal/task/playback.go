@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -129,24 +130,29 @@ func playbackAction(c *cli.Context) (err error) {
 		return
 	}
 
-	type jt struct {
-		TrackID  int64
-		Location string
-	}
-	j := jt{}
 	switch res.Playing.(type) {
 	case *m3uetcpb.GetPlaybackResponse_Playback:
 		pb := res.GetPlayback()
-		j = jt{pb.Id, pb.Location}
+
+		tbl := table.New("ID", "Location")
+		un, _ := url.QueryUnescape(pb.Location)
+		if un == "" {
+			un = pb.Location
+		}
+		tbl.AddRow(pb.Id, un)
+		tbl.Print()
 	case *m3uetcpb.GetPlaybackResponse_Track:
 		t := res.GetTrack()
-		j = jt{t.Id, t.Location}
+
+		tbl := table.New("ID", "Title", "Artist", "Album", "Year")
+		artist := t.Artist
+		if artist == "" {
+			artist = t.Albumartist
+		}
+		tbl.AddRow(t.Id, t.Title, artist, t.Album, t.Year)
+		tbl.Print()
 	default:
 	}
-
-	tbl := table.New("ID", "Location")
-	tbl.AddRow(j.TrackID, j.Location)
-	tbl.Print()
 
 	return
 }
