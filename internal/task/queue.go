@@ -26,7 +26,7 @@ func Queue() *cli.Command {
 		Subcommands: []*cli.Command{
 			{
 				Name:    "append",
-				Aliases: []string{"app"},
+				Aliases: []string{"app", "add"},
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:  "ids",
@@ -45,7 +45,7 @@ func Queue() *cli.Command {
 			},
 			{
 				Name:    "delete",
-				Aliases: []string{"del"},
+				Aliases: []string{"del", "remove", "rem"},
 				Flags: []cli.Flag{
 					&cli.IntFlag{
 						Name:     "position",
@@ -80,7 +80,7 @@ func Queue() *cli.Command {
 			},
 			{
 				Name:    "preppend",
-				Aliases: []string{"prep"},
+				Aliases: []string{"prep", "top"},
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:  "ids",
@@ -91,14 +91,6 @@ func Queue() *cli.Command {
 				Description: "Preppend to queue",
 				Action:      queueCreateAction,
 			},
-		},
-		SkipFlagParsing: false,
-		HideHelp:        false,
-		Hidden:          false,
-		HelpName:        "doo!",
-		BashComplete: func(c *cli.Context) {
-			// TODO: complete
-			fmt.Fprintf(c.App.Writer, "--better\n")
 		},
 		Before: checkServerStatus,
 		Action: queueAction,
@@ -119,11 +111,6 @@ func Queue() *cli.Command {
 				Usage: "Limit output count",
 				Value: 0,
 			},
-		},
-		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
-			// TODO: complete
-			fmt.Fprintf(c.App.Writer, "for shame\n")
-			return err
 		},
 	}
 }

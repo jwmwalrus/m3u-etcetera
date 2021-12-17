@@ -1,8 +1,6 @@
 package task
 
 import (
-	"fmt"
-
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
 	"github.com/urfave/cli/v2"
 )
@@ -10,26 +8,15 @@ import (
 // Serve serve task
 func Serve() *cli.Command {
 	return &cli.Command{
-		Name:            "serve",
-		Category:        "Server",
-		Usage:           "Controls the server",
-		UsageText:       "serve [--off]",
-		Description:     "Starts or stops the m3uetc-server",
-		SkipFlagParsing: false,
-		HideHelp:        false,
-		Hidden:          false,
-		HelpName:        "doo!",
-		BashComplete: func(c *cli.Context) {
-			fmt.Fprintf(c.App.Writer, "--better\n")
-		},
+		Name:        "serve",
+		Category:    "Server",
+		Usage:       "Controls the server",
+		UsageText:   "serve [--off]",
+		Description: "Starts or stops the m3uetc-server",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{Name: "off"},
 		},
 		Action: serveAction,
-		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
-			fmt.Fprintf(c.App.Writer, "for shame\n")
-			return err
-		},
 	}
 }
 

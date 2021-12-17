@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/task"
@@ -23,25 +22,26 @@ func main() {
 	}
 
 	app := &cli.App{
-		Name:     "m3uetc-task",
-		Version:  "v0.20.0",
-		Compiled: time.Now(),
+		Name:    "m3uetc-task",
+		Version: "v0.20.0",
 		Authors: []*cli.Author{
 			{
 				Name:  "John M",
 				Email: "jwmwalrus@gmail.com",
 			},
 		},
-		Copyright: "(c) 2021 WalrusAhead Solutions",
-		// HelpName:  "m3uetc-task",
-		Usage:     "Task interface for M3U Etcétera",
-		UsageText: "m3uetc-task - control M3U Etcétera from the terminal",
+		Copyright:   "(c) 2021 WalrusAhead Solutions",
+		HelpName:    "m3uetc-task",
+		Usage:       "Task interface for M3U Etcétera",
+		UsageText:   "m3uetc-task command [subcommand [--flags...] [args...]]",
+		Description: "A playlist-centric music player",
 		ExitErrHandler: func(c *cli.Context, err error) {
 			if err != nil {
 				log.Error(err)
 				fmt.Fprintf(c.App.ErrWriter, err.Error()+"\n")
 			}
 		},
+		EnableBashCompletion: true,
 		Commands: []*cli.Command{
 			task.Serve(),
 			task.Playback(),

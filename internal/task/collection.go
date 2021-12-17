@@ -117,13 +117,6 @@ func Collection() *cli.Command {
 				Action:      collectionDiscoverActiion,
 			},
 		},
-		SkipFlagParsing: false,
-		HideHelp:        false,
-		Hidden:          false,
-		HelpName:        "doo!",
-		BashComplete: func(c *cli.Context) {
-			fmt.Fprintf(c.App.Writer, "--better\n")
-		},
 		Before: checkServerStatus,
 		Action: collectionAction,
 		Flags: []cli.Flag{
@@ -132,10 +125,6 @@ func Collection() *cli.Command {
 				Aliases: []string{"j"},
 				Usage:   "Output JSON",
 			},
-		},
-		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
-			fmt.Fprintf(c.App.Writer, "for shame\n")
-			return err
 		},
 	}
 }

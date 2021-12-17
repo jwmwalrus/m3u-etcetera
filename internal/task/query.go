@@ -207,14 +207,6 @@ func Query() *cli.Command {
 				Action: queryByAction,
 			},
 		},
-		SkipFlagParsing: false,
-		HideHelp:        false,
-		Hidden:          false,
-		HelpName:        "doo!",
-		BashComplete: func(c *cli.Context) {
-			// TODO: complete
-			fmt.Fprintf(c.App.Writer, "--better\n")
-		},
 		Before: checkServerStatus,
 		Action: queryAction,
 		Flags: []cli.Flag{
@@ -233,11 +225,6 @@ func Query() *cli.Command {
 				Aliases: []string{"coll-id"},
 				Usage:   "Bound to collection ID",
 			},
-		},
-		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
-			// TODO: complete
-			fmt.Fprintf(c.App.Writer, "for shame\n")
-			return err
 		},
 	}
 }

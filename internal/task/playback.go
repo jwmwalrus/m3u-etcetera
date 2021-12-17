@@ -25,7 +25,8 @@ func Playback() *cli.Command {
 		Description: "Control the application's playback according with the given subcommand. If no subcommand is given, display current status",
 		Subcommands: []*cli.Command{
 			{
-				Name: "play",
+				Name:    "play",
+				Aliases: []string{"pl"},
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:  "force",
@@ -73,14 +74,6 @@ func Playback() *cli.Command {
 				Action:      playbackJumpAction,
 			},
 		},
-		SkipFlagParsing: false,
-		HideHelp:        false,
-		Hidden:          false,
-		HelpName:        "playback",
-		BashComplete: func(c *cli.Context) {
-			// TODO: complete
-			fmt.Fprintf(c.App.Writer, "--better\n")
-		},
 		Before: checkServerStatus,
 		Action: playbackAction,
 		Flags: []cli.Flag{
@@ -89,11 +82,6 @@ func Playback() *cli.Command {
 				Aliases: []string{"j"},
 				Usage:   "Output JSON",
 			},
-		},
-		OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
-			// TODO: complete
-			fmt.Fprintf(c.App.Writer, "for shame\n")
-			return err
 		},
 	}
 }
