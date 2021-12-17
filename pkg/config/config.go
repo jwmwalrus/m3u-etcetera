@@ -13,7 +13,8 @@ import (
 // Config Application's configuration
 type Config struct {
 	FirstRun bool `json:"firstRun"`
-	Server   ServerSpec
+	Server   Server
+	Query    Query
 }
 
 // Load Loads application's configuration
@@ -72,4 +73,5 @@ func (c *Config) Save(path, lockFile string) (err error) {
 // SetDefaults sets configuration defaults
 func (c *Config) SetDefaults() {
 	c.Server.SetDefaults()
+	c.Query.SetDefaults()
 }

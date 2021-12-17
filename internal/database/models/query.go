@@ -9,6 +9,8 @@ import (
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/config"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -84,7 +86,14 @@ func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
 	}).
 		Info("Finding tracks")
 
-	tx := db.Where("1 = 1")
+	limit := config.DefaultQueryMaxLimit
+	if base.Conf.Query.Limit > 0 {
+		limit = base.Conf.Query.Limit
+	}
+	if q.Limit > 0 {
+		limit = q.Limit
+	}
+	tx := db.Limit(limit)
 
 	if q.Params != "" {
 		parsed, _ := qparams.ParseParams(q.Params)
@@ -115,9 +124,7 @@ func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
 	if q.Rating > 0 {
 		tx.Where("rating = ?", q.Rating)
 	}
-	if q.Limit > 0 {
-		tx.Limit(q.Limit)
-	}
+
 	if q.From > 0 {
 		fromYear := time.Unix(q.From, 0).Year()
 		tx.Where("year >= ?", fromYear)

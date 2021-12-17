@@ -16,8 +16,8 @@ const (
 	DefaultServerAPIVersion = "/api/v1"
 )
 
-// ServerSpec Server-related config
-type ServerSpec struct {
+// Server server-related config
+type Server struct {
 	Scheme     string `json:"scheme"`
 	Host       string `json:"host"`
 	Port       int    `json:"port"`
@@ -25,7 +25,7 @@ type ServerSpec struct {
 }
 
 // SetDefaults provides default settings
-func (s *ServerSpec) SetDefaults() {
+func (s *Server) SetDefaults() {
 	if s.Scheme == "" {
 		s.Scheme = DefaultServerScheme
 	}
@@ -44,11 +44,11 @@ func (s *ServerSpec) SetDefaults() {
 }
 
 // GetAuthority returns the authority portion of the playback URI
-func (s *ServerSpec) GetAuthority() string {
+func (s *Server) GetAuthority() string {
 	return s.Host + ":" + strconv.Itoa(s.Port)
 }
 
 // GetURI returns the playback URI
-func (s *ServerSpec) GetURI() string {
+func (s *Server) GetURI() string {
 	return s.Scheme + "://" + s.GetAuthority()
 }
