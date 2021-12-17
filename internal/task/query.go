@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
@@ -178,10 +179,6 @@ func Query() *cli.Command {
 						Name:  "limit",
 						Usage: "Query `LIMIT`",
 					},
-					&cli.StringFlag{
-						Name:  "params",
-						Usage: "Query `PARAMS` for title,artist,album,genre (e.g.: \"title=thing and genre=[sh]ome or genre=some*other\"",
-					},
 					&cli.Int64Flag{
 						Name:  "from",
 						Usage: "Query's start `TIMESTAMP` (i.e., from the date the track was issued)",
@@ -196,8 +193,9 @@ func Query() *cli.Command {
 						Usage:   "Output JSON",
 					},
 					&cli.BoolFlag{
-						Name:  "play",
-						Usage: "Add tracks to playback instead of listing them",
+						Name:    "play",
+						Aliases: []string{"pl"},
+						Usage:   "Add tracks to playback instead of listing them",
 					},
 					&cli.BoolFlag{
 						Name:  "force",
@@ -512,9 +510,7 @@ func queryTracksAction(c *cli.Context) (err error) {
 }
 
 func queryByAction(c *cli.Context) (err error) {
-	if err = mustNotParseExtraArgs(c); err != nil {
-		return
-	}
+	rest := c.Args().Slice()
 
 	q := &m3uetcpb.Query{
 		Name:        c.String("persist-as"),
@@ -522,7 +518,7 @@ func queryByAction(c *cli.Context) (err error) {
 		Random:      c.Bool("random"),
 		Rating:      int32(c.Int("rating")),
 		Limit:       int32(c.Int("limit")),
-		Params:      c.String("params"),
+		Params:      strings.Join(rest, " "),
 		From:        c.Int64("from"),
 		To:          c.Int64("from"),
 	}
