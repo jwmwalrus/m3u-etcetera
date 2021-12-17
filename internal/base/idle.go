@@ -74,19 +74,19 @@ func GetFree(is IdleStatus) {
 
 // Idle exits the server if it has been idle for a while and no long-term processes are pending
 func Idle(ctx context.Context) {
-	log.WithFields(log.Fields{
-		"forceExit":            forceExit,
-		"len(idleStatusStack)": len(idleStatusStack) - 1,
-	}).
-		Info("Entering idle status")
-
-	if len(idleStatusStack) > 1 {
-		log.Info("Server is busy, so cancelling request")
+	if len(idleStatusStack) > 1 || idleGotCalled {
+		log.Info("Server is busy or already idling, so cancelling request")
 		<-ctx.Done()
 		return
 	}
 
 	idleGotCalled = true
+
+	log.WithFields(log.Fields{
+		"forceExit":            forceExit,
+		"len(idleStatusStack)": len(idleStatusStack) - 1,
+	}).
+		Info("Entering idle status")
 
 	if !forceExit {
 		select {

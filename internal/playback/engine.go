@@ -74,17 +74,18 @@ loop:
 	for {
 		pb := &models.Playback{}
 
+	signals:
 		select {
 		case <-quitEngineLoop:
 			break loop
 		case <-prevInHistory:
 			pb = e.getPrevInHistory()
-			break
+			break signals
 		case <-models.PlaybackChanged:
 			switch e.lastEvent {
 			case stopAllEvent:
 				pb = &models.Playback{}
-				break
+				break signals
 			default:
 			}
 
@@ -96,7 +97,7 @@ loop:
 					pb = e.addPlaybackFromQueue(qt)
 				}
 			}
-			break
+			break signals
 		}
 
 		if pb.ID > 0 && pb.Location != "" {
@@ -106,7 +107,7 @@ loop:
 			go func() {
 				models.PlaybackChanged <- struct{}{}
 			}()
-			continue
+			continue loop
 		}
 
 		if !base.IsAppIdling() {

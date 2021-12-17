@@ -24,6 +24,7 @@ const (
 	playlistEvent
 	stopPlaylistEvent
 	stopAllEvent
+	resumeAllEvent
 	watchQueue
 )
 
@@ -41,6 +42,7 @@ func (ee engineEvent) String() string {
 		"PLAYLIST",
 		"STOP-PLAYLIST",
 		"STOP-ALL",
+		"RESUME-ALL",
 		"WATCH-QUEUE",
 	}[ee]
 }
@@ -94,6 +96,11 @@ func IsPlaying() bool {
 	return eng.state == gst.StatePlaying
 }
 
+// IsStopped checks if a stream is playing right now
+func IsStopped() bool {
+	return eng.lastEvent == stopAllEvent
+}
+
 // NextStream plays the next stream in playlist
 func NextStream() (err error) {
 	eng.lastEvent = nextEvent
@@ -109,12 +116,18 @@ func NextStream() (err error) {
 
 // PauseStream pauses the current stream
 func PauseStream(off bool) (err error) {
-	eng.lastEvent = pauseEvent
-	log.Infof("Firing the %v event", eng.lastEvent)
-
 	if eng.playbin == nil {
+		if !IsStopped() {
+			return
+		}
+		eng.lastEvent = resumeAllEvent
+		log.Infof("Firing the %v event", eng.lastEvent)
+		models.PlaybackChanged <- struct{}{}
 		return
 	}
+
+	eng.lastEvent = pauseEvent
+	log.Infof("Firing the %v event", eng.lastEvent)
 
 	if off {
 		if !IsPaused() {
