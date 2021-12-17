@@ -30,56 +30,6 @@ type QParam struct {
 	Val string
 }
 
-// ToFuzzy converts the given value into a fuzzy one
-// * Numbers and proper wildcards are never converted
-func (qp *QParam) ToFuzzy() *QParam {
-	out := *qp
-	if strings.ContainsAny(out.Val, "*?[]") {
-		return &out
-	}
-
-	if _, err := strconv.ParseInt(out.Val, 10, 64); err == nil {
-		return &out
-	}
-
-	out.Val = "*" + out.Val + "*"
-	if strings.Count(out.Val, " ") == 0 {
-		return &out
-	}
-
-	out.Val = strings.Join(strings.Split(out.Val, " "), "*")
-	return &out
-}
-
-// ToSQL converts the given wildcards to SQL
-func (qp *QParam) ToSQL() (out QParam) {
-	out = *qp
-	var sb strings.Builder
-	literal := 0
-	for _, r := range out.Val {
-		switch r {
-		case '[':
-			literal++
-		case ']':
-			literal--
-		case '*':
-			if literal == 0 {
-				sb.WriteRune('%')
-				continue
-			}
-		case '?':
-			if literal == 0 {
-				sb.WriteRune('_')
-				continue
-			}
-		default:
-		}
-		sb.WriteRune(r)
-	}
-	out.Val = sb.String()
-	return
-}
-
 // ParseParams parse a params string and return an equivalent slice
 func ParseParams(params string) (qp []*QParam, err error) {
 	qp = []*QParam{}
@@ -155,6 +105,56 @@ func ParseParams(params string) (qp []*QParam, err error) {
 	return
 }
 
+// ToFuzzy converts the given value into a fuzzy one
+// * Numbers and proper wildcards are never converted
+func (qp *QParam) ToFuzzy() *QParam {
+	out := *qp
+	if strings.ContainsAny(out.Val, "*?[]") {
+		return &out
+	}
+
+	if _, err := strconv.ParseInt(out.Val, 10, 64); err == nil {
+		return &out
+	}
+
+	out.Val = "*" + out.Val + "*"
+	if strings.Count(out.Val, " ") == 0 {
+		return &out
+	}
+
+	out.Val = strings.Join(strings.Split(out.Val, " "), "*")
+	return &out
+}
+
+// ToSQL converts the given wildcards to SQL
+func (qp *QParam) ToSQL() (out QParam) {
+	out = *qp
+	var sb strings.Builder
+	literal := 0
+	for _, r := range out.Val {
+		switch r {
+		case '[':
+			literal++
+		case ']':
+			literal--
+		case '*':
+			if literal == 0 {
+				sb.WriteRune('%')
+				continue
+			}
+		case '?':
+			if literal == 0 {
+				sb.WriteRune('_')
+				continue
+			}
+		default:
+		}
+		sb.WriteRune(r)
+	}
+	out.Val = sb.String()
+	return
+}
+
 func createParam(cond, kv string) (newq QParam, err error) {
 	var k, v string
 	var or, not bool
@@ -199,28 +199,33 @@ func parseCondition(cond string) (or, not bool) {
 }
 
 func splitCSV(in *QParam) (out []*QParam) {
-	if strings.Index(in.Val, ",") < 0 {
-		out = append(out, in)
+	work := *in
+	if strings.Index(work.Val, ",") < 0 {
+		out = append(out, &work)
 		return
 	}
 
-	s := strings.Split(in.Val, ",")
+	list := []QParam{}
+	s := strings.Split(work.Val, ",")
 	if s[0] != "" {
 		nosp := strings.TrimSpace(s[0])
-		out = append(out, &QParam{Or: in.Or, Not: in.Not, Key: in.Key, Val: nosp})
+		list = append(list, QParam{Or: work.Or, Not: work.Not, Key: work.Key, Val: nosp})
 	}
 	for i := 1; i < len(s); i++ {
 		if s[i] != "" {
 			not := false
 			or := true
-			if in.Not {
+			if work.Not {
 				not = true
 				or = false
 			}
 			nosp := strings.TrimSpace(s[i])
-			out = append(out,
-				&QParam{Not: not, Or: or, Key: in.Key, Val: nosp})
+			list = append(list, QParam{Not: not, Or: or, Key: work.Key, Val: nosp})
 		}
+	}
+
+	for i := range list {
+		out = append(out, &list[i])
 	}
 	return
 }
