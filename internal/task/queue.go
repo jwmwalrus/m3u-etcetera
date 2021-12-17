@@ -91,6 +91,33 @@ func Queue() *cli.Command {
 				Description: "Preppend to queue",
 				Action:      queueCreateAction,
 			},
+			{
+				Name:    "move",
+				Aliases: []string{"mv"},
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "perspective",
+						Aliases: []string{"persp"},
+						Usage:   "Applies to perspective",
+						Value:   "music",
+					},
+					&cli.Int64Flag{
+						Name:     "from-position",
+						Aliases:  []string{"from"},
+						Usage:    "Move this `POSITION`",
+						Required: true,
+					},
+					&cli.Int64Flag{
+						Name:     "to-position",
+						Aliases:  []string{"to"},
+						Usage:    "Move to this `POSITION`",
+						Required: true,
+					},
+				},
+				Usage:       "queue move [--flags ...]",
+				Description: "Move track from one position to another",
+				Action:      queueMoveAction,
+			},
 		},
 		Before: checkServerStatus,
 		Action: queueAction,
@@ -240,6 +267,47 @@ func queueDestroyAction(c *cli.Context) (err error) {
 
 	if req.Action == m3uetcpb.QueueAction_Q_DELETE {
 		req.Position = int32(c.Int("position"))
+	}
+
+	var cc *grpc.ClientConn
+	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewQueueSvcClient(cc)
+	_, err = cl.ExecuteQueueAction(context.Background(), req)
+	if err != nil {
+		return
+	}
+
+	fmt.Printf("OK\n")
+	return
+}
+
+func queueMoveAction(c *cli.Context) (err error) {
+	const actionPrefix = "Q_"
+
+	if err = mustNotParseExtraArgs(c); err != nil {
+		return
+	}
+
+	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	req := &m3uetcpb.ExecuteQueueActionRequest{
+		Action:       m3uetcpb.QueueAction(action),
+		FromPosition: int32(c.Int("from-position")),
+		Position:     int32(c.Int("to-position")),
+	}
+
+	persp := strings.ToLower(c.String("perspective"))
+	if strings.HasPrefix("radio", persp) {
+		req.Perspective = m3uetcpb.Perspective_RADIO
+	} else if strings.HasPrefix("podcasts", persp) {
+		req.Perspective = m3uetcpb.Perspective_PODCASTS
+	} else if strings.HasPrefix("audiobooks", persp) {
+		req.Perspective = m3uetcpb.Perspective_AUDIOBOOKS
+	} else {
+		req.Perspective = m3uetcpb.Perspective_MUSIC
 	}
 
 	var cc *grpc.ClientConn

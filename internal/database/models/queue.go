@@ -13,7 +13,7 @@ import (
 // GetPerspectiveQueue returns the queue associated to the perspective index
 func (idx PerspectiveIndex) GetPerspectiveQueue() (q *Queue, err error) {
 	q = &Queue{}
-	err = db.Joins("JOIN perspective ON queue.perspective_id = perspective.id AND perspective.idx = ?", int(idx)).First(q).Error
+	err = db.Preload("Perspective").Joins("JOIN perspective ON queue.perspective_id = perspective.id AND perspective.idx = ?", int(idx)).First(q).Error
 	return
 
 }
@@ -130,6 +130,52 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 		qt := QueueTrack{Location: locations[i], Position: position}
 		err := q.insertInto(&qt)
 		onerror.Log(err)
+	}
+}
+
+// Move moves one queue track from one position to another
+func (q *Queue) Move(from, to int) {
+	if from == to || from < 1 {
+		return
+	}
+
+	s := []QueueTrack{}
+	db.Where("queue_id = ? AND played = 0", q.ID).Order("position").Find(&s)
+	if len(s) == 0 || from > len(s) {
+		return
+	}
+
+	var moved, afterPiv []QueueTrack
+	var piv *QueueTrack
+	for i := range s {
+		if s[i].Position == from {
+			piv = &s[i]
+		} else if s[i].Position < to {
+			moved = append(moved, s[i])
+		} else if s[i].Position > to {
+			afterPiv = append(afterPiv, s[i])
+		} else if s[i].Position == to {
+			if from < to {
+				moved = append(moved, s[i])
+			} else {
+				afterPiv = append(afterPiv, s[i])
+			}
+		}
+	}
+
+	if piv != nil {
+		moved = append(moved, *piv)
+	}
+	moved = append(moved, afterPiv...)
+
+	newPos := 0
+	for i := range moved {
+		newPos++
+		moved[i].Position = newPos
+	}
+
+	if err := db.Save(&moved).Error; err != nil {
+		return
 	}
 }
 
@@ -282,7 +328,7 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []*QueueTrack) {
 		Where("played = 0 AND queue_id = ?", q.ID).
 		Order("position ASC")
 
-	if limit > 9 {
+	if limit > 0 {
 		tx.Limit(limit)
 	}
 

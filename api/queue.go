@@ -47,6 +47,8 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 			q.DeleteAt(int(req.Position))
 		case m3uetcpb.QueueAction_Q_CLEAR:
 			q.Clear()
+		case m3uetcpb.QueueAction_Q_MOVE:
+			q.Move(int(req.FromPosition), int(req.Position))
 		default:
 		}
 	}()

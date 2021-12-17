@@ -23,9 +23,10 @@ message GetQueueResponse {
 message ExecuteQueueActionRequest {
     QueueAction action = 1;
     int32 position = 2;
-    Perspective perspective = 3;
-    repeated int64 ids = 4;
-    repeated string locations = 5;
+    int32 from_position = 3;
+    Perspective perspective = 4;
+    repeated int64 ids = 5;
+    repeated string locations = 6;
 }
 
 message QueueTrack {
@@ -46,4 +47,5 @@ enum QueueAction {
     Q_PREPPEND = 3;
     Q_DELETE = 4;
     Q_CLEAR = 5;
+    Q_MOVE = 6;
 }
