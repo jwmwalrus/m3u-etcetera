@@ -75,6 +75,9 @@ var (
 	// FlagDry Dry run
 	FlagDry bool
 
+	// FlagDebugMode Start in debug mode
+	FlagDebugMode bool
+
 	// FlagTestingMode Start in testing mode
 	FlagTestingMode bool
 
@@ -171,6 +174,16 @@ func RegisterUnloader(u Unloader) {
 	unloadRegistry = append(unloadRegistry, u)
 }
 
+// SetTestingMode -
+func SetTestingMode() {
+	FlagTestingMode = true
+}
+
+// UnsetTestingMode -
+func UnsetTestingMode() {
+	FlagTestingMode = false
+}
+
 // Unload Cleans up server before exit
 func Unload() {
 	log.Info("Unloading application")
@@ -214,7 +227,9 @@ func resolveSeverity() {
 	givenSeverity := FlagSeverity
 
 	if givenSeverity == "" {
-		if FlagTestingMode {
+		if FlagDebugMode {
+			FlagSeverity = "debug"
+		} else if FlagTestingMode {
 			FlagSeverity = "debug"
 		} else if FlagVerbose {
 			FlagSeverity = "info"
@@ -249,6 +264,7 @@ func init() {
 	// Define global flags
 	getopt.FlagLong(&flagHelp, "help", 'h', "Display this help")
 	getopt.FlagLong(&FlagDry, "dry", 'n', "Dry run")
+	getopt.FlagLong(&FlagDebugMode, "debug", 0, "Start in debug mode")
 	getopt.FlagLong(&FlagTestingMode, "testing", 0, "Start in testing mode")
 	getopt.FlagLong(&FlagVerbose, "verbose", 'v', "Bump logging severity")
 	getopt.FlagLong(&FlagSeverity, "severity", 0, "Logging severity (debug|info|warn|error|fatal)")

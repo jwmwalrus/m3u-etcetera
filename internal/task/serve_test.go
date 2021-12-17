@@ -49,8 +49,8 @@ func TestServe(t *testing.T) {
 
 	base.Load(true)
 
-	base.FlagTestingMode = true
-	defer func() { base.FlagTestingMode = false }()
+	base.SetTestingMode()
+	defer base.UnsetTestingMode()
 
 	app := &cli.App{
 		Commands: []*cli.Command{

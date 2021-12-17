@@ -9,7 +9,7 @@ var (
 	storageGuard chan struct{}
 
 	// DbgChan is a debug channel
-	DbgChan chan string
+	DbgChan chan map[string]interface{}
 
 	// PlaybackChanged is the AfterCreate-hook channel for QueueTrack and Playback
 	PlaybackChanged chan struct{}
@@ -21,7 +21,7 @@ func SetConnection(conn *gorm.DB) {
 }
 
 func init() {
-	DbgChan = make(chan string)
+	DbgChan = make(chan map[string]interface{})
 	storageGuard = make(chan struct{}, 1)
 	PlaybackChanged = make(chan struct{}, 1)
 }

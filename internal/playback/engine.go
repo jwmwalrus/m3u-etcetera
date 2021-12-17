@@ -56,12 +56,12 @@ func (e *engine) clearPendingPlayback() {
 	e.pb.ClearPending()
 }
 
-func (e *engine) debugChannel(msg string) {
+func (e *engine) debugChannel(format string, args ...interface{}) {
 	if e.mode == TestMode {
-		models.DbgChan <- msg
+		models.DbgChan <- map[string]interface{}{"format": format, "args": args}
 		return
 	}
-	log.Debug(msg)
+	log.Debugf(format, args...)
 }
 
 func (e *engine) engineLoop() {
@@ -192,7 +192,7 @@ func (e *engine) playStream(pb *models.Playback) {
 		e.pb = nil
 		return
 	}
-	log.Infof("StateChangeReturn: %d\n", gst.StatePlaying)
+	e.debugChannel("StateChangeReturn: %d\n", gst.StatePlaying)
 
 	bus := e.playbin.GetBus()
 
@@ -239,7 +239,7 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 
 	switch msg.GetType() {
 	case gst.MessageEos:
-		log.Info("End of stream: " + pb.Location)
+		e.debugChannel("End of stream: %v", pb.Location)
 		if !e.goingBack {
 			go pb.AddToHistory(e.lastPosition)
 		}
@@ -250,7 +250,7 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 		e.duration = 0
 
 	case gst.MessageInfo:
-		log.Info(msg.GetName())
+		e.debugChannel(msg.GetName())
 	case gst.MessageError:
 		log.Error(msg.GetName())
 		e.terminate = true
@@ -259,10 +259,12 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 	case gst.MessageStateChanged:
 		e.prevState, e.state, _ = msg.ParseStateChanged()
 		// if (GST_MESSAGE_SRC (msg) == GST_OBJECT (data->playbin)) {
-		log.WithFields(log.Fields{
-			"previousState": e.prevState,
-			"newState":      e.state,
-		}).Info("Pipeline state changed")
+		e.debugChannel(
+			"Pipeline state changed",
+			map[string]interface{}{
+				"previousState": e.prevState,
+				"newState":      e.state,
+			})
 
 		if e.state == gst.StatePlaying {
 			/* We just moved to PLAYING. Check if seeking is possible */
@@ -271,15 +273,17 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 			if e.playbin.Query(q) {
 				e.seekEnabled, start, end = q.ParseSeeking(nil)
 				if e.seekEnabled {
-					log.WithFields(log.Fields{
-						"start": start,
-						"end":   end,
-					}).Info("Seeking is ENABLED")
+					e.debugChannel(
+						"Seeking is ENABLED",
+						log.Fields{
+							"start": start,
+							"end":   end,
+						})
 				} else {
-					log.Info("Seeking is DISABLED for this stream")
+					e.debugChannel("Seeking is DISABLED for this stream")
 				}
 			} else {
-				log.Info("Seeking query failed")
+				e.debugChannel("Seeking query failed")
 			}
 		}
 
