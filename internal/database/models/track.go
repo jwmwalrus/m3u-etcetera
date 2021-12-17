@@ -153,7 +153,17 @@ func AddTrackFromPath(path string, withTags bool) (t *Track, err error) {
 	return
 }
 
-func removeDuplicateTracks(ts []*Track) (err error) {
-	//TODO: implement
-	return
+func appendToTrackList(list []*Track, ts []*Track) {
+	for i := range ts {
+		found := false
+		for j := range list {
+			if list[j].ID == ts[i].ID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			list = append(list, ts[i])
+		}
+	}
 }

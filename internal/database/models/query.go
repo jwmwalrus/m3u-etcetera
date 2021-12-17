@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,11 +26,13 @@ type QueryBoundaryID interface {
 	GetQueryID() int64
 }
 
-var supportedParams = []string{"title", "artist", "album", "albumartist", "genre"}
-
-// SupportedParams returns the list of supported string parameters
-func SupportedParams() []string {
-	return supportedParams
+var supportedParams = []string{
+	"id",
+	"title",
+	"artist",
+	"album",
+	"albumartist",
+	"genre",
 }
 
 // CountSupportedParams returns the count of supported parameters in a slice
@@ -87,15 +90,24 @@ func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
 		parsed, _ := qparams.ParseParams(q.Params)
 		for _, x := range parsed {
 			if !slice.Contains(supportedParams, strings.ToLower(x.Key)) {
+				log.Warnf("Ignored query paranmeter: %v", x.Key)
 				continue
+			}
+			comp := " LIKE ?"
+			if x.Key == "id" {
+				if _, err := strconv.ParseInt(x.Val, 10, 64); err != nil {
+					log.Warnf("Ignoring `id` value due to parsing error:%v", x.Val)
+					continue
+				}
+				comp = " = ?"
 			}
 			y := x.ToFuzzy().ToSQL()
 			if y.Or {
-				tx.Or(y.Key+" LIKE ?", y.Val)
+				tx.Or(y.Key+comp, y.Val)
 			} else if y.Not {
-				tx.Not(y.Key+" LIKE ?", y.Val)
+				tx.Not(y.Key+comp, y.Val)
 			} else {
-				tx.Where(y.Key+" LIKE ?", y.Val)
+				tx.Where(y.Key+comp, y.Val)
 			}
 		}
 	}
@@ -115,14 +127,26 @@ func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
 		tx.Where("year <= ?", toYear)
 	}
 
+	if q.Random {
+		tx.Order("random()")
+	}
+
+	ts = []*Track{}
 	if len(qbs) > 0 {
 		for _, x := range qbs {
-			ts = append(ts, x.FindTracksWithTx(tx)...)
+			list := x.FindTracksWithTx(tx)
+			appendToTrackList(ts, list)
 		}
-		removeDuplicateTracks(ts)
 	} else {
-		err := tx.Debug().Find(&ts).Error
-		onerror.Log(err)
+		list := []Track{}
+		if err := tx.Debug().Find(&list).Error; err != nil {
+			onerror.Log(err)
+			return
+		}
+
+		for i := range list {
+			ts = append(ts, &list[i])
+		}
 	}
 	return
 }
@@ -230,11 +254,11 @@ func GetAllQueries(limit int, qbs ...QueryBoundaryID) (s []*Query) {
 		return
 	}
 
-	for _, x := range qs {
+	for k, v := range qs {
 		if len(qbs) > 0 {
 			match := false
 			for _, i := range qbs {
-				if x.ID == i.GetQueryID() {
+				if v.ID == i.GetQueryID() {
 					match = true
 					break
 				}
@@ -243,7 +267,7 @@ func GetAllQueries(limit int, qbs ...QueryBoundaryID) (s []*Query) {
 				continue
 			}
 		}
-		s = append(s, &x)
+		s = append(s, &qs[k])
 		if limit > 0 && len(s) == limit {
 			break
 		}
@@ -259,6 +283,11 @@ func RemoveCollections(cqs []*CollectionQuery) (err error) {
 		}
 	}
 	return
+}
+
+// SupportedParams returns the list of supported string parameters
+func SupportedParams() []string {
+	return supportedParams
 }
 
 func protobufToQuery(in *m3uetcpb.Query, out *Query) {

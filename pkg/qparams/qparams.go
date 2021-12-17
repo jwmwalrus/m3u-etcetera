@@ -3,17 +3,26 @@ package qparams
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jwmwalrus/bnp/slice"
 )
 
 // QParam defines a query parameter
+// A QParam is sort of an SQL where condition, with proper wildcards.
+//
 // A query will be something like
-// ```
+// ```sql
 // title=some*thing and artist=some*other genre=[Rr]ock or genre=ska not genre=pop
 // ```
-// Which is sort of an SQL where condition, with proper wildcards
+//
+// ## CSV-like conditions:
+// The following two expressions are equivalent
+// ```sql
+// genre=pop,rock,punk
+// genre=pop or genre=rock or genre=punk
+// ```
 type QParam struct {
 	Or  bool
 	Not bool
@@ -21,9 +30,15 @@ type QParam struct {
 	Val string
 }
 
+// ToFuzzy converts the given value into a fuzzy one
+// * Numbers and proper wildcards are never converted
 func (qp *QParam) ToFuzzy() *QParam {
 	out := *qp
 	if strings.ContainsAny(out.Val, "*?[]") {
+		return &out
+	}
+
+	if _, err := strconv.ParseInt(out.Val, 10, 64); err == nil {
 		return &out
 	}
 
@@ -36,6 +51,7 @@ func (qp *QParam) ToFuzzy() *QParam {
 	return &out
 }
 
+// ToSQL converts the given wildcards to SQL
 func (qp *QParam) ToSQL() (out QParam) {
 	out = *qp
 	var sb strings.Builder
@@ -64,13 +80,16 @@ func (qp *QParam) ToSQL() (out QParam) {
 	return
 }
 
+// ParseParams parse a params string and return an equivalent slice
 func ParseParams(params string) (qp []*QParam, err error) {
-	conditions := []string{"and", "or", "not"}
+	qp = []*QParam{}
 
 	if len(params) == 0 {
 		err = errors.New("Cannot parse empty string")
 		return
 	}
+
+	out := []QParam{}
 
 	words := []string{}
 	literal := 0
@@ -90,61 +109,118 @@ func ParseParams(params string) (qp []*QParam, err error) {
 	}
 	words = append(words, params[from:])
 
-	list := []string{words[0]}
-	for i := 1; i < len(words); i++ {
-		if slice.Contains(conditions, words[i-1]) &&
-			slice.Contains(conditions, words[i]) {
-			list[len(list)-1] = words[i]
+	aux := []string{}
+	for i := 0; i < len(words); i++ {
+		if i > 0 &&
+			isCondition(words[i-1]) &&
+			isCondition(words[i]) {
+			aux[len(aux)-1] = words[i]
 			continue
 		}
-		list = append(list, words[i])
-	}
-	words = list
-
-	getKeyVal := func(s string) (k, v string) {
-		idx := strings.Index(s, "=")
-		if idx < 0 {
-			return
-		}
-		k = strings.TrimSpace(strings.ToLower(s[:idx]))
-		v = strings.TrimSpace(s[idx+1:])
-		return
+		aux = append(aux, words[i])
 	}
 
-	or := false
-	not := false
-	from = 0
-	for i, w := range words {
-		cond := strings.ToLower(w)
-		if slice.Contains(conditions, cond) {
-			kv := strings.Join(words[from:i], " ")
-			k, v := getKeyVal(kv)
-			if k == "" {
-				err = fmt.Errorf("No key found in: %v", kv)
+	if !isCondition(words[0]) {
+		words = []string{"and"}
+		words = append(words, aux...)
+	} else {
+		words = aux
+	}
+
+	var kv string
+	var newq QParam
+	from = 1
+	cond := words[0]
+	for i := 1; i < len(words); i++ {
+		if isCondition(words[i]) {
+			kv = strings.Join(words[from:i], " ")
+			if newq, err = createParam(cond, kv); err != nil {
 				return
 			}
-			newq := QParam{Or: or, Not: not, Key: k, Val: v}
-			qp = append(qp, &newq)
-
-			or = false
-			not = false
+			out = append(out, newq)
+			cond = words[i]
 			from = i + 1
-			switch cond {
-			case "or":
-				or = true
-			case "not":
-				not = true
-			default:
-			}
 		}
 	}
-	kv := strings.Join(words[from:], " ")
-	k, v := getKeyVal(kv)
-	if k == "" {
-		err = fmt.Errorf("No key found in: %v", kv)
+	kv = strings.Join(words[from:], " ")
+	if newq, err = createParam(cond, kv); err != nil {
 		return
 	}
-	newq := QParam{Or: or, Not: not, Key: k, Val: v}
-	qp = append(qp, &newq)
+	out = append(out, newq)
+
+	for _, v := range out {
+		csv := splitCSV(&v)
+		qp = append(qp, csv...)
+	}
+	return
+}
+
+func createParam(cond, kv string) (newq QParam, err error) {
+	var k, v string
+	var or, not bool
+	if k, v, err = getKeyVal(kv); err != nil {
+		return
+	}
+	or, not = parseCondition(cond)
+	newq = QParam{Or: or, Not: not, Key: k, Val: v}
+	return
+}
+
+func getKeyVal(s string) (k, v string, err error) {
+	idx := strings.Index(s, "=")
+	if idx < 0 {
+		err = fmt.Errorf("No key=value pair found in %s", s)
+		return
+	}
+	k = strings.TrimSpace(strings.ToLower(s[:idx]))
+	v = strings.TrimSpace(s[idx+1:])
+	if k == "" || v == "" {
+		err = fmt.Errorf("No key or value found in: %s", s)
+		return
+	}
+	return
+}
+
+func isCondition(s string) bool {
+	conditions := []string{"and", "or", "not"}
+	cond := strings.ToLower(s)
+	return slice.Contains(conditions, cond)
+}
+
+func parseCondition(cond string) (or, not bool) {
+	switch strings.ToLower(cond) {
+	case "or":
+		or = true
+	case "not":
+		not = true
+	default:
+	}
+	return
+}
+
+func splitCSV(in *QParam) (out []*QParam) {
+	if strings.Index(in.Val, ",") < 0 {
+		out = append(out, in)
+		return
+	}
+
+	s := strings.Split(in.Val, ",")
+	if s[0] != "" {
+		nosp := strings.TrimSpace(s[0])
+		out = append(out, &QParam{Or: in.Or, Not: in.Not, Key: in.Key, Val: nosp})
+	}
+	for i := 1; i < len(s); i++ {
+		if s[i] != "" {
+			not := false
+			or := true
+			if in.Not {
+				not = true
+				or = false
+			}
+			nosp := strings.TrimSpace(s[i])
+			out = append(out,
+				&QParam{Not: not, Or: or, Key: in.Key, Val: nosp})
+		}
+	}
 	return
 }

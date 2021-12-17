@@ -103,6 +103,10 @@ func Query() *cli.Command {
 						Name:  "random",
 						Usage: "Query is random",
 					},
+					&cli.BoolFlag{
+						Name:  "no-random",
+						Usage: "Query is not random",
+					},
 					&cli.IntFlag{
 						Name:  "rating",
 						Usage: "Query `RATING`",
@@ -139,6 +143,14 @@ func Query() *cli.Command {
 						Name:    "json",
 						Aliases: []string{"j"},
 						Usage:   "Output JSON",
+					},
+					&cli.BoolFlag{
+						Name:  "play",
+						Usage: "Add tracks to playback instead of listing them",
+					},
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "Force playback",
 					},
 				},
 				Action: queryTracksAction,
@@ -182,6 +194,14 @@ func Query() *cli.Command {
 						Name:    "json",
 						Aliases: []string{"j"},
 						Usage:   "Output JSON",
+					},
+					&cli.BoolFlag{
+						Name:  "play",
+						Usage: "Add tracks to playback instead of listing them",
+					},
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "Force playback",
 					},
 				},
 				Action: queryByAction,
@@ -473,6 +493,14 @@ func queryTracksAction(c *cli.Context) (err error) {
 		return
 	}
 
+	if c.Bool("play") {
+		if err = playTracks(cc, res.Tracks, c.Bool("force")); err != nil {
+			return
+		}
+		fmt.Printf("Tracks added to playback!\n")
+		return
+	}
+
 	if c.Bool("json") {
 		var bv []byte
 		bv, err = json.MarshalIndent(res, "", "  ")
@@ -502,7 +530,7 @@ func queryByAction(c *cli.Context) (err error) {
 	}
 
 	q := &m3uetcpb.Query{
-		Name:        c.String("name"),
+		Name:        c.String("persist-as"),
 		Description: c.String("description"),
 		Random:      c.Bool("random"),
 		Rating:      int32(c.Int("rating")),
@@ -527,6 +555,14 @@ func queryByAction(c *cli.Context) (err error) {
 		return
 	}
 
+	if c.Bool("play") {
+		if err = playTracks(cc, res.Tracks, c.Bool("force")); err != nil {
+			return
+		}
+		fmt.Printf("Tracks added to playback!\n")
+		return
+	}
+
 	if c.Bool("json") {
 		var bv []byte
 		bv, err = json.MarshalIndent(res, "", "  ")
@@ -546,5 +582,22 @@ func queryByAction(c *cli.Context) (err error) {
 		tbl.AddRow(i+1, t.Id, t.Title, artist, t.Album)
 	}
 	tbl.Print()
+	return
+}
+
+func playTracks(cc *grpc.ClientConn, ts []*m3uetcpb.Track, force bool) (err error) {
+	ids := []int64{}
+	for _, v := range ts {
+		ids = append(ids, v.Id)
+	}
+
+	req := &m3uetcpb.ExecutePlaybackActionRequest{
+		Action: m3uetcpb.PlaybackAction_PB_PLAY,
+		Force:  force,
+		Ids:    ids,
+	}
+
+	cl := m3uetcpb.NewPlaybackSvcClient(cc)
+	_, err = cl.ExecutePlaybackAction(context.Background(), req)
 	return
 }
