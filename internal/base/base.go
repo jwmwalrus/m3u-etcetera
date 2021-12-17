@@ -10,6 +10,8 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/jwmwalrus/bnp/env"
 	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/bnp/slice"
+	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/config"
 	"github.com/pborman/getopt/v2"
 	log "github.com/sirupsen/logrus"
@@ -115,6 +117,26 @@ type Unloader struct {
 
 // UnloaderCallback defines the signature of the method to be called when unloading the application
 type UnloaderCallback func() error
+
+// IsSupportedURL returns true if the path is supported
+func IsSupportedURL(s string) bool {
+	path, err := urlstr.URLToPath(s)
+	if err != nil {
+		return false
+	}
+
+	return IsSupportedFile(path)
+}
+
+// IsSupportedFile returns true if the path is supported
+func IsSupportedFile(path string) bool {
+	return slice.Contains(SupportedFileExtensions, filepath.Ext(path))
+}
+
+// IsIgnoredFile returns true if the path should be ignored
+func IsIgnoredFile(path string) bool {
+	return slice.Contains(IgnoredFileExtensions, filepath.Ext(path))
+}
 
 // Load Loads application's configuration
 func Load(noParseArgs ...bool) (args []string) {

@@ -28,7 +28,7 @@ func Queue() *cli.Command {
 				Name:    "append",
 				Aliases: []string{"app"},
 				Flags: []cli.Flag{
-					&cli.IntFlag{
+					&cli.BoolFlag{
 						Name:  "ids",
 						Usage: "Use IDs instead of locations",
 					},
@@ -69,7 +69,7 @@ func Queue() *cli.Command {
 						Value:       1,
 						DefaultText: "1",
 					},
-					&cli.IntFlag{
+					&cli.BoolFlag{
 						Name:  "ids",
 						Usage: "Use IDs instead of locations",
 					},
@@ -82,7 +82,7 @@ func Queue() *cli.Command {
 				Name:    "preppend",
 				Aliases: []string{"prep"},
 				Flags: []cli.Flag{
-					&cli.IntFlag{
+					&cli.BoolFlag{
 						Name:  "ids",
 						Usage: "Use IDs instead of locations",
 					},
@@ -190,7 +190,7 @@ func queueCreateAction(c *cli.Context) (err error) {
 
 	rest := c.Args().Slice()
 	if len(rest) < 1 {
-		err = errors.New("I need a list of locations")
+		err = errors.New("I need a list of locations or IDs")
 		return
 	}
 

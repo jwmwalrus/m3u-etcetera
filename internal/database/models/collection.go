@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/jwmwalrus/bnp/onerror"
-	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -208,9 +207,14 @@ func (c *Collection) Scan(withTags bool) {
 			return nil
 		}
 
-		if !slice.Contains(base.SupportedFileExtensions, filepath.Ext(path)) {
-			if !slice.Contains(base.IgnoredFileExtensions, filepath.Ext(path)) {
-				log.Info("Unsupported file:", filepath.Ext(path), ",", path)
+		if !base.IsSupportedFile(path) {
+			if !base.IsIgnoredFile(path) {
+				log.WithFields(log.Fields{
+					"path":      path,
+					"extension": filepath.Ext(path),
+				}).
+					Info("Unsupported file:")
+
 				unsupp++
 			}
 			return nil
