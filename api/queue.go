@@ -3,8 +3,11 @@ package api
 import (
 	"context"
 
+	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 // QueueSvc defines the queue server
@@ -40,6 +43,26 @@ func (*QueueSvc) GetQueue(_ context.Context, req *m3uetcpb.GetQueueRequest) (*m3
 
 // ExecuteQueueAction implements m3uetcpb.QueueSvcServer
 func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueueActionRequest) (*m3uetcpb.Empty, error) {
+	if slice.Contains(
+		[]m3uetcpb.QueueAction{
+			m3uetcpb.QueueAction_Q_APPEND,
+			m3uetcpb.QueueAction_Q_PREPPEND,
+		},
+		req.Action,
+	) {
+		if len(req.Locations) > 0 || len(req.Ids) > 0 {
+			unsup := models.CheckUnsupportedFiles(req.Locations)
+			if len(unsup) > 0 {
+				return nil, grpc.Errorf(codes.InvalidArgument, "Unsupported locations were provided: %+q", unsup)
+			}
+		}
+		if len(req.Ids) > 0 {
+			notFound := models.CheckNotFoundTracks(req.Ids)
+			if len(notFound) > 0 {
+				return nil, grpc.Errorf(codes.InvalidArgument, "Non-existing track IDs were provided: %+v", notFound)
+			}
+		}
+	}
 
 	q, _ := models.PerspectiveIndex(req.Perspective).GetPerspectiveQueue()
 

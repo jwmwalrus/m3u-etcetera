@@ -37,15 +37,6 @@ func (q *Queue) Add(locations []string, ids []int64) {
 		Info("Adding payload to queue")
 
 	for _, v := range locations {
-		if !base.IsSupportedURL(v) {
-			log.WithField("location", v).
-				Error("The given location is unsupported for queue")
-
-			return
-		}
-	}
-
-	for _, v := range locations {
 		qt := QueueTrack{Location: v}
 
 		if err := q.appendTo(&qt); err != nil {
@@ -54,17 +45,17 @@ func (q *Queue) Add(locations []string, ids []int64) {
 		}
 	}
 	for _, v := range ids {
+		var err error
 		t := Track{}
-		if err := db.First(&t, v).Error; err != nil {
+
+		if err = db.First(&t, v).Error; err != nil {
 			log.Error(err)
 			continue
 		}
 
 		qt := QueueTrack{Location: t.Location, TrackID: v}
-		if err := q.appendTo(&qt); err != nil {
-			log.Error(err)
-			continue
-		}
+		err = q.appendTo(&qt)
+		onerror.Log(err)
 	}
 	return
 }

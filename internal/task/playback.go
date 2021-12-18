@@ -12,6 +12,7 @@ import (
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 // Playback playback task
@@ -183,6 +184,8 @@ func playbackPlayAction(c *cli.Context) (err error) {
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
 	_, err = cl.ExecutePlaybackAction(context.Background(), req)
 	if err != nil {
+		s := status.Convert(err)
+		err = errors.New(s.Message())
 		return
 	}
 

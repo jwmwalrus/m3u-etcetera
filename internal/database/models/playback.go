@@ -155,13 +155,6 @@ func AddPlaybackLocation(location string) (pb *Playback) {
 	log.WithField("location", location).
 		Info("Adding playback entry by location")
 
-	if !base.IsSupportedURL(location) {
-		log.WithField("location", location).
-			Error("The given location is unsupported for playback")
-
-		return
-	}
-
 	pb = &Playback{Location: location}
 	if err := db.Create(pb).Error; err != nil {
 		log.Error(err)

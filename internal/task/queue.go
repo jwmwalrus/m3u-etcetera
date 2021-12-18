@@ -12,6 +12,7 @@ import (
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 // Queue queue task
@@ -255,6 +256,8 @@ func queueCreateAction(c *cli.Context) (err error) {
 	cl := m3uetcpb.NewQueueSvcClient(cc)
 	_, err = cl.ExecuteQueueAction(context.Background(), req)
 	if err != nil {
+		s := status.Convert(err)
+		err = errors.New(s.Message())
 		return
 	}
 

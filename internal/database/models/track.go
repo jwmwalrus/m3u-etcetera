@@ -6,6 +6,7 @@ import (
 
 	"github.com/dhowden/tag"
 	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -155,6 +156,22 @@ func AddTrackFromPath(path string, withTags bool) (t *Track, err error) {
 	}
 
 	t, err = AddTrackFromLocation(u, withTags)
+	return
+}
+
+// CheckNotFoundTracks returns the not-found track IDs from a given list
+func CheckNotFoundTracks(ids []int64) (notFound []int64) {
+	ts := FindTracksIn(ids)
+	actual := []int64{}
+	for i := range ts {
+		actual = append(actual, ts[i].ID)
+	}
+
+	for _, id := range ids {
+		if !slice.Contains(actual, id) {
+			notFound = append(notFound, id)
+		}
+	}
 	return
 }
 

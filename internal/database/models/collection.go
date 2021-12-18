@@ -406,6 +406,16 @@ func (cq *CollectionQuery) SaveTx(tx *gorm.DB) error {
 	return tx.Save(cq).Error
 }
 
+// CheckUnsupportedFiles Returns the unsupported files from a given list
+func CheckUnsupportedFiles(files []string) (unsupp []string) {
+	for _, f := range files {
+		if !base.IsSupportedFile(f) {
+			unsupp = append(unsupp, f)
+		}
+	}
+	return
+}
+
 // CreateCollectionQueryBoundaries -
 func CreateCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryTx) {
 	cqs := []CollectionQuery{}
