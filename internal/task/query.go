@@ -259,13 +259,13 @@ func queryAction(c *cli.Context) (err error) {
 		return
 	}
 
-	tbl := table.New("ID", "Name", "Params", "Limit", "Bounds")
+	tbl := table.New("ID", "Name", "Params", "Limit", "Random", "Bounds")
 	for _, q := range res.Queries {
 		b := ""
 		if len(q.CollectionIds) > 0 {
 			b = "C"
 		}
-		tbl.AddRow(q.Id, q.Name, q.Params, q.Limit, b)
+		tbl.AddRow(q.Id, q.Name, q.Params, q.Limit, q.Random, b)
 	}
 	tbl.Print()
 
@@ -304,13 +304,13 @@ func queryInfoAction(c *cli.Context) (err error) {
 		return
 	}
 
-	tbl := table.New("ID", "Name", "Params", "Limit", "Bounds")
+	tbl := table.New("ID", "Name", "Params", "Limit", "Random", "Bounds")
 	q := res.Query
 	b := ""
 	if len(q.CollectionIds) > 0 {
 		b = "C"
 	}
-	tbl.AddRow(q.Id, q.Name, q.Params, q.Limit, b)
+	tbl.AddRow(q.Id, q.Name, q.Params, q.Limit, q.Random, b)
 
 	tbl.Print()
 	return
