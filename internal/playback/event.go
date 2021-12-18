@@ -236,7 +236,7 @@ func StopAll() {
 func StopEngine() {
 	log.Info("Stopping engine")
 
-	StopStream()
+	StopAll()
 
 	for i := 0; i < base.ServerWaitTimeout; i++ {
 		if eng.playbin != nil {
