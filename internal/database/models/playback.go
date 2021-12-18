@@ -39,6 +39,11 @@ func (pb *Playback) ToProtobuf() proto.Message {
 	out := &m3uetcpb.Playback{}
 	err = json.Unmarshal(bv, out)
 	onerror.Log(err)
+
+	// Unmatched
+	out.TrackId = pb.TrackID
+	out.CreatedAt = pb.CreatedAt
+	out.UpdatedAt = pb.UpdatedAt
 	return out
 }
 

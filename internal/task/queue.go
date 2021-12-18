@@ -186,8 +186,22 @@ func queueAction(c *cli.Context) (err error) {
 		return
 	}
 
-	tbl := table.New("Position", "Location")
+	tbl := table.New("Position", "Track|Location")
 	for _, qt := range res.QueueTracks {
+		if qt.TrackId > 0 {
+			s := ""
+			for _, t := range res.Tracks {
+				if t.Id != qt.TrackId {
+					continue
+				}
+				s = fmt.Sprintf("%s -- By: %v (from: %v)", t.Title, t.Artist, t.Album)
+				break
+			}
+			if s != "" {
+				tbl.AddRow(qt.Position, s)
+				continue
+			}
+		}
 		un, _ := url.QueryUnescape(qt.Location)
 		if un == "" {
 			un = qt.Location

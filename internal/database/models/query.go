@@ -92,6 +92,10 @@ func (q *Query) ToProtobuf() proto.Message {
 	err = json.Unmarshal(bv, out)
 	onerror.Log(err)
 
+	// Unmatched
+	out.CreatedAt = q.CreatedAt
+	out.UpdatedAt = q.UpdatedAt
+
 	cqs := q.GetCollections()
 	for _, x := range cqs {
 		out.CollectionIds = append(out.CollectionIds, x.CollectionID)

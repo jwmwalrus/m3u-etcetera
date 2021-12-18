@@ -16,18 +16,25 @@ type QueueSvc struct {
 func (*QueueSvc) GetQueue(_ context.Context, req *m3uetcpb.GetQueueRequest) (*m3uetcpb.GetQueueResponse, error) {
 
 	res := &m3uetcpb.GetQueueResponse{}
-	s := models.GetAllQueueTracks(
+	qs, ts := models.GetAllQueueTracks(
 		models.PerspectiveIndex(req.Perspective),
 		int(req.Limit),
 	)
 
-	list := []*m3uetcpb.QueueTrack{}
-	for _, qt := range s {
+	qtList := []*m3uetcpb.QueueTrack{}
+	for _, qt := range qs {
 		out := qt.ToProtobuf().(*m3uetcpb.QueueTrack)
-		list = append(list, out)
+		qtList = append(qtList, out)
+	}
+	res.QueueTracks = qtList
+
+	tList := []*m3uetcpb.Track{}
+	for _, t := range ts {
+		out := t.ToProtobuf().(*m3uetcpb.Track)
+		tList = append(tList, out)
 	}
 
-	res.QueueTracks = list
+	res.Tracks = tList
 	return res, nil
 }
 

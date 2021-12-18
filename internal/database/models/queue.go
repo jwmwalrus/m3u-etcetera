@@ -312,6 +312,11 @@ func (qt *QueueTrack) ToProtobuf() proto.Message {
 	out := &m3uetcpb.QueueTrack{}
 	err = json.Unmarshal(bv, out)
 	onerror.Log(err)
+
+	// Unmatched
+	out.TrackId = qt.TrackID
+	out.CreatedAt = qt.CreatedAt
+	out.UpdatedAt = qt.UpdatedAt
 	return out
 }
 
@@ -326,7 +331,7 @@ func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 }
 
 // GetAllQueueTracks returns all queue tracks for the given perspective, constrained by a limit
-func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []*QueueTrack) {
+func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qs []*QueueTrack, ts []*Track) {
 	log.WithFields(log.Fields{
 		"idx":   idx,
 		"limit": limit,
@@ -347,14 +352,19 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []*QueueTrack) {
 		tx.Limit(limit)
 	}
 
-	list := []QueueTrack{}
-	tx.Find(&list)
+	qsList := []QueueTrack{}
+	tx.Find(&qsList)
 
-	s = []*QueueTrack{}
-	for i := range list {
-		s = append(s, &list[i])
+	qs = []*QueueTrack{}
+	ids := []int64{}
+	for i := range qsList {
+		if qsList[i].TrackID > 0 {
+			ids = append(ids, qsList[i].TrackID)
+		}
+		qs = append(qs, &qsList[i])
 	}
 
+	ts = FindTracksIn(ids)
 	return
 }
 

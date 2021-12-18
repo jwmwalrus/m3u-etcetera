@@ -134,6 +134,10 @@ func (c *Collection) ToProtobuf() proto.Message {
 	out := &m3uetcpb.Collection{}
 	err = json.Unmarshal(bv, out)
 	onerror.Log(err)
+
+	// Unmatched
+	out.CreatedAt = c.CreatedAt
+	out.UpdatedAt = c.UpdatedAt
 	return out
 }
 

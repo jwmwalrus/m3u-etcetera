@@ -79,6 +79,10 @@ func (t *Track) ToProtobuf() proto.Message {
 	out := &m3uetcpb.Track{}
 	err = json.Unmarshal(bv, out)
 	onerror.Log(err)
+
+	// Unmatched
+	out.CreatedAt = t.CreatedAt
+	out.UpdatedAt = t.UpdatedAt
 	return out
 }
 
@@ -151,6 +155,27 @@ func AddTrackFromPath(path string, withTags bool) (t *Track, err error) {
 	}
 
 	t, err = AddTrackFromLocation(u, withTags)
+	return
+}
+
+// FindTracksIn returns the tracks for the given IDs
+func FindTracksIn(ids []int64) (ts []*Track) {
+	ts = []*Track{}
+	if len(ids) < 1 {
+		return
+	}
+
+	list := []Track{}
+	err := db.Where("id in ?", ids).Find(&list).Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	ts = []*Track{}
+	for i := range list {
+		ts = append(ts, &list[i])
+	}
 	return
 }
 
