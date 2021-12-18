@@ -9,6 +9,26 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] 2021-12-17
+
+Fixes, features, improvements
+
+## Fixed
+
+* Multiple idle requests and playback stop issues
+* Id-as-location issue
+* Pointer-in-stack issue
+
+## Added
+
+* Implemented queue move
+* Added configurable query limit
+
+## Modified
+
+* Simplified query by
+* Reduced log pollution by debug
+
 ## [0.5.0] 2021-12-16
 
 ### Fixed
