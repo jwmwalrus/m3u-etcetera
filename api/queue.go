@@ -23,7 +23,8 @@ func (*QueueSvc) GetQueue(_ context.Context, req *m3uetcpb.GetQueueRequest) (*m3
 
 	list := []*m3uetcpb.QueueTrack{}
 	for _, qt := range s {
-		list = append(list, qt.ToProtobuf())
+		out := qt.ToProtobuf().(*m3uetcpb.QueueTrack)
+		list = append(list, out)
 	}
 
 	res.QueueTracks = list
@@ -48,7 +49,7 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 		case m3uetcpb.QueueAction_Q_CLEAR:
 			q.Clear()
 		case m3uetcpb.QueueAction_Q_MOVE:
-			q.Move(int(req.FromPosition), int(req.Position))
+			q.MoveTo(int(req.FromPosition), int(req.Position))
 		default:
 		}
 	}()

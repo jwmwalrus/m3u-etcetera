@@ -28,7 +28,8 @@ func (*QuerySvc) GetQuery(_ context.Context, req *m3uetcpb.GetQueryRequest) (*m3
 		return nil, grpc.Errorf(codes.NotFound, "%v", err)
 	}
 
-	return &m3uetcpb.GetQueryResponse{Query: q.ToProtobuf()}, nil
+	out := q.ToProtobuf().(*m3uetcpb.Query)
+	return &m3uetcpb.GetQueryResponse{Query: out}, nil
 }
 
 // GetQueries implements m3uetcpb.QuerySvcServer
@@ -39,7 +40,8 @@ func (*QuerySvc) GetQueries(_ context.Context, req *m3uetcpb.GetQueriesRequest) 
 
 	out := []*m3uetcpb.Query{}
 	for _, x := range qs {
-		out = append(out, x.ToProtobuf())
+		aux := x.ToProtobuf().(*m3uetcpb.Query)
+		out = append(out, aux)
 	}
 
 	return &m3uetcpb.GetQueriesResponse{Queries: out}, nil
@@ -112,7 +114,8 @@ func (*QuerySvc) ApplyQuery(_ context.Context, req *m3uetcpb.ApplyQueryRequest) 
 
 	out := []*m3uetcpb.Track{}
 	for _, x := range ts {
-		out = append(out, x.ToProtobuf())
+		aux := x.ToProtobuf().(*m3uetcpb.Track)
+		out = append(out, aux)
 	}
 
 	return &m3uetcpb.ApplyQueryResponse{Tracks: out}, nil
@@ -133,7 +136,8 @@ func (*QuerySvc) QueryBy(_ context.Context, req *m3uetcpb.QueryByRequest) (*m3ue
 
 	out := []*m3uetcpb.Track{}
 	for _, x := range ts {
-		out = append(out, x.ToProtobuf())
+		aux := x.ToProtobuf().(*m3uetcpb.Track)
+		out = append(out, aux)
 	}
 
 	return &m3uetcpb.QueryByResponse{Tracks: out}, nil

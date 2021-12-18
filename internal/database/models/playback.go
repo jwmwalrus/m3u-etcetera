@@ -7,6 +7,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -19,6 +20,26 @@ type Playback struct { // too transient
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 	TrackID   int64  `json:"trackId"`
+}
+
+// Read implements the DataReader interface
+func (pb *Playback) Read(id int64) (err error) {
+	err = db.First(pb, id).Error
+	return
+}
+
+// ToProtobuf implments ProtoOut interface
+func (pb *Playback) ToProtobuf() proto.Message {
+	bv, err := json.Marshal(pb)
+	if err != nil {
+		log.Error(err)
+		return &m3uetcpb.Playback{}
+	}
+
+	out := &m3uetcpb.Playback{}
+	err = json.Unmarshal(bv, out)
+	onerror.Log(err)
+	return out
 }
 
 // AddToHistory adds unplayed playback to history and marks it as played
@@ -100,26 +121,6 @@ func (pb *Playback) GetTrack() (t *Track, err error) {
 	err = db.First(&t, pb.TrackID).Error
 	return
 
-}
-
-// Read selects a playback from the DB, with the given id
-func (pb *Playback) Read(id int64) (err error) {
-	err = db.First(pb, id).Error
-	return
-}
-
-// ToProtobuf converter
-func (pb *Playback) ToProtobuf() *m3uetcpb.Playback {
-	bv, err := json.Marshal(pb)
-	if err != nil {
-		log.Error(err)
-		return &m3uetcpb.Playback{}
-	}
-
-	out := &m3uetcpb.Playback{}
-	err = json.Unmarshal(bv, out)
-	onerror.Log(err)
-	return out
 }
 
 // PlaybackHistory defines a playback_history row

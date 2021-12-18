@@ -9,6 +9,7 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"google.golang.org/protobuf/proto"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -43,38 +44,32 @@ type Track struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
-// Create inserts a track into the DB
+// Create implements the DataCreator interface
 func (t *Track) Create() (err error) {
 	err = db.Create(t).Error
 	return
 }
 
-// Delete deletes a track from the DB
+// Delete implements the DataDeleter interface
 func (t *Track) Delete() {
 	err := db.Delete(&Track{}, t.ID).Error
 	onerror.Log(err)
 }
 
-// FindBy finds a track in the DB, according to the given query
-func (t *Track) FindBy(query interface{}) (err error) {
-	err = db.Where(query).First(t).Error
-	return
-}
-
-// Read selects a track from the DB, with the given id
+// Read implements the DataReader interface
 func (t *Track) Read(id int64) (err error) {
 	err = db.First(t, id).Error
 	return
 }
 
-// Save persists a track in the DB
+// Save implements the DataUpdater interface
 func (t *Track) Save() (err error) {
 	err = db.Save(t).Error
 	return
 }
 
-// ToProtobuf converter
-func (t *Track) ToProtobuf() *m3uetcpb.Track {
+// ToProtobuf implements the ProtoOut interface
+func (t *Track) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(t)
 	if err != nil {
 		log.Error(err)
@@ -85,6 +80,12 @@ func (t *Track) ToProtobuf() *m3uetcpb.Track {
 	err = json.Unmarshal(bv, out)
 	onerror.Log(err)
 	return out
+}
+
+// FindBy implements the DataFinder interface
+func (t *Track) FindBy(query interface{}) (err error) {
+	err = db.Where(query).First(t).Error
+	return
 }
 
 func (t *Track) updateTags() (err error) {

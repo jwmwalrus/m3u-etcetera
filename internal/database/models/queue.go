@@ -7,6 +7,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -133,8 +134,8 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 	}
 }
 
-// Move moves one queue track from one position to another
-func (q *Queue) Move(from, to int) {
+// MoveTo moves one queue track from one position to another
+func (q *Queue) MoveTo(from, to int) {
 	if from == to || from < 1 {
 		return
 	}
@@ -300,6 +301,20 @@ type QueueTrack struct { // too transient
 	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`
 }
 
+// ToProtobuf implements the ProtoOut interface
+func (qt *QueueTrack) ToProtobuf() proto.Message {
+	bv, err := json.Marshal(qt)
+	if err != nil {
+		log.Error(err)
+		return &m3uetcpb.QueueTrack{}
+	}
+
+	out := &m3uetcpb.QueueTrack{}
+	err = json.Unmarshal(bv, out)
+	onerror.Log(err)
+	return out
+}
+
 // AfterCreate is a GORM hook
 func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 	go func() {
@@ -341,20 +356,6 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (s []*QueueTrack) {
 	}
 
 	return
-}
-
-// ToProtobuf converter
-func (qt *QueueTrack) ToProtobuf() *m3uetcpb.QueueTrack {
-	bv, err := json.Marshal(qt)
-	if err != nil {
-		log.Error(err)
-		return &m3uetcpb.QueueTrack{}
-	}
-
-	out := &m3uetcpb.QueueTrack{}
-	err = json.Unmarshal(bv, out)
-	onerror.Log(err)
-	return out
 }
 
 // findQueueTrack attempts to find track from location

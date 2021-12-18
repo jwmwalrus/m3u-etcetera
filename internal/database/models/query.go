@@ -13,14 +13,15 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/pkg/config"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
 
 // QueryBoundaryTx defines the transactional query boundary interface
 type QueryBoundaryTx interface {
-	DeleteWithTx(*gorm.DB) error
-	FindTracksWithTx(*gorm.DB) []*Track
-	SaveWithTx(*gorm.DB) error
+	FindTracksTx(*gorm.DB) []*Track
+	DataDeleterTx
+	DataUpdaterTx
 }
 
 // QueryBoundaryID defines the query boundary ID interface
@@ -63,11 +64,46 @@ type Query struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
+// Read implements DataReader interface
+func (q *Query) Read(id int64) error {
+	return db.First(q, id).Error
+}
+
+// Save implements DataSaver interface
+func (q *Query) Save() error {
+	return db.Save(q).Error
+}
+
+// FromProtobuf implements ProtoIn interface
+func (q *Query) FromProtobuf(in proto.Message) {
+	protobufToQuery(in.(*m3uetcpb.Query), q)
+	return
+}
+
+// ToProtobuf implements ProtoOut interface
+func (q *Query) ToProtobuf() proto.Message {
+	bv, err := json.Marshal(q)
+	if err != nil {
+		log.Error(err)
+		return &m3uetcpb.Query{}
+	}
+
+	out := &m3uetcpb.Query{}
+	err = json.Unmarshal(bv, out)
+	onerror.Log(err)
+
+	cqs := q.GetCollections()
+	for _, x := range cqs {
+		out.CollectionIds = append(out.CollectionIds, x.CollectionID)
+	}
+	return out
+}
+
 // Delete deletes a query from the DB
 func (q *Query) Delete(qbs ...QueryBoundaryTx) (err error) {
 	return db.Transaction(func(tx *gorm.DB) error {
 		for _, b := range qbs {
-			if err := b.DeleteWithTx(tx); err != nil {
+			if err := b.DeleteTx(tx); err != nil {
 				return err
 			}
 		}
@@ -141,7 +177,7 @@ func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
 	ts = []*Track{}
 	if len(qbs) > 0 {
 		for _, x := range qbs {
-			list := x.FindTracksWithTx(tx)
+			list := x.FindTracksTx(tx)
 			appendToTrackList(ts, list)
 		}
 	} else {
@@ -155,12 +191,6 @@ func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
 			ts = append(ts, &list[i])
 		}
 	}
-	return
-}
-
-// FromProtobuf returns a Query type populated from the given m3uetcpb.Query
-func (q *Query) FromProtobuf(in *m3uetcpb.Query) {
-	protobufToQuery(in, q)
 	return
 }
 
@@ -182,18 +212,6 @@ func (q *Query) GetCollections() (cqs []*CollectionQuery) {
 	return
 }
 
-// Read selects a query from the DB, with the given id
-func (q *Query) Read(id int64) (err error) {
-	err = db.First(q, id).Error
-	return
-}
-
-// Save persists a query in the DB
-func (q *Query) Save() (err error) {
-	err = db.Save(q).Error
-	return
-}
-
 // SaveBound persists a query in the DB and bounds it to a list of collections
 func (q *Query) SaveBound(qbs []QueryBoundaryTx) error {
 	return db.Transaction(func(tx *gorm.DB) error {
@@ -202,31 +220,12 @@ func (q *Query) SaveBound(qbs []QueryBoundaryTx) error {
 		}
 
 		for _, b := range qbs {
-			if err := b.SaveWithTx(tx); err != nil {
+			if err := b.SaveTx(tx); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
-}
-
-// ToProtobuf converter
-func (q *Query) ToProtobuf() *m3uetcpb.Query {
-	bv, err := json.Marshal(q)
-	if err != nil {
-		log.Error(err)
-		return &m3uetcpb.Query{}
-	}
-
-	out := &m3uetcpb.Query{}
-	err = json.Unmarshal(bv, out)
-	onerror.Log(err)
-
-	cqs := q.GetCollections()
-	for _, x := range cqs {
-		out.CollectionIds = append(out.CollectionIds, x.CollectionID)
-	}
-	return out
 }
 
 // CollectionsToBoundaries adds forward support for CollectionQuery

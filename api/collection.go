@@ -28,7 +28,11 @@ func (*CollectionSvc) GetCollection(_ context.Context, req *m3uetcpb.GetCollecti
 
 	coll.CountTracks()
 
-	return &m3uetcpb.GetCollectionResponse{Collection: coll.ToProtobuf()}, nil
+	out := coll.ToProtobuf().(*m3uetcpb.Collection)
+	return &m3uetcpb.GetCollectionResponse{
+			Collection: out,
+		},
+		nil
 }
 
 // GetAllCollections implements m3uetcpb.CollectionSvcServer
@@ -38,8 +42,8 @@ func (*CollectionSvc) GetAllCollections(_ context.Context, _ *m3uetcpb.Empty) (*
 	all := []*m3uetcpb.Collection{}
 	for _, c := range s {
 		c.CountTracks()
-		aux := c.ToProtobuf()
-		all = append(all, aux)
+		out := c.ToProtobuf().(*m3uetcpb.Collection)
+		all = append(all, out)
 	}
 	return &m3uetcpb.GetAllCollectionsResponse{Collections: all}, nil
 }

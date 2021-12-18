@@ -11,6 +11,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -52,28 +53,13 @@ type Collection struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
-// CountTracks counts tracks that belong to the collection
-func (c *Collection) CountTracks() {
-	log.Info("Counting tracks in collection")
-	if c.Scanned != 100 {
-		return
-	}
-
-	var tracks int64
-	if err := db.Model(&CollectionTrack{}).Where("collection_id = ?", c.ID).Count(&tracks).Error; err != nil {
-		return
-	}
-	c.Tracks = tracks
-	return
-}
-
-// Create inserts a collection into the DB
+// Create implements DataCreator interface
 func (c *Collection) Create() (err error) {
 	err = db.Create(c).Error
 	return
 }
 
-// Delete deletes collection along with tracks
+// Delete implements DataDeleter interface
 func (c *Collection) Delete() (err error) {
 	log.Info("Deleting collection")
 	storageGuard <- struct{}{}
@@ -125,15 +111,44 @@ func (c *Collection) Delete() (err error) {
 	return
 }
 
-// Read selects a collection from the DB, with the given id
+// Read implements DataReader interface
 func (c *Collection) Read(id int64) (err error) {
 	err = db.First(c, id).Error
 	return
 }
 
-// Save persists the collection in the DB
+// Save implements DataUpdater interface
 func (c *Collection) Save() (err error) {
 	err = db.Save(c).Error
+	return
+}
+
+// ToProtobuf implements ProtoOut interface
+func (c *Collection) ToProtobuf() proto.Message {
+	bv, err := json.Marshal(c)
+	if err != nil {
+		log.Error(err)
+		return &m3uetcpb.Collection{}
+	}
+
+	out := &m3uetcpb.Collection{}
+	err = json.Unmarshal(bv, out)
+	onerror.Log(err)
+	return out
+}
+
+// CountTracks counts tracks that belong to the collection
+func (c *Collection) CountTracks() {
+	log.Info("Counting tracks in collection")
+	if c.Scanned != 100 {
+		return
+	}
+
+	var tracks int64
+	if err := db.Model(&CollectionTrack{}).Where("collection_id = ?", c.ID).Count(&tracks).Error; err != nil {
+		return
+	}
+	c.Tracks = tracks
 	return
 }
 
@@ -259,20 +274,6 @@ func (c *Collection) Scan(withTags bool) {
 	return
 }
 
-// ToProtobuf converter
-func (c *Collection) ToProtobuf() *m3uetcpb.Collection {
-	bv, err := json.Marshal(c)
-	if err != nil {
-		log.Error(err)
-		return &m3uetcpb.Collection{}
-	}
-
-	out := &m3uetcpb.Collection{}
-	err = json.Unmarshal(bv, out)
-	onerror.Log(err)
-	return out
-}
-
 // Verify removes tracks that do not exist in the collection anymore
 func (c *Collection) Verify() {
 	if c.Disabled {
@@ -290,7 +291,7 @@ func (c *Collection) Verify() {
 			continue
 		}
 
-		ct.Delete(true)
+		ct.DeleteWithRemote(true)
 	}
 }
 
@@ -305,14 +306,23 @@ type CollectionTrack struct {
 	Track        Track      `json:"track" gorm:"foreignKey:TrackID"`
 }
 
-// Save persists the collection track in the DB
-func (ct *CollectionTrack) Save() (err error) {
-	err = db.Save(ct).Error
-	return
+// Create implements DataWriter interface
+func (ct *CollectionTrack) Create() error {
+	return db.Create(ct).Error
 }
 
-// Delete removes a collection-track from collection, along with the track
-func (ct *CollectionTrack) Delete(withRemote bool) {
+// Save implements DataWriter interface
+func (ct *CollectionTrack) Save() error {
+	return db.Save(ct).Error
+}
+
+// Delete implements DataWriter interface
+func (ct *CollectionTrack) Delete() error {
+	return db.Delete(&ct).Error
+}
+
+// DeleteWithRemote removes a collection-track from collection, along with the track
+func (ct *CollectionTrack) DeleteWithRemote(withRemote bool) {
 	c := Collection{}
 	t := Track{}
 	db.First(&t, ct.TrackID)
@@ -324,7 +334,7 @@ func (ct *CollectionTrack) Delete(withRemote bool) {
 
 	defer t.Delete()
 
-	err := db.Delete(&ct).Error
+	err := ct.Delete()
 	onerror.Log(err)
 	return
 }
@@ -338,7 +348,7 @@ func (ct *CollectionTrack) DeleteIfTransient(withRemote bool) (err error) {
 		return
 	}
 
-	ct.Delete(withRemote)
+	ct.DeleteWithRemote(withRemote)
 	return
 }
 
@@ -353,13 +363,18 @@ type CollectionQuery struct {
 	Query        Query      `json:"query" gorm:"foreignKey:QueryID"`
 }
 
-// DeleteWithTx implements QueryBoundaryTx interface
-func (cq *CollectionQuery) DeleteWithTx(tx *gorm.DB) error {
+// Save implements the DataUpdater interface
+func (cq *CollectionQuery) Save() error {
+	return db.Save(cq).Error
+}
+
+// DeleteTx implements QueryBoundaryTx interface
+func (cq *CollectionQuery) DeleteTx(tx *gorm.DB) error {
 	return tx.Delete(cq).Error
 }
 
-// FindTracksWithTx implements QueryBoundaryTx interface
-func (cq *CollectionQuery) FindTracksWithTx(tx *gorm.DB) (ts []*Track) {
+// FindTracksTx implements QueryBoundaryTx interface
+func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) (ts []*Track) {
 	ts = []*Track{}
 
 	list := []Track{}
@@ -382,17 +397,12 @@ func (cq *CollectionQuery) GetQueryID() int64 {
 	return cq.QueryID
 }
 
-// Save persists a collection query in the DB
-func (cq *CollectionQuery) Save() error {
-	return db.Save(cq).Error
-}
-
-// SaveWithTx implements QueryBoundaryTx interface
-func (cq *CollectionQuery) SaveWithTx(tx *gorm.DB) error {
+// SaveTx implements QueryBoundaryTx interface
+func (cq *CollectionQuery) SaveTx(tx *gorm.DB) error {
 	return tx.Save(cq).Error
 }
 
-// CreateCollectionQueryBoundaries implements QueryBoundary interface
+// CreateCollectionQueryBoundaries -
 func CreateCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryTx) {
 	cqs := []CollectionQuery{}
 	for _, id := range ids {
@@ -403,6 +413,20 @@ func CreateCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryTx) {
 	for _, x := range cqs {
 		var i interface{} = &x
 		qbs = append(qbs, i.(QueryBoundaryTx))
+	}
+	return
+}
+
+// FilterCollectionQueryBoundaries -
+func FilterCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryID) {
+	cqs := []CollectionQuery{}
+	if err := db.Where("collection_id in ?", ids).Find(&cqs).Error; err != nil {
+		return
+	}
+
+	for _, x := range cqs {
+		var i interface{} = &x
+		qbs = append(qbs, i.(QueryBoundaryID))
 	}
 	return
 }
@@ -419,20 +443,6 @@ func GetAllCollections() (s []*Collection) {
 	}
 	for i := range list {
 		s = append(s, &list[i])
-	}
-	return
-}
-
-// FilterCollectionQueryBoundaries implements QueryBoundary interface
-func FilterCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryID) {
-	cqs := []CollectionQuery{}
-	if err := db.Where("collection_id in ?", ids).Find(&cqs).Error; err != nil {
-		return
-	}
-
-	for _, x := range cqs {
-		var i interface{} = &x
-		qbs = append(qbs, i.(QueryBoundaryID))
 	}
 	return
 }

@@ -22,11 +22,13 @@ func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb
 	if pb != nil {
 		if pb.TrackID > 0 {
 			if t, err := pb.GetTrack(); err == nil {
-				res := &m3uetcpb.GetPlaybackResponse_Track{Track: t.ToProtobuf()}
+				out := t.ToProtobuf().(*m3uetcpb.Track)
+				res := &m3uetcpb.GetPlaybackResponse_Track{Track: out}
 				return &m3uetcpb.GetPlaybackResponse{Playing: res}, nil
 			}
 		}
-		res := &m3uetcpb.GetPlaybackResponse_Playback{Playback: pb.ToProtobuf()}
+		out := pb.ToProtobuf().(*m3uetcpb.Playback)
+		res := &m3uetcpb.GetPlaybackResponse_Playback{Playback: out}
 		return &m3uetcpb.GetPlaybackResponse{Playing: res}, nil
 	}
 
