@@ -12,9 +12,10 @@ import (
 
 // Config Application's configuration
 type Config struct {
-	FirstRun bool `json:"firstRun"`
-	Server   Server
-	Query    Query
+	FirstRun bool   `json:"firstRun"`
+	Server   Server `json:"server"`
+	Task     Task   `json:"task"`
+	GTK      GTK    `json:"gtk"`
 }
 
 // Load Loads application's configuration
@@ -73,5 +74,6 @@ func (c *Config) Save(path, lockFile string) (err error) {
 // SetDefaults sets configuration defaults
 func (c *Config) SetDefaults() {
 	c.Server.SetDefaults()
-	c.Query.SetDefaults()
+	c.Task.SetDefaults()
+	c.GTK.SetDefaults()
 }

@@ -3,9 +3,11 @@ package base
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/adrg/xdg"
 	"github.com/jwmwalrus/bnp/env"
@@ -52,6 +54,8 @@ var (
 	lockFile       string
 	logFile        *lumberjack.Logger
 	unloadRegistry []Unloader
+	randomSeed     *rand.Rand
+	dbTmpSuffix    string
 
 	logFilename = "app.log"
 
@@ -120,6 +124,37 @@ type Unloader struct {
 
 // UnloaderCallback defines the signature of the method to be called when unloading the application
 type UnloaderCallback func() error
+
+// GetDatabaseDir returns the database directory
+func GetDatabaseDir() string {
+	if !FlagTestingMode {
+		return DataDir
+	}
+	return os.TempDir()
+}
+
+// GetDatabaseFilename returns the database filename
+func GetDatabaseFilename() string {
+	if !FlagTestingMode {
+		return DatabaseFilename
+	}
+	return "m3uetc-test-music-" + dbTmpSuffix + ".db"
+}
+
+func randomString(n int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = charset[randomSeed.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+// GetDatabasePath returns the full path to the database {
+func GetDatabasePath() string {
+	return filepath.Join(GetDatabaseDir(), GetDatabaseFilename())
+}
 
 // IsSupportedURL returns true if the path is supported
 func IsSupportedURL(s string) bool {
@@ -254,6 +289,10 @@ func resolveSeverity() {
 
 func init() {
 	OS = runtime.GOOS
+
+	randomSeed = rand.New(
+		rand.NewSource(time.Now().UnixNano()))
+	dbTmpSuffix = randomString(8)
 
 	// XDG-related
 	DataDir = filepath.Join(xdg.DataHome, AppDirName)

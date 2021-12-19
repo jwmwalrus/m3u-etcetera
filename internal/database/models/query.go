@@ -127,8 +127,8 @@ func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
 		Info("Finding tracks")
 
 	limit := config.DefaultQueryMaxLimit
-	if base.Conf.Query.Limit > 0 {
-		limit = base.Conf.Query.Limit
+	if base.Conf.Server.Query.Limit > 0 {
+		limit = base.Conf.Server.Query.Limit
 	}
 	if q.Limit > 0 {
 		limit = q.Limit

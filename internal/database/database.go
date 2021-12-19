@@ -1,7 +1,8 @@
 package database
 
 import (
-	"path/filepath"
+	"os"
+	"os/exec"
 
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/jwmwalrus/bnp/onerror"
@@ -17,21 +18,26 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var conn *gorm.DB
+const (
+	connectionOptions = "?_foreign_keys=1&_loc=Local"
+)
+
+var (
+	conn *gorm.DB
+)
 
 // DSN returns the application's DSN
-func DSN(prod bool) string {
-	if prod {
-		return filepath.Join(base.DataDir, base.DatabaseFilename) + "?_foreign_keys=1&_loc=Local"
-	}
-	return "/tmp/m3uetc-test-music.db?_foreign_keys=1&_loc=Local"
+func DSN() string {
+	return base.GetDatabasePath() + connectionOptions
 }
 
 // Open creates the application database, if it doesn't exist
 func Open() *gorm.DB {
 	var err error
 
-	conn, err = gorm.Open(sqlite.Open(DSN(!base.FlagTestingMode)), &gorm.Config{
+	backupDatabase()
+
+	conn, err = gorm.Open(sqlite.Open(DSN()), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},
@@ -56,8 +62,27 @@ func Open() *gorm.DB {
 		conn.Where("played = 1").Delete(models.Queue{})
 	}()
 
-	log.WithField("dsn", DSN(!base.FlagTestingMode)).
+	log.WithField("dsn", DSN()).
 		Info("Database loaded")
 
 	return conn
+}
+
+func backupDatabase() {
+	if !base.FlagTestingMode &&
+		base.Conf.Server.Database.Backup {
+		path := base.GetDatabasePath()
+		_, err := os.Stat(path)
+		if !os.IsNotExist(err) {
+			if _, err := exec.LookPath("sqlite3"); err != nil {
+				log.Error(err)
+				return
+			}
+
+			if out, err := exec.Command("sqlite3", path, ".backup "+path+".bak").CombinedOutput(); err != nil {
+				log.WithField("output", out).Error(err)
+				return
+			}
+		}
+	}
 }
