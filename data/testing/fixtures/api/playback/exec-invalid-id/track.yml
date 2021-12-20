@@ -1,0 +1,6 @@
+---
+- id: 1
+  location: "./data/testing/audio1/track01.ogg"
+  title: "track"
+  album: "tracks"
+  artist: "tracker"

@@ -212,6 +212,11 @@ func SetMode(mode EngineMode) {
 func StartEngine() {
 	log.Info("Starting playback engine")
 
+	if eng.mode == TestMode {
+		mockEngineLoop()
+		return
+	}
+
 	go eng.engineLoop()
 	models.PlaybackChanged <- struct{}{}
 
@@ -280,4 +285,12 @@ func StopStream() {
 	eng.playbin.SendEvent(eos)
 
 	return
+}
+
+func mockEngineLoop() {
+	aux := &models.Playback{}
+	aux.GetNextToPlay()
+	if aux != nil {
+		eng.pb = aux
+	}
 }

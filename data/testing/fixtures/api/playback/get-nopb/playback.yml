@@ -1,0 +1,5 @@
+---
+- id: 1
+  location: "./data/testing/audio1/track01.ogg"
+  played: 1
+  track_id: 0

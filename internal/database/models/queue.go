@@ -314,7 +314,7 @@ func (qt *QueueTrack) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
+		if !base.FlagTestingMode && !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
 			PlaybackChanged <- struct{}{}
 		}
 	}()

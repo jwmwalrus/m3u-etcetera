@@ -82,7 +82,7 @@ func (pb *Playback) AddToHistory(duration int64) {
 // AfterCreate is a GORM hook
 func (pb *Playback) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
+		if !base.FlagTestingMode && !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
 			PlaybackChanged <- struct{}{}
 		}
 	}()

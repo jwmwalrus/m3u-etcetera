@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRootOff(t *testing.T) {
@@ -12,12 +13,8 @@ func TestRootOff(t *testing.T) {
 
 	req := &m3uetcpb.Empty{}
 	res, err := c.Off(context.Background(), req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !res.GetGoingOff() || res.GetReason() != "" {
-		t.Fail()
-	}
+	assert.Equal(t, err != nil, false)
+	assert.Equal(t, res.GetGoingOff() || res.GetReason() == "", true)
 }
 
 func TestRootStatus(t *testing.T) {
@@ -25,10 +22,6 @@ func TestRootStatus(t *testing.T) {
 
 	req := &m3uetcpb.Empty{}
 	res, err := c.Status(context.Background(), req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !res.GetAlive() {
-		t.Fail()
-	}
+	assert.Equal(t, err != nil, false)
+	assert.Equal(t, res.GetAlive(), true)
 }

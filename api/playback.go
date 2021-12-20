@@ -41,7 +41,7 @@ func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb
 // ExecutePlaybackAction implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
 	if req.Action == m3uetcpb.PlaybackAction_PB_PLAY {
-		if len(req.Locations) > 0 || len(req.Ids) > 0 {
+		if len(req.Locations) > 0 {
 			unsup := models.CheckUnsupportedFiles(req.Locations)
 			if len(unsup) > 0 {
 				return nil, grpc.Errorf(codes.InvalidArgument, "Unsupported locations were provided: %+q", unsup)
