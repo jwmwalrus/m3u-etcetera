@@ -119,7 +119,7 @@ func (q *Query) Delete(qbs ...QueryBoundaryTx) (err error) {
 }
 
 // FindTracks return the list of tracks that match the query
-func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
+func (q *Query) FindTracks(qbs []QueryBoundaryTx) (ts []*Track) {
 	log.WithFields(log.Fields{
 		"q":        q,
 		"len(qbs)": len(qbs),
@@ -133,73 +133,79 @@ func (q *Query) FindTracks(qbs ...QueryBoundaryTx) (ts []*Track) {
 	if q.Limit > 0 {
 		limit = q.Limit
 	}
-	tx := db.Limit(limit)
 
-	if q.Params != "" {
-		parsed, _ := qparams.ParseParams(q.Params)
-		for _, x := range parsed {
-			if !slice.Contains(supportedParams, strings.ToLower(x.Key)) {
-				log.Warnf("Ignored query paranmeter: %v", x.Key)
-				continue
-			}
-			comp := " LIKE ?"
-			if x.Key == "id" {
-				if _, err := strconv.ParseInt(x.Val, 10, 64); err != nil {
-					log.Warnf("Ignoring `id` value due to parsing error:%v", x.Val)
+	buildStmt := func() *gorm.DB {
+		tx := db.Limit(limit)
+
+		if q.Params != "" {
+			parsed, _ := qparams.ParseParams(q.Params)
+			for _, x := range parsed {
+				if !slice.Contains(supportedParams, strings.ToLower(x.Key)) {
+					log.Warnf("Ignored query paranmeter: %v", x.Key)
 					continue
 				}
-				comp = " = ?"
-			}
-			y := x.ToFuzzy().ToSQL()
-			if y.Or {
-				tx.Or(y.Key+comp, y.Val)
-			} else if y.Not {
-				tx.Not(y.Key+comp, y.Val)
-			} else {
-				tx.Where(y.Key+comp, y.Val)
+				comp := " LIKE ?"
+				if x.Key == "id" {
+					if _, err := strconv.ParseInt(x.Val, 10, 64); err != nil {
+						log.Warnf("Ignoring `id` value due to parsing error:%v", x.Val)
+						continue
+					}
+					comp = " = ?"
+				}
+				y := x.ToFuzzy().ToSQL()
+				if y.Or {
+					tx.Or(y.Key+comp, y.Val)
+				} else if y.Not {
+					tx.Not(y.Key+comp, y.Val)
+				} else {
+					tx.Where(y.Key+comp, y.Val)
+				}
 			}
 		}
-	}
 
-	if q.Rating > 0 {
-		tx.Where("rating = ?", q.Rating)
-	}
+		if q.Rating > 0 {
+			tx.Where("rating >= ?", q.Rating)
+		}
 
-	if q.From > 0 {
-		fromYear := time.Unix(q.From, 0).Year()
-		tx.Where("year >= ?", fromYear)
-	}
-	if q.To > 0 {
-		toYear := time.Unix(q.To, 0).Year()
-		tx.Where("year <= ?", toYear)
-	}
+		if q.From > 0 {
+			fromYear := time.Unix(q.From, 0).Year()
+			tx.Where("year >= ?", fromYear)
+		}
+		if q.To > 0 {
+			toYear := time.Unix(q.To, 0).Year()
+			tx.Where("year <= ?", toYear)
+		}
 
-	if q.Random {
-		tx.Order("random()")
+		if q.Random {
+			tx.Order("random()")
+		}
+		return tx
 	}
 
 	ts = []*Track{}
-	if len(qbs) > 0 {
-		for _, x := range qbs {
-			list := x.FindTracksTx(tx)
-			appendToTrackList(ts, list)
-		}
-	} else {
-		list := []Track{}
-		if err := tx.Debug().Find(&list).Error; err != nil {
-			onerror.Log(err)
-			return
-		}
+	for i := range qbs {
+		tx := buildStmt()
+		list := qbs[i].FindTracksTx(tx)
+		ts = appendToTrackList(ts, list)
+	}
 
-		for i := range list {
-			ts = append(ts, &list[i])
+	if q.Random {
+		shuff := getSuffler(len(ts))
+		newts := make([]*Track, len(ts))
+		for k, v := range shuff {
+			newts[k] = ts[v]
 		}
 	}
+
+	if len(ts) > limit {
+		ts = ts[:limit]
+	}
+
 	return
 }
 
-// GetCollections adds forward support for CollectionQuery
-// This is required for ToProtobuf
+// GetCollections returns all the collections associated to the given query
+// This adds forward support for CollectionQuery, required for ToProtobuf
 func (q *Query) GetCollections() (cqs []*CollectionQuery) {
 	cqs = []*CollectionQuery{}
 
@@ -230,15 +236,6 @@ func (q *Query) SaveBound(qbs []QueryBoundaryTx) error {
 		}
 		return nil
 	})
-}
-
-// CollectionsToBoundaries adds forward support for CollectionQuery
-func CollectionsToBoundaries(cts []*CollectionQuery) (qbs []QueryBoundaryTx) {
-	for _, x := range cts {
-		var i interface{} = x
-		qbs = append(qbs, i.(QueryBoundaryTx))
-	}
-	return
 }
 
 // FromProtobuf returns a Query type populated from the given m3uetcpb.Query
@@ -280,16 +277,6 @@ func GetAllQueries(limit int, qbs ...QueryBoundaryID) (s []*Query) {
 		s = append(s, &qs[k])
 		if limit > 0 && len(s) == limit {
 			break
-		}
-	}
-	return
-}
-
-// RemoveCollections adds forward support for CollectionQuery
-func RemoveCollections(cqs []*CollectionQuery) (err error) {
-	for _, x := range cqs {
-		if err = db.Where("id > 0").Delete(x).Error; err != nil {
-			return
 		}
 	}
 	return

@@ -196,7 +196,7 @@ func FindTracksIn(ids []int64) (ts []*Track) {
 	return
 }
 
-func appendToTrackList(list []*Track, ts []*Track) {
+func appendToTrackList(list []*Track, ts []*Track) []*Track {
 	for i := range ts {
 		found := false
 		for j := range list {
@@ -209,4 +209,5 @@ func appendToTrackList(list []*Track, ts []*Track) {
 			list = append(list, ts[i])
 		}
 	}
+	return list
 }

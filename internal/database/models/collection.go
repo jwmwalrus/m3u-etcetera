@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -383,7 +384,8 @@ func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) (ts []*Track) {
 
 	list := []Track{}
 	err := tx.
-		Joins("JOIN collection_track ON collection_track.track_id = track.id").
+		Joins("JOIN collection_track ON collection_track.track_id = track.id AND collection_track.collection_id = ?", cq.CollectionID).
+		Debug().
 		Find(&list).
 		Error
 	if err != nil {
@@ -416,18 +418,38 @@ func CheckUnsupportedFiles(files []string) (unsupp []string) {
 	return
 }
 
-// CreateCollectionQueryBoundaries -
-func CreateCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryTx) {
-	cqs := []CollectionQuery{}
+// CollectionsToBoundaries adds forward support for CollectionQuery
+func CollectionsToBoundaries(cts []*CollectionQuery) (qbs []QueryBoundaryTx) {
+	for i := range cts {
+		var x interface{} = cts[i]
+		qbs = append(qbs, x.(QueryBoundaryTx))
+	}
+	return
+}
+
+// CreateCollectionQueries -
+func CreateCollectionQueries(ids []int64) (cqs []*CollectionQuery) {
+	list := []CollectionQuery{}
 	for _, id := range ids {
 		c := CollectionQuery{CollectionID: id}
-		cqs = append(cqs, c)
+		list = append(list, c)
 	}
+	for i := range list {
+		cqs = append(cqs, &list[i])
+	}
+	return
+}
 
-	for _, x := range cqs {
-		var i interface{} = &x
-		qbs = append(qbs, i.(QueryBoundaryTx))
+// DeleteCollectionQueries deletes all the collection queries associated to the given query
+func DeleteCollectionQueries(queryID int64) (err error) {
+	cqs := []CollectionQuery{}
+	if err = db.Where("query_id = ?", queryID).Find(&cqs).Error; err != nil {
+		return
 	}
+	if len(cqs) < 1 {
+		return
+	}
+	err = db.Where("id > 0").Delete(&cqs).Error
 	return
 }
 
@@ -457,6 +479,68 @@ func GetAllCollections() (s []*Collection) {
 	}
 	for i := range list {
 		s = append(s, &list[i])
+	}
+	return
+}
+
+// GetApplicableCollectionQueries returns all the collections that can be applied to the given query
+func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQuery) {
+	cqs = []*CollectionQuery{}
+
+	list := []CollectionQuery{}
+	var err error
+
+	if q.ID > 0 {
+		s := q.GetCollections()
+		if len(s) > 0 {
+			fmt.Println("own bounded collections")
+			err = db.
+				Joins("JOIN collection on collection_query.collection_id = "+
+					"collection.id AND collection.hidden = 0 AND collection.disabled = 0").
+				Where("query_id = ?", q.ID).
+				Find(&list).
+				Error
+		} else {
+			fmt.Println("all collections")
+			cs := []Collection{}
+			if err = db.Where("hidden AND disabled = 0").Find(&cs).Error; err != nil {
+				return
+			}
+			for _, x := range cs {
+				c := CollectionQuery{CollectionID: x.ID, QueryID: q.ID}
+				list = append(list, c)
+			}
+		}
+	} else {
+		cs := []Collection{}
+		if len(ids) > 0 {
+			fmt.Println("given bounded collections")
+			if err = db.Where("hidden = 0 and disabled = 0 and id in ?", ids).Find(&cs).Error; err != nil {
+				return
+			}
+			for _, x := range cs {
+				var c CollectionQuery
+				c = CollectionQuery{CollectionID: x.ID}
+				list = append(list, c)
+			}
+		} else {
+			fmt.Println("all valid collections")
+			if err = db.Where("hidden = 0 and disabled = 0").Find(&cs).Error; err != nil {
+				return
+			}
+			for _, x := range cs {
+				c := CollectionQuery{CollectionID: x.ID}
+				list = append(list, c)
+			}
+		}
+	}
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for i := range list {
+		cqs = append(cqs, &list[i])
 	}
 	return
 }

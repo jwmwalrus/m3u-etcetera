@@ -58,7 +58,9 @@ func (*QuerySvc) AddQuery(_ context.Context, req *m3uetcpb.AddQueryRequest) (*m3
 
 	q := models.FromProtobuf(req.Query)
 
-	qbs := models.CreateCollectionQueryBoundaries(req.Query.CollectionIds)
+	qbs := models.CollectionsToBoundaries(
+		models.CreateCollectionQueries(req.Query.CollectionIds),
+	)
 	if err := q.SaveBound(qbs); err != nil {
 		return nil, grpc.Errorf(codes.InvalidArgument, "Error saving query: %v", err)
 	}
@@ -74,8 +76,13 @@ func (*QuerySvc) UpdateQuery(_ context.Context, req *m3uetcpb.UpdateQueryRequest
 	}
 	q.FromProtobuf(req.Query)
 
-	models.RemoveCollections(q.GetCollections())
-	qbs := models.CreateCollectionQueryBoundaries(req.Query.CollectionIds)
+	if err := models.DeleteCollectionQueries(q.ID); err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Error replacing collection boundaries: %w", err)
+	}
+
+	qbs := models.CollectionsToBoundaries(
+		models.CreateCollectionQueries(req.Query.CollectionIds),
+	)
 	if err := q.SaveBound(qbs); err != nil {
 		return nil, grpc.Errorf(codes.InvalidArgument, "Error saving query: %v", err)
 	}
@@ -109,8 +116,10 @@ func (*QuerySvc) ApplyQuery(_ context.Context, req *m3uetcpb.ApplyQueryRequest) 
 		return nil, grpc.Errorf(codes.NotFound, "%v", err)
 	}
 
-	qbs := models.CollectionsToBoundaries(q.GetCollections())
-	ts := q.FindTracks(qbs...)
+	qbs := models.CollectionsToBoundaries(
+		models.GetApplicableCollectionQueries(&q),
+	)
+	ts := q.FindTracks(qbs)
 
 	out := []*m3uetcpb.Track{}
 	for _, x := range ts {
@@ -125,11 +134,19 @@ func (*QuerySvc) ApplyQuery(_ context.Context, req *m3uetcpb.ApplyQueryRequest) 
 func (*QuerySvc) QueryBy(_ context.Context, req *m3uetcpb.QueryByRequest) (*m3uetcpb.QueryByResponse, error) {
 	q := models.FromProtobuf(req.Query)
 
-	ts := q.FindTracks()
+	qbs := models.CollectionsToBoundaries(
+		models.GetApplicableCollectionQueries(q, req.Query.CollectionIds...),
+	)
+	ts := q.FindTracks(qbs)
 
 	if q.Name != "" {
 		go func() {
-			err := q.Save()
+			var err error
+			if len(req.Query.CollectionIds) > 0 {
+				err = q.SaveBound(qbs)
+			} else {
+				err = q.Save()
+			}
 			onerror.Log(err)
 		}()
 	}

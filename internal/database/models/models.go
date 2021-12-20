@@ -1,6 +1,9 @@
 package models
 
 import (
+	"math/rand"
+	"time"
+
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -76,6 +79,18 @@ type DataFinder interface {
 // SetConnection sets the database connection for the whole package
 func SetConnection(conn *gorm.DB) {
 	db = conn
+}
+
+func getSuffler(n int) []int {
+	s := make([]int, n)
+	for i := range s {
+		s[i] = i
+	}
+
+	seed := rand.New(rand.NewSource(time.Now().UnixNano()))
+	seed.Shuffle(n, func(i, j int) { s[i], s[j] = s[j], s[i] })
+
+	return s
 }
 
 func init() {
