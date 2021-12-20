@@ -1,8 +1,10 @@
 package database
 
 import (
+	"database/sql"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/jwmwalrus/bnp/onerror"
@@ -26,9 +28,23 @@ var (
 	conn *gorm.DB
 )
 
+// Close closes the application database
+func Close() {
+	if conn == nil {
+		return
+	}
+
+	var err error
+	var sqlDB *sql.DB
+	if sqlDB, err = conn.DB(); err != nil {
+		panic(err)
+	}
+	sqlDB.Close()
+}
+
 // DSN returns the application's DSN
 func DSN() string {
-	return base.GetDatabasePath() + connectionOptions
+	return getDatabasePath() + connectionOptions
 }
 
 // Open creates the application database, if it doesn't exist
@@ -71,7 +87,7 @@ func Open() *gorm.DB {
 func backupDatabase() {
 	if !base.FlagTestingMode &&
 		base.Conf.Server.Database.Backup {
-		path := base.GetDatabasePath()
+		path := getDatabasePath()
 		_, err := os.Stat(path)
 		if !os.IsNotExist(err) {
 			if _, err := exec.LookPath("sqlite3"); err != nil {
@@ -85,4 +101,25 @@ func backupDatabase() {
 			}
 		}
 	}
+}
+
+// getDatabaseDir returns the database directory
+func getDatabaseDir() string {
+	if !base.FlagTestingMode {
+		return base.DataDir
+	}
+	return os.TempDir()
+}
+
+// getDatabasePath returns the full path to the database {
+func getDatabasePath() string {
+	return filepath.Join(getDatabaseDir(), getDatabaseFilename())
+}
+
+// getDatabaseFilename returns the database filename
+func getDatabaseFilename() string {
+	if !base.FlagTestingMode {
+		return base.DatabaseFilename
+	}
+	return "m3uetc-test-music-" + base.InstanceSuffix + ".db"
 }

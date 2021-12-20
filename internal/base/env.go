@@ -10,10 +10,6 @@ import (
 	"time"
 
 	"github.com/adrg/xdg"
-	"github.com/jwmwalrus/bnp/env"
-	"github.com/jwmwalrus/bnp/onerror"
-	"github.com/jwmwalrus/bnp/slice"
-	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/config"
 	"github.com/pborman/getopt/v2"
 	log "github.com/sirupsen/logrus"
@@ -35,27 +31,13 @@ const (
 
 	// ServerWaitTimeout Maximum amount of seconds the server will wait for an event to sync up
 	ServerWaitTimeout = 60
-
-	// SupportedFileExtensionMP3 supported mp3
-	SupportedFileExtensionMP3 = ".mp3"
-
-	// SupportedFileExtensionM4A supported m4a
-	SupportedFileExtensionM4A = ".m4a"
-
-	// SupportedFileExtensionOGG supported ogg
-	SupportedFileExtensionOGG = ".ogg"
-
-	// SupportedFileExtensionFLAC supported flac
-	SupportedFileExtensionFLAC = ".flac"
 )
 
 var (
-	configFile     string
-	lockFile       string
-	logFile        *lumberjack.Logger
-	unloadRegistry []Unloader
-	randomSeed     *rand.Rand
-	dbTmpSuffix    string
+	configFile string
+	lockFile   string
+	logFile    *lumberjack.Logger
+	randomSeed *rand.Rand
 
 	logFilename = "app.log"
 
@@ -94,120 +76,12 @@ var (
 	// FlagEchoLogging Echo logs to stderr
 	FlagEchoLogging bool
 
+	// InstanceSuffix suffix used for the running instance
+	InstanceSuffix string
+
 	// Conf global configuration
 	Conf config.Config
-
-	// SupportedFileExtensions supported file extensons
-	SupportedFileExtensions = []string{
-		SupportedFileExtensionMP3,
-		SupportedFileExtensionM4A,
-		SupportedFileExtensionOGG,
-		SupportedFileExtensionFLAC,
-	}
-
-	// IgnoredFileExtensions supported file extensons
-	IgnoredFileExtensions = []string{
-		".bmp",
-		".db",
-		".gif",
-		".jpeg",
-		".jpg",
-		".png",
-	}
 )
-
-// Unloader defines a method to be called when unloading the application
-type Unloader struct {
-	Description string
-	Callback    UnloaderCallback
-}
-
-// UnloaderCallback defines the signature of the method to be called when unloading the application
-type UnloaderCallback func() error
-
-// GetDatabaseDir returns the database directory
-func GetDatabaseDir() string {
-	if !FlagTestingMode {
-		return DataDir
-	}
-	return os.TempDir()
-}
-
-// GetDatabaseFilename returns the database filename
-func GetDatabaseFilename() string {
-	if !FlagTestingMode {
-		return DatabaseFilename
-	}
-	return "m3uetc-test-music-" + dbTmpSuffix + ".db"
-}
-
-func randomString(n int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = charset[randomSeed.Intn(len(charset))]
-	}
-	return string(b)
-}
-
-// GetDatabasePath returns the full path to the database {
-func GetDatabasePath() string {
-	return filepath.Join(GetDatabaseDir(), GetDatabaseFilename())
-}
-
-// IsSupportedURL returns true if the path is supported
-func IsSupportedURL(s string) bool {
-	path, err := urlstr.URLToPath(s)
-	if err != nil {
-		return false
-	}
-
-	return IsSupportedFile(path)
-}
-
-// IsSupportedFile returns true if the path is supported
-func IsSupportedFile(path string) bool {
-	return slice.Contains(SupportedFileExtensions, filepath.Ext(path))
-}
-
-// IsIgnoredFile returns true if the path should be ignored
-func IsIgnoredFile(path string) bool {
-	return slice.Contains(IgnoredFileExtensions, filepath.Ext(path))
-}
-
-// Load Loads application's configuration
-func Load(noParseArgs ...bool) (args []string) {
-	noParse := false
-	if len(noParseArgs) > 0 {
-		noParse = noParseArgs[0]
-	}
-
-	if !noParse {
-		args = parseArgs()
-	}
-
-	configFile = filepath.Join(ConfigDir, configFilename)
-	lockFile = filepath.Join(RuntimeDir, lockFilename)
-
-	err := env.SetDirs(
-		CacheDir,
-		ConfigDir,
-		DataDir,
-		RuntimeDir,
-	)
-	onerror.Panic(err)
-
-	err = Conf.Load(configFile, lockFile)
-	onerror.Panic(err)
-
-	return
-}
-
-// RegisterUnloader registers an Unloader, to be invoked before stopping the app
-func RegisterUnloader(u Unloader) {
-	unloadRegistry = append(unloadRegistry, u)
-}
 
 // SetTestingMode -
 func SetTestingMode() {
@@ -217,24 +91,6 @@ func SetTestingMode() {
 // UnsetTestingMode -
 func UnsetTestingMode() {
 	FlagTestingMode = false
-}
-
-// Unload Cleans up server before exit
-func Unload() {
-	log.Info("Unloading application")
-
-	if Conf.FirstRun {
-		Conf.FirstRun = false
-
-		// NOTE: ignore error
-		Conf.Save(configFile, lockFile)
-	}
-
-	for _, u := range unloadRegistry {
-		log.Infof("Calling unloader: %v", u.Description)
-		err := u.Callback()
-		onerror.Log(err)
-	}
 }
 
 func parseArgs() (args []string) {
@@ -256,6 +112,16 @@ func parseArgs() (args []string) {
 	}
 
 	return
+}
+
+func randomString(n int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = charset[randomSeed.Intn(len(charset))]
+	}
+	return string(b)
 }
 
 func resolveSeverity() {
@@ -292,7 +158,7 @@ func init() {
 
 	randomSeed = rand.New(
 		rand.NewSource(time.Now().UnixNano()))
-	dbTmpSuffix = randomString(8)
+	InstanceSuffix = randomString(8)
 
 	// XDG-related
 	DataDir = filepath.Join(xdg.DataHome, AppDirName)
