@@ -9,6 +9,26 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.0] 2021-12-20
+
+More features and improvements
+
+### Fixed
+
+* Issue when stopping engine with pending queue
+
+### Added
+
+* Some testing
+* Random column to query lists
+* Showing track info from queue when available
+* Some interfaces for the future
+
+### Modified
+* Query boundaries should always apply
+* Refactor base
+* Move location and id sanity checks to the API level
+
 ## [0.6.0] 2021-12-17
 
 Fixes, features, improvements
