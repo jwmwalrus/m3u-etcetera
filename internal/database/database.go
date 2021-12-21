@@ -44,7 +44,7 @@ func Close() {
 
 // DSN returns the application's DSN
 func DSN() string {
-	return getDatabasePath() + connectionOptions
+	return getDatabasePath() + getConnectionOptions()
 }
 
 // Open creates the application database, if it doesn't exist
@@ -101,6 +101,14 @@ func backupDatabase() {
 			}
 		}
 	}
+}
+
+// getConnectionOptions returns the database directory
+func getConnectionOptions() string {
+	if !base.FlagTestingMode {
+		return connectionOptions
+	}
+	return "?_loc=Local"
 }
 
 // getDatabaseDir returns the database directory

@@ -77,7 +77,7 @@ func (*QuerySvc) UpdateQuery(_ context.Context, req *m3uetcpb.UpdateQueryRequest
 	q.FromProtobuf(req.Query)
 
 	if err := models.DeleteCollectionQueries(q.ID); err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Error replacing collection boundaries: %w", err)
+		return nil, grpc.Errorf(codes.Internal, "Error replacing collection boundaries: %v", err)
 	}
 
 	qbs := models.CollectionsToBoundaries(

@@ -239,10 +239,13 @@ func StopAll() {
 
 // StopEngine stops the engine
 func StopEngine() {
-	if eng.lastEvent == noLoopEvent {
+	if eng.mode == TestMode {
 		return
 	}
 
+	if eng.lastEvent == noLoopEvent {
+		return
+	}
 	log.Info("Stopping engine")
 
 	StopAll()

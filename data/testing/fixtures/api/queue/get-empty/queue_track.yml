@@ -1,0 +1,7 @@
+---
+- id: 1
+  position: 1
+  played: 1
+  location: "./data/testing/audio1/track01.ogg"
+  queue_id: 1
+  track_id: 0

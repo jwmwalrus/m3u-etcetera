@@ -11,7 +11,7 @@ import (
 func TestGetPlayback(t *testing.T) {
 	table := []testCase{
 		{
-			"GET With no playback",
+			"Get with no playback",
 			"api/playback/get-nopb",
 			false,
 			0,
@@ -24,7 +24,7 @@ func TestGetPlayback(t *testing.T) {
 			false,
 		},
 		{
-			"GET With playback, TrackID=0",
+			"Get with playback, TrackID=0",
 			"api/playback/get-notrackid",
 			true,
 			0,
@@ -40,7 +40,7 @@ func TestGetPlayback(t *testing.T) {
 			false,
 		},
 		{
-			"GET With playback, TrackID>0",
+			"Get with playback, TrackID>0",
 			"api/playback/get-trackid",
 			true,
 			0,
