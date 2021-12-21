@@ -5,8 +5,10 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/adrg/xdg"
@@ -155,6 +157,9 @@ func resolveSeverity() {
 
 func init() {
 	OS = runtime.GOOS
+
+	InterruptSignal = make(chan os.Signal, 1)
+	signal.Notify(InterruptSignal, os.Interrupt, syscall.SIGTERM)
 
 	randomSeed = rand.New(
 		rand.NewSource(time.Now().UnixNano()))

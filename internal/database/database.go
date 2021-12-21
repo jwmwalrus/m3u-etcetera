@@ -62,6 +62,14 @@ func Open() *gorm.DB {
 	})
 	onerror.Panic(err)
 
+	base.RegisterUnloader(base.Unloader{
+		Description: "CloseDatabase",
+		Callback: func() error {
+			Close()
+			return nil
+		},
+	})
+
 	models.SetConnection(conn)
 
 	// TODO: connect with logrus

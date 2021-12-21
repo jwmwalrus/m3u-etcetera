@@ -2,9 +2,7 @@ package base
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/jwmwalrus/bnp/slice"
@@ -42,6 +40,9 @@ var (
 	idleStatusStack = []IdleStatus{IdleStatusIdle}
 	doneEmmitted    = 0
 	idleGotCalled   = false
+
+	// InteruptSignal -
+	InterruptSignal chan os.Signal
 )
 
 // GetBusy registers a process as busy, to prevent idle timeout
@@ -110,9 +111,7 @@ func Idle(ctx context.Context) {
 	doneEmmitted++
 
 	log.Info("Server seems to have been Idle for a while, and that's gotta stop!")
-	Unload()
-	fmt.Printf("Bye %v from %v\n", OS, filepath.Base(os.Args[0]))
-	os.Exit(0)
+	InterruptSignal <- os.Interrupt
 }
 
 // IsAppBusy returns true if some process has registered as busy

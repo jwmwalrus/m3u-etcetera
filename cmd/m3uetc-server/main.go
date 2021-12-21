@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 
 	"github.com/jwmwalrus/m3u-etcetera/api"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -23,7 +25,7 @@ func main() {
 	log.Info("Starting server...")
 
 	port := base.Conf.Server.Port
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
@@ -40,7 +42,24 @@ func main() {
 
 	reflection.Register(s)
 
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
-	}
+	base.RegisterUnloader(base.Unloader{
+		Description: "StopServer",
+		Callback: func() error {
+			s.Stop()
+			lsnr.Close()
+			return nil
+		},
+	})
+
+	go func() {
+		if err := s.Serve(listener); err != nil {
+			log.Fatalf("Failed to serve: %v", err)
+		}
+	}()
+
+	<-base.InterruptSignal
+
+	base.Unload()
+
+	fmt.Printf("\nBye %v from %v\n", base.OS, filepath.Base(os.Args[0]))
 }
