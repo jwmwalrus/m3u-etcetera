@@ -1,0 +1,5 @@
+---
+- id: 1
+  name: "local:audio"
+  location: "./data/testing/audio1/"
+  idx: 0

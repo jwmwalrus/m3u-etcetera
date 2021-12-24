@@ -46,7 +46,7 @@ func main() {
 		Description: "StopServer",
 		Callback: func() error {
 			s.Stop()
-			lsnr.Close()
+			listener.Close()
 			return nil
 		},
 	})

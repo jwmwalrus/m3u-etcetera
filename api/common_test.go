@@ -36,37 +36,10 @@ type testCase struct {
 
 func closeTestDatabase() {
 	database.Close()
-	/*
-		var err error
-		var sqlDB *sql.DB
-		if sqlDB, err = conn.DB(); err != nil {
-			panic(err)
-		}
-		sqlDB.Close()
-	*/
 }
 
 func openTestDatabase(fixturesDir string) (db *gorm.DB) {
 	var err error
-	/*
-		db, err = gorm.Open(sqlite.Open(database.DSN()), &gorm.Config{
-			NamingStrategy: schema.NamingStrategy{
-				SingularTable: true,
-			},
-			Logger: logger.Default.LogMode(logger.Silent),
-		})
-		onerror.Panic(err)
-
-		models.SetConnection(conn)
-
-		m := gormigrate.New(db, gormigrate.DefaultOptions, migrations.All())
-
-		m.InitSchema(migrations.InitSchema)
-		err = m.Migrate()
-		if err != nil {
-			panic(err)
-		}
-	*/
 
 	db = database.Open()
 

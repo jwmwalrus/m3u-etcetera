@@ -472,7 +472,7 @@ func GetAllCollections() (s []*Collection) {
 	s = []*Collection{}
 
 	list := []Collection{}
-	err := db.Where("hidden = 0 AND disabled = 0").Find(&list).Error
+	err := db.Where("hidden = 0").Find(&list).Error
 	if err != nil {
 		log.Error(err)
 		return
@@ -496,14 +496,14 @@ func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQu
 			fmt.Println("own bounded collections")
 			err = db.
 				Joins("JOIN collection on collection_query.collection_id = "+
-					"collection.id AND collection.hidden = 0 AND collection.disabled = 0").
+					"collection.id and collection.hidden = 0 and collection.disabled = 0").
 				Where("query_id = ?", q.ID).
 				Find(&list).
 				Error
 		} else {
 			fmt.Println("all collections")
 			cs := []Collection{}
-			if err = db.Where("hidden AND disabled = 0").Find(&cs).Error; err != nil {
+			if err = db.Where("hidden = 0 and disabled = 0").Find(&cs).Error; err != nil {
 				return
 			}
 			for _, x := range cs {
