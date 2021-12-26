@@ -11,6 +11,15 @@ const (
 
 const DefaultPerspective = MusicPerspective
 
+func PerspectiveIndexList() []PerspectiveIndex {
+	return []PerspectiveIndex{
+		MusicPerspective,
+		RadioPerspective,
+		PodcastsPerspective,
+		AudiobooksPerspective,
+	}
+}
+
 func PerspectiveIndexStrings() []string {
 	return []string{"Music", "Radio", "Podcasts", "Audiobooks"}
 }

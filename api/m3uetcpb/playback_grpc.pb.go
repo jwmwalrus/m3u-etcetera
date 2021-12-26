@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type PlaybackSvcClient interface {
 	GetPlayback(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPlaybackResponse, error)
 	ExecutePlaybackAction(ctx context.Context, in *ExecutePlaybackActionRequest, opts ...grpc.CallOption) (*Empty, error)
+	SubscribeToPlayback(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybackSvc_SubscribeToPlaybackClient, error)
 }
 
 type playbackSvcClient struct {
@@ -48,12 +49,45 @@ func (c *playbackSvcClient) ExecutePlaybackAction(ctx context.Context, in *Execu
 	return out, nil
 }
 
+func (c *playbackSvcClient) SubscribeToPlayback(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybackSvc_SubscribeToPlaybackClient, error) {
+	stream, err := c.cc.NewStream(ctx, &PlaybackSvc_ServiceDesc.Streams[0], "/m3uetcpb.PlaybackSvc/SubscribeToPlayback", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &playbackSvcSubscribeToPlaybackClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type PlaybackSvc_SubscribeToPlaybackClient interface {
+	Recv() (*SubscribeToPlaybackResponse, error)
+	grpc.ClientStream
+}
+
+type playbackSvcSubscribeToPlaybackClient struct {
+	grpc.ClientStream
+}
+
+func (x *playbackSvcSubscribeToPlaybackClient) Recv() (*SubscribeToPlaybackResponse, error) {
+	m := new(SubscribeToPlaybackResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // PlaybackSvcServer is the server API for PlaybackSvc service.
 // All implementations must embed UnimplementedPlaybackSvcServer
 // for forward compatibility
 type PlaybackSvcServer interface {
 	GetPlayback(context.Context, *Empty) (*GetPlaybackResponse, error)
 	ExecutePlaybackAction(context.Context, *ExecutePlaybackActionRequest) (*Empty, error)
+	SubscribeToPlayback(*Empty, PlaybackSvc_SubscribeToPlaybackServer) error
 	mustEmbedUnimplementedPlaybackSvcServer()
 }
 
@@ -66,6 +100,9 @@ func (UnimplementedPlaybackSvcServer) GetPlayback(context.Context, *Empty) (*Get
 }
 func (UnimplementedPlaybackSvcServer) ExecutePlaybackAction(context.Context, *ExecutePlaybackActionRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecutePlaybackAction not implemented")
+}
+func (UnimplementedPlaybackSvcServer) SubscribeToPlayback(*Empty, PlaybackSvc_SubscribeToPlaybackServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeToPlayback not implemented")
 }
 func (UnimplementedPlaybackSvcServer) mustEmbedUnimplementedPlaybackSvcServer() {}
 
@@ -116,6 +153,27 @@ func _PlaybackSvc_ExecutePlaybackAction_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PlaybackSvc_SubscribeToPlayback_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(PlaybackSvcServer).SubscribeToPlayback(m, &playbackSvcSubscribeToPlaybackServer{stream})
+}
+
+type PlaybackSvc_SubscribeToPlaybackServer interface {
+	Send(*SubscribeToPlaybackResponse) error
+	grpc.ServerStream
+}
+
+type playbackSvcSubscribeToPlaybackServer struct {
+	grpc.ServerStream
+}
+
+func (x *playbackSvcSubscribeToPlaybackServer) Send(m *SubscribeToPlaybackResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // PlaybackSvc_ServiceDesc is the grpc.ServiceDesc for PlaybackSvc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -132,6 +190,12 @@ var PlaybackSvc_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PlaybackSvc_ExecutePlaybackAction_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeToPlayback",
+			Handler:       _PlaybackSvc_SubscribeToPlayback_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/m3uetcpb/playback.proto",
 }

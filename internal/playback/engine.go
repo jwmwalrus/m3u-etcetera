@@ -38,7 +38,7 @@ func (e *engine) addPlaybackFromQueue(qt *models.QueueTrack) (pb *models.Playbac
 
 	if qt.TrackID > 0 {
 		t := &models.Track{}
-		if err := t.Read(qt.TrackID); err != nil {
+		if err := t.Read(qt.TrackID); err == nil {
 			pb = models.AddPlaybackTrack(t)
 			return
 		}
@@ -151,8 +151,12 @@ func (e *engine) playStream(pb *models.Playback) {
 	log.WithField("pb", *pb).
 		Info("Starting playStream")
 
+	broadcastEvent(SubscribedToPlayback, pb)
+	defer func() { broadcastEvent(SubscribedToPlayback, nil) }()
+
 	e.pb = pb
 	e.terminate = false
+	defer func() { e.pb = nil }()
 
 	base.GetBusy(base.IdleStatusEngineLoop)
 	defer func() { base.GetFree(base.IdleStatusEngineLoop) }()
@@ -170,6 +174,7 @@ func (e *engine) playStream(pb *models.Playback) {
 		log.Error(err)
 		return
 	}
+	defer func() { e.playbin = nil }()
 	e.debugChannel("Playbin created")
 
 	if e.playbin == nil {
@@ -188,8 +193,6 @@ func (e *engine) playStream(pb *models.Playback) {
 	e.state = gst.StatePlaying
 	if state := e.playbin.SetState(e.state); state == gst.StateChangeFailure {
 		log.Warn("Unable to start playback")
-		e.playbin = nil
-		e.pb = nil
 		return
 	}
 	e.debugChannel("StateChangeReturn: %d\n", gst.StatePlaying)
@@ -229,8 +232,6 @@ func (e *engine) playStream(pb *models.Playback) {
 	e.debugChannel("End of playback")
 	e.state = gst.StateNull
 	e.playbin.SetState(e.state)
-	e.playbin = nil
-	e.pb = nil
 	return
 }
 

@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"time"
 
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	log "github.com/sirupsen/logrus"
@@ -95,4 +97,56 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.Execu
 	}()
 
 	return &m3uetcpb.Empty{}, nil
+}
+
+// SubscribeToPlayback implements m3uetcpb.PlaybackSvcServer
+func (*PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty, stream m3uetcpb.PlaybackSvc_SubscribeToPlaybackServer) error {
+
+	base.GetBusy(base.IdleStatusSubscription)
+	defer func() { base.GetFree(base.IdleStatusSubscription) }()
+
+	subs := playback.Subscribe(playback.SubscribedToPlayback)
+	defer func() { subs.Unsubscribe() }()
+
+	go func() { time.Sleep(5 * time.Second); subs.Data <- playback.GetPlayback() }()
+
+subsLoop:
+	for {
+		select {
+		case i := <-subs.Data:
+			pb, ok := i.(*models.Playback)
+			if !ok {
+				pb = nil
+			}
+			if pb != nil {
+				if pb.TrackID > 0 {
+					if t, err := pb.GetTrack(); err == nil {
+						out := t.ToProtobuf().(*m3uetcpb.Track)
+						res := &m3uetcpb.SubscribeToPlaybackResponse_Track{Track: out}
+						err = stream.Send(&m3uetcpb.SubscribeToPlaybackResponse{Playing: res})
+						if err != nil {
+							log.Warn(err)
+							break subsLoop
+						}
+						continue subsLoop
+					}
+				}
+				out := pb.ToProtobuf().(*m3uetcpb.Playback)
+				res := &m3uetcpb.SubscribeToPlaybackResponse_Playback{Playback: out}
+				err := stream.Send(&m3uetcpb.SubscribeToPlaybackResponse{Playing: res})
+				if err != nil {
+					log.Warn(err)
+					break subsLoop
+				}
+				continue subsLoop
+			}
+			res := &m3uetcpb.SubscribeToPlaybackResponse_Empty{}
+			err := stream.Send(&m3uetcpb.SubscribeToPlaybackResponse{Playing: res})
+			if err != nil {
+				log.Warn(err)
+				break subsLoop
+			}
+		}
+	}
+	return nil
 }

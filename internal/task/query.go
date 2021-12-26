@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
@@ -238,7 +240,9 @@ func queryAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -283,7 +287,9 @@ func queryInfoAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -337,7 +343,9 @@ func queryAddAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -363,7 +371,9 @@ func queryRemoveAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -391,7 +401,9 @@ func queryUpdateAction(c *cli.Context) (err error) {
 	req0 := &m3uetcpb.GetQueryRequest{Id: c.Int64("id")}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -467,7 +479,9 @@ func queryTracksAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -527,7 +541,9 @@ func queryByAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()

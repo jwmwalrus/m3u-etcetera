@@ -116,7 +116,7 @@ func parseArgs() (args []string) {
 	return
 }
 
-func randomString(n int) string {
+func GetRandomString(n int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 	b := make([]byte, n)
@@ -163,7 +163,7 @@ func init() {
 
 	randomSeed = rand.New(
 		rand.NewSource(time.Now().UnixNano()))
-	InstanceSuffix = randomString(8)
+	InstanceSuffix = GetRandomString(8)
 
 	// XDG-related
 	DataDir = filepath.Join(xdg.DataHome, AppDirName)

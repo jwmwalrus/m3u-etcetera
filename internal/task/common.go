@@ -6,19 +6,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/grpc"
 )
-
-func getAuthority() string {
-	return base.Conf.Server.GetAuthority()
-}
-
-func getGrpcOpts() (opts []grpc.DialOption) {
-	opts = append(opts, grpc.WithInsecure())
-	return
-}
 
 func mustNotParseExtraArgs(c *cli.Context) (err error) {
 	rest := c.Args().Slice()

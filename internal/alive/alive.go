@@ -38,6 +38,12 @@ func CheckServerStatus() (err error) {
 	return
 }
 
+// GetGrpcDialOpts returns the grpc dial options that any client should use
+func GetGrpcDialOpts() (opts []grpc.DialOption) {
+	opts = append(opts, grpc.WithInsecure())
+	return
+}
+
 // Serve starts or stops the server
 func Serve(turnOff bool) (err error) {
 	if isServerAlive() {
@@ -88,9 +94,9 @@ func findBinary(bin string) (path string, err error) {
 }
 
 func isServerAlive() bool {
-	opts := grpc.WithInsecure()
+	opts := GetGrpcDialOpts()
 	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts)
+	cc, err := grpc.Dial(auth, opts...)
 	if err != nil {
 		s := status.Convert(err)
 		if s.Code() != codes.Unavailable {
@@ -173,9 +179,9 @@ func startServer() (err error) {
 }
 
 func stopServer() (err error) {
-	opts := grpc.WithInsecure()
+	opts := GetGrpcDialOpts()
 	auth := base.Conf.Server.GetAuthority()
-	cc, err := grpc.Dial(auth, opts)
+	cc, err := grpc.Dial(auth, opts...)
 	if err != nil {
 		return
 	}

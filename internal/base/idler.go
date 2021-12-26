@@ -24,6 +24,9 @@ const (
 	// IdleStatusEngineLoop The engine loop is working
 	IdleStatusEngineLoop
 
+	// IdleStatusSubscription A client subscription is active
+	IdleStatusSubscription
+
 	// IdleStatusDbOperations A DB-related operation is in progress
 	IdleStatusDbOperations
 

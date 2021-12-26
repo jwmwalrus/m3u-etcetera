@@ -8,6 +8,8 @@ import (
 	"strconv"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
@@ -135,7 +137,9 @@ func collectionAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -180,7 +184,9 @@ func collectionInfoAction(c *cli.Context) (err error) {
 	req := &m3uetcpb.GetCollectionRequest{Id: id}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -230,7 +236,9 @@ func collectionAddAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -254,7 +262,9 @@ func collectionRemoveAction(c *cli.Context) (err error) {
 	req := &m3uetcpb.RemoveCollectionRequest{Id: id}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -278,7 +288,9 @@ func collectionUpdateAction(c *cli.Context) (err error) {
 	req := &m3uetcpb.UpdateCollectionRequest{Id: id}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -324,7 +336,9 @@ func collectionScanAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -345,7 +359,9 @@ func collectionDiscoverActiion(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()

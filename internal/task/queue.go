@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
@@ -166,7 +168,9 @@ func queueAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -248,7 +252,9 @@ func queueCreateAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -287,7 +293,9 @@ func queueDestroyAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
@@ -328,7 +336,9 @@ func queueMoveAction(c *cli.Context) (err error) {
 	}
 
 	var cc *grpc.ClientConn
-	if cc, err = grpc.Dial(getAuthority(), getGrpcOpts()...); err != nil {
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
 	}
 	defer cc.Close()
