@@ -48,7 +48,7 @@ func (q *Queue) Add(locations []string, ids []int64) {
 		var err error
 		t := Track{}
 
-		if err = db.First(&t, v).Error; err != nil {
+		if err = t.Read(v); err != nil {
 			log.Error(err)
 			continue
 		}
@@ -109,7 +109,7 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 
 	for i := len(ids) - 1; i >= 0; i-- {
 		t := Track{}
-		if err := db.First(&t, ids[i]).Error; err != nil {
+		if err := t.Read(ids[i]); err != nil {
 			log.Error(err)
 			continue
 		}
@@ -185,7 +185,7 @@ func (q *Queue) Pop() (qt *QueueTrack, err error) {
 	}
 	log.Info("Found location to pop from queue:", qt.Location)
 	qt.Played = true
-	err = db.Save(qt).Error
+	err = qt.Save()
 
 	go q.reorder()
 	return
@@ -203,7 +203,7 @@ func (q *Queue) appendTo(qt *QueueTrack) (err error) {
 
 	qt.QueueID = q.ID
 	qt.Position = int(qs) + 1
-	err = db.Create(qt).Error
+	err = qt.Create()
 	go findQueueTrack(qt)
 	return
 }
@@ -216,7 +216,7 @@ func (q *Queue) deleteFrom(qt *QueueTrack) (err error) {
 		Info("Deleting track from queue")
 
 	qt.Played = true
-	if err = db.Save(qt).Error; err != nil {
+	if err = qt.Save(); err != nil {
 		return
 	}
 	go q.reorder()
@@ -252,7 +252,7 @@ func (q *Queue) insertInto(qt *QueueTrack) (err error) {
 		return
 	}
 	qt.QueueID = q.ID
-	if err = db.Create(qt).Error; err != nil {
+	if err = qt.Create(); err != nil {
 		return
 	}
 	q.reorder()
@@ -290,6 +290,18 @@ type QueueTrack struct { // too transient
 	TrackID   int64  `json:"trackId" gorm:"index:idx_queue_track_track_id"`
 	QueueID   int64  `json:"queueId" gorm:"index:idx_queue_track_queue_id,not null"`
 	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`
+}
+
+// Create implements the DataCreator interface
+func (qt *QueueTrack) Create() (err error) {
+	err = db.Create(qt).Error
+	return
+}
+
+// Save implements the DataUpdater interface
+func (qt *QueueTrack) Save() (err error) {
+	err = db.Save(qt).Error
+	return
 }
 
 // ToProtobuf implements the ProtoOut interface
@@ -383,7 +395,7 @@ func findQueueTrack(qt *QueueTrack) {
 		return
 	}
 	qt.TrackID = t.ID
-	err := db.Save(qt).Error
+	err := qt.Save()
 	onerror.Log(err)
 	return
 }

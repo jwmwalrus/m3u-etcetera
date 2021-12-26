@@ -88,12 +88,22 @@ func GetState() gst.StateOptions {
 
 // IsPaused checks if a stream is paused right now
 func IsPaused() bool {
-	return eng.state == gst.StatePaused
+	return eng.playbin != nil && eng.state == gst.StatePaused
 }
 
 // IsPlaying checks if a stream is playing right now
 func IsPlaying() bool {
-	return eng.state == gst.StatePlaying
+	return eng.playbin != nil && eng.state == gst.StatePlaying
+}
+
+// IsReady checks if a stream is ready
+func IsReady() bool {
+	return eng.playbin != nil && eng.state == gst.StateReady
+}
+
+// IsStreaming check if a stream is playing or paused
+func IsStreaming() bool {
+	return IsPaused() || IsPlaying()
 }
 
 // IsStopped checks if a stream is playing right now
@@ -106,7 +116,7 @@ func NextStream() (err error) {
 	eng.lastEvent = nextEvent
 	log.Infof("Firing the %v event", eng.lastEvent)
 
-	if eng.playbin == nil || !(eng.state == gst.StatePlaying || eng.state == gst.StateReady) {
+	if !(IsStreaming() || IsReady()) {
 		return
 	}
 
@@ -175,6 +185,10 @@ func PlayStreams(force bool, locations []string, ids []int64) {
 
 // PreviousStream plays the previous stream in history
 func PreviousStream() {
+	if !IsStreaming() {
+		return
+	}
+
 	eng.lastEvent = previousEvent
 	log.Infof("Firing the %v event", eng.lastEvent)
 
@@ -191,7 +205,7 @@ func SeekInStream(pos int64) {
 	eng.lastEvent = seekEvent
 	log.Infof("Firing the %v event", eng.lastEvent)
 
-	if eng.playbin == nil || eng.state != gst.StatePlaying {
+	if !IsPlaying() {
 		return
 	}
 
@@ -280,8 +294,11 @@ func StopStream() {
 		log.Infof("Firing the %v event", eng.lastEvent)
 	}
 
-	if eng.playbin == nil || !IsPlaying() {
+	if !IsStreaming() {
 		return
+	}
+
+	if IsPaused() {
 	}
 
 	eos := gst.NewEosEvent()

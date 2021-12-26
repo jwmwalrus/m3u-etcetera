@@ -200,8 +200,9 @@ func (e *engine) playStream(pb *models.Playback) {
 	bus := e.playbin.GetBus()
 
 	for !e.terminate {
-		msg := bus.TimedPopFiltered(100*time.Millisecond, gst.MessageStateChanged|gst.MessageError|gst.MessageWarning|gst.MessageInfo|gst.MessageEos|gst.MessageDurationChanged)
-		// msg := bus.Pull(gst.MessageStateChanged | gst.MessageError | gst.MessageWarning | gst.MessageInfo | gst.MessageEos | gst.MessageDurationChanged)
+		msg := bus.TimedPopFiltered(100*time.Millisecond, gst.MessageEos|
+			gst.MessageError|gst.MessageWarning|gst.MessageInfo|
+			gst.MessageStateChanged|gst.MessageDurationChanged)
 
 		if msg != nil {
 			e.handleMessage(msg, pb)
@@ -242,21 +243,18 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 	case gst.MessageEos:
 		e.debugChannel("End of stream: %v", pb.Location)
 		if !e.goingBack {
-			go pb.AddToHistory(e.lastPosition)
+			go pb.AddToHistory(e.lastPosition, e.duration)
 		}
 		e.terminate = true
 		break
 
-	case gst.MessageDurationChanged:
-		e.duration = 0
-
-	case gst.MessageInfo:
-		e.debugChannel(msg.GetName())
 	case gst.MessageError:
 		log.Error(msg.GetName())
 		e.terminate = true
 	case gst.MessageWarning:
 		log.Warning(msg.GetName())
+	case gst.MessageInfo:
+		e.debugChannel(msg.GetName())
 	case gst.MessageStateChanged:
 		e.prevState, e.state, _ = msg.ParseStateChanged()
 		// if (GST_MESSAGE_SRC (msg) == GST_OBJECT (data->playbin)) {
@@ -287,6 +285,9 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 				e.debugChannel("Seeking query failed")
 			}
 		}
+
+	case gst.MessageDurationChanged:
+		e.duration = 0
 
 	default:
 	}

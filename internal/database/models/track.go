@@ -144,7 +144,7 @@ func AddTrackFromLocation(location string, withTags bool) (t *Track, err error) 
 		onerror.Log(err)
 	}
 
-	err = db.Save(t).Error
+	err = t.Save()
 	return
 }
 

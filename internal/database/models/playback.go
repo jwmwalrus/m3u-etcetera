@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -22,9 +23,21 @@ type Playback struct { // too transient
 	TrackID   int64  `json:"trackId"`
 }
 
+// Create implements the DataCreator interface
+func (pb *Playback) Create() (err error) {
+	err = db.Create(pb).Error
+	return
+}
+
 // Read implements the DataReader interface
 func (pb *Playback) Read(id int64) (err error) {
 	err = db.First(pb, id).Error
+	return
+}
+
+// Save implements the DataUpdater interface
+func (pb *Playback) Save() (err error) {
+	err = db.Save(pb).Error
 	return
 }
 
@@ -48,31 +61,39 @@ func (pb *Playback) ToProtobuf() proto.Message {
 }
 
 // AddToHistory adds unplayed playback to history and marks it as played
-func (pb *Playback) AddToHistory(duration int64) {
+func (pb *Playback) AddToHistory(position, duration int64) {
 	log.WithFields(log.Fields{
 		"pb":       *pb,
+		"position": position,
 		"duration": duration,
 	}).
 		Info("Adding playback to history")
 
 	pb.Played = true
-	db.Save(&pb)
+	pb.Save()
 	go func() {
 		h := PlaybackHistory{
 			Location: pb.Location,
 			TrackID:  pb.TrackID,
+			Duration: position,
 		}
-		err := db.Create(&h).Error
+		err := h.Create()
 		onerror.Log(err)
 		if pb.TrackID > 0 {
-			t := Track{}
-			if err := db.First(&t, pb.TrackID).Error; err != nil {
+			t := &Track{}
+			if t, err = pb.GetTrack(); err != nil {
 				log.Error(err)
 				return
 			}
-			t.Lastplayed = h.CreatedAt
-			t.Playcount++
-			err = db.Save(&t).Error
+
+			if time.Duration(position) >= time.Duration(base.Conf.Server.Playback.PlayedThreshold)*time.Second {
+				t.Lastplayed = h.CreatedAt
+				t.Playcount++
+			}
+			if t.Duration == 0 {
+				t.Duration = duration
+			}
+			err = t.Save()
 			onerror.Warn(err)
 		}
 	}()
@@ -109,7 +130,7 @@ func (pb *Playback) FindTrack() {
 		return
 	}
 	pb.TrackID = t.ID
-	err := db.Save(pb).Error
+	err := pb.Save()
 	onerror.Log(err)
 	return
 }
@@ -123,9 +144,8 @@ func (pb *Playback) GetNextToPlay() (err error) {
 // GetTrack returns the track for the given playback
 func (pb *Playback) GetTrack() (t *Track, err error) {
 	t = &Track{}
-	err = db.First(&t, pb.TrackID).Error
+	err = db.First(t, pb.TrackID).Error
 	return
-
 }
 
 // PlaybackHistory defines a playback_history row
@@ -136,6 +156,12 @@ type PlaybackHistory struct {
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime,index:idx_playback_history_created_at"`
 	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 	TrackID   int64  `json:"trackId" gorm:"index:idx_playback_history_track_id"`
+}
+
+// Create implements the DataCreator interface
+func (h *PlaybackHistory) Create() (err error) {
+	err = db.Create(h).Error
+	return
 }
 
 // FindLastBy returns the newest entry in the playback history, according to the given query
@@ -156,7 +182,7 @@ func AddPlaybackLocation(location string) (pb *Playback) {
 		Info("Adding playback entry by location")
 
 	pb = &Playback{Location: location}
-	if err := db.Create(pb).Error; err != nil {
+	if err := pb.Create(); err != nil {
 		log.Error(err)
 		return
 	}
@@ -170,7 +196,7 @@ func AddPlaybackTrack(t *Track) (pb *Playback) {
 		Info("Adding playback entry by track")
 
 	pb = &Playback{Location: t.Location, TrackID: t.ID}
-	err := db.Create(pb).Error
+	err := pb.Create()
 	onerror.Log(err)
 	return
 }

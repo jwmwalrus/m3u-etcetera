@@ -67,7 +67,7 @@ func (c *Collection) Delete() (err error) {
 	defer func() { <-storageGuard }()
 
 	c.Disabled = true
-	if err = db.Save(c).Error; err != nil {
+	if err = c.Save(); err != nil {
 		log.Error(err)
 		return
 	}
@@ -107,7 +107,7 @@ func (c *Collection) Delete() (err error) {
 	}
 
 	// delete collection
-	err = db.Delete(&Collection{}, c.ID).Error
+	err = c.Delete()
 	onerror.Log(err)
 	return
 }
@@ -274,7 +274,7 @@ func (c *Collection) Scan(withTags bool) {
 	}
 	log.Infof("ScanCollection Summary:\nTracks expected: %v\nTracks found: %v\nUnsupported tracks: %v\nScanning Errors: %v", iTrack, nTrack, unsupp, scanErr)
 	c.Scanned = 100
-	err = db.Save(c).Error
+	err = c.Save()
 	onerror.Log(err)
 	return
 }
