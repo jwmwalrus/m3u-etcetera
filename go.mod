@@ -7,7 +7,7 @@ require (
 	github.com/dhowden/tag v0.0.0-20201120070457-d52dcb253c63
 	github.com/go-gormigrate/gormigrate/v2 v2.0.0
 	github.com/go-testfixtures/testfixtures/v3 v3.6.1
-	github.com/gotk3/gotk3 v0.6.1
+	github.com/gotk3/gotk3 v0.6.2-0.20211226093840-cf265f40b836
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/jwmwalrus/bnp v1.6.0
 	github.com/jwmwalrus/seater v0.1.1
@@ -25,6 +25,8 @@ require (
 	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.22.4
 )
+
+replace github.com/notedit/gst v0.0.9 => ../../repos/gst
 
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
