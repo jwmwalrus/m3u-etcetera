@@ -154,11 +154,11 @@ func (q *Query) FindTracks(qbs []QueryBoundaryTx) (ts []*Track) {
 				}
 				y := x.ToFuzzy().ToSQL()
 				if y.Or {
-					tx.Or(y.Key+comp, y.Val)
+					tx.Or("track."+y.Key+comp, y.Val)
 				} else if y.Not {
-					tx.Not(y.Key+comp, y.Val)
+					tx.Not("track."+y.Key+comp, y.Val)
 				} else {
-					tx.Where(y.Key+comp, y.Val)
+					tx.Where("track."+y.Key+comp, y.Val)
 				}
 			}
 		}

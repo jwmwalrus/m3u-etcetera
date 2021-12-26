@@ -159,24 +159,8 @@ func AddTrackFromPath(path string, withTags bool) (t *Track, err error) {
 	return
 }
 
-// CheckNotFoundTracks returns the not-found track IDs from a given list
-func CheckNotFoundTracks(ids []int64) (notFound []int64) {
-	ts := FindTracksIn(ids)
-	actual := []int64{}
-	for i := range ts {
-		actual = append(actual, ts[i].ID)
-	}
-
-	for _, id := range ids {
-		if !slice.Contains(actual, id) {
-			notFound = append(notFound, id)
-		}
-	}
-	return
-}
-
 // FindTracksIn returns the tracks for the given IDs
-func FindTracksIn(ids []int64) (ts []*Track) {
+func FindTracksIn(ids []int64) (ts []*Track, notFound []int64) {
 	ts = []*Track{}
 	if len(ids) < 1 {
 		return
@@ -189,10 +173,25 @@ func FindTracksIn(ids []int64) (ts []*Track) {
 		return
 	}
 
-	ts = []*Track{}
+	actual := []int64{}
 	for i := range list {
+		actual = append(actual, list[i].ID)
 		ts = append(ts, &list[i])
 	}
+
+	for _, id := range ids {
+		if !slice.Contains(actual, id) {
+			notFound = append(notFound, id)
+		}
+	}
+	return
+}
+
+// ReadTagsForLocation returns a track containing the tags read
+// for the given location
+func ReadTagsForLocation(location string) (t *Track, err error) {
+	t = &Track{Location: location}
+	err = t.updateTags()
 	return
 }
 

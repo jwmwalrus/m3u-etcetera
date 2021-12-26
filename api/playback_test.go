@@ -17,9 +17,7 @@ func TestGetPlayback(t *testing.T) {
 			0,
 			&m3uetcpb.Empty{},
 			&m3uetcpb.GetPlaybackResponse{
-				Playing: &m3uetcpb.GetPlaybackResponse_Empty{
-					Empty: &m3uetcpb.Empty{},
-				},
+				Playing: false,
 			},
 			false,
 		},
@@ -30,12 +28,12 @@ func TestGetPlayback(t *testing.T) {
 			0,
 			&m3uetcpb.Empty{},
 			&m3uetcpb.GetPlaybackResponse{
-				Playing: &m3uetcpb.GetPlaybackResponse_Playback{
-					Playback: &m3uetcpb.Playback{
-						Id:       1,
-						Location: "./data/testing/audio1/track01.ogg",
-					},
+				Playing: true,
+				Playback: &m3uetcpb.Playback{
+					Id:       1,
+					Location: "./data/testing/audio1/track01.ogg",
 				},
+				Track: &m3uetcpb.Track{},
 			},
 			false,
 		},
@@ -46,14 +44,17 @@ func TestGetPlayback(t *testing.T) {
 			0,
 			&m3uetcpb.Empty{},
 			&m3uetcpb.GetPlaybackResponse{
-				Playing: &m3uetcpb.GetPlaybackResponse_Track{
-					Track: &m3uetcpb.Track{
-						Id:       1,
-						Location: "./data/testing/audio1/track01.ogg",
-						Title:    "track",
-						Album:    "tracks",
-						Artist:   "tracker",
-					},
+				Playing: true,
+				Playback: &m3uetcpb.Playback{
+					Id:       1,
+					Location: "./data/testing/audio1/track01.ogg",
+				},
+				Track: &m3uetcpb.Track{
+					Id:       1,
+					Location: "./data/testing/audio1/track01.ogg",
+					Title:    "track",
+					Album:    "tracks",
+					Artist:   "tracker",
 				},
 			},
 			false,
@@ -72,21 +73,17 @@ func TestGetPlayback(t *testing.T) {
 			res, err := svc.GetPlayback(context.Background(), tc.req.(*m3uetcpb.Empty))
 
 			assert.Equal(t, err != nil, tc.err)
-			if exp.GetEmpty() != nil {
-				assert.Equal(t, res.GetEmpty() != nil, true)
-			}
-			if exp.GetPlayback() != nil {
-				assert.Equal(t, res.GetPlayback() != nil, true)
-				assert.Equal(t, res.GetPlayback().Id, exp.GetPlayback().Id)
-				assert.Equal(t, res.GetPlayback().Location, exp.GetPlayback().Location)
-			}
-			if exp.GetTrack() != nil {
-				assert.Equal(t, res.GetTrack() != nil, true)
-				assert.Equal(t, res.GetTrack().Id, exp.GetTrack().Id)
-				assert.Equal(t, res.GetTrack().Location, exp.GetTrack().Location)
-				assert.Equal(t, res.GetTrack().Title, exp.GetTrack().Title)
-				assert.Equal(t, res.GetTrack().Album, exp.GetTrack().Album)
-				assert.Equal(t, res.GetTrack().Artist, exp.GetTrack().Artist)
+			assert.Equal(t, res.Playing, exp.Playing)
+			if res.Playing {
+				assert.Equal(t, res.Playback != nil, true)
+				assert.Equal(t, res.Playback.Id, exp.Playback.Id)
+				assert.Equal(t, res.Playback.Location, exp.Playback.Location)
+				assert.Equal(t, res.Track != nil, true)
+				assert.Equal(t, res.Track.Id, exp.Track.Id)
+				assert.Equal(t, res.Track.Location, exp.Track.Location)
+				assert.Equal(t, res.Track.Title, exp.Track.Title)
+				assert.Equal(t, res.Track.Album, exp.Track.Album)
+				assert.Equal(t, res.Track.Artist, exp.Track.Artist)
 			}
 		})
 	}

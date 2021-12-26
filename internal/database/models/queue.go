@@ -348,14 +348,24 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qs []*QueueTrack, ts []
 
 	qs = []*QueueTrack{}
 	ids := []int64{}
+	locations := []string{}
 	for i := range qsList {
 		if qsList[i].TrackID > 0 {
 			ids = append(ids, qsList[i].TrackID)
+		} else {
+			locations = append(locations, qsList[i].Location)
 		}
 		qs = append(qs, &qsList[i])
 	}
 
-	ts = FindTracksIn(ids)
+	ts, _ = FindTracksIn(ids)
+	for _, l := range locations {
+		t := &Track{}
+		if t, err = ReadTagsForLocation(l); err != nil {
+			continue
+		}
+		ts = append(ts, t)
+	}
 	return
 }
 

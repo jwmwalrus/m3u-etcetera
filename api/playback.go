@@ -24,20 +24,22 @@ func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb
 
 	pb := playback.GetPlayback()
 	if pb != nil {
+		res := &m3uetcpb.GetPlaybackResponse{Playing: true}
+		res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
+		res.Track = &m3uetcpb.Track{}
 		if pb.TrackID > 0 {
 			if t, err := pb.GetTrack(); err == nil {
-				out := t.ToProtobuf().(*m3uetcpb.Track)
-				res := &m3uetcpb.GetPlaybackResponse_Track{Track: out}
-				return &m3uetcpb.GetPlaybackResponse{Playing: res}, nil
+				res.Track = t.ToProtobuf().(*m3uetcpb.Track)
+			}
+		} else {
+			if t, err := models.ReadTagsForLocation(pb.Location); err == nil {
+				res.Track = t.ToProtobuf().(*m3uetcpb.Track)
 			}
 		}
-		out := pb.ToProtobuf().(*m3uetcpb.Playback)
-		res := &m3uetcpb.GetPlaybackResponse_Playback{Playback: out}
-		return &m3uetcpb.GetPlaybackResponse{Playing: res}, nil
+		return res, nil
 	}
 
-	res := &m3uetcpb.GetPlaybackResponse_Empty{Empty: &m3uetcpb.Empty{}}
-	return &m3uetcpb.GetPlaybackResponse{Playing: res}, nil
+	return &m3uetcpb.GetPlaybackResponse{Playing: false}, nil
 }
 
 // ExecutePlaybackAction implements m3uetcpb.PlaybackSvcServer
@@ -50,7 +52,7 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.Execu
 			}
 		}
 		if len(req.Ids) > 0 {
-			notFound := models.CheckNotFoundTracks(req.Ids)
+			_, notFound := models.FindTracksIn(req.Ids)
 			if len(notFound) > 0 {
 				return nil, grpc.Errorf(codes.InvalidArgument, "Non-existing track IDs were provided: %+v", notFound)
 			}
@@ -119,29 +121,27 @@ subsLoop:
 				pb = nil
 			}
 			if pb != nil {
+				res := &m3uetcpb.SubscribeToPlaybackResponse{Playing: true}
+				res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
+				res.Track = &m3uetcpb.Track{}
 				if pb.TrackID > 0 {
 					if t, err := pb.GetTrack(); err == nil {
-						out := t.ToProtobuf().(*m3uetcpb.Track)
-						res := &m3uetcpb.SubscribeToPlaybackResponse_Track{Track: out}
-						err = stream.Send(&m3uetcpb.SubscribeToPlaybackResponse{Playing: res})
-						if err != nil {
-							log.Warn(err)
-							break subsLoop
-						}
-						continue subsLoop
+						res.Track = t.ToProtobuf().(*m3uetcpb.Track)
+					}
+				} else {
+					if t, err := models.ReadTagsForLocation(pb.Location); err == nil {
+						res.Track = t.ToProtobuf().(*m3uetcpb.Track)
 					}
 				}
-				out := pb.ToProtobuf().(*m3uetcpb.Playback)
-				res := &m3uetcpb.SubscribeToPlaybackResponse_Playback{Playback: out}
-				err := stream.Send(&m3uetcpb.SubscribeToPlaybackResponse{Playing: res})
+				err := stream.Send(res)
 				if err != nil {
 					log.Warn(err)
 					break subsLoop
 				}
 				continue subsLoop
 			}
-			res := &m3uetcpb.SubscribeToPlaybackResponse_Empty{}
-			err := stream.Send(&m3uetcpb.SubscribeToPlaybackResponse{Playing: res})
+			res := &m3uetcpb.SubscribeToPlaybackResponse{Playing: false}
+			err := stream.Send(res)
 			if err != nil {
 				log.Warn(err)
 				break subsLoop

@@ -57,6 +57,21 @@ func GetTextView(id string) (tv *gtk.TextView, err error) {
 	return
 }
 
+func GetToolButton(id string) (btn *gtk.ToolButton, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get tool-button object: %w", err)
+		return
+	}
+
+	btn, ok := obj.(*gtk.ToolButton)
+	if !ok {
+		err = fmt.Errorf("Unable to create tool-button: %w", err)
+		return
+	}
+	return
+}
+
 func SetTextView(id, val string) (err error) {
 	tv, err := GetTextView(id)
 	if err != nil {

@@ -24,11 +24,9 @@ message Playback {
 }
 
 message GetPlaybackResponse {
-    oneof playing {
-        Empty empty = 1;
-        Playback playback = 2;
-        Track track = 3;
-    }
+    bool playing = 1;
+    Playback playback = 2;
+    Track track = 3;
 }
 
 message ExecutePlaybackActionRequest {
@@ -41,11 +39,9 @@ message ExecutePlaybackActionRequest {
 }
 
 message SubscribeToPlaybackResponse {
-    oneof playing {
-        Empty empty = 1;
-        Playback playback = 2;
-        Track track = 3;
-    }
+    bool playing = 1;
+    Playback playback = 2;
+    Track track = 3;
 }
 
 enum PlaybackAction {

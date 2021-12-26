@@ -2,6 +2,7 @@ package gtkui
 
 import (
 	"context"
+	"net/url"
 	"sync"
 
 	"github.com/gotk3/gotk3/glib"
@@ -52,7 +53,20 @@ func setupPlayback(signals *map[string]interface{}) (err error) {
 		go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_PREVIOUS)
 	}
 	(*signals)["on_control_play_clicked"] = func(btn *gtk.ToolButton) {
-		go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_PLAY)
+		action := m3uetcpb.PlaybackAction_PB_PLAY
+		iconName := "media-playback-pause"
+
+		name := btn.GetIconName()
+		if name == "media-playback-pause" {
+			action = m3uetcpb.PlaybackAction_PB_PAUSE
+			iconName = "media-playback-start"
+		}
+		btn, err := builder.GetToolButton("control_play")
+		onerror.Warn(err)
+		if btn != nil {
+			btn.SetIconName(iconName)
+		}
+		go onControlClicked(btn, action)
 	}
 	(*signals)["on_control_stop_clicked"] = func(btn *gtk.ToolButton) {
 		go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_STOP)
@@ -97,54 +111,54 @@ func subscribeToPlayback() {
 }
 
 func updatePlayback() bool {
-	changed := false
-
 	status.mu.Lock()
-	if status.data.GetEmpty() != nil {
+	playing := status.data.Playing
+	if playing {
+		playbackID = status.data.Playback.Id
+		location = status.data.Playback.Location
+		trackID = status.data.Track.Id
+		title = status.data.Track.Title
+		artist = status.data.Track.Artist
+		album = status.data.Track.Album
+	} else {
 		if location != "" {
 			playbackID, trackID = 0, 0
 			location = ""
 			title, artist, album = "", "", ""
-			changed = true
-		}
-	}
-	if status.data.GetPlayback() != nil {
-		pb := status.data.GetPlayback()
-		if location != pb.Location {
-			playbackID = pb.Id
-			location = pb.Location
-			title, artist, album = "", "", ""
-			changed = true
-		}
-	}
-	if status.data.GetTrack() != nil {
-		t := status.data.GetTrack()
-		if location != t.Location {
-			trackID = t.Id
-			location = t.Location
-			title, artist, album = t.Title, t.Artist, t.Album
-			changed = true
 		}
 	}
 	status.mu.Unlock()
 
-	if changed {
-		ltitle, lartist, lsource := title, artist, location
-		if title == "" {
-			ltitle = "Not Playing"
+	un, err := url.QueryUnescape(location)
+	if err != nil {
+		location = un
+	}
+
+	ltitle, lartist, lsource := title, artist, location
+	if title == "" {
+		ltitle = "Not Playing"
+	}
+	if artist != "" {
+		lartist = "by " + artist
+	}
+	if album != "" {
+		lsource = "from " + album
+	}
+	err = builder.SetTextView("playback_title", ltitle)
+	onerror.Warn(err)
+	err = builder.SetTextView("playback_artist", lartist)
+	onerror.Warn(err)
+	err = builder.SetTextView("playback_source", lsource)
+	onerror.Warn(err)
+
+	btn, err := builder.GetToolButton("control_play")
+	onerror.Warn(err)
+	if btn != nil {
+		if playing {
+			btn.SetIconName("media-playback-pause")
+		} else {
+			btn.SetIconName("media-playback-start")
 		}
-		if artist != "" {
-			lartist = "by " + artist
-		}
-		if album != "" {
-			lsource = "from " + album
-		}
-		err := builder.SetTextView("playback_title", ltitle)
-		onerror.Warn(err)
-		err = builder.SetTextView("playback_artist", lartist)
-		onerror.Warn(err)
-		err = builder.SetTextView("playback_source", lsource)
-		onerror.Warn(err)
 	}
 	return false
 }

@@ -57,7 +57,7 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 			}
 		}
 		if len(req.Ids) > 0 {
-			notFound := models.CheckNotFoundTracks(req.Ids)
+			_, notFound := models.FindTracksIn(req.Ids)
 			if len(notFound) > 0 {
 				return nil, grpc.Errorf(codes.InvalidArgument, "Non-existing track IDs were provided: %+v", notFound)
 			}

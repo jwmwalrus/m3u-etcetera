@@ -108,14 +108,14 @@ func playbackAction(c *cli.Context) (err error) {
 		return
 	}
 
-	if _, ok := res.Playing.(*m3uetcpb.GetPlaybackResponse_Empty); ok {
+	if !res.Playing {
 		fmt.Printf("\nThere is no active playback\n")
 		return
 	}
 
 	if c.Bool("json") {
 		var bv []byte
-		bv, err = json.MarshalIndent(res.Playing, "", "  ")
+		bv, err = json.MarshalIndent(res, "", "  ")
 		if err != nil {
 			return
 		}
@@ -123,29 +123,24 @@ func playbackAction(c *cli.Context) (err error) {
 		return
 	}
 
-	switch res.Playing.(type) {
-	case *m3uetcpb.GetPlaybackResponse_Playback:
-		pb := res.GetPlayback()
+	if res.Track.Title == "" {
 
 		tbl := table.New("ID", "Location")
-		un, _ := url.QueryUnescape(pb.Location)
+		un, _ := url.QueryUnescape(res.Playback.Location)
 		if un == "" {
-			un = pb.Location
+			un = res.Playback.Location
 		}
-		tbl.AddRow(pb.Id, un)
+		tbl.AddRow(res.Playback.Id, un)
 		tbl.Print()
-	case *m3uetcpb.GetPlaybackResponse_Track:
-		t := res.GetTrack()
-
-		tbl := table.New("ID", "Title", "Artist", "Album", "Year")
-		artist := t.Artist
-		if artist == "" {
-			artist = t.Albumartist
-		}
-		tbl.AddRow(t.Id, t.Title, artist, t.Album, t.Year)
-		tbl.Print()
-	default:
 	}
+
+	tbl := table.New("ID", "Title", "Artist", "Album", "Duration")
+	artist := res.Track.Artist
+	if artist == "" {
+		artist = res.Track.Albumartist
+	}
+	tbl.AddRow(res.Track.Id, res.Track.Title, artist, res.Track.Album, res.Track.Duration)
+	tbl.Print()
 
 	return
 }
