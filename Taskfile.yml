@@ -14,21 +14,27 @@ tasks:
 
   build:
     cmds:
-      - task: build-server
-      - task: build-task
-      - task: build-gtk
-  build-server:
+      - task: build:server
+      - task: build:task
+      - task: build:gtk
+  build:s:
+    cmds:
+      - task: build:server
+  build:t:
+    cmds:
+      - task: build:task
+  build:g:
+    cmds:
+      - task: build:gtk
+  build:server:
     cmds:
       - go build -v -o ./m3uetc-server{{exeExt}} ./cmd/m3uetc-server
-    silent: true
-  build-task:
+  build:task:
     cmds:
       - go build -v -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
-    silent: true
-  build-gtk:
+  build:gtk:
     cmds:
       - go build -v -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
-    silent: true
 
   clean:
     cmds:
@@ -37,15 +43,24 @@ tasks:
       - rm m3uetc-gtk > /dev/null 2>&1
     silent: true
 
-  dev-server:
+  dev:s:
+    cmds:
+      - task: dev:server
+  dev:t:
+    cmds:
+      - task: dev:task
+  dev:g:
+    cmds:
+      - task: dev:gtk
+  dev:server:
     cmds:
       - go run ./cmd/m3uetc-server
     silent: true
-  dev-task:
+  dev:task:
     cmds:
       - go run ./cmd/m3uetc-task
     silent: true
-  dev-gtk:
+  dev:gtk:
     cmds:
       - go run ./cmd/m3uetc-gtk
     silent: true
@@ -55,19 +70,19 @@ tasks:
       - go test -v -p 1 ./...
     silent: true
 
-  bump-min:
+  bump:min:
     cmds:
-      - task: bump-minor
+      - task: bump:minor
     silent: true
-  bump-p:
+  bump:p:
     cmds:
-      - task: bump-patch
+      - task: bump:patch
     silent: true
-  bump-minor:
+  bump:minor:
     cmds:
       - bumpy bump --minor
     silent: true
-  bump-patch:
+  bump:patch:
     cmds:
       - bumpy bump --patch
     silent: true
