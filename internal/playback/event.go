@@ -5,6 +5,7 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
 )
@@ -153,6 +154,10 @@ func PauseStream(off bool) (err error) {
 		eng.playbin.SetState(eng.state)
 	}
 
+	subscription.Broadcast(
+		subscription.ToPlaybackEvent,
+		subscription.Event{Data: GetPlayback()},
+	)
 	return
 }
 
@@ -193,10 +198,9 @@ func PreviousStream() {
 	log.Infof("Firing the %v event", eng.lastEvent)
 
 	eng.goingBack = true
-	defer func() { eng.goingBack = false }()
 
-	prevInHistory <- struct{}{}
 	StopStream()
+	prevInHistory <- struct{}{}
 	return
 }
 

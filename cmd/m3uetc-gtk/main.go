@@ -6,6 +6,7 @@ import (
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	gtkui "github.com/jwmwalrus/m3u-etcetera/internal/gtk"
+	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/store"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -37,6 +38,7 @@ func main() {
 	}
 
 	window.Connect("destroy", func() {
+		// store.Unsubscribe()
 		gtk.MainQuit()
 	})
 
@@ -48,6 +50,8 @@ func main() {
 	builder.ConnectSignals(signals)
 
 	window.ShowAll()
+
+	store.Subscribe()
 
 	gtk.Main()
 }

@@ -21,6 +21,7 @@ type PlaybackSvcClient interface {
 	GetPlayback(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPlaybackResponse, error)
 	ExecutePlaybackAction(ctx context.Context, in *ExecutePlaybackActionRequest, opts ...grpc.CallOption) (*Empty, error)
 	SubscribeToPlayback(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybackSvc_SubscribeToPlaybackClient, error)
+	UnsubscribeFromPlayback(ctx context.Context, in *UnsubscribeFromPlaybackRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type playbackSvcClient struct {
@@ -81,6 +82,15 @@ func (x *playbackSvcSubscribeToPlaybackClient) Recv() (*SubscribeToPlaybackRespo
 	return m, nil
 }
 
+func (c *playbackSvcClient) UnsubscribeFromPlayback(ctx context.Context, in *UnsubscribeFromPlaybackRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybackSvc/UnsubscribeFromPlayback", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PlaybackSvcServer is the server API for PlaybackSvc service.
 // All implementations must embed UnimplementedPlaybackSvcServer
 // for forward compatibility
@@ -88,6 +98,7 @@ type PlaybackSvcServer interface {
 	GetPlayback(context.Context, *Empty) (*GetPlaybackResponse, error)
 	ExecutePlaybackAction(context.Context, *ExecutePlaybackActionRequest) (*Empty, error)
 	SubscribeToPlayback(*Empty, PlaybackSvc_SubscribeToPlaybackServer) error
+	UnsubscribeFromPlayback(context.Context, *UnsubscribeFromPlaybackRequest) (*Empty, error)
 	mustEmbedUnimplementedPlaybackSvcServer()
 }
 
@@ -103,6 +114,9 @@ func (UnimplementedPlaybackSvcServer) ExecutePlaybackAction(context.Context, *Ex
 }
 func (UnimplementedPlaybackSvcServer) SubscribeToPlayback(*Empty, PlaybackSvc_SubscribeToPlaybackServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToPlayback not implemented")
+}
+func (UnimplementedPlaybackSvcServer) UnsubscribeFromPlayback(context.Context, *UnsubscribeFromPlaybackRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromPlayback not implemented")
 }
 func (UnimplementedPlaybackSvcServer) mustEmbedUnimplementedPlaybackSvcServer() {}
 
@@ -174,6 +188,24 @@ func (x *playbackSvcSubscribeToPlaybackServer) Send(m *SubscribeToPlaybackRespon
 	return x.ServerStream.SendMsg(m)
 }
 
+func _PlaybackSvc_UnsubscribeFromPlayback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsubscribeFromPlaybackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PlaybackSvcServer).UnsubscribeFromPlayback(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/m3uetcpb.PlaybackSvc/UnsubscribeFromPlayback",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PlaybackSvcServer).UnsubscribeFromPlayback(ctx, req.(*UnsubscribeFromPlaybackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PlaybackSvc_ServiceDesc is the grpc.ServiceDesc for PlaybackSvc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -188,6 +220,10 @@ var PlaybackSvc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExecutePlaybackAction",
 			Handler:    _PlaybackSvc_ExecutePlaybackAction_Handler,
+		},
+		{
+			MethodName: "UnsubscribeFromPlayback",
+			Handler:    _PlaybackSvc_UnsubscribeFromPlayback_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

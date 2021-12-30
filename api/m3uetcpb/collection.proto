@@ -5,6 +5,7 @@ package m3uetcpb;
 option go_package = './m3uetcpb';
 
 import 'api/m3uetcpb/common.proto';
+import 'api/m3uetcpb/track.proto';
 
 service CollectionSvc {
     rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse);
@@ -14,6 +15,11 @@ service CollectionSvc {
     rpc UpdateCollection(UpdateCollectionRequest) returns (Empty);
     rpc ScanCollection(ScanCollectionRequest) returns (Empty);
     rpc DiscoverCollections(Empty) returns (Empty);
+
+    rpc SubscribeToCollectionStore(Empty)
+        returns (stream SubscribeToCollectionStoreResponse);
+    rpc UnsubscribeFromCollectionStore(UnsubscribeFromCollectionStoreRequest)
+        returns (Empty);
 }
 
 message GetCollectionRequest {
@@ -59,15 +65,47 @@ message ScanCollectionRequest {
     bool update_tags = 2;
 }
 
+message SubscribeToCollectionStoreResponse {
+    string subscription_id = 1;
+    CollectionEvent event = 2;
+    oneof item {
+        CollectionTrack collection_track = 3;
+        Collection collection = 4;
+        Track track = 5;
+    }
+}
+
+message UnsubscribeFromCollectionStoreRequest {
+    string subscription_id = 1;
+}
+
 message Collection {
     int64 id = 1;
     string name = 2;
     string description = 3;
     string location = 4;
-    bool disabled = 5;
-    bool remote = 6;
-    int32 scanned = 7;
-    int64 tracks = 8;
+    bool hidden = 5;
+    bool disabled = 6;
+    bool remote = 7;
+    int32 scanned = 8;
+    int64 tracks = 9;
     int64 created_at = 101;
     int64 updated_at = 102;
+}
+
+message CollectionTrack {
+    int64 id = 1;
+    int64 collection_id = 2;
+    int64 track_id = 3;
+    int64 created_at = 101;
+    int64 updated_at = 102;
+}
+
+enum CollectionEvent {
+    CE_NONE = 0;
+    CE_INITIAL = 1;
+    CE_INITIAL_DONE = 2;
+    CE_ITEM_ADDED = 3;
+    CE_ITEM_CHANGED = 4;
+    CE_ITEM_REMOVED = 5;
 }

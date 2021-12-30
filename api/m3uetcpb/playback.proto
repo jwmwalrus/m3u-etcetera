@@ -5,28 +5,25 @@ package m3uetcpb;
 option go_package = './m3uetcpb';
 
 import 'api/m3uetcpb/common.proto';
+import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/track.proto';
 
 service PlaybackSvc {
     rpc GetPlayback(Empty) returns (GetPlaybackResponse);
     rpc ExecutePlaybackAction(ExecutePlaybackActionRequest) returns (Empty);
-    rpc SubscribeToPlayback(Empty) returns (stream SubscribeToPlaybackResponse);
-}
 
-message Playback {
-    int64 id = 1;
-    string location = 2;
-    bool played = 3;
-    int64 skip = 4;
-    int64 track_id = 5;
-    int64 created_at = 101;
-    int64 updated_at = 102;
+    rpc SubscribeToPlayback(Empty) returns (stream SubscribeToPlaybackResponse);
+    rpc UnsubscribeFromPlayback(UnsubscribeFromPlaybackRequest) returns (Empty);
 }
 
 message GetPlaybackResponse {
-    bool playing = 1;
-    Playback playback = 2;
-    Track track = 3;
+    bool is_streaming = 1;
+    bool is_playing = 2;
+    bool is_paused = 3;
+    bool is_stopped = 4;
+    bool is_ready = 5;
+    Playback playback = 6;
+    Track track = 7;
 }
 
 message ExecutePlaybackActionRequest {
@@ -39,9 +36,28 @@ message ExecutePlaybackActionRequest {
 }
 
 message SubscribeToPlaybackResponse {
-    bool playing = 1;
-    Playback playback = 2;
-    Track track = 3;
+    string subscription_id = 1;
+    bool is_streaming = 2;
+    bool is_playing = 3;
+    bool is_paused = 4;
+    bool is_stopped = 5;
+    bool is_ready = 6;
+    Playback playback = 7;
+    Track track = 8;
+}
+
+message UnsubscribeFromPlaybackRequest {
+    string subscription_id = 1;
+}
+
+message Playback {
+    int64 id = 1;
+    string location = 2;
+    bool played = 3;
+    int64 skip = 4;
+    int64 track_id = 5;
+    int64 created_at = 101;
+    int64 updated_at = 102;
 }
 
 enum PlaybackAction {

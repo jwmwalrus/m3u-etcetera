@@ -6,6 +6,7 @@ import (
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -26,6 +27,15 @@ type Queue struct { // too transient
 	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime"`
 	PerspectiveID int64       `json:"perspectiveId" gorm:"uniqueIndex:unique_idx_queue_perspective_id,not null"`
 	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
+}
+
+// Read implements the DataReader interface
+func (q *Queue) Read(id int64) (err error) {
+	err = db.
+		Preload("Perspective").
+		Joins("JOIN perspective ON queue.perspective_id = perspective.id").
+		First(q, id).Error
+	return
 }
 
 // Add adds the given locations/IDs to the end of the queue
@@ -57,6 +67,8 @@ func (q *Queue) Add(locations []string, ids []int64) {
 		err = q.appendTo(&qt)
 		onerror.Log(err)
 	}
+
+	subscription.Broadcast(subscription.ToQueueStoreEvent)
 	return
 }
 
@@ -66,7 +78,8 @@ func (q *Queue) Clear() {
 		Info("Clearing queue")
 
 	s := []QueueTrack{}
-	if err := db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error; err != nil {
+	err := db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
+	if err != nil {
 		return
 	}
 
@@ -74,8 +87,12 @@ func (q *Queue) Clear() {
 		s[i].Played = true
 	}
 
-	err := db.Where("id > 0").Save(&s).Error
-	onerror.Log(err)
+	if err = db.Save(&s).Error; err != nil {
+		log.Error(err)
+		return
+	}
+
+	subscription.Broadcast(subscription.ToQueueStoreEvent)
 	return
 }
 
@@ -87,14 +104,27 @@ func (q *Queue) DeleteAt(position int) {
 	}).
 		Info("Deleting entry from queue")
 
-	qt := QueueTrack{}
-	if err := db.Where("queue_id = ? AND position = ?", q.ID, position).First(&qt).Error; err != nil {
+	s := []QueueTrack{}
+	err := db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
+	if err != nil {
 		return
 	}
 
-	err := q.deleteFrom(&qt)
-	onerror.Log(err)
-	return
+	for i := range s {
+		if s[i].Position == position {
+			s[i].Played = true
+			break
+		}
+	}
+
+	s = reasignQueueTrackPositions(s)
+
+	if err := db.Save(&s).Error; err != nil {
+		log.Error(err)
+		return
+	}
+
+	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
 // InsertAt inserts the given locations and IDs into the queue
@@ -123,6 +153,8 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 		err := q.insertInto(&qt)
 		onerror.Log(err)
 	}
+
+	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
 // MoveTo moves one queue track from one position to another
@@ -130,6 +162,12 @@ func (q *Queue) MoveTo(from, to int) {
 	if from == to || from < 1 {
 		return
 	}
+
+	log.WithFields(log.Fields{
+		"from": from,
+		"to":   to,
+	}).
+		Info("Moving queue tracks")
 
 	s := []QueueTrack{}
 	db.Where("queue_id = ? AND played = 0", q.ID).Order("position").Find(&s)
@@ -160,34 +198,41 @@ func (q *Queue) MoveTo(from, to int) {
 	}
 	moved = append(moved, afterPiv...)
 
-	newPos := 0
-	for i := range moved {
-		newPos++
-		moved[i].Position = newPos
-	}
+	moved = reasignQueueTrackPositions(moved)
 
 	if err := db.Save(&moved).Error; err != nil {
 		return
 	}
+	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
 // Pop returns the next entry to be played from the queue
-func (q *Queue) Pop() (qt *QueueTrack, err error) {
+func (q *Queue) Pop() (qt *QueueTrack) {
 	log.WithField("q", *q).
 		Info("Popping from queue")
 
-	q.reorder()
-
-	qt = &QueueTrack{}
-	if err = db.Where("queue_id = ? AND played = 0 AND position = 1", q.ID).First(qt).Error; err != nil {
-		log.Info("Nothing to pop!")
+	s := []QueueTrack{}
+	err := db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
+	if err != nil {
 		return
 	}
-	log.Info("Found location to pop from queue:", qt.Location)
-	qt.Played = true
-	err = qt.Save()
 
-	go q.reorder()
+	for i := range s {
+		if s[i].Position == 1 {
+			s[i].Played = true
+			qt = &s[i]
+			break
+		}
+	}
+	if qt == nil {
+		return
+	}
+	s = reasignQueueTrackPositions(s)
+
+	log.Info("Found location to pop from queue:", qt.Location)
+	err = db.Save(&s).Error
+
+	subscription.Broadcast(subscription.ToQueueStoreEvent)
 	return
 }
 
@@ -198,28 +243,26 @@ func (q *Queue) appendTo(qt *QueueTrack) (err error) {
 	}).
 		Info("Appending track to queue")
 
-	var qs int64
-	db.Model(&QueueTrack{}).Where("queue_id = ? AND played = 0", q.ID).Count(&qs)
-
 	qt.QueueID = q.ID
-	qt.Position = int(qs) + 1
-	err = qt.Create()
-	go findQueueTrack(qt)
-	return
-}
-
-func (q *Queue) deleteFrom(qt *QueueTrack) (err error) {
-	log.WithFields(log.Fields{
-		"q":  *q,
-		"qt": *qt,
-	}).
-		Info("Deleting track from queue")
-
 	qt.Played = true
-	if err = qt.Save(); err != nil {
+	if err = qt.Create(); err != nil {
 		return
 	}
-	go q.reorder()
+	qt.Played = false
+
+	s := []QueueTrack{}
+	err = db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
+	if err != nil {
+		return
+	}
+
+	s = append(s, *qt)
+	s = reasignQueueTrackPositions(s)
+	if err = db.Save(&s).Error; err != nil {
+		return
+	}
+
+	go findQueueTrack(qt)
 	return
 }
 
@@ -230,52 +273,43 @@ func (q *Queue) insertInto(qt *QueueTrack) (err error) {
 	}).
 		Info("Inserting track into queue")
 
-	var qs int64
-	if err = db.Model(&QueueTrack{}).Where("queue_id = ? AND played = 0", q.ID).Count(&qs).Error; err != nil {
+	qt.QueueID = q.ID
+	qt.Played = true
+	if err = qt.Create(); err != nil {
 		return
 	}
+	qt.Played = false
+
+	s := []QueueTrack{}
+	err = db.Where("queue_id = ? AND played = 0", q.ID).
+		Order("position ASC").
+		Find(&s).
+		Error
+	if err != nil {
+		return
+	}
+
 	if qt.Position <= 1 {
-		qt.Position = 0
-	} else if qt.Position > 1 && qt.Position <= int(qs) {
-		s := []QueueTrack{}
-		if err = db.Where("queue_id = ? AND played = 0 AND position >= ?", q.ID, qt.Position).Find(&s).Error; err != nil {
-			return
-		}
-		for i := 0; i < len(s); i++ {
-			s[i].Position++
-		}
-		if err = db.Where("id > 0").Save(&s).Error; err != nil {
-			return
-		}
+		aux := s
+		s = []QueueTrack{*qt}
+		s = append(s, aux...)
+	} else if qt.Position > 1 && qt.Position <= len(s) {
+		aux := s
+		piv := int(qt.Position) - 1
+		s = aux[:piv]
+		s = append(s, *qt)
+		s = append(s, aux[piv:]...)
 	} else {
 		err = q.appendTo(qt)
 		return
 	}
-	qt.QueueID = q.ID
-	if err = qt.Create(); err != nil {
+
+	s = reasignQueueTrackPositions(s)
+	if err = db.Save(&s).Error; err != nil {
 		return
 	}
-	q.reorder()
+
 	go findQueueTrack(qt)
-	return
-}
-
-func (q *Queue) reorder() {
-	log.WithField("q", *q).
-		Info("Reordering queue")
-
-	s := []QueueTrack{}
-	db.Where("queue_id = ? AND played = 0", q.ID).Order("position").Find(&s)
-	if len(s) == 0 {
-		return
-	}
-
-	for i := 0; i < len(s); i++ {
-		s[i].Position = i + 1
-	}
-
-	err := db.Where("id > 0").Save(&s).Error
-	onerror.Log(err)
 	return
 }
 
@@ -317,6 +351,11 @@ func (qt *QueueTrack) ToProtobuf() proto.Message {
 	onerror.Log(err)
 
 	// Unmatched
+	q := Queue{}
+	err = q.Read(qt.QueueID)
+	onerror.Log(err)
+
+	out.Perspective = m3uetcpb.Perspective(q.Perspective.Idx)
 	out.TrackId = qt.TrackID
 	out.CreatedAt = qt.CreatedAt
 	out.UpdatedAt = qt.UpdatedAt
@@ -334,7 +373,7 @@ func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 }
 
 // GetAllQueueTracks returns all queue tracks for the given perspective, constrained by a limit
-func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qs []*QueueTrack, ts []*Track) {
+func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts []*Track) {
 	log.WithFields(log.Fields{
 		"idx":   idx,
 		"limit": limit,
@@ -355,19 +394,23 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qs []*QueueTrack, ts []
 		tx.Limit(limit)
 	}
 
-	qsList := []QueueTrack{}
-	tx.Find(&qsList)
+	qts = []*QueueTrack{}
+	ts = []*Track{}
+	list := []QueueTrack{}
+	if err = tx.Find(&list).Error; err != nil {
+		log.Error(err)
+		return
+	}
 
-	qs = []*QueueTrack{}
 	ids := []int64{}
 	locations := []string{}
-	for i := range qsList {
-		if qsList[i].TrackID > 0 {
-			ids = append(ids, qsList[i].TrackID)
+	for i := range list {
+		if list[i].TrackID > 0 {
+			ids = append(ids, list[i].TrackID)
 		} else {
-			locations = append(locations, qsList[i].Location)
+			locations = append(locations, list[i].Location)
 		}
-		qs = append(qs, &qsList[i])
+		qts = append(qts, &list[i])
 	}
 
 	ts, _ = FindTracksIn(ids)
@@ -377,6 +420,22 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qs []*QueueTrack, ts []
 			continue
 		}
 		ts = append(ts, t)
+	}
+	return
+}
+
+// GetQueueStore returns all queue tracks for all perspectives
+func GetQueueStore() (qs []*QueueTrack, ts []*Track) {
+	log.Info("Getting queue store")
+
+	for _, idx := range PerspectiveIndexList() {
+		qout, tout := GetAllQueueTracks(idx, 0)
+		for i := range qout {
+			qs = append(qs, qout[i])
+		}
+		for i := range tout {
+			ts = append(ts, tout[i])
+		}
 	}
 	return
 }
@@ -398,4 +457,16 @@ func findQueueTrack(qt *QueueTrack) {
 	err := qt.Save()
 	onerror.Log(err)
 	return
+}
+
+func reasignQueueTrackPositions(s []QueueTrack) []QueueTrack {
+	pos := 0
+	for i := range s {
+		if s[i].Played {
+			continue
+		}
+		pos++
+		s[i].Position = pos
+	}
+	return s
 }

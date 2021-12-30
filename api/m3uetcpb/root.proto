@@ -7,8 +7,8 @@ option go_package = './m3uetcpb';
 import 'api/m3uetcpb/common.proto';
 
 service RootSvc {
-    rpc Status(Empty) returns(StatusResponse);
-    rpc Off(Empty) returns(OffResponse);
+    rpc Status(Empty) returns (StatusResponse);
+    rpc Off(Empty) returns (OffResponse);
 }
 
 message StatusResponse {

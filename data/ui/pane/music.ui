@@ -2,15 +2,14 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <object class="GtkTreeStore" id="mystore">
+  <object class="GtkTreeStore" id="music_collection_store">
     <columns>
       <!-- column-name gchararray1 -->
-      <column type="gchararray"/>
-      <!-- column-name gchararray2 -->
       <column type="gchararray"/>
     </columns>
   </object>
   <object class="GtkPaned" id="music_perspective_pane">
+    <property name="height-request">400</property>
     <property name="visible">True</property>
     <property name="can-focus">True</property>
     <child>
@@ -60,32 +59,24 @@
               </packing>
             </child>
             <child>
-              <object class="GtkTreeView">
+              <object class="GtkScrolledWindow">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="model">mystore</property>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection"/>
-                </child>
+                <property name="shadow-type">in</property>
                 <child>
-                  <object class="GtkTreeViewColumn">
-                    <property name="title" translatable="yes">column1</property>
-                    <child>
-                      <object class="GtkCellRendererText"/>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkTreeViewColumn">
-                    <property name="title" translatable="yes">column2</property>
-                    <child>
-                      <object class="GtkCellRendererText"/>
+                  <object class="GtkTreeView" id="collections_view">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection" id="collections_sel">
+                        <signal name="changed" handler="on_collections_sel_changed" swapped="no"/>
+                      </object>
                     </child>
                   </object>
                 </child>
               </object>
               <packing>
-                <property name="expand">False</property>
+                <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">1</property>
               </packing>
@@ -193,7 +184,27 @@
             <property name="can-focus">False</property>
             <property name="orientation">vertical</property>
             <child>
-              <placeholder/>
+              <object class="GtkScrolledWindow">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="shadow-type">in</property>
+                <child>
+                  <object class="GtkTreeView" id="music_queue_view">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection" id="music_queue_sel">
+                        <signal name="changed" handler="on_music_queue_sel_changed" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
             </child>
           </object>
         </child>
@@ -232,5 +243,19 @@
         <property name="shrink">True</property>
       </packing>
     </child>
+  </object>
+  <object class="GtkListStore" id="music_queue_store">
+    <columns>
+      <!-- column-name gint1 -->
+      <column type="gint64"/>
+      <!-- column-name gint2 -->
+      <column type="gint"/>
+      <!-- column-name gchararray1 -->
+      <column type="gchararray"/>
+      <!-- column-name gint3 -->
+      <column type="gint"/>
+      <!-- column-name gint4 -->
+      <column type="gint64"/>
+    </columns>
   </object>
 </interface>

@@ -20,6 +20,8 @@ const _ = grpc.SupportPackageIsVersion7
 type QueueSvcClient interface {
 	GetQueue(ctx context.Context, in *GetQueueRequest, opts ...grpc.CallOption) (*GetQueueResponse, error)
 	ExecuteQueueAction(ctx context.Context, in *ExecuteQueueActionRequest, opts ...grpc.CallOption) (*Empty, error)
+	SubscribeToQueueStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (QueueSvc_SubscribeToQueueStoreClient, error)
+	UnsubscribeFromQueueStore(ctx context.Context, in *UnsubscribeFromQueueStoreRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type queueSvcClient struct {
@@ -48,12 +50,55 @@ func (c *queueSvcClient) ExecuteQueueAction(ctx context.Context, in *ExecuteQueu
 	return out, nil
 }
 
+func (c *queueSvcClient) SubscribeToQueueStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (QueueSvc_SubscribeToQueueStoreClient, error) {
+	stream, err := c.cc.NewStream(ctx, &QueueSvc_ServiceDesc.Streams[0], "/m3uetcpb.QueueSvc/SubscribeToQueueStore", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &queueSvcSubscribeToQueueStoreClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type QueueSvc_SubscribeToQueueStoreClient interface {
+	Recv() (*SubscribeToQueueStoreResponse, error)
+	grpc.ClientStream
+}
+
+type queueSvcSubscribeToQueueStoreClient struct {
+	grpc.ClientStream
+}
+
+func (x *queueSvcSubscribeToQueueStoreClient) Recv() (*SubscribeToQueueStoreResponse, error) {
+	m := new(SubscribeToQueueStoreResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *queueSvcClient) UnsubscribeFromQueueStore(ctx context.Context, in *UnsubscribeFromQueueStoreRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/m3uetcpb.QueueSvc/UnsubscribeFromQueueStore", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueueSvcServer is the server API for QueueSvc service.
 // All implementations must embed UnimplementedQueueSvcServer
 // for forward compatibility
 type QueueSvcServer interface {
 	GetQueue(context.Context, *GetQueueRequest) (*GetQueueResponse, error)
 	ExecuteQueueAction(context.Context, *ExecuteQueueActionRequest) (*Empty, error)
+	SubscribeToQueueStore(*Empty, QueueSvc_SubscribeToQueueStoreServer) error
+	UnsubscribeFromQueueStore(context.Context, *UnsubscribeFromQueueStoreRequest) (*Empty, error)
 	mustEmbedUnimplementedQueueSvcServer()
 }
 
@@ -66,6 +111,12 @@ func (UnimplementedQueueSvcServer) GetQueue(context.Context, *GetQueueRequest) (
 }
 func (UnimplementedQueueSvcServer) ExecuteQueueAction(context.Context, *ExecuteQueueActionRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteQueueAction not implemented")
+}
+func (UnimplementedQueueSvcServer) SubscribeToQueueStore(*Empty, QueueSvc_SubscribeToQueueStoreServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeToQueueStore not implemented")
+}
+func (UnimplementedQueueSvcServer) UnsubscribeFromQueueStore(context.Context, *UnsubscribeFromQueueStoreRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromQueueStore not implemented")
 }
 func (UnimplementedQueueSvcServer) mustEmbedUnimplementedQueueSvcServer() {}
 
@@ -116,6 +167,45 @@ func _QueueSvc_ExecuteQueueAction_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _QueueSvc_SubscribeToQueueStore_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(QueueSvcServer).SubscribeToQueueStore(m, &queueSvcSubscribeToQueueStoreServer{stream})
+}
+
+type QueueSvc_SubscribeToQueueStoreServer interface {
+	Send(*SubscribeToQueueStoreResponse) error
+	grpc.ServerStream
+}
+
+type queueSvcSubscribeToQueueStoreServer struct {
+	grpc.ServerStream
+}
+
+func (x *queueSvcSubscribeToQueueStoreServer) Send(m *SubscribeToQueueStoreResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _QueueSvc_UnsubscribeFromQueueStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsubscribeFromQueueStoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueSvcServer).UnsubscribeFromQueueStore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/m3uetcpb.QueueSvc/UnsubscribeFromQueueStore",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueSvcServer).UnsubscribeFromQueueStore(ctx, req.(*UnsubscribeFromQueueStoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // QueueSvc_ServiceDesc is the grpc.ServiceDesc for QueueSvc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -131,7 +221,17 @@ var QueueSvc_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ExecuteQueueAction",
 			Handler:    _QueueSvc_ExecuteQueueAction_Handler,
 		},
+		{
+			MethodName: "UnsubscribeFromQueueStore",
+			Handler:    _QueueSvc_UnsubscribeFromQueueStore_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeToQueueStore",
+			Handler:       _QueueSvc_SubscribeToQueueStore_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/m3uetcpb/queue.proto",
 }

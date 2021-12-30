@@ -1,0 +1,15 @@
+syntax = 'proto3';
+
+package m3uetcpb;
+
+option go_package = './m3uetcpb';
+
+service PerspectiveSvc {
+}
+
+enum Perspective {
+    MUSIC = 0;
+    RADIO = 1;
+    PODCASTS = 2;
+    AUDIOBOOKS = 3;
+}

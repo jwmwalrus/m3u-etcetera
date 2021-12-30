@@ -12,7 +12,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/migrations"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 
-	// _ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

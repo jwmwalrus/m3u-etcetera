@@ -9,6 +9,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -22,9 +23,15 @@ type PlaybackSvc struct {
 // GetPlayback implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
 
+	res := &m3uetcpb.GetPlaybackResponse{
+		IsStreaming: playback.IsStreaming(),
+		IsPlaying:   playback.IsPlaying(),
+		IsPaused:    playback.IsPaused(),
+		IsStopped:   playback.IsStopped(),
+		IsReady:     playback.IsReady(),
+	}
 	pb := playback.GetPlayback()
 	if pb != nil {
-		res := &m3uetcpb.GetPlaybackResponse{Playing: true}
 		res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
 		res.Track = &m3uetcpb.Track{}
 		if pb.TrackID > 0 {
@@ -39,7 +46,7 @@ func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb
 		return res, nil
 	}
 
-	return &m3uetcpb.GetPlaybackResponse{Playing: false}, nil
+	return res, nil
 }
 
 // ExecutePlaybackAction implements m3uetcpb.PlaybackSvcServer
@@ -60,17 +67,15 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.Execu
 	}
 
 	go func() {
-		go func() {
-			if !slice.Contains([]m3uetcpb.PlaybackAction{m3uetcpb.PlaybackAction_PB_PLAY, m3uetcpb.PlaybackAction_PB_SEEK}, req.Action) &&
-				(len(req.Locations) > 0 || len(req.Ids) > 0) {
-				for _, v := range req.Locations {
-					log.Warnf("Ignoring given location: %v", v)
-				}
-				for _, v := range req.Ids {
-					log.Warnf("Ignoring given ID: %v", v)
-				}
+		if !slice.Contains([]m3uetcpb.PlaybackAction{m3uetcpb.PlaybackAction_PB_PLAY, m3uetcpb.PlaybackAction_PB_SEEK}, req.Action) &&
+			(len(req.Locations) > 0 || len(req.Ids) > 0) {
+			for _, v := range req.Locations {
+				log.Warnf("Ignoring given location: %v", v)
 			}
-		}()
+			for _, v := range req.Ids {
+				log.Warnf("Ignoring given ID: %v", v)
+			}
+		}
 
 		switch req.Action {
 		case m3uetcpb.PlaybackAction_PB_SEEK:
@@ -95,6 +100,7 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.Execu
 		case m3uetcpb.PlaybackAction_PB_STOP:
 			playback.StopAll()
 		default:
+			return
 		}
 	}()
 
@@ -107,21 +113,35 @@ func (*PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty, stream m3uetcpb.Playb
 	base.GetBusy(base.IdleStatusSubscription)
 	defer func() { base.GetFree(base.IdleStatusSubscription) }()
 
-	subs := playback.Subscribe(playback.SubscribedToPlayback)
-	defer func() { subs.Unsubscribe() }()
+	s, id := subscription.Subscribe(subscription.ToPlaybackEvent)
+	defer func() { s.Unsubscribe() }()
 
-	go func() { time.Sleep(5 * time.Second); subs.Data <- playback.GetPlayback() }()
+	go func() {
+		time.Sleep(2 * time.Second)
+		s.Event <- subscription.Event{Data: playback.GetPlayback()}
+	}()
 
-subsLoop:
+sLoop:
 	for {
 		select {
-		case i := <-subs.Data:
-			pb, ok := i.(*models.Playback)
+		case e := <-s.Event:
+			if s.MustUnsubscribe(e) {
+				break sLoop
+			}
+
+			res := &m3uetcpb.SubscribeToPlaybackResponse{
+				SubscriptionId: id,
+				IsStreaming:    playback.IsStreaming(),
+				IsPlaying:      playback.IsPlaying(),
+				IsPaused:       playback.IsPaused(),
+				IsStopped:      playback.IsStopped(),
+				IsReady:        playback.IsReady(),
+			}
+			pb, ok := e.Data.(*models.Playback)
 			if !ok {
 				pb = nil
 			}
 			if pb != nil {
-				res := &m3uetcpb.SubscribeToPlaybackResponse{Playing: true}
 				res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
 				res.Track = &m3uetcpb.Track{}
 				if pb.TrackID > 0 {
@@ -136,17 +156,29 @@ subsLoop:
 				err := stream.Send(res)
 				if err != nil {
 					log.Warn(err)
-					break subsLoop
+					break sLoop
 				}
-				continue subsLoop
+				continue sLoop
 			}
-			res := &m3uetcpb.SubscribeToPlaybackResponse{Playing: false}
 			err := stream.Send(res)
 			if err != nil {
 				log.Warn(err)
-				break subsLoop
+				break sLoop
 			}
 		}
 	}
 	return nil
+}
+
+// UnsubscribeFromPlayback implements m3uetcpb.PlaybackSvcServer
+func (*PlaybackSvc) UnsubscribeFromPlayback(_ context.Context, req *m3uetcpb.UnsubscribeFromPlaybackRequest) (*m3uetcpb.Empty, error) {
+	if req.SubscriptionId == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "A non-empty subscription ID is required")
+	}
+	subscription.Broadcast(
+		subscription.ToNone,
+		subscription.Event{Data: req.SubscriptionId},
+	)
+
+	return &m3uetcpb.Empty{}, nil
 }

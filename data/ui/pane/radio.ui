@@ -11,7 +11,7 @@
         <property name="can-focus">True</property>
         <property name="tab-pos">left</property>
         <child>
-          <object class="GtkBox" id="stationd">
+          <object class="GtkBox" id="stations">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="orientation">vertical</property>

@@ -25,6 +25,8 @@ type CollectionSvcClient interface {
 	UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*Empty, error)
 	ScanCollection(ctx context.Context, in *ScanCollectionRequest, opts ...grpc.CallOption) (*Empty, error)
 	DiscoverCollections(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	SubscribeToCollectionStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (CollectionSvc_SubscribeToCollectionStoreClient, error)
+	UnsubscribeFromCollectionStore(ctx context.Context, in *UnsubscribeFromCollectionStoreRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type collectionSvcClient struct {
@@ -98,6 +100,47 @@ func (c *collectionSvcClient) DiscoverCollections(ctx context.Context, in *Empty
 	return out, nil
 }
 
+func (c *collectionSvcClient) SubscribeToCollectionStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (CollectionSvc_SubscribeToCollectionStoreClient, error) {
+	stream, err := c.cc.NewStream(ctx, &CollectionSvc_ServiceDesc.Streams[0], "/m3uetcpb.CollectionSvc/SubscribeToCollectionStore", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &collectionSvcSubscribeToCollectionStoreClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type CollectionSvc_SubscribeToCollectionStoreClient interface {
+	Recv() (*SubscribeToCollectionStoreResponse, error)
+	grpc.ClientStream
+}
+
+type collectionSvcSubscribeToCollectionStoreClient struct {
+	grpc.ClientStream
+}
+
+func (x *collectionSvcSubscribeToCollectionStoreClient) Recv() (*SubscribeToCollectionStoreResponse, error) {
+	m := new(SubscribeToCollectionStoreResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *collectionSvcClient) UnsubscribeFromCollectionStore(ctx context.Context, in *UnsubscribeFromCollectionStoreRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/m3uetcpb.CollectionSvc/UnsubscribeFromCollectionStore", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CollectionSvcServer is the server API for CollectionSvc service.
 // All implementations must embed UnimplementedCollectionSvcServer
 // for forward compatibility
@@ -109,6 +152,8 @@ type CollectionSvcServer interface {
 	UpdateCollection(context.Context, *UpdateCollectionRequest) (*Empty, error)
 	ScanCollection(context.Context, *ScanCollectionRequest) (*Empty, error)
 	DiscoverCollections(context.Context, *Empty) (*Empty, error)
+	SubscribeToCollectionStore(*Empty, CollectionSvc_SubscribeToCollectionStoreServer) error
+	UnsubscribeFromCollectionStore(context.Context, *UnsubscribeFromCollectionStoreRequest) (*Empty, error)
 	mustEmbedUnimplementedCollectionSvcServer()
 }
 
@@ -136,6 +181,12 @@ func (UnimplementedCollectionSvcServer) ScanCollection(context.Context, *ScanCol
 }
 func (UnimplementedCollectionSvcServer) DiscoverCollections(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DiscoverCollections not implemented")
+}
+func (UnimplementedCollectionSvcServer) SubscribeToCollectionStore(*Empty, CollectionSvc_SubscribeToCollectionStoreServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeToCollectionStore not implemented")
+}
+func (UnimplementedCollectionSvcServer) UnsubscribeFromCollectionStore(context.Context, *UnsubscribeFromCollectionStoreRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromCollectionStore not implemented")
 }
 func (UnimplementedCollectionSvcServer) mustEmbedUnimplementedCollectionSvcServer() {}
 
@@ -276,6 +327,45 @@ func _CollectionSvc_DiscoverCollections_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CollectionSvc_SubscribeToCollectionStore_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CollectionSvcServer).SubscribeToCollectionStore(m, &collectionSvcSubscribeToCollectionStoreServer{stream})
+}
+
+type CollectionSvc_SubscribeToCollectionStoreServer interface {
+	Send(*SubscribeToCollectionStoreResponse) error
+	grpc.ServerStream
+}
+
+type collectionSvcSubscribeToCollectionStoreServer struct {
+	grpc.ServerStream
+}
+
+func (x *collectionSvcSubscribeToCollectionStoreServer) Send(m *SubscribeToCollectionStoreResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _CollectionSvc_UnsubscribeFromCollectionStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsubscribeFromCollectionStoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CollectionSvcServer).UnsubscribeFromCollectionStore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/m3uetcpb.CollectionSvc/UnsubscribeFromCollectionStore",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CollectionSvcServer).UnsubscribeFromCollectionStore(ctx, req.(*UnsubscribeFromCollectionStoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CollectionSvc_ServiceDesc is the grpc.ServiceDesc for CollectionSvc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -311,7 +401,17 @@ var CollectionSvc_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "DiscoverCollections",
 			Handler:    _CollectionSvc_DiscoverCollections_Handler,
 		},
+		{
+			MethodName: "UnsubscribeFromCollectionStore",
+			Handler:    _CollectionSvc_UnsubscribeFromCollectionStore_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeToCollectionStore",
+			Handler:       _CollectionSvc_SubscribeToCollectionStore_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/m3uetcpb/collection.proto",
 }

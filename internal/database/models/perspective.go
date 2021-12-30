@@ -1,16 +1,28 @@
 package models
 
+import log "github.com/sirupsen/logrus"
+
+// PerspectiveIndex defines the perpective index
 type PerspectiveIndex int
 
 const (
+	// MusicPerspective -
 	MusicPerspective PerspectiveIndex = iota
+
+	// RadioPerspective -
 	RadioPerspective
+
+	// PodcastsPerspective -
 	PodcastsPerspective
+
+	// AudiobooksPerspective -
 	AudiobooksPerspective
 )
 
+// DefaultPerspective declares the default perspective
 const DefaultPerspective = MusicPerspective
 
+// PerspectiveIndexList returns the list of perspectives
 func PerspectiveIndexList() []PerspectiveIndex {
 	return []PerspectiveIndex{
 		MusicPerspective,
@@ -20,6 +32,7 @@ func PerspectiveIndexList() []PerspectiveIndex {
 	}
 }
 
+// PerspectiveIndexStrings Returns the string list of perspectives
 func PerspectiveIndexStrings() []string {
 	return []string{"Music", "Radio", "Podcasts", "Audiobooks"}
 }
@@ -28,7 +41,11 @@ func (idx PerspectiveIndex) String() string {
 	return PerspectiveIndexStrings()[idx]
 }
 
+// Activate sets the given perspective as active
 func (idx PerspectiveIndex) Activate() (err error) {
+	log.WithField("idx", idx).
+		Info("Activating perspective")
+
 	s := []Perspective{}
 	if err = db.Where("active = 1 OR idx = ?", int(idx)).Find(&s).Error; err != nil {
 		return
@@ -46,11 +63,14 @@ func (idx PerspectiveIndex) Activate() (err error) {
 	return
 
 }
+
+// Get returns the database row for the given index
 func (idx PerspectiveIndex) Get() (p Perspective) {
 	db.Where("idx = ?", int(idx)).First(&p)
 	return
 }
 
+// Perspective defines a perspective
 type Perspective struct {
 	ID          int64  `json:"id" gorm:"primaryKey"`
 	Idx         int    `json:"idx" gorm:"uniqueIndex:unique_idx_perspective_index,not null"`
@@ -60,6 +80,7 @@ type Perspective struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
+// GetActivePerspectiveIndex returns the index for the active perspective
 func GetActivePerspectiveIndex() (idx PerspectiveIndex) {
 	var err error
 	p := Perspective{}
@@ -72,6 +93,7 @@ func GetActivePerspectiveIndex() (idx PerspectiveIndex) {
 	return
 }
 
+// GetActivePerspectiveName -
 func GetActivePerspectiveName() string {
 	return GetActivePerspectiveIndex().String()
 }

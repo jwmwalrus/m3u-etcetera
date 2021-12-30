@@ -2,10 +2,14 @@ package api
 
 import (
 	"context"
+	"time"
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -168,6 +172,151 @@ func (*CollectionSvc) DiscoverCollections(_ context.Context, _ *m3uetcpb.Empty) 
 			coll.Scan(false)
 		}
 	}()
+
+	return &m3uetcpb.Empty{}, nil
+}
+
+// SubscribeToCollectionStore implements m3uetcpb.CollectionSvcServer
+func (*CollectionSvc) SubscribeToCollectionStore(_ *m3uetcpb.Empty, stream m3uetcpb.CollectionSvc_SubscribeToCollectionStoreServer) error {
+
+	base.GetBusy(base.IdleStatusSubscription)
+	defer func() { base.GetFree(base.IdleStatusSubscription) }()
+
+	s, id := subscription.Subscribe(subscription.ToCollectionStoreEvent)
+	defer func() { s.Unsubscribe() }()
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		s.Event <- subscription.Event{Idx: int(models.CollectionEventInitial)}
+	}()
+
+	sendCollectionTrack := func(e m3uetcpb.CollectionEvent, ct models.ProtoOut) error {
+		res := &m3uetcpb.SubscribeToCollectionStoreResponse{
+			SubscriptionId: id,
+			Event:          e,
+			Item: &m3uetcpb.SubscribeToCollectionStoreResponse_CollectionTrack{
+				CollectionTrack: ct.ToProtobuf().(*m3uetcpb.CollectionTrack),
+			},
+		}
+		return stream.Send(res)
+	}
+
+	sendCollection := func(e m3uetcpb.CollectionEvent, c models.ProtoOut) error {
+		res := &m3uetcpb.SubscribeToCollectionStoreResponse{
+			SubscriptionId: id,
+			Event:          e,
+			Item: &m3uetcpb.SubscribeToCollectionStoreResponse_Collection{
+				Collection: c.ToProtobuf().(*m3uetcpb.Collection),
+			},
+		}
+		return stream.Send(res)
+	}
+
+	sendTrack := func(e m3uetcpb.CollectionEvent, t models.ProtoOut) error {
+		res := &m3uetcpb.SubscribeToCollectionStoreResponse{
+			SubscriptionId: id,
+			Event:          e,
+			Item: &m3uetcpb.SubscribeToCollectionStoreResponse_Track{
+				Track: t.ToProtobuf().(*m3uetcpb.Track),
+			},
+		}
+		return stream.Send(res)
+	}
+
+sLoop:
+	for {
+
+		select {
+		case e := <-s.Event:
+			if s.MustUnsubscribe(e) {
+				break sLoop
+			}
+
+			if models.CollectionEvent(e.Idx) == models.CollectionEventInitial {
+				cts, cs, ts := models.GetCollectionStore()
+				for i := range cts {
+					err := sendCollectionTrack(
+						m3uetcpb.CollectionEvent_CE_INITIAL,
+						cts[i],
+					)
+					if err != nil {
+						break sLoop
+					}
+				}
+				for i := range cs {
+					err := sendCollection(
+						m3uetcpb.CollectionEvent_CE_INITIAL,
+						cs[i],
+					)
+					if err != nil {
+						break sLoop
+					}
+				}
+				for i := range ts {
+					err := sendTrack(
+						m3uetcpb.CollectionEvent_CE_INITIAL,
+						ts[i],
+					)
+					if err != nil {
+						break sLoop
+					}
+				}
+
+				res := &m3uetcpb.SubscribeToCollectionStoreResponse{
+					SubscriptionId: id,
+					Event:          m3uetcpb.CollectionEvent_CE_INITIAL_DONE,
+				}
+				err := stream.Send(res)
+				onerror.Log(err)
+				continue sLoop
+			}
+
+			var eout m3uetcpb.CollectionEvent
+			var fn func(m3uetcpb.CollectionEvent, models.ProtoOut) error
+
+			switch models.CollectionEvent(e.Idx) {
+			case models.CollectionEventItemAdded:
+				eout = m3uetcpb.CollectionEvent_CE_ITEM_ADDED
+			case models.CollectionEventItemChanged:
+				eout = m3uetcpb.CollectionEvent_CE_ITEM_CHANGED
+			case models.CollectionEventItemRemoved:
+				eout = m3uetcpb.CollectionEvent_CE_ITEM_REMOVED
+			default:
+				log.Errorf("Ignoring unsupported collection event: %v", e.Idx)
+				continue sLoop
+
+			}
+
+			switch e.Data.(type) {
+			case *models.CollectionTrack:
+				fn = sendCollectionTrack
+			case *models.Collection:
+				fn = sendCollection
+			case *models.Track:
+				fn = sendTrack
+			default:
+				log.Errorf("Ignoring unsupported data for %v: %+v", e.Idx, e.Data)
+				continue sLoop
+			}
+
+			if err := fn(eout, e.Data.(models.ProtoOut)); err != nil {
+				break sLoop
+			}
+		}
+	}
+	return nil
+
+}
+
+// UnsubscribeFromCollectionStore implements m3uetcpb.CollectionSvcServer
+func (*CollectionSvc) UnsubscribeFromCollectionStore(_ context.Context, req *m3uetcpb.UnsubscribeFromCollectionStoreRequest) (*m3uetcpb.Empty, error) {
+	if req.SubscriptionId == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "A non-empty subscription ID is required")
+	}
+	subscription.Broadcast(
+		subscription.ToNone,
+		subscription.Event{Data: req.SubscriptionId},
+	)
 
 	return &m3uetcpb.Empty{}, nil
 }

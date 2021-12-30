@@ -5,11 +5,16 @@ package m3uetcpb;
 option go_package = './m3uetcpb';
 
 import 'api/m3uetcpb/common.proto';
+import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/track.proto';
 
 service QueueSvc {
     rpc GetQueue(GetQueueRequest) returns (GetQueueResponse);
     rpc ExecuteQueueAction(ExecuteQueueActionRequest) returns (Empty);
+
+    rpc SubscribeToQueueStore(Empty)
+        returns (stream SubscribeToQueueStoreResponse);
+    rpc UnsubscribeFromQueueStore(UnsubscribeFromQueueStoreRequest) returns (Empty);
 }
 
 message GetQueueRequest {
@@ -31,15 +36,25 @@ message ExecuteQueueActionRequest {
     repeated string locations = 6;
 }
 
+message SubscribeToQueueStoreResponse {
+    string subscription_id = 1;
+    repeated QueueTrack queue_tracks = 2;
+    repeated Track tracks = 3;
+}
+
+message UnsubscribeFromQueueStoreRequest {
+    string subscription_id = 1;
+}
+
 message QueueTrack {
     int64 id = 1;
     int32 position = 2;
     bool played = 3;
     string location = 4;
-    int64 created_at = 5;
-    int64 updated_at = 6;
-    int64 track_id = 7;
-    int64 queue_id = 8;
+    Perspective perspective = 5;
+    int64 track_id = 6;
+    int64 created_at = 101;
+    int64 updated_at = 102;
 }
 
 enum QueueAction {

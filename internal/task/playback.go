@@ -108,7 +108,7 @@ func playbackAction(c *cli.Context) (err error) {
 		return
 	}
 
-	if !res.Playing {
+	if !res.IsStreaming {
 		fmt.Printf("\nThere is no active playback\n")
 		return
 	}

@@ -28,6 +28,21 @@ func GetComboBoxText(id string) (cbt *gtk.ComboBoxText, err error) {
 	return
 }
 
+func GetListStore(id string) (s *gtk.ListStore, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get list-store object: %w", err)
+		return
+	}
+
+	s, ok := obj.(*gtk.ListStore)
+	if !ok {
+		err = fmt.Errorf("Unable to create list-store: %w", err)
+		return
+	}
+	return
+}
+
 func GetNotebook(id string) (nb *gtk.Notebook, err error) {
 	obj, err := app.GetObject("perspective_panes")
 	if err != nil {
@@ -67,6 +82,36 @@ func GetToolButton(id string) (btn *gtk.ToolButton, err error) {
 	btn, ok := obj.(*gtk.ToolButton)
 	if !ok {
 		err = fmt.Errorf("Unable to create tool-button: %w", err)
+		return
+	}
+	return
+}
+
+func GetTreeStore(id string) (s *gtk.TreeStore, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get tree-store object: %w", err)
+		return
+	}
+
+	s, ok := obj.(*gtk.TreeStore)
+	if !ok {
+		err = fmt.Errorf("Unable to create tree-store: %w", err)
+		return
+	}
+	return
+}
+
+func GetTreeView(id string) (s *gtk.TreeView, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get tree-view object: %w", err)
+		return
+	}
+
+	s, ok := obj.(*gtk.TreeView)
+	if !ok {
+		err = fmt.Errorf("Unable to create tree-view: %w", err)
 		return
 	}
 	return

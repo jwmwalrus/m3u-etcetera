@@ -39,7 +39,7 @@ type Track struct {
 	Playcount   int    `json:"playCount"`
 	Rating      int    `json:"rating" gorm:"index:idx_track_rating"`
 	Duration    int64  `json:"duration"`
-	Remote      bool   `json:"remote"` // if track is remote
+	Remote      bool   `json:"remote"` // if track is remote but not in a remote collectioin
 	Lastplayed  int64  `json:"lastPlayed"`
 	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`

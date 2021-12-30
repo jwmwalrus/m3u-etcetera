@@ -2,7 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -38,6 +37,38 @@ func (idx CollectionIndex) Get() (c *Collection, err error) {
 	return
 }
 
+// CollectionEvent defines a collection event
+type CollectionEvent int
+
+const (
+	// CollectionEventNone -
+	CollectionEventNone CollectionEvent = iota
+
+	// CollectionEventInitial -
+	CollectionEventInitial
+
+	// CollectionEventInitialDone -
+	_
+
+	// CollectionEventItemAdded -
+	CollectionEventItemAdded
+
+	// CollectionEventItemChanged -
+	CollectionEventItemChanged
+
+	// CollectionEventItemRemoved -
+	CollectionEventItemRemoved
+)
+
+func (ce CollectionEvent) String() string {
+	return []string{
+		"initial",
+		"item-added",
+		"item-changed",
+		"item-removed",
+	}[ce]
+}
+
 // Collection defines a collection row
 type Collection struct {
 	ID          int64  `json:"id" gorm:"primaryKey"`
@@ -63,6 +94,7 @@ func (c *Collection) Create() (err error) {
 // Delete implements DataDeleter interface
 func (c *Collection) Delete() (err error) {
 	log.Info("Deleting collection")
+
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
 
@@ -145,6 +177,7 @@ func (c *Collection) ToProtobuf() proto.Message {
 // CountTracks counts tracks that belong to the collection
 func (c *Collection) CountTracks() {
 	log.Info("Counting tracks in collection")
+
 	if c.Scanned != 100 {
 		return
 	}
@@ -165,6 +198,7 @@ func (c *Collection) Scan(withTags bool) {
 	}
 
 	log.Info("Scanning collection")
+
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
 
@@ -281,6 +315,9 @@ func (c *Collection) Scan(withTags bool) {
 
 // Verify removes tracks that do not exist in the collection anymore
 func (c *Collection) Verify() {
+	log.WithField("c", *c).
+		Info("Verifying collection")
+
 	if c.Disabled {
 		log.Info("Cannot verify collection while disabled")
 		return
@@ -324,6 +361,24 @@ func (ct *CollectionTrack) Save() error {
 // Delete implements DataWriter interface
 func (ct *CollectionTrack) Delete() error {
 	return db.Delete(&ct).Error
+}
+
+// ToProtobuf implements ProtoOut interface
+func (ct *CollectionTrack) ToProtobuf() proto.Message {
+	bv, err := json.Marshal(ct)
+	if err != nil {
+		log.Error(err)
+		return &m3uetcpb.CollectionTrack{}
+	}
+
+	out := &m3uetcpb.CollectionTrack{}
+	err = json.Unmarshal(bv, out)
+	onerror.Log(err)
+
+	// Unmatched
+	out.CreatedAt = ct.CreatedAt
+	out.UpdatedAt = ct.UpdatedAt
+	return out
 }
 
 // DeleteWithRemote removes a collection-track from collection, along with the track
@@ -493,7 +548,6 @@ func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQu
 	if q.ID > 0 {
 		s := q.GetCollections()
 		if len(s) > 0 {
-			fmt.Println("own bounded collections")
 			err = db.
 				Joins("JOIN collection on collection_query.collection_id = "+
 					"collection.id and collection.hidden = 0 and collection.disabled = 0").
@@ -501,7 +555,6 @@ func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQu
 				Find(&list).
 				Error
 		} else {
-			fmt.Println("all collections")
 			cs := []Collection{}
 			if err = db.Where("hidden = 0 and disabled = 0").Find(&cs).Error; err != nil {
 				return
@@ -514,7 +567,6 @@ func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQu
 	} else {
 		cs := []Collection{}
 		if len(ids) > 0 {
-			fmt.Println("given bounded collections")
 			if err = db.Where("hidden = 0 and disabled = 0 and id in ?", ids).Find(&cs).Error; err != nil {
 				return
 			}
@@ -524,7 +576,6 @@ func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQu
 				list = append(list, c)
 			}
 		} else {
-			fmt.Println("all valid collections")
 			if err = db.Where("hidden = 0 and disabled = 0").Find(&cs).Error; err != nil {
 				return
 			}
@@ -545,15 +596,27 @@ func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQu
 	return
 }
 
-// GetCollectionTree returns all valid collection tracks
-func GetCollectionTree() (cts []*CollectionTrack) {
+// GetCollectionStore returns all valid collection tracks
+func GetCollectionStore() (cts []*CollectionTrack, cs []*Collection, ts []*Track) {
 	cts = []*CollectionTrack{}
+	cs = []*Collection{}
+	ts = []*Track{}
 
-	list := []CollectionTrack{}
-	db.Preload("track").Joins("JOIN collection ON collection_track.collection_id = collection.id AND collection.hidden = 0 AND collection.disabled = 0").Find(&list)
+	ctList := []CollectionTrack{}
+	cList := []Collection{}
+	tList := []Track{}
+	db.Find(&ctList)
+	db.Find(&cList)
+	db.Find(&tList)
 
-	for i := range list {
-		cts = append(cts, &list[i])
+	for i := range ctList {
+		cts = append(cts, &ctList[i])
+	}
+	for i := range cList {
+		cs = append(cs, &cList[i])
+	}
+	for i := range tList {
+		ts = append(ts, &tList[i])
 	}
 	return
 }

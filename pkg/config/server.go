@@ -3,22 +3,25 @@ package config
 import "strconv"
 
 const (
-	// DefaultServerScheme idem
+	// DefaultServerScheme -
 	DefaultServerScheme = "http"
 
-	// DefaultServerHost idem
+	// DefaultServerHost -
 	DefaultServerHost = "localhost"
 
-	// DefaultServerPort idem
+	// DefaultServerPort -
 	DefaultServerPort = 50099
 
-	// DefaultServerAPIVersion idem
+	// DefaultServerAPIVersion -
 	DefaultServerAPIVersion = "/api/v1"
 
-	// DefaultQueryLimit idem
+	// DefaultPlayedThreshold -
+	DefaultPlayedThreshold = 30
+
+	// DefaultQueryLimit -
 	DefaultQueryLimit = 0
 
-	// DefaultQueryMaxLimit idem
+	// DefaultQueryMaxLimit -
 	DefaultQueryMaxLimit = 1023
 )
 
@@ -29,6 +32,7 @@ type Server struct {
 	Port       int      `json:"port"`
 	APIVersion string   `json:"apiVersion"`
 	Database   Database `json:"database"`
+	Playback   Playback `json:"playback"`
 	Query      Query    `json:"query"`
 }
 
@@ -72,6 +76,18 @@ type Database struct {
 // SetDefaults provides default settings
 func (db *Database) SetDefaults() {
 	db.Backup = true
+}
+
+// Playback playback-related config
+type Playback struct {
+	PlayedThreshold int `json:"playedThreshold"`
+}
+
+// SetDefaults provides default settings
+func (pb *Playback) SetDefaults() {
+	if pb.PlayedThreshold == 0 {
+		pb.PlayedThreshold = DefaultPlayedThreshold
+	}
 }
 
 // Query query-related config

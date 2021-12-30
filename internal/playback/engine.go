@@ -7,6 +7,7 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -92,7 +93,7 @@ loop:
 			err := pb.GetNextToPlay()
 			if err != nil {
 				q, _ := models.GetActivePerspectiveIndex().GetPerspectiveQueue()
-				if qt, err := q.Pop(); err == nil {
+				if qt := q.Pop(); qt != nil {
 					e.debugChannel("Popped successfully")
 					pb = e.addPlaybackFromQueue(qt)
 				}
@@ -151,8 +152,18 @@ func (e *engine) playStream(pb *models.Playback) {
 	log.WithField("pb", *pb).
 		Info("Starting playStream")
 
-	broadcastEvent(SubscribedToPlayback, pb)
-	defer func() { broadcastEvent(SubscribedToPlayback, nil) }()
+	defer func() { e.goingBack = false }()
+
+	subscription.Broadcast(
+		subscription.ToPlaybackEvent,
+		subscription.Event{Data: pb},
+	)
+	defer func() {
+		subscription.Broadcast(
+			subscription.ToPlaybackEvent,
+			subscription.Event{Data: nil},
+		)
+	}()
 
 	e.pb = pb
 	e.terminate = false

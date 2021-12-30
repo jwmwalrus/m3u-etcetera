@@ -2,10 +2,13 @@ package api
 
 import (
 	"context"
+	"time"
 
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -83,6 +86,67 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 		default:
 		}
 	}()
+
+	return &m3uetcpb.Empty{}, nil
+}
+
+// SubscribeToQueueStore implements m3uetcpb.QueueSvcServer
+func (*QueueSvc) SubscribeToQueueStore(_ *m3uetcpb.Empty, stream m3uetcpb.QueueSvc_SubscribeToQueueStoreServer) error {
+
+	base.GetBusy(base.IdleStatusSubscription)
+	defer func() { base.GetFree(base.IdleStatusSubscription) }()
+
+	s, id := subscription.Subscribe(subscription.ToQueueStoreEvent)
+	defer func() { s.Unsubscribe() }()
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		s.Event <- subscription.Event{}
+	}()
+
+sLoop:
+	for {
+		select {
+		case e := <-s.Event:
+			if s.MustUnsubscribe(e) {
+				break sLoop
+			}
+
+			res := &m3uetcpb.SubscribeToQueueStoreResponse{SubscriptionId: id}
+			qs, ts := models.GetQueueStore()
+
+			qtList := []*m3uetcpb.QueueTrack{}
+			for _, qt := range qs {
+				out := qt.ToProtobuf().(*m3uetcpb.QueueTrack)
+				qtList = append(qtList, out)
+			}
+			res.QueueTracks = qtList
+
+			tList := []*m3uetcpb.Track{}
+			for _, t := range ts {
+				out := t.ToProtobuf().(*m3uetcpb.Track)
+				tList = append(tList, out)
+			}
+
+			res.Tracks = tList
+			if err := stream.Send(res); err != nil {
+				break sLoop
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnsubscribeFromQueueStore implements m3uetcpb.QueueSvcServer
+func (*QueueSvc) UnsubscribeFromQueueStore(_ context.Context, req *m3uetcpb.UnsubscribeFromQueueStoreRequest) (*m3uetcpb.Empty, error) {
+	if req.SubscriptionId == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "A non-empty subscription ID is required")
+	}
+	subscription.Broadcast(
+		subscription.ToNone,
+		subscription.Event{Data: req.SubscriptionId},
+	)
 
 	return &m3uetcpb.Empty{}, nil
 }
