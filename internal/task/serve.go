@@ -13,8 +13,19 @@ func Serve() *cli.Command {
 		Usage:       "Controls the server",
 		UsageText:   "serve [--off]",
 		Description: "Starts or stops the m3uetc-server",
-		Flags: []cli.Flag{
-			&cli.BoolFlag{Name: "off"},
+		Subcommands: []*cli.Command{
+			{
+				Name: "off",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "Force server termination",
+					},
+				},
+				Usage:       "serve off [--force]",
+				Description: "Terminate server",
+				Action:      serveOffAction,
+			},
 		},
 		Action: serveAction,
 	}
@@ -36,6 +47,15 @@ func serveAction(c *cli.Context) (err error) {
 		return
 	}
 
-	err = alive.Serve(c.Bool("off"))
+	err = alive.Serve(false, false)
+	return
+}
+
+func serveOffAction(c *cli.Context) (err error) {
+	if err = mustNotParseExtraArgs(c); err != nil {
+		return
+	}
+
+	err = alive.Serve(true, c.Bool("force"))
 	return
 }

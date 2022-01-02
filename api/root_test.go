@@ -11,7 +11,7 @@ import (
 func TestRootOff(t *testing.T) {
 	c := RootSvc{}
 
-	req := &m3uetcpb.Empty{}
+	req := &m3uetcpb.OffRequest{}
 	res, err := c.Off(context.Background(), req)
 	assert.Equal(t, err != nil, false)
 	assert.Equal(t, res.GetGoingOff() || res.GetReason() == "", true)

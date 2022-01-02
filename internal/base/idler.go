@@ -35,11 +35,18 @@ const (
 )
 
 func (is IdleStatus) String() string {
-	return []string{"idle", "engine-loop", "db-operations", "file-operations"}[is]
+	return []string{
+		"idle",
+		"engine-loop",
+		"subscription",
+		"db-operations",
+		"file-operations",
+	}[is]
 }
 
 var (
 	forceExit       = false
+	exitNow         = false
 	idleStatusStack = []IdleStatus{IdleStatusIdle}
 	doneEmmitted    = 0
 	idleGotCalled   = false
@@ -47,6 +54,14 @@ var (
 	// InteruptSignal -
 	InterruptSignal chan os.Signal
 )
+
+// DoTerminate forces immediate termination of the application
+func DoTerminate(force bool) {
+	exitNow = true
+	if force {
+		forceExit = true
+	}
+}
 
 // GetBusy registers a process as busy, to prevent idle timeout
 func GetBusy(is IdleStatus) {
@@ -130,9 +145,4 @@ func IsAppBusyBy(is IdleStatus) bool {
 // IsAppIdling returns true if the Idle method is active
 func IsAppIdling() bool {
 	return idleGotCalled //&& len(idleStatusStack) == 1
-}
-
-// DoTerminate forces immediate termination of the application
-func DoTerminate() {
-	forceExit = true
 }

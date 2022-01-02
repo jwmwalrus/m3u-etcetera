@@ -32,7 +32,7 @@ var (
 // CheckServerStatus If ServerCheckInterval is up, starts the server
 func CheckServerStatus() (err error) {
 	if time.Now().Unix()-LastCheck > ServerCheckInterval {
-		err = Serve(false)
+		err = Serve(false, false)
 	}
 
 	return
@@ -45,11 +45,11 @@ func GetGrpcDialOpts() (opts []grpc.DialOption) {
 }
 
 // Serve starts or stops the server
-func Serve(turnOff bool) (err error) {
+func Serve(turnOff, force bool) (err error) {
 	if isServerAlive() {
 		err = &ServerAlreadyRunning{}
 		if turnOff {
-			err = stopServer()
+			err = stopServer(force)
 		}
 		return
 	}
@@ -178,7 +178,7 @@ func startServer() (err error) {
 	return
 }
 
-func stopServer() (err error) {
+func stopServer(force bool) (err error) {
 	opts := GetGrpcDialOpts()
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts...)
@@ -188,7 +188,7 @@ func stopServer() (err error) {
 	defer cc.Close()
 
 	c := m3uetcpb.NewRootSvcClient(cc)
-	res, err := c.Off(context.Background(), &m3uetcpb.Empty{})
+	res, err := c.Off(context.Background(), &m3uetcpb.OffRequest{Force: force})
 	if err != nil {
 		return
 	}
@@ -200,7 +200,7 @@ func stopServer() (err error) {
 	}
 
 	alive := true
-	for i := 0; i < 12; i++ {
+	for i := 0; i < 6; i++ {
 		if alive = isServerAlive(); alive {
 			time.Sleep(5 * time.Second)
 			continue

@@ -8,11 +8,15 @@ import 'api/m3uetcpb/common.proto';
 
 service RootSvc {
     rpc Status(Empty) returns (StatusResponse);
-    rpc Off(Empty) returns (OffResponse);
+    rpc Off(OffRequest) returns (OffResponse);
 }
 
 message StatusResponse {
     bool alive = 1;
+}
+
+message OffRequest {
+    bool force = 1;
 }
 
 message OffResponse {
