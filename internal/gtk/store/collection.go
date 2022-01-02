@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"sort"
+	"strconv"
 	"sync"
 
 	"github.com/gotk3/gotk3/glib"
@@ -13,76 +15,64 @@ import (
 	"google.golang.org/grpc"
 )
 
+// CollectionsTree defines the collections-tree type
+type CollectionsTree int
+
+// Album: Album > Title
+// Artist: Artist > Album > Title
+// Album Artist: Album Artist > Album > Title
+// Genre - Artist: Genre > Artist > Album > Title
+// Genre - Album Artist: Genre > Album Artist > Album > Title
+// Genre - Album: Genre > Album  > Artist > Title
+// Year - Artist: Year > Artist > Album > Title
+// Year - Album Artist: Year > Album Artist > Album > Title
+// Year - Album: Year > Album  > Artist > Title
+//  Artist - (Year - Album): Artist > (Year - Album) > Title
+//  Album Artist - (Year - Album): Album Artist > (Year - Album) > Title
 const (
-	titleCol int = iota
-	albumCol
-	artistCol
-	albumArtistCol
-	genreCol
-	yearCol
+	ArtistYearAlbumTree CollectionsTree = iota
+	CollectionArtistYearAlbumTree
 )
 
-type collectionData struct {
-	subscriptionID  string
-	Mu              sync.Mutex
-	CollectionTrack []*m3uetcpb.CollectionTrack
-	Collection      []*m3uetcpb.Collection
-	Track           []*m3uetcpb.Track
+func (tree CollectionsTree) String() string {
+	return []string{
+		"Artist - (Year - Album)",
+		"Collection - Artist - (Year - Album)",
+	}[tree]
 }
 
 var (
+	collectionsModel *gtk.TreeStore
+	currentTree      CollectionsTree
+
 	// CStore collection store
-	CStore collectionData
+	CStore struct {
+		subscriptionID  string
+		Mu              sync.Mutex
+		CollectionTrack []*m3uetcpb.CollectionTrack
+		Collection      []*m3uetcpb.Collection
+		Track           []*m3uetcpb.Track
+	}
 )
 
-// Album -> Album > Title
-// Artist -> Artist > Album > Title
-// Album Artist -> Album Artist > Album > Title
+// CreateCollectionsModel creates a collection model
+func CreateCollectionsModel(tree CollectionsTree) (model *gtk.TreeStore, err error) {
+	log.WithField("tree", tree).
+		Info("Creating collections model")
 
-// Genre - Artist -> Genre > Artist > Album > Title
-// Genre - Album Artist -> Genre > Album Artist > Album > Title
-// Genre - Album -> Genre > Album  > Artist > Title
-
-// Year - Artist -> Year > Artist > Album > Title
-// Year - Album Artist -> Year > Album Artist > Album > Title
-// Year - Album -> Year > Album  > Artist > Title
-
-//  Artist - (Year - Album) -> Artist > (Year - Album) > Title
-//  Album Artist - (Year - Album) -> Album Artist > (Year - Album) > Title
-
-// GetArtistYearAlbumModel -
-func GetArtistYearAlbumModel(useAlbumArtist bool) (s *gtk.TreeStore, err error) {
-	s, err = gtk.TreeStoreNew(
-		glib.TYPE_STRING,
-	)
+	collectionsModel, err = gtk.TreeStoreNew(TreeColumn.getTypes()...)
 	if err != nil {
 		return
 	}
 
-	/*
-		var artist, yearAlbum, title *gtk.TreeIter
-
-		for _, v := range cts {
-			artist, err = store.GetIterFromString(v.Track.Artist)
-			if err != nil {
-				continue
-			} else if artist != nil {
-				var parent *gtk.TreeIter
-				store.IterParent(parent, artist)
-				if parent != nil {
-					continue
-				}
-			} else {
-				artist = store.Append(nil)
-				err = store.SetValue(artist, 0, v.Track.Artist)
-			}
-			if err != nil {
-				return
-			}
-		}
-	*/
-
+	currentTree = tree
+	model = collectionsModel
 	return
+}
+
+// GetCollectionsModel returns the current collections model
+func GetCollectionsModel() *gtk.TreeStore {
+	return collectionsModel
 }
 
 func subscribeToCollectionStore() {
@@ -204,7 +194,9 @@ func subscribeToCollectionStore() {
 			}
 		}
 		CStore.Mu.Unlock()
-		glib.IdleAdd(updateCollections)
+		if res.Event != m3uetcpb.CollectionEvent_CE_INITIAL {
+			glib.IdleAdd(updateCollections)
+		}
 		if !wgdone {
 			wg.Done()
 			wgdone = true
@@ -214,6 +206,8 @@ func subscribeToCollectionStore() {
 
 func unsubscribeFromCollectionStore() {
 	log.Info("Unsubscribing from collection store")
+
+	defer wgcollections.Done()
 
 	CStore.Mu.Lock()
 	id := CStore.subscriptionID
@@ -240,37 +234,158 @@ func unsubscribeFromCollectionStore() {
 	}
 }
 
-func getCollectionTree() {
-	const path = "/collections/tree"
-
-	/*
-		uri := base.Conf.Server.GetURL() + path
-
-		res, err := http.Get(uri)
-		if err != nil || !httpstatus.IsSuccess(res) {
-			err = onerror.LogHTTP(err, res, false)
-			return
-		}
-		defer res.Body.Close()
-
-		r, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			log.Error(err)
-		}
-
-		cts = []models.CollectionTrack{}
-		err = json.Unmarshal(r, cts)
-
-		view, _ := createViewAndModel()
-	*/
-
-	return
+func updateCollections() bool {
+	switch currentTree {
+	case ArtistYearAlbumTree:
+		updateArtistYearAlbumTree()
+	default:
+	}
+	return false
 }
 
-func updateCollections() bool {
-	log.Info("Updating collections")
+func updateArtistYearAlbumTree() {
+	model := collectionsModel
+	if model == nil {
+		return
+	}
 
-	return false
+	type titleType struct {
+		id     int64
+		title  string
+		number int
+	}
+
+	type yearAlbumType struct {
+		yearAlbum string
+		ids       []int64
+		title     []titleType
+	}
+
+	type artistType struct {
+		artist    string
+		ids       []int64
+		yearAlbum []yearAlbumType
+	}
+
+	if model.GetNColumns() == 0 {
+		return
+	}
+
+	iter, ok := model.GetIterFirst()
+	for ok {
+		model.Remove(iter)
+		ok = model.IterNext(iter)
+	}
+
+	artistM := map[string]int{}
+	all := []artistType{}
+
+	CStore.Mu.Lock()
+	for _, t := range CStore.Track {
+		artist := t.Albumartist
+		if artist == "" {
+			artist = t.Artist
+		}
+		aidx, ok := artistM[artist]
+		if !ok {
+			all = append(all, artistType{})
+			aidx = len(all) - 1
+			all[aidx].artist = artist
+			artistM[artist] = aidx
+		}
+
+		yearAlbum := strconv.Itoa(int(t.Year)) + " - " + t.Album
+		yaidx := -1
+		for i, ya := range all[aidx].yearAlbum {
+			if yearAlbum == ya.yearAlbum {
+				yaidx = i
+				break
+			}
+		}
+		if yaidx < 0 {
+			all[aidx].yearAlbum = append(
+				all[aidx].yearAlbum,
+				yearAlbumType{},
+			)
+			yaidx = len(all[aidx].yearAlbum) - 1
+			all[aidx].yearAlbum[yaidx].yearAlbum = yearAlbum
+		}
+
+		all[aidx].yearAlbum[yaidx].title = append(
+			all[aidx].yearAlbum[yaidx].title,
+			titleType{t.Id, t.Title, int(t.Tracknumber)},
+		)
+	}
+	CStore.Mu.Unlock()
+
+	sort.Slice(all, func(i, j int) bool {
+		return all[i].artist < all[j].artist
+	})
+
+	for a := range all {
+		sort.Slice(all[a].yearAlbum, func(i, j int) bool {
+			return all[a].yearAlbum[i].yearAlbum <
+				all[a].yearAlbum[j].yearAlbum
+		})
+		for b := range all[a].yearAlbum {
+			sort.Slice(all[a].yearAlbum[b].title, func(i, j int) bool {
+				return all[a].yearAlbum[b].title[i].number <
+					all[a].yearAlbum[b].title[j].number
+			})
+
+			for c := range all[a].yearAlbum[b].title {
+				all[a].yearAlbum[b].ids = append(
+					all[a].yearAlbum[b].ids,
+					all[a].yearAlbum[b].title[c].id,
+				)
+			}
+
+			all[a].ids = append(all[a].ids, all[a].yearAlbum[b].ids...)
+		}
+	}
+
+	idListToString := func(ids []int64) (s string) {
+		if len(ids) < 1 {
+			return
+		}
+		s = strconv.FormatInt(ids[0], 10)
+		for i := 1; i < len(ids); i++ {
+			s += "," + strconv.FormatInt(ids[i], 10)
+		}
+		return
+	}
+
+	for i := range all {
+		artIter := model.Append(nil)
+		model.SetValue(
+			artIter,
+			CColTree,
+			all[i].artist+" ("+strconv.Itoa(len(all[i].ids))+")",
+		)
+		model.SetValue(
+			artIter,
+			CColIDList,
+			idListToString(all[i].ids),
+		)
+		for _, ya := range all[i].yearAlbum {
+			yaIter := model.Append(artIter)
+			model.SetValue(
+				yaIter,
+				CColTree,
+				ya.yearAlbum+" ("+strconv.Itoa(len(ya.ids))+")",
+			)
+			model.SetValue(
+				yaIter,
+				CColIDList,
+				idListToString(ya.ids),
+			)
+			for _, t := range ya.title {
+				tIter := model.Append(yaIter)
+				model.SetValue(tIter, CColTree, t.title)
+				model.SetValue(tIter, CColIDList, strconv.FormatInt(t.id, 10))
+			}
+		}
+	}
 }
 
 func createViewAndModel() (view *gtk.TreeView, err error) {

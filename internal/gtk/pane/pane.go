@@ -44,26 +44,6 @@ func Add(idx m3uetcpb.Perspective, nb *gtk.Notebook, signals *map[string]interfa
 		return
 	}
 
-	/*
-		b, err := gtk.BuilderNewFromFile(data.path)
-		if err != nil {
-			err = fmt.Errorf("Unable to create builder for %v: %w", idx, err)
-			return
-		}
-
-		obj, err := b.GetObject(data.id)
-		if err != nil {
-			err = fmt.Errorf("Unable to get %v: %v", data.id, err)
-			return
-		}
-
-		newPane, ok := obj.(*gtk.Paned)
-		if !ok {
-			err = fmt.Errorf("Unable to create pane: %v", err)
-			return
-		}
-	*/
-
 	label, err := gtk.LabelNew(strings.Title(idx.String()))
 	if err != nil {
 		err = fmt.Errorf("Unable to create %v label: %v", idx, err)

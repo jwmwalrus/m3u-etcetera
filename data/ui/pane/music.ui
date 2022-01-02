@@ -2,12 +2,6 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <object class="GtkTreeStore" id="music_collection_store">
-    <columns>
-      <!-- column-name gchararray1 -->
-      <column type="gchararray"/>
-    </columns>
-  </object>
   <object class="GtkPaned" id="music_perspective_pane">
     <property name="height-request">400</property>
     <property name="visible">True</property>

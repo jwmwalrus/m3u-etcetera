@@ -29,6 +29,8 @@ var (
 func subscribeToPlayback() {
 	log.Info("Subscribing to playback")
 
+	defer wgplayback.Done()
+
 	var wgdone bool
 	var cc *grpc.ClientConn
 	var err error

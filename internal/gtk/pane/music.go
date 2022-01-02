@@ -11,16 +11,60 @@ import (
 func setupMusic(signals *map[string]interface{}) (err error) {
 	log.Info("Setting up music")
 
-	if err = createMusicViewAndModel(); err != nil {
+	if err = createMusicQueue(); err != nil {
 		return
 	}
-
 	(*signals)["on_music_queue_sel_changed"] = onMusicQueueSelChanged
+
+	if err = createMusicCollections(); err != nil {
+		return
+	}
+	(*signals)["on_collections_sel_changed"] = onMusicCollectionsSelChanged
+
 	return
 }
 
-func createMusicViewAndModel() (err error) {
-	log.Info("Creating view and model")
+func createMusicCollections() (err error) {
+	log.Info("Creating music collections view and model")
+
+	view, err := builder.GetTreeView("collections_view")
+	if err != nil {
+		return
+	}
+
+	renderer, err := gtk.CellRendererTextNew()
+	if err != nil {
+		return
+	}
+
+	qcols := []int{
+		store.CColTree,
+	}
+
+	for _, i := range qcols {
+		var col *gtk.TreeViewColumn
+		col, err = gtk.TreeViewColumnNewWithAttribute(
+			store.TreeColumn[i].Name,
+			renderer,
+			"text",
+			i,
+		)
+		if err != nil {
+			return
+		}
+		view.InsertColumn(col, -1)
+	}
+
+	model, err := store.CreateCollectionsModel(store.ArtistYearAlbumTree)
+	if err != nil {
+		return
+	}
+	view.SetModel(model)
+	return
+}
+
+func createMusicQueue() (err error) {
+	log.Info("Creating music queue view and model")
 
 	view, err := builder.GetTreeView("music_queue_view")
 	if err != nil {
@@ -63,17 +107,44 @@ func createMusicViewAndModel() (err error) {
 	return
 }
 
-func onMusicQueueSelChanged(tv *gtk.TreeSelection) {
-	model := store.GetQueueModel(m3uetcpb.Perspective_MUSIC)
-	rows := tv.GetSelectedRows(model)
+func onMusicCollectionsSelChanged(sel *gtk.TreeSelection) {
+	model, iter, ok := sel.GetSelected()
+	if ok {
+		value, err := model.(*gtk.TreeModel).GetValue(iter, store.CColIDList)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		_, err = value.GoValue()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	}
+}
 
-	items := make([]string, 0, rows.Length())
+func onMusicQueueSelChanged(sel *gtk.TreeSelection) {
+	model, _, ok := sel.GetSelected()
+	if ok {
+		rows := sel.GetSelectedRows(model)
 
-	for l := rows; l != nil; l = l.Next() {
-		path := l.Data().(*gtk.TreePath)
-		iter, _ := model.GetIter(path)
-		value, _ := model.GetValue(iter, 0)
-		str, _ := value.GetString()
-		items = append(items, str)
+		for l := rows; l != nil; l = l.Next() {
+			path := l.Data().(*gtk.TreePath)
+			iter, err := model.(*gtk.TreeModel).GetIter(path)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			value, err := model.(*gtk.TreeModel).GetValue(iter, 0)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			_, err = value.GoValue()
+			if err != nil {
+				log.Error(err)
+				return
+			}
+		}
 	}
 }

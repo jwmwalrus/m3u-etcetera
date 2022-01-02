@@ -14,59 +14,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	// QColID -
-	QColID int = iota
-
-	// QColPosition -
-	QColPosition
-
-	// QColLocation -
-	QColLocation
-
-	// QColPerspective -
-	QColPerspective
-
-	// QColTrackID -
-	QColTrackID
-
-	// QColTitle -
-	QColTitle
-
-	// QColAlbum -
-	QColAlbum
-
-	// QColArtist -
-	QColArtist
-
-	// QColAlbumartist -
-	QColAlbumartist
-
-	// QColComposer -
-	QColComposer
-
-	// QColGenre -
-	QColGenre
-
-	// QColYear -
-	QColYear
-
-	// QColTracknumber -
-	QColTracknumber
-
-	// QColTracktotal -
-	QColTracktotal
-
-	// QColDiscnumber -
-	QColDiscnumber
-
-	// QColDisctotal -
-	QColDisctotal
-
-	// QColDuration -
-	QColDuration
-)
-
 var (
 	musicModel      *gtk.ListStore
 	radioModel      *gtk.ListStore
@@ -78,30 +25,6 @@ var (
 		Mu   sync.Mutex
 		Data *m3uetcpb.SubscribeToQueueStoreResponse
 	}
-
-	// QColumns queue columns
-	QColumns = []struct {
-		Name    string
-		ColType glib.Type
-	}{
-		{"ID", glib.TYPE_INT64},
-		{"Position", glib.TYPE_INT},
-		{"Location", glib.TYPE_STRING},
-		{"Perspective", glib.TYPE_INT},
-		{"Track ID", glib.TYPE_INT},
-		{"Title", glib.TYPE_STRING},
-		{"Album", glib.TYPE_STRING},
-		{"Artist", glib.TYPE_STRING},
-		{"Album Artist", glib.TYPE_STRING},
-		{"Composer", glib.TYPE_STRING},
-		{"Genre", glib.TYPE_STRING},
-		{"Year", glib.TYPE_INT},
-		{"Tracknumber", glib.TYPE_INT},
-		{"Tracktotal", glib.TYPE_INT},
-		{"Discnumber", glib.TYPE_INT},
-		{"Disctotal", glib.TYPE_INT},
-		{"Duration", glib.TYPE_INT64},
-	}
 )
 
 // CreateQueueModel -
@@ -109,12 +32,7 @@ func CreateQueueModel(idx m3uetcpb.Perspective) (model *gtk.ListStore, err error
 	log.WithField("idx", idx).
 		Info("Creating queue model")
 
-	gtypes := []glib.Type{}
-	for _, v := range QColumns {
-		gtypes = append(gtypes, v.ColType)
-	}
-
-	model, err = gtk.ListStoreNew(gtypes...)
+	model, err = gtk.ListStoreNew(QColumns.getTypes()...)
 	if err != nil {
 		return
 	}
@@ -189,6 +107,8 @@ func subscribeToQueueStore() {
 func unsubscribeFromQueueStore() {
 	log.Info("Unsuubscribing from queue store")
 
+	defer wgqueue.Done()
+
 	QStore.Mu.Lock()
 	id := QStore.Data.SubscriptionId
 	QStore.Mu.Unlock()
@@ -251,8 +171,9 @@ func updateQueueModels() bool {
 				err := model.Set(
 					iter,
 					[]int{
-						QColID,
+						QColQueueTrackID,
 						QColPosition,
+						QColPlayed,
 						QColLocation,
 						QColPerspective,
 						QColTrackID,
@@ -260,6 +181,7 @@ func updateQueueModels() bool {
 					[]interface{}{
 						qt.Id,
 						int(qt.Position),
+						qt.Played,
 						qt.Location,
 						int(qt.Perspective),
 						qt.TrackId,
@@ -275,32 +197,52 @@ func updateQueueModels() bool {
 						err = model.Set(
 							iter,
 							[]int{
+								QColFormat,
+								QColType,
 								QColTitle,
 								QColAlbum,
 								QColArtist,
 								QColAlbumartist,
 								QColComposer,
 								QColGenre,
+
 								QColYear,
 								QColTracknumber,
 								QColTracktotal,
 								QColDiscnumber,
 								QColDisctotal,
+								QColLyrics,
+								QColComment,
+								QColPlaycount,
+
+								QColRating,
 								QColDuration,
+								QColRemote,
+								QColLastplayed,
 							},
 							[]interface{}{
+								t.Format,
+								t.Type,
 								t.Title,
 								t.Album,
 								t.Artist,
 								t.Albumartist,
 								t.Composer,
 								t.Genre,
-								t.Year,
-								t.Tracknumber,
-								t.Tracktotal,
-								t.Discnumber,
-								t.Disctotal,
+
+								int(t.Year),
+								int(t.Tracknumber),
+								int(t.Tracktotal),
+								int(t.Discnumber),
+								int(t.Disctotal),
+								t.Lyrics,
+								t.Comment,
+								int(t.Playcount),
+
+								int(t.Rating),
 								t.Duration,
+								t.Remote,
+								t.Lastplayed,
 							},
 						)
 					}
