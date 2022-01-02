@@ -112,6 +112,10 @@ loop:
 		}
 
 		if !base.IsAppIdling() {
+			subscription.Broadcast(
+				subscription.ToPlaybackEvent,
+				subscription.Event{Data: nil},
+			)
 			idleCtx, cancelIdle = context.WithCancel(context.Background())
 			go base.Idle(idleCtx)
 		}
@@ -154,17 +158,6 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	defer func() { e.goingBack = false }()
 
-	subscription.Broadcast(
-		subscription.ToPlaybackEvent,
-		subscription.Event{Data: pb},
-	)
-	defer func() {
-		subscription.Broadcast(
-			subscription.ToPlaybackEvent,
-			subscription.Event{Data: nil},
-		)
-	}()
-
 	e.pb = pb
 	e.terminate = false
 	defer func() { e.pb = nil }()
@@ -192,6 +185,11 @@ func (e *engine) playStream(pb *models.Playback) {
 		log.Error("Not all elements could be created")
 		return
 	}
+
+	subscription.Broadcast(
+		subscription.ToPlaybackEvent,
+		subscription.Event{Data: pb},
+	)
 
 	if e.mode == TestMode {
 		// Location is relative
