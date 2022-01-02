@@ -60,8 +60,8 @@ type Query struct {
 	Params      string `json:"params"`      // patterns to look for in track's indexed columns
 	From        int64  `json:"from"`        // from datetime in range
 	To          int64  `json:"to"`          // to datetime in range
-	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
 // Read implements DataReader interface

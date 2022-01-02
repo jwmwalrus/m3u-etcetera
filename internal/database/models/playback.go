@@ -18,8 +18,8 @@ type Playback struct { // too transient
 	Location  string `json:"location" gorm:"not null"`
 	Played    bool   `json:"played"`
 	Skip      int64  `json:"skip"`
-	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	TrackID   int64  `json:"trackId"`
 }
 
@@ -153,8 +153,8 @@ type PlaybackHistory struct {
 	ID        int64  `json:"id" gorm:"primaryKey"`
 	Location  string `json:"location" gorm:"index:idx_playback_history_location, not null"`
 	Duration  int64  `json:"duration"`
-	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime,index:idx_playback_history_created_at"`
-	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:nano,index:idx_playback_history_created_at"`
+	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	TrackID   int64  `json:"trackId" gorm:"index:idx_playback_history_track_id"`
 }
 

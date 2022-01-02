@@ -76,8 +76,8 @@ type Perspective struct {
 	Idx         int    `json:"idx" gorm:"uniqueIndex:unique_idx_perspective_index,not null"`
 	Description string `json:"description"`
 	Active      bool   `json:"active"`
-	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
 // GetActivePerspectiveIndex returns the index for the active perspective

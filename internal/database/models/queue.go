@@ -23,8 +23,8 @@ func (idx PerspectiveIndex) GetPerspectiveQueue() (q *Queue, err error) {
 // Queue defines a queue
 type Queue struct { // too transient
 	ID            int64       `json:"id" gorm:"primaryKey"`
-	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	PerspectiveID int64       `json:"perspectiveId" gorm:"uniqueIndex:unique_idx_queue_perspective_id,not null"`
 	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
 }
@@ -319,8 +319,8 @@ type QueueTrack struct { // too transient
 	Position  int    `json:"position"`
 	Played    bool   `json:"played"`
 	Location  string `json:"location" gorm:"not null"`
-	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	TrackID   int64  `json:"trackId" gorm:"index:idx_queue_track_track_id"`
 	QueueID   int64  `json:"queueId" gorm:"index:idx_queue_track_queue_id,not null"`
 	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`

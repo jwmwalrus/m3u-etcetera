@@ -40,29 +40,20 @@ func (idx CollectionIndex) Get() (c *Collection, err error) {
 // CollectionEvent defines a collection event
 type CollectionEvent int
 
+// CollectionEvent definitions
 const (
-	// CollectionEventNone -
 	CollectionEventNone CollectionEvent = iota
-
-	// CollectionEventInitial -
 	CollectionEventInitial
-
-	// CollectionEventInitialDone -
 	_
-
-	// CollectionEventItemAdded -
 	CollectionEventItemAdded
-
-	// CollectionEventItemChanged -
 	CollectionEventItemChanged
-
-	// CollectionEventItemRemoved -
 	CollectionEventItemRemoved
 )
 
 func (ce CollectionEvent) String() string {
 	return []string{
 		"initial",
+		"initial-done",
 		"item-added",
 		"item-changed",
 		"item-removed",
@@ -71,18 +62,19 @@ func (ce CollectionEvent) String() string {
 
 // Collection defines a collection row
 type Collection struct {
-	ID          int64  `json:"id" gorm:"primaryKey"`
-	Idx         int    `json:"idx" gorm:"not null"`
-	Name        string `json:"name" gorm:"index:unique_idx_collection_name,not null"`
-	Description string `json:"description"`
-	Location    string `json:"location" gorm:"uniqueIndex:unique_idx_collection_location,not null"`
-	Hidden      bool   `json:"hidden"`
-	Disabled    bool   `json:"disabled"`
-	Remote      bool   `json:"remote"`
-	Scanned     int    `json:"scanned"`
-	Tracks      int64  `json:"tracks" gorm:"-"`
-	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
+	ID             int64  `json:"id" gorm:"primaryKey"`
+	Idx            int    `json:"idx" gorm:"not null"`
+	Name           string `json:"name" gorm:"index:unique_idx_collection_name,not null"`
+	Description    string `json:"description"`
+	Location       string `json:"location" gorm:"uniqueIndex:unique_idx_collection_location,not null"`
+	Remotelocation string `json:"remoteLocation"`
+	Hidden         bool   `json:"hidden"`
+	Disabled       bool   `json:"disabled"`
+	Remote         bool   `json:"remote"`
+	Scanned        int    `json:"scanned"`
+	Tracks         int64  `json:"tracks" gorm:"-"`
+	CreatedAt      int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt      int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
 // Create implements DataCreator interface
@@ -340,8 +332,8 @@ func (c *Collection) Verify() {
 // CollectionTrack defines a collection__track row
 type CollectionTrack struct {
 	ID           int64      `json:"id" gorm:"primaryKey"`
-	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt    int64      `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt    int64      `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	CollectionID int64      `json:"collectionId" gorm:"index:idx_collection_track_collection_id,not null"`
 	TrackID      int64      `json:"trackId" gorm:"index:idx_collection_track_track_id,not null"`
 	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`
@@ -415,8 +407,8 @@ func (ct *CollectionTrack) DeleteIfTransient(withRemote bool) (err error) {
 // CollectionQuery Defines a collection query
 type CollectionQuery struct {
 	ID           int64      `json:"id" gorm:"primaryKey"`
-	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt    int64      `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt    int64      `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	CollectionID int64      `json:"collectionId" gorm:"index:idx_collection_query_collection_id,not null"`
 	QueryID      int64      `json:"queryId" gorm:"index:idx_collection_query_query_id,not null"`
 	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`

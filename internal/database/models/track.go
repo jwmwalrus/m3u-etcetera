@@ -3,6 +3,8 @@ package models
 import (
 	"encoding/json"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/dhowden/tag"
 	"github.com/jwmwalrus/bnp/onerror"
@@ -27,22 +29,24 @@ type Track struct {
 	Albumartist string `json:"albumArtist" gorm:"index:idx_track_album_artist"`
 	Composer    string `json:"composer" gorm:"index:idx_track_composer"`
 	Genre       string `json:"genre" gorm:"index:idx_track_genre"`
+
+	Comment     string `json:"comment"`
+	Lyrics      string `json:"lyrics"`
 	Year        int    `json:"year" gorm:"index:idx_track_year"`
 	Tracknumber int    `json:"trackNumber"`
 	Tracktotal  int    `json:"trackTotal"`
 	Discnumber  int    `json:"discNumber"`
 	Disctotal   int    `json:"discTotal"`
-	Lyrics      string `json:"lyrics"`
-	Comment     string `json:"comment"`
-	Tags        string `json:"tags"`
-	Sum         string `json:"sum" gorm:"index:idx_track_sum"`
-	Playcount   int    `json:"playCount"`
-	Rating      int    `json:"rating" gorm:"index:idx_track_rating"`
+	Date        int64  `json:"date" gorm:"index:idx_track_date"`
 	Duration    int64  `json:"duration"`
-	Remote      bool   `json:"remote"` // if track is remote but not in a remote collectioin
-	Lastplayed  int64  `json:"lastPlayed"`
-	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime"`
+
+	Rating     int    `json:"rating" gorm:"index:idx_track_rating"`
+	Playcount  int    `json:"playCount"`
+	Remote     bool   `json:"remote"` // if track is remote but not in a remote collection
+	Lastplayed int64  `json:"lastPlayed"`
+	Tags       string `json:"tags"`
+	CreatedAt  int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt  int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
 // Create implements the DataCreator interface
@@ -82,6 +86,13 @@ func (t *Track) ToProtobuf() proto.Message {
 	onerror.Log(err)
 
 	// Unmatched
+	out.Albumartist = t.Albumartist
+	out.Tracknumber = int32(t.Tracknumber)
+	out.Tracktotal = int32(t.Tracktotal)
+	out.Discnumber = int32(t.Discnumber)
+	out.Disctotal = int32(t.Disctotal)
+	out.Playcount = int32(t.Playcount)
+	out.Lastplayed = t.Lastplayed
 	out.CreatedAt = t.CreatedAt
 	out.UpdatedAt = t.UpdatedAt
 	return out
@@ -93,21 +104,77 @@ func (t *Track) FindBy(query interface{}) (err error) {
 	return
 }
 
+func (t *Track) fillMissingTags(raw map[string]interface{}) {
+	var full, partial time.Time
+	for k, v := range raw {
+		str, _ := v.(string)
+		switch k {
+		case "TDAT", "TRDA", "TDRL", "TDRC", "TDOR":
+			var dt time.Time
+			dt, err := time.Parse("2006-01-02", str)
+			if err != nil && str != "0000" {
+				dt, err = time.Parse("2006-01-02", str+"-01-01")
+				if err != nil {
+					dt, err = time.Parse("2006-01-02", str+"-01")
+					if err == nil && partial.IsZero() {
+						partial = dt
+					}
+				} else if partial.IsZero() {
+					partial = dt
+				}
+			} else if full.IsZero() {
+				full = dt
+			}
+		case "TLEN":
+			msec, err := strconv.ParseInt(str, 10, 64)
+			if err == nil && t.Duration == 0 {
+				t.Duration = msec * 1e6
+			}
+		default:
+		}
+	}
+	var year int
+	var unano int64
+	if !full.IsZero() {
+		year = full.Year()
+		unano = full.UnixNano()
+	} else if !partial.IsZero() {
+		year = partial.Year()
+		unano = partial.UnixNano()
+	}
+	if year != 0 && t.Year == 0 {
+		t.Year = year
+	}
+	if unano != 0 && t.Date == 0 {
+		t.Date = unano
+	}
+}
+
+func (t *Track) savePicture(p *tag.Picture) {
+	// TODO
+	return
+}
 func (t *Track) updateTags() (err error) {
 	base.GetBusy(base.IdleStatusFileOperations)
 	defer base.GetFree(base.IdleStatusFileOperations)
 
 	var path string
 	path, err = urlstr.URLToPath(t.Location)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
 	f, err := os.Open(path)
 	if err != nil {
+		log.Error(err)
 		return
 	}
 	defer f.Close()
 
 	m, err := tag.ReadFrom(f)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -119,11 +186,13 @@ func (t *Track) updateTags() (err error) {
 	t.Albumartist = m.AlbumArtist()
 	t.Composer = m.Composer()
 	t.Genre = m.Genre()
+	// t.Comment = m.Comment()
+	// t.Lyrics = m.Lyrics()
 	t.Year = m.Year()
 	t.Tracknumber, t.Tracktotal = m.Track()
 	t.Discnumber, t.Disctotal = m.Disc()
-	t.Lyrics = m.Lyrics()
-	t.Comment = m.Comment()
+	t.fillMissingTags(m.Raw())
+	t.savePicture(m.Picture())
 
 	return
 }
