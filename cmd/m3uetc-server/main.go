@@ -12,6 +12,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -19,6 +20,9 @@ import (
 
 func main() {
 	base.Load()
+
+	base.RegisterUnloader(subscription.Unloader)
+
 	database.Open()
 	playback.StartEngine()
 

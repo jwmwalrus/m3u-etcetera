@@ -50,7 +50,6 @@ func subscribeToPlayback() {
 	for {
 		res, err := stream.Recv()
 		if err != nil {
-			log.Error(err)
 			break
 		}
 
@@ -77,6 +76,7 @@ func unsubscribeFromPlayback() {
 	opts := alive.GetGrpcDialOpts()
 	auth := base.Conf.Server.GetAuthority()
 	if cc, err = grpc.Dial(auth, opts...); err != nil {
+		log.Error(err)
 		return
 	}
 	defer cc.Close()
@@ -89,6 +89,7 @@ func unsubscribeFromPlayback() {
 		},
 	)
 	if err != nil {
+		log.Error(err)
 		return
 	}
 }

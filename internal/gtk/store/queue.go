@@ -71,6 +71,8 @@ func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 func subscribeToQueueStore() {
 	log.Info("Subscribing to queue store")
 
+	defer wgqueue.Done()
+
 	var wgdone bool
 	var cc *grpc.ClientConn
 	var err error
@@ -107,8 +109,6 @@ func subscribeToQueueStore() {
 func unsubscribeFromQueueStore() {
 	log.Info("Unsuubscribing from queue store")
 
-	defer wgqueue.Done()
-
 	QStore.Mu.Lock()
 	id := QStore.Data.SubscriptionId
 	QStore.Mu.Unlock()
@@ -118,6 +118,7 @@ func unsubscribeFromQueueStore() {
 	opts := alive.GetGrpcDialOpts()
 	auth := base.Conf.Server.GetAuthority()
 	if cc, err = grpc.Dial(auth, opts...); err != nil {
+		log.Error(err)
 		return
 	}
 	defer cc.Close()
@@ -130,6 +131,7 @@ func unsubscribeFromQueueStore() {
 		},
 	)
 	if err != nil {
+		log.Error(err)
 		return
 	}
 }

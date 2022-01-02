@@ -38,7 +38,7 @@ func main() {
 	}
 
 	window.Connect("destroy", func() {
-		// store.Unsubscribe()
+		store.Unsubscribe()
 		gtk.MainQuit()
 	})
 

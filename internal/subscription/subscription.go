@@ -10,21 +10,17 @@ import (
 // Type defines the subscription type
 type Type int
 
+// Subscription type events
 const (
-	// ToNone unsubscribe
 	ToNone = iota
-	// ToPlaybackEvent -
 	ToPlaybackEvent
-
-	// ToQueueStoreEvent -
 	ToQueueStoreEvent
-
-	// ToCollectionStoreEvent -
 	ToCollectionStoreEvent
 )
 
 func (st Type) String() string {
 	return []string{
+		"subscribed-to-none",
 		"subscribed-to-playback-event",
 		"subscribed-to-queue-store-event",
 		"subscribed-to-collection-store-event",
@@ -55,6 +51,12 @@ type unsubscribeData struct {
 var (
 	subscriptors []Subscriber
 	smu          sync.Mutex
+
+	// Unloader declares the subscription unloader
+	Unloader = base.Unloader{
+		Description: "UnsubscribeAll",
+		Callback:    unloadSubscriptions,
+	}
 )
 
 // Subscribe subscribes a client to the given event|store|model
@@ -99,7 +101,7 @@ func Broadcast(st Type, es ...Event) {
 				Data: unsubscribeData{st: st, id: id},
 			}
 			subscriptors[i].Event <- evt
-			return
+			break
 		}
 		smu.Unlock()
 		return
@@ -144,8 +146,17 @@ func removeSubscription(id string) {
 		if subscriptors[k].id == id {
 			subscriptors[k] = subscriptors[len(subscriptors)-1]
 			subscriptors = subscriptors[:len(subscriptors)-1]
-			return
+			break
 		}
 	}
 	smu.Unlock()
+}
+
+func unloadSubscriptions() error {
+	smu.Lock()
+	for i := range subscriptors {
+		Broadcast(ToNone, Event{Data: subscriptors[i].id})
+	}
+	smu.Unlock()
+	return nil
 }

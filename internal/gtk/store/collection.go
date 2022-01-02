@@ -78,6 +78,8 @@ func GetCollectionsModel() *gtk.TreeStore {
 func subscribeToCollectionStore() {
 	log.Info("Subscribing to collection store")
 
+	defer wgcollections.Done()
+
 	var wgdone bool
 	var cc *grpc.ClientConn
 	var err error
@@ -207,8 +209,6 @@ func subscribeToCollectionStore() {
 func unsubscribeFromCollectionStore() {
 	log.Info("Unsubscribing from collection store")
 
-	defer wgcollections.Done()
-
 	CStore.Mu.Lock()
 	id := CStore.subscriptionID
 	CStore.Mu.Unlock()
@@ -218,6 +218,7 @@ func unsubscribeFromCollectionStore() {
 	opts := alive.GetGrpcDialOpts()
 	auth := base.Conf.Server.GetAuthority()
 	if cc, err = grpc.Dial(auth, opts...); err != nil {
+		log.Error(err)
 		return
 	}
 	defer cc.Close()
@@ -230,6 +231,7 @@ func unsubscribeFromCollectionStore() {
 		},
 	)
 	if err != nil {
+		log.Error(err)
 		return
 	}
 }
@@ -387,60 +389,3 @@ func updateArtistYearAlbumTree() {
 		}
 	}
 }
-
-func createViewAndModel() (view *gtk.TreeView, err error) {
-	/*
-		view, err = gtk.TreeViewNew()
-		renderer, err := gtk.CellRendererTextNew()
-
-		cols := []struct {
-			name string
-			col  int
-		}{
-			{"Title", titleCol},
-			// {"Album", albumCol},
-			// {"Artist", artistCol},
-			// {"Album Artist", albumArtistCol},
-			// {"Genre", genreCol},
-			// {"Year", yearCol},
-		}
-
-		for _, c := range cols {
-			var col *gtk.TreeViewColumn
-			col, err = gtk.TreeViewColumnNewWithAttribute(
-				c.name,
-				renderer,
-				"text",
-				c.col,
-			)
-			if err != nil {
-				return
-			}
-			view.InsertColumn(col, -1)
-		}
-
-		model, err := store.GetQueueStore(m3uetcpb.Perspective_MUSIC)
-		view.SetModel(model)
-	*/
-	return
-}
-
-// int
-// main (int argc, char **argv)
-// {
-//   gtk_init (&argc, &argv);
-
-//   GtkWidget *window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-//   g_signal_connect (window, "destroy", gtk_main_quit, NULL);
-
-//   GtkWidget *view = create_view_and_model ();
-
-//   gtk_container_add (GTK_CONTAINER (window), view);
-
-//   gtk_widget_show_all (window);
-
-//   gtk_main ();
-
-//   return 0;
-// }
-// Copy
