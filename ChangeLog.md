@@ -9,6 +9,29 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.0] 2022-01-03
+
+Even more features, fixes and improvements
+
+### Fixed
+
+* Compilation warnings
+
+### Added
+
+* Testing
+* Playback, Queue and Collection subscriptions
+* GTK playback, music queue and collections treeview
+* Interrupt signal
+
+### Modified
+* Misc. changes to queue and collections treeviews
+* Database-related tweaks
+* Allow explicitly forcing application's exit
+* Get rid of oneof in playback proto message
+* Use incerceptors for logging and idle handling
+
+
 ## [0.7.0] 2021-12-20
 
 More features and improvements
