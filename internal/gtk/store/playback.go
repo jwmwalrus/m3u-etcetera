@@ -32,11 +32,10 @@ func subscribeToPlayback() {
 	defer wgplayback.Done()
 
 	var wgdone bool
-	var cc *grpc.ClientConn
-	var err error
-	opts := middleware.GetClientOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
+
+	cc, err := getClientConn()
+	if err != nil {
+		log.Errorf("Error obtaining client connection: %v", err)
 		return
 	}
 	defer cc.Close()
@@ -44,12 +43,14 @@ func subscribeToPlayback() {
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
 	stream, err := cl.SubscribeToPlayback(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
+		log.Errorf("Error subscribing to playback: %v", err)
 		return
 	}
 
 	for {
 		res, err := stream.Recv()
 		if err != nil {
+			log.Infof("Subscription closed by server: %v", err)
 			break
 		}
 

@@ -51,6 +51,7 @@ type unsubscribeData struct {
 var (
 	subscriptors []Subscriber
 	smu          sync.Mutex
+	unloading    = false
 
 	// Unloader declares the subscription unloader
 	Unloader = base.Unloader{
@@ -141,6 +142,10 @@ func removeSubscription(id string) {
 	log.WithField("id", id).
 		Info("Removing subscription")
 
+	if unloading {
+		return
+	}
+
 	smu.Lock()
 	for k := range subscriptors {
 		if subscriptors[k].id == id {
@@ -153,9 +158,14 @@ func removeSubscription(id string) {
 }
 
 func unloadSubscriptions() error {
+	unloading = true
+
 	smu.Lock()
 	for i := range subscriptors {
-		Broadcast(ToNone, Event{Data: subscriptors[i].id})
+		evt := Event{
+			Data: unsubscribeData{st: ToNone, id: subscriptors[i].id},
+		}
+		subscriptors[i].Event <- evt
 	}
 	smu.Unlock()
 	return nil
