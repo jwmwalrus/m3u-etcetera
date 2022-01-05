@@ -46,6 +46,9 @@ var (
 	// OS Operating system's name
 	OS string
 
+	// AppInstance Application's instance
+	AppInstance string
+
 	// CacheDir Home directory for cache
 	CacheDir string
 
@@ -185,7 +188,8 @@ func init() {
 	getopt.FlagLong(&FlagEchoLogging, "echo-logging", 'e', "Echo logs to stderr")
 
 	// log-related
-	logFilename = filepath.Base(os.Args[0]) + ".log"
+	AppInstance = filepath.Base(os.Args[0])
+	logFilename = AppInstance + ".log"
 	logFilePath := filepath.Join(DataDir, logFilename)
 	logFile = &lumberjack.Logger{
 		Filename:   logFilePath,

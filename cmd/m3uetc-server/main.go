@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"net"
-	"os"
-	"path/filepath"
 
 	"github.com/jwmwalrus/m3u-etcetera/api"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -20,7 +18,7 @@ import (
 
 func main() {
 	base.Load()
-
+	base.StartIdler()
 	base.RegisterUnloader(subscription.Unloader)
 
 	database.Open()
@@ -66,5 +64,5 @@ func main() {
 
 	base.Unload()
 
-	fmt.Printf("\nBye %v from %v\n", base.OS, filepath.Base(os.Args[0]))
+	fmt.Printf("\nBye %v from %v\n", base.OS, base.AppInstance)
 }

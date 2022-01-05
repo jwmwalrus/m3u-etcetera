@@ -177,3 +177,8 @@ func IsAppBusyBy(is IdleStatus) bool {
 func IsAppIdling() bool {
 	return idleGotCalled || len(idleStatusStack) == 1
 }
+
+// StartIdler -
+func StartIdler() {
+	GetFree(IdleStatusIdle)
+}

@@ -51,8 +51,6 @@ func Load(noParseArgs ...bool) (args []string) {
 
 	err = Conf.Load(configFile, lockFile)
 	onerror.Panic(err)
-
-	GetFree(IdleStatusIdle)
 	return
 }
 
