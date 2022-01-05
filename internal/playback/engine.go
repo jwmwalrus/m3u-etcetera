@@ -12,6 +12,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	positionThreshold = 5e8
+)
+
 var (
 	quitEngineLoop chan struct{}
 	prevInHistory chan struct{}
@@ -106,10 +110,7 @@ loop:
 			continue loop
 		}
 
-		subscription.Broadcast(
-			subscription.ToPlaybackEvent,
-			subscription.Event{Data: nil},
-		)
+		subscription.Broadcast(subscription.ToPlaybackEvent)
 	}
 
 	e.lastEvent = noLoopEvent
@@ -177,10 +178,7 @@ func (e *engine) playStream(pb *models.Playback) {
 		return
 	}
 
-	subscription.Broadcast(
-		subscription.ToPlaybackEvent,
-		subscription.Event{Data: pb},
-	)
+	subscription.Broadcast(subscription.ToPlaybackEvent)
 
 	if e.mode == TestMode {
 		// Location is relative
@@ -218,6 +216,13 @@ func (e *engine) playStream(pb *models.Playback) {
 		if position, err = e.playbin.QueryPosition(); err != nil {
 			log.Warn("Could not query current position")
 		}
+
+		if int64(position)-e.lastPosition > positionThreshold {
+			go func() {
+				time.Sleep(1 * time.Second)
+				subscription.Broadcast(subscription.ToPlaybackEvent)
+			}()
+		}
 		e.lastPosition = int64(position)
 
 		/* If we didn't know it yet, query the stream duration */
@@ -227,6 +232,7 @@ func (e *engine) playStream(pb *models.Playback) {
 				log.Warn("Could not query current duration")
 			}
 			e.duration = int64(duration)
+			subscription.Broadcast(subscription.ToPlaybackEvent)
 		}
 	}
 

@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -244,7 +246,7 @@ func updateQueueModels() bool {
 								int(t.Playcount),
 
 								int(t.Rating),
-								t.Duration,
+								fmt.Sprint(time.Duration(t.Duration) * time.Nanosecond),
 								t.Remote,
 								t.Lastplayed,
 							},

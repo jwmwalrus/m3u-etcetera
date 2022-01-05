@@ -318,7 +318,7 @@ func init() {
 	QColumns[QColPlaycount] = columnDef{"Play Count", glib.TYPE_INT}
 
 	QColumns[QColRating] = columnDef{"Rating", glib.TYPE_INT}
-	QColumns[QColDuration] = columnDef{"Duration", glib.TYPE_INT64}
+	QColumns[QColDuration] = columnDef{"Duration", glib.TYPE_STRING}
 	QColumns[QColRemote] = columnDef{"Remote (T)", glib.TYPE_BOOLEAN}
 	QColumns[QColLastplayed] = columnDef{"Last Played", glib.TYPE_INT64}
 }

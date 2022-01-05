@@ -30,18 +30,12 @@ func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb
 		IsStopped:   playback.IsStopped(),
 		IsReady:     playback.IsReady(),
 	}
-	pb := playback.GetPlayback()
+	pb, t := playback.GetPlayback()
 	if pb != nil {
 		res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
 		res.Track = &m3uetcpb.Track{}
-		if pb.TrackID > 0 {
-			if t, err := pb.GetTrack(); err == nil {
-				res.Track = t.ToProtobuf().(*m3uetcpb.Track)
-			}
-		} else {
-			if t, err := models.ReadTagsForLocation(pb.Location); err == nil {
-				res.Track = t.ToProtobuf().(*m3uetcpb.Track)
-			}
+		if t != nil {
+			res.Track = t.ToProtobuf().(*m3uetcpb.Track)
 		}
 		return res, nil
 	}
@@ -118,7 +112,7 @@ func (*PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty, stream m3uetcpb.Playb
 
 	go func() {
 		time.Sleep(2 * time.Second)
-		s.Event <- subscription.Event{Data: playback.GetPlayback()}
+		s.Event <- subscription.Event{Data: struct{}{}}
 	}()
 
 sLoop:
@@ -137,21 +131,13 @@ sLoop:
 				IsStopped:      playback.IsStopped(),
 				IsReady:        playback.IsReady(),
 			}
-			pb, ok := e.Data.(*models.Playback)
-			if !ok {
-				pb = nil
-			}
+
+			pb, t := playback.GetPlayback()
 			if pb != nil {
 				res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
 				res.Track = &m3uetcpb.Track{}
-				if pb.TrackID > 0 {
-					if t, err := pb.GetTrack(); err == nil {
-						res.Track = t.ToProtobuf().(*m3uetcpb.Track)
-					}
-				} else {
-					if t, err := models.ReadTagsForLocation(pb.Location); err == nil {
-						res.Track = t.ToProtobuf().(*m3uetcpb.Track)
-					}
+				if t != nil {
+					res.Track = t.ToProtobuf().(*m3uetcpb.Track)
 				}
 				err := stream.Send(res)
 				if err != nil {

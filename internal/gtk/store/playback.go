@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/jwmwalrus/bnp/onerror"
@@ -96,7 +98,7 @@ func unsubscribeFromPlayback() {
 }
 
 func updatePlayback() bool {
-	log.Info("Updating playback")
+	log.Debug("Updating playback")
 
 	pbres.mu.Lock()
 	iconName := "media-playback-pause"
@@ -109,6 +111,7 @@ func updatePlayback() bool {
 		btn.SetIconName(iconName)
 	}
 
+	var duration, position int64
 	if pbres.data.IsStreaming {
 		playbackID = pbres.data.Playback.Id
 		location = pbres.data.Playback.Location
@@ -117,12 +120,29 @@ func updatePlayback() bool {
 		title = pbres.data.Track.Title
 		artist = pbres.data.Track.Artist
 		album = pbres.data.Track.Album
+		duration = pbres.data.Track.Duration
+		position = pbres.data.Playback.Skip
 	} else {
 		playbackID, trackID = 0, 0
 		location = ""
 		title, artist, album = "", "", ""
 	}
 	pbres.mu.Unlock()
+
+	prog, err := builder.GetProgressBar("progress")
+	if duration > 0 {
+		prog.SetFraction(float64(position) / float64(duration))
+		prog.SetText(
+			fmt.Sprintf(
+				"%v / %v",
+				time.Duration(position)*time.Nanosecond,
+				time.Duration(duration)*time.Nanosecond,
+			),
+		)
+	} else {
+		prog.SetFraction(float64(0))
+		prog.SetText("")
+	}
 
 	un, err := url.QueryUnescape(location)
 	if err != nil {

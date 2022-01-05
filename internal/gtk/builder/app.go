@@ -57,6 +57,21 @@ func GetNotebook(id string) (nb *gtk.Notebook, err error) {
 	return
 }
 
+func GetProgressBar(id string) (p *gtk.ProgressBar, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get progress-bar object: %w", err)
+		return
+	}
+
+	p, ok := obj.(*gtk.ProgressBar)
+	if !ok {
+		err = fmt.Errorf("Unable to create progress bar: %w", err)
+		return
+	}
+	return
+}
+
 func GetTextView(id string) (tv *gtk.TextView, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {

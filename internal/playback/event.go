@@ -68,7 +68,7 @@ var (
 )
 
 // GetPlayback returns a copy of the current playback
-func GetPlayback() (pb *models.Playback) {
+func GetPlayback() (pb *models.Playback, t *models.Track) {
 	if eng.pb == nil {
 		return
 	}
@@ -78,7 +78,26 @@ func GetPlayback() (pb *models.Playback) {
 	pb = &models.Playback{}
 	if err := pb.Read(eng.pb.ID); err != nil {
 		log.Error(err)
+		return
 	}
+	if pb.TrackID > 0 {
+		t = &models.Track{}
+		if err := t.Read(pb.TrackID); err != nil {
+			log.Error(err)
+			return
+		}
+	} else {
+		var err error
+		if t, err = models.ReadTagsForLocation(pb.Location); err != nil {
+			log.Error(err)
+			return
+		}
+	}
+
+	if t != nil && t.Duration == 0 {
+		t.Duration = eng.duration
+	}
+	pb.Skip = eng.lastPosition
 	return
 }
 
@@ -154,10 +173,7 @@ func PauseStream(off bool) (err error) {
 		eng.playbin.SetState(eng.state)
 	}
 
-	subscription.Broadcast(
-		subscription.ToPlaybackEvent,
-		subscription.Event{Data: GetPlayback()},
-	)
+	subscription.Broadcast(subscription.ToPlaybackEvent)
 	return
 }
 

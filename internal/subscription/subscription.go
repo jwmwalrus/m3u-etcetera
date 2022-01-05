@@ -86,7 +86,7 @@ func Broadcast(st Type, es ...Event) {
 		"st": st,
 		"es": es,
 	}).
-		Info("Broadcasting")
+		Debug("Broadcasting")
 
 	if st == ToNone && len(es) > 0 {
 		id, ok := es[0].Data.(string)
