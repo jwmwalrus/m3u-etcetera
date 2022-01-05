@@ -1,6 +1,7 @@
 package base
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/jwmwalrus/bnp/env"
@@ -41,9 +42,17 @@ func Load(noParseArgs ...bool) (args []string) {
 	)
 	onerror.Panic(err)
 
+	if _, err = os.Stat(CoversDir); os.IsNotExist(err) {
+		err = os.MkdirAll(CoversDir, 0755)
+		if err != nil {
+			return
+		}
+	}
+
 	err = Conf.Load(configFile, lockFile)
 	onerror.Panic(err)
 
+	GetFree(IdleStatusIdle)
 	return
 }
 

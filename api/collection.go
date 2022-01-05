@@ -233,28 +233,39 @@ sLoop:
 			}
 
 			if models.CollectionEvent(e.Idx) == models.CollectionEventInitial {
+				res := &m3uetcpb.SubscribeToCollectionStoreResponse{
+					SubscriptionId: id,
+					Event:          m3uetcpb.CollectionEvent_CE_INITIAL,
+				}
+				err := stream.Send(res)
+				if err != nil {
+					break sLoop
+				}
+
 				cts, cs, ts := models.GetCollectionStore()
 				for i := range cts {
 					err := sendCollectionTrack(
-						m3uetcpb.CollectionEvent_CE_INITIAL,
+						m3uetcpb.CollectionEvent_CE_INITIAL_ITEM,
 						cts[i],
 					)
 					if err != nil {
 						break sLoop
 					}
 				}
+
 				for i := range cs {
 					err := sendCollection(
-						m3uetcpb.CollectionEvent_CE_INITIAL,
+						m3uetcpb.CollectionEvent_CE_INITIAL_ITEM,
 						cs[i],
 					)
 					if err != nil {
 						break sLoop
 					}
 				}
+
 				for i := range ts {
 					err := sendTrack(
-						m3uetcpb.CollectionEvent_CE_INITIAL,
+						m3uetcpb.CollectionEvent_CE_INITIAL_ITEM,
 						ts[i],
 					)
 					if err != nil {
@@ -262,11 +273,11 @@ sLoop:
 					}
 				}
 
-				res := &m3uetcpb.SubscribeToCollectionStoreResponse{
+				res = &m3uetcpb.SubscribeToCollectionStoreResponse{
 					SubscriptionId: id,
 					Event:          m3uetcpb.CollectionEvent_CE_INITIAL_DONE,
 				}
-				err := stream.Send(res)
+				err = stream.Send(res)
 				onerror.Log(err)
 				continue sLoop
 			}

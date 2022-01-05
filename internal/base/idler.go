@@ -24,6 +24,9 @@ const (
 	// IdleStatusEngineLoop The engine loop is working
 	IdleStatusEngineLoop
 
+	// IdleStatusRequest A client's request is being processed
+	IdleStatusRequest
+
 	// IdleStatusSubscription A client subscription is active
 	IdleStatusSubscription
 
@@ -38,6 +41,7 @@ func (is IdleStatus) String() string {
 	return []string{
 		"idle",
 		"engine-loop",
+		"request",
 		"subscription",
 		"db-operations",
 		"file-operations",
@@ -45,20 +49,23 @@ func (is IdleStatus) String() string {
 }
 
 var (
+	idleCancel context.CancelFunc
+	idleCtx    context.Context
+
 	forceExit       = false
 	exitNow         = false
 	idleStatusStack = []IdleStatus{IdleStatusIdle}
 	doneEmmitted    = 0
 	idleGotCalled   = false
 
-	// InteruptSignal -
+	// InterruptSignal -
 	InterruptSignal chan os.Signal
 )
 
 // DoTerminate forces immediate termination of the application
 func DoTerminate(force bool) {
 	exitNow = true
-	if force {
+	if force || IsAppIdling() {
 		forceExit = true
 	}
 }
@@ -69,24 +76,40 @@ func GetBusy(is IdleStatus) {
 		return
 	}
 
-	log.Info("server got a lot busier")
+	log.WithField("is", is).
+		Debug("server got a lot busier")
+
 	idleStatusStack = append(idleStatusStack, is)
+
+	if idleGotCalled {
+		idleCancel()
+	}
 }
 
 // GetFree registers a process as less busy
 func GetFree(is IdleStatus) {
-	if is == IdleStatusIdle {
-		return
+	if is != IdleStatusIdle {
+		log.WithField("is", is).
+			Debug("server got a little less busy")
+
+		for i := len(idleStatusStack) - 1; i >= 0; i-- {
+			if is == idleStatusStack[i] {
+				idleStatusStack[i] = idleStatusStack[len(idleStatusStack)-1]
+				idleStatusStack = idleStatusStack[:len(idleStatusStack)-1]
+				break
+			}
+		}
 	}
 
-	log.WithField("is", is).
-		Info("server got a little less busy")
+	log.Debugf(
+		"Topmost idle status is %v",
+		idleStatusStack[len(idleStatusStack)-1],
+	)
 
-	for i := len(idleStatusStack) - 1; i >= 0; i-- {
-		if is == idleStatusStack[i] {
-			idleStatusStack[i] = idleStatusStack[len(idleStatusStack)-1]
-			idleStatusStack = idleStatusStack[:len(idleStatusStack)-1]
-			break
+	if len(idleStatusStack) == 1 {
+		if !idleGotCalled {
+			idleCtx, idleCancel = context.WithCancel(context.Background())
+			go Idle(idleCtx)
 		}
 	}
 }
@@ -100,7 +123,7 @@ func Idle(ctx context.Context) {
 		Info("Stating Idle checks")
 
 	if !forceExit {
-		if len(idleStatusStack) > 1 || idleGotCalled {
+		if IsAppBusy() || idleGotCalled {
 			log.Info("Server is busy or already idling, so cancelling request")
 			<-ctx.Done()
 			return
@@ -111,8 +134,14 @@ func Idle(ctx context.Context) {
 
 		select {
 		case <-time.After(time.Duration(ServerIdleTimeout) * time.Second):
+			if IsAppBusy() {
+				log.Info("Server is busy, so cancelling timeout")
+				<-ctx.Done()
+				return
+			}
 			break
 		case <-ctx.Done():
+			log.Info("idleCancel got called explicitly")
 			idleGotCalled = false
 			return
 		}

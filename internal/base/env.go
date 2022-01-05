@@ -58,6 +58,9 @@ var (
 	// RuntimeDir Run (volatile) directory
 	RuntimeDir string
 
+	// CoversDir directory where covers are stored
+	CoversDir string
+
 	flagHelp bool
 
 	// FlagDry Dry run
@@ -170,6 +173,7 @@ func init() {
 	ConfigDir = filepath.Join(xdg.ConfigHome, AppDirName)
 	CacheDir = filepath.Join(xdg.CacheHome, AppDirName)
 	RuntimeDir = filepath.Join(xdg.RuntimeDir, AppDirName)
+	CoversDir = filepath.Join(DataDir, "covers")
 
 	// Define global flags
 	getopt.FlagLong(&flagHelp, "help", 'h', "Display this help")

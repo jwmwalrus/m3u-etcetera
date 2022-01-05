@@ -1,11 +1,21 @@
 package pane
 
 import (
+	"context"
+
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/store"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
+)
+
+var (
+	collsFilter *gtk.TreeModelFilter
 )
 
 func setupMusic(signals *map[string]interface{}) (err error) {
@@ -20,6 +30,8 @@ func setupMusic(signals *map[string]interface{}) (err error) {
 		return
 	}
 	(*signals)["on_collections_sel_changed"] = onMusicCollectionsSelChanged
+	(*signals)["on_collections_view_row_activated"] = onMusicCollectionsDblClicked
+	(*signals)["on_collections_filter_search_changed"] = onMusicCollectionsFiltered
 
 	return
 }
@@ -59,6 +71,7 @@ func createMusicCollections() (err error) {
 	if err != nil {
 		return
 	}
+
 	view.SetModel(model)
 	return
 }
@@ -107,19 +120,96 @@ func createMusicQueue() (err error) {
 	return
 }
 
+func onMusicCollectionsDblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
+	imodel, err := tv.GetModel()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	model, ok := imodel.(*gtk.TreeStore)
+	if !ok {
+		log.Error("Unable to get model from treeview")
+		return
+	}
+	iter, err := model.GetIter(path)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	value, err := model.GetValue(iter, store.CColTree)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	goval, err := value.GoValue()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	log.Infof("Doouble-clicked column value: %v", goval)
+
+	value, err = model.GetValue(iter, store.CColTreeIDList)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	goval, err = value.GoValue()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	ids, err := store.StringToIDList(goval.(string))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	var cc *grpc.ClientConn
+	opts := alive.GetGrpcDialOpts()
+	auth := base.Conf.Server.GetAuthority()
+	if cc, err = grpc.Dial(auth, opts...); err != nil {
+		return
+	}
+	defer cc.Close()
+
+	req := &m3uetcpb.ExecuteQueueActionRequest{
+		Action: m3uetcpb.QueueAction_Q_APPEND,
+		Ids:    ids,
+	}
+	cl := m3uetcpb.NewQueueSvcClient(cc)
+	_, err = cl.ExecuteQueueAction(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		log.Error(s.Message())
+		return
+	}
+}
+
+func onMusicCollectionsFiltered(se *gtk.SearchEntry) {
+	text, err := se.GetText()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	store.FilterCollectionsBy(text)
+
+}
+
 func onMusicCollectionsSelChanged(sel *gtk.TreeSelection) {
 	model, iter, ok := sel.GetSelected()
 	if ok {
-		value, err := model.(*gtk.TreeModel).GetValue(iter, store.CColIDList)
+		value, err := model.(*gtk.TreeModel).GetValue(iter, store.CColTreeIDList)
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		_, err = value.GoValue()
+		goval, err := value.GoValue()
 		if err != nil {
 			log.Error(err)
 			return
 		}
+		log.Infof("Selected collection entry: %v", goval)
 	}
 }
 
@@ -140,11 +230,12 @@ func onMusicQueueSelChanged(sel *gtk.TreeSelection) {
 				log.Error(err)
 				return
 			}
-			_, err = value.GoValue()
+			goval, err := value.GoValue()
 			if err != nil {
 				log.Error(err)
 				return
 			}
+			log.Infof("Selected queue row: %v", goval)
 		}
 	}
 }

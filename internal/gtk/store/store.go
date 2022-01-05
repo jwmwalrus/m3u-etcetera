@@ -1,10 +1,14 @@
 package store
 
 import (
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gotk3/gotk3/glib"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,7 +29,8 @@ type columnDef struct {
 // CColTree column definition
 const (
 	CColTree = iota
-	CColIDList
+	CColTreeIDList
+	CColTreeKeywords
 )
 
 // CCol* column definition
@@ -134,6 +139,16 @@ var (
 
 // Subscribe start subscriptions to the server
 func Subscribe() {
+	log.Info("Checking server status")
+	err := alive.CheckServerStatus()
+	switch err.(type) {
+	case *alive.ServerAlreadyRunning,
+		*alive.ServerStarted:
+		err = nil
+	default:
+	}
+	onerror.Panic(err)
+
 	log.Info("Subscribing")
 
 	wg.Add(3)
@@ -163,6 +178,34 @@ func Unsubscribe() {
 	log.Info("Done unsubscribing")
 }
 
+func idListToString(ids []int64) (s string) {
+	if len(ids) < 1 {
+		return
+	}
+	s = strconv.FormatInt(ids[0], 10)
+	for i := 1; i < len(ids); i++ {
+		s += "," + strconv.FormatInt(ids[i], 10)
+	}
+	return
+}
+
+// StringToIDList parses the IDList column
+func StringToIDList(s string) (ids []int64, err error) {
+	if len(s) == 0 {
+		return
+	}
+	list := strings.Split(s, ",")
+	for _, l := range list {
+		var id int64
+		id, err = strconv.ParseInt(l, 10, 64)
+		if err != nil {
+			return
+		}
+		ids = append(ids, id)
+	}
+	return
+}
+
 func init() {
 	perspectivesList = []m3uetcpb.Perspective{
 		m3uetcpb.Perspective_MUSIC,
@@ -174,6 +217,7 @@ func init() {
 	TreeColumn = storeColumns{
 		columnDef{"Tree", glib.TYPE_STRING},
 		columnDef{"ID List", glib.TYPE_STRING},
+		columnDef{"Keywords", glib.TYPE_STRING},
 	}
 
 	CColumns = make(storeColumns, CColsN)

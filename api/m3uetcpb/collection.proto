@@ -106,8 +106,9 @@ message CollectionTrack {
 enum CollectionEvent {
     CE_NONE = 0;
     CE_INITIAL = 1;
-    CE_INITIAL_DONE = 2;
-    CE_ITEM_ADDED = 3;
-    CE_ITEM_CHANGED = 4;
-    CE_ITEM_REMOVED = 5;
+    CE_INITIAL_ITEM = 2;
+    CE_INITIAL_DONE = 3;
+    CE_ITEM_ADDED = 4;
+    CE_ITEM_CHANGED = 5;
+    CE_ITEM_REMOVED = 6;
 }

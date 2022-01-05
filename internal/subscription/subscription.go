@@ -128,7 +128,7 @@ func Broadcast(st Type, es ...Event) {
 // MustUnsubscribe checks if the event means unsubscribing
 func (s *Subscriber) MustUnsubscribe(e Event) bool {
 	log.WithField("e", e).
-		Info("Checking if must unsubscribe")
+		Debug("Checking if must unsubscribe")
 
 	ud, ok := e.Data.(unsubscribeData)
 	if !ok {

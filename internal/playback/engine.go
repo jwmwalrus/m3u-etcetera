@@ -10,7 +10,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
 )
 
 var (
@@ -68,9 +67,6 @@ func (e *engine) debugChannel(format string, args ...interface{}) {
 func (e *engine) engineLoop() {
 	log.Info("Starting engine loop")
 
-	idleCtx, cancelIdle := context.WithCancel(context.Background())
-	cancelIdle()
-
 loop:
 	for {
 		pb := &models.Playback{}
@@ -103,7 +99,6 @@ loop:
 
 		if pb.ID > 0 && pb.Location != "" {
 			e.debugChannel("There is a playback")
-			cancelIdle()
 			e.playStream(pb)
 			go func() {
 				models.PlaybackChanged <- struct{}{}
@@ -111,14 +106,10 @@ loop:
 			continue loop
 		}
 
-		if !base.IsAppIdling() {
-			subscription.Broadcast(
-				subscription.ToPlaybackEvent,
-				subscription.Event{Data: nil},
-			)
-			idleCtx, cancelIdle = context.WithCancel(context.Background())
-			go base.Idle(idleCtx)
-		}
+		subscription.Broadcast(
+			subscription.ToPlaybackEvent,
+			subscription.Event{Data: nil},
+		)
 	}
 
 	e.lastEvent = noLoopEvent

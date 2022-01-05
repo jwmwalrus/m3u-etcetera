@@ -55,6 +55,7 @@ func (s *Server) SetDefaults() {
 	}
 
 	s.Database.SetDefaults()
+	s.Playback.SetDefaults()
 	s.Query.SetDefaults()
 }
 

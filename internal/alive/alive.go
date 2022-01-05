@@ -200,9 +200,9 @@ func stopServer(force bool) (err error) {
 	}
 
 	alive := true
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 10; i++ {
 		if alive = isServerAlive(); alive {
-			time.Sleep(5 * time.Second)
+			time.Sleep(3 * time.Second)
 			continue
 		}
 		break

@@ -24,6 +24,7 @@ func main() {
 	base.RegisterUnloader(subscription.Unloader)
 
 	database.Open()
+
 	playback.StartEngine()
 
 	log.Info("Starting server...")

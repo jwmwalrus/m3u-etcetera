@@ -54,6 +54,7 @@ func CreateQueueModel(idx m3uetcpb.Perspective) (model *gtk.ListStore, err error
 func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 	log.WithField("idx", idx).
 		Info("Getting queue model")
+
 	switch idx {
 	case m3uetcpb.Perspective_MUSIC:
 		return musicModel

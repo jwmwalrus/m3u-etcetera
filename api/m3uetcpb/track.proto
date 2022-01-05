@@ -18,19 +18,20 @@ message Track {
 
     string comment = 11;
     string lyrics = 12;
-    int32 year = 13;
-    int32 tracknumber = 14;
-    int32 tracktotal = 15;
-    int32 discnumber = 16;
-    int32 disctotal = 17;
-    int32 date = 18;
-    int64 duration = 19;
-    int32 rating = 20;
+    string cover = 13;
+    int32 year = 14;
+    int32 tracknumber = 15;
+    int32 tracktotal = 16;
+    int32 discnumber = 17;
+    int32 disctotal = 18;
+    int64 date = 19;
+    int64 duration = 20;
 
-    int32 playcount = 21;
-    bool remote = 22;
-    int64 lastplayed = 23;
-    string tags = 24;
+    int32 rating = 21;
+    int32 playcount = 22;
+    bool remote = 23;
+    int64 lastplayed = 24;
+    string tags = 25;
 
     int64 created_at = 101;
     int64 updated_at = 102;

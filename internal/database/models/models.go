@@ -8,11 +8,37 @@ import (
 	"gorm.io/gorm"
 )
 
+// CollectionEvent defines a collection event
+type CollectionEvent int
+
+// CollectionEvent definitions
+const (
+	CollectionEventNone CollectionEvent = iota
+	CollectionEventInitial
+	_
+	_
+	CollectionEventItemAdded
+	CollectionEventItemChanged
+	CollectionEventItemRemoved
+)
+
+func (ce CollectionEvent) String() string {
+	return []string{
+		"initial",
+		"initial-item",
+		"initial-done",
+		"item-added",
+		"item-changed",
+		"item-removed",
+	}[ce]
+}
+
 var (
 	db *gorm.DB
 
 	// make sure we only do heavy collection tasks one at a time
-	storageGuard chan struct{}
+	storageGuard          chan struct{}
+	globalCollectionEvent = CollectionEventNone
 
 	// DbgChan is a debug channel
 	DbgChan chan map[string]interface{}

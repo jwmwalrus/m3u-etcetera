@@ -10,6 +10,7 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -35,29 +36,6 @@ func (idx CollectionIndex) Get() (c *Collection, err error) {
 	c = &Collection{}
 	err = db.Where("idx = ?", int(idx)).First(c).Error
 	return
-}
-
-// CollectionEvent defines a collection event
-type CollectionEvent int
-
-// CollectionEvent definitions
-const (
-	CollectionEventNone CollectionEvent = iota
-	CollectionEventInitial
-	_
-	CollectionEventItemAdded
-	CollectionEventItemChanged
-	CollectionEventItemRemoved
-)
-
-func (ce CollectionEvent) String() string {
-	return []string{
-		"initial",
-		"initial-done",
-		"item-added",
-		"item-changed",
-		"item-removed",
-	}[ce]
 }
 
 // Collection defines a collection row
@@ -166,6 +144,54 @@ func (c *Collection) ToProtobuf() proto.Message {
 	return out
 }
 
+// AfterCreate is a GORM hook
+func (c *Collection) AfterCreate(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{
+					Idx:  int(CollectionEventItemAdded),
+					Data: c,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterSave is a GORM hook
+func (c *Collection) AfterSave(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{
+					Idx:  int(CollectionEventItemChanged),
+					Data: c,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterDelete is a GORM hook
+func (c *Collection) AfterDelete(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{
+					Idx:  int(CollectionEventItemRemoved),
+					Data: c,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
 // CountTracks counts tracks that belong to the collection
 func (c *Collection) CountTracks() {
 	log.Info("Counting tracks in collection")
@@ -191,6 +217,17 @@ func (c *Collection) Scan(withTags bool) {
 
 	log.Info("Scanning collection")
 
+	globalCollectionEvent = CollectionEventInitial
+	defer func() {
+		globalCollectionEvent = CollectionEventNone
+
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{Idx: int(CollectionEventInitial)})
+		}
+	}()
+
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
 
@@ -207,7 +244,7 @@ func (c *Collection) Scan(withTags bool) {
 		return
 	}
 
-	// FIXME: support things other than mounted directories?
+	// TODO: support things other than mounted directories?
 	if u.Scheme != "file" {
 		u.Scheme = "fi;e"
 	}
@@ -371,6 +408,54 @@ func (ct *CollectionTrack) ToProtobuf() proto.Message {
 	out.CreatedAt = ct.CreatedAt
 	out.UpdatedAt = ct.UpdatedAt
 	return out
+}
+
+// AfterCreate is a GORM hook
+func (ct *CollectionTrack) AfterCreate(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{
+					Idx:  int(CollectionEventItemAdded),
+					Data: ct,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterSave is a GORM hook
+func (ct *CollectionTrack) AfterSave(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{
+					Idx:  int(CollectionEventItemChanged),
+					Data: ct,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterDelete is a GORM hook
+func (ct *CollectionTrack) AfterDelete(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{
+					Idx:  int(CollectionEventItemRemoved),
+					Data: ct,
+				},
+			)
+		}
+	}()
+	return nil
 }
 
 // DeleteWithRemote removes a collection-track from collection, along with the track

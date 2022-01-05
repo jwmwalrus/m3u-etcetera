@@ -2,17 +2,22 @@ package models
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/dhowden/tag"
+	"github.com/google/uuid"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"google.golang.org/protobuf/proto"
+	"gorm.io/gorm"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -32,6 +37,7 @@ type Track struct {
 
 	Comment     string `json:"comment"`
 	Lyrics      string `json:"lyrics"`
+	Cover       string `json:"cover"`
 	Year        int    `json:"year" gorm:"index:idx_track_year"`
 	Tracknumber int    `json:"trackNumber"`
 	Tracktotal  int    `json:"trackTotal"`
@@ -45,8 +51,9 @@ type Track struct {
 	Remote     bool   `json:"remote"` // if track is remote but not in a remote collection
 	Lastplayed int64  `json:"lastPlayed"`
 	Tags       string `json:"tags"`
-	CreatedAt  int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt  int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+
+	CreatedAt int64 `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt int64 `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
 // Create implements the DataCreator interface
@@ -104,6 +111,54 @@ func (t *Track) FindBy(query interface{}) (err error) {
 	return
 }
 
+// AfterCreate is a GORM hook
+func (t *Track) AfterCreate(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{
+					Idx:  int(CollectionEventItemAdded),
+					Data: t,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterSave is a GORM hook
+func (t *Track) AfterSave(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{
+					Idx:  int(CollectionEventItemChanged),
+					Data: t,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterDelete is a GORM hook
+func (t *Track) AfterDelete(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+			subscription.Broadcast(
+				subscription.ToCollectionStoreEvent,
+				subscription.Event{
+					Idx:  int(CollectionEventItemRemoved),
+					Data: t,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
 func (t *Track) fillMissingTags(raw map[string]interface{}) {
 	var full, partial time.Time
 	for k, v := range raw {
@@ -151,8 +206,24 @@ func (t *Track) fillMissingTags(raw map[string]interface{}) {
 }
 
 func (t *Track) savePicture(p *tag.Picture) {
-	// TODO
-	return
+	if p == nil {
+		return
+	}
+
+	if p.Ext != "" && p.MIMEType != "" {
+		fn := t.Cover
+		if fn == "" {
+			fn = uuid.New().String() + "." + p.Ext
+		}
+		file := filepath.Join(base.CoversDir, fn)
+		err := ioutil.WriteFile(file, p.Data, 0644)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		log.Debugf("Picture info saved as %v", fn)
+		t.Cover = fn
+	}
 }
 func (t *Track) updateTags() (err error) {
 	base.GetBusy(base.IdleStatusFileOperations)

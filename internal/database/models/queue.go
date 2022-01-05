@@ -209,7 +209,7 @@ func (q *Queue) MoveTo(from, to int) {
 // Pop returns the next entry to be played from the queue
 func (q *Queue) Pop() (qt *QueueTrack) {
 	log.WithField("q", *q).
-		Info("Popping from queue")
+		Debug("Popping from queue")
 
 	s := []QueueTrack{}
 	err := db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
