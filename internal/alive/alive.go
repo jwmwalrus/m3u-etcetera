@@ -10,6 +10,7 @@ import (
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -35,12 +36,6 @@ func CheckServerStatus() (err error) {
 		err = Serve(false, false)
 	}
 
-	return
-}
-
-// GetGrpcDialOpts returns the grpc dial options that any client should use
-func GetGrpcDialOpts() (opts []grpc.DialOption) {
-	opts = append(opts, grpc.WithInsecure())
 	return
 }
 
@@ -94,7 +89,7 @@ func findBinary(bin string) (path string, err error) {
 }
 
 func isServerAlive() bool {
-	opts := GetGrpcDialOpts()
+	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts...)
 	if err != nil {
@@ -179,7 +174,7 @@ func startServer() (err error) {
 }
 
 func stopServer(force bool) (err error) {
-	opts := GetGrpcDialOpts()
+	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts...)
 	if err != nil {

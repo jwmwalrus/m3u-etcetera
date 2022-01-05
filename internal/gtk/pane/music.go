@@ -5,12 +5,9 @@ import (
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/store"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -165,10 +162,8 @@ func onMusicCollectionsDblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk
 		return
 	}
 
-	var cc *grpc.ClientConn
-	opts := alive.GetGrpcDialOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
+	cc, err := store.GetClientConn()
+	if err != nil {
 		return
 	}
 	defer cc.Close()

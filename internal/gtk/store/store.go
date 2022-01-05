@@ -8,8 +8,11 @@ import (
 	"github.com/gotk3/gotk3/glib"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 type storeColumns []columnDef
@@ -137,16 +140,18 @@ var (
 	QColumns storeColumns
 )
 
+// GetClientConn returns a valid client connection to the server
+func GetClientConn() (*grpc.ClientConn, error) {
+
+	if err := sanityCheck(); err != nil {
+		return nil, err
+	}
+	return getClientConn()
+}
+
 // Subscribe start subscriptions to the server
 func Subscribe() {
-	log.Info("Checking server status")
-	err := alive.CheckServerStatus()
-	switch err.(type) {
-	case *alive.ServerAlreadyRunning,
-		*alive.ServerStarted:
-		err = nil
-	default:
-	}
+	err := sanityCheck()
 	onerror.Panic(err)
 
 	log.Info("Subscribing")
@@ -168,7 +173,10 @@ func Subscribe() {
 
 // Unsubscribe finish all subscriptions to the server
 func Unsubscribe() {
+	sanityCheck()
+
 	log.Info("Unubscribing")
+
 	unsubscribeFromPlayback()
 	unsubscribeFromQueueStore()
 	unsubscribeFromCollectionStore()
@@ -176,6 +184,24 @@ func Unsubscribe() {
 	wgqueue.Wait()
 	wgcollections.Wait()
 	log.Info("Done unsubscribing")
+}
+
+func getClientConn() (*grpc.ClientConn, error) {
+	opts := middleware.GetClientOpts()
+	auth := base.Conf.Server.GetAuthority()
+	return grpc.Dial(auth, opts...)
+}
+
+func sanityCheck() (err error) {
+	log.Info("Checking server status")
+	err = alive.CheckServerStatus()
+	switch err.(type) {
+	case *alive.ServerAlreadyRunning,
+		*alive.ServerStarted:
+		err = nil
+	default:
+	}
+	return
 }
 
 func idListToString(ids []int64) (s string) {

@@ -8,7 +8,7 @@ import (
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
+	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -77,7 +77,7 @@ func subscribeToQueueStore() {
 	var wgdone bool
 	var cc *grpc.ClientConn
 	var err error
-	opts := alive.GetGrpcDialOpts()
+	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
@@ -116,7 +116,7 @@ func unsubscribeFromQueueStore() {
 
 	var cc *grpc.ClientConn
 	var err error
-	opts := alive.GetGrpcDialOpts()
+	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		log.Error(err)

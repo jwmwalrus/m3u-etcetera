@@ -53,7 +53,6 @@ var (
 	idleCtx    context.Context
 
 	forceExit       = false
-	exitNow         = false
 	idleStatusStack = []IdleStatus{IdleStatusIdle}
 	doneEmmitted    = 0
 	idleGotCalled   = false
@@ -64,10 +63,13 @@ var (
 
 // DoTerminate forces immediate termination of the application
 func DoTerminate(force bool) {
-	exitNow = true
-	if force || IsAppIdling() {
-		forceExit = true
-	}
+	forceExit = force || IsAppIdling()
+
+	log.WithFields(log.Fields{
+		"force":     force,
+		"forceExit": forceExit,
+	}).
+		Debug("Immediate termination status")
 }
 
 // GetBusy registers a process as busy, to prevent idle timeout
@@ -120,7 +122,7 @@ func Idle(ctx context.Context) {
 		"forceExit":            forceExit,
 		"len(idleStatusStack)": len(idleStatusStack) - 1,
 	}).
-		Info("Stating Idle checks")
+		Info("Starting Idle checks")
 
 	if !forceExit {
 		if IsAppBusy() || idleGotCalled {
@@ -173,5 +175,5 @@ func IsAppBusyBy(is IdleStatus) bool {
 
 // IsAppIdling returns true if the Idle method is active
 func IsAppIdling() bool {
-	return idleGotCalled //&& len(idleStatusStack) == 1
+	return idleGotCalled || len(idleStatusStack) == 1
 }

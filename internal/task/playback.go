@@ -9,11 +9,8 @@ import (
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -94,10 +91,8 @@ func playbackAction(c *cli.Context) (err error) {
 		return
 	}
 
-	var cc *grpc.ClientConn
-	opts := alive.GetGrpcDialOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
+	cc, err := getClientConn()
+	if err != nil {
 		return
 	}
 	defer cc.Close()
@@ -174,10 +169,8 @@ func playbackPlayAction(c *cli.Context) (err error) {
 		}
 	}
 
-	var cc *grpc.ClientConn
-	opts := alive.GetGrpcDialOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
+	cc, err := getClientConn()
+	if err != nil {
 		return
 	}
 	defer cc.Close()

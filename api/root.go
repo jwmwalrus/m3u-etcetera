@@ -16,8 +16,8 @@ type RootSvc struct {
 // Off implements RootSvcServer
 // Initiates the process to unload the server
 func (*RootSvc) Off(_ context.Context, req *m3uetcpb.OffRequest) (*m3uetcpb.OffResponse, error) {
+	base.DoTerminate(req.Force)
 	go func() {
-		base.DoTerminate(req.Force)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		go base.Idle(ctx)

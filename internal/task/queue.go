@@ -9,11 +9,8 @@ import (
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -167,10 +164,8 @@ func queueAction(c *cli.Context) (err error) {
 		req.Limit = int32(c.Int("limit"))
 	}
 
-	var cc *grpc.ClientConn
-	opts := alive.GetGrpcDialOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
+	cc, err := getClientConn()
+	if err != nil {
 		return
 	}
 	defer cc.Close()
@@ -251,10 +246,8 @@ func queueCreateAction(c *cli.Context) (err error) {
 		req.Position = int32(c.Int("position"))
 	}
 
-	var cc *grpc.ClientConn
-	opts := alive.GetGrpcDialOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
+	cc, err := getClientConn()
+	if err != nil {
 		return
 	}
 	defer cc.Close()
@@ -292,10 +285,8 @@ func queueDestroyAction(c *cli.Context) (err error) {
 		req.Position = int32(c.Int("position"))
 	}
 
-	var cc *grpc.ClientConn
-	opts := alive.GetGrpcDialOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
+	cc, err := getClientConn()
+	if err != nil {
 		return
 	}
 	defer cc.Close()
@@ -335,10 +326,8 @@ func queueMoveAction(c *cli.Context) (err error) {
 		req.Perspective = m3uetcpb.Perspective_MUSIC
 	}
 
-	var cc *grpc.ClientConn
-	opts := alive.GetGrpcDialOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
+	cc, err := getClientConn()
+	if err != nil {
 		return
 	}
 	defer cc.Close()

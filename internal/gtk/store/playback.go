@@ -8,7 +8,7 @@ import (
 	"github.com/gotk3/gotk3/glib"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
+	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
 	log "github.com/sirupsen/logrus"
@@ -34,7 +34,7 @@ func subscribeToPlayback() {
 	var wgdone bool
 	var cc *grpc.ClientConn
 	var err error
-	opts := alive.GetGrpcDialOpts()
+	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		return
@@ -73,7 +73,7 @@ func unsubscribeFromPlayback() {
 
 	var cc *grpc.ClientConn
 	var err error
-	opts := alive.GetGrpcDialOpts()
+	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	if cc, err = grpc.Dial(auth, opts...); err != nil {
 		log.Error(err)

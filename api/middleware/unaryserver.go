@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"path"
 	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -10,8 +11,10 @@ import (
 
 func unaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		base.GetBusy(base.IdleStatusRequest)
-		defer func() { base.GetFree(base.IdleStatusRequest) }()
+		if path.Base(info.FullMethod) != "Off" {
+			base.GetBusy(base.IdleStatusRequest)
+			defer func() { base.GetFree(base.IdleStatusRequest) }()
+		}
 
 		startTime := time.Now()
 

@@ -6,8 +6,17 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc"
 )
+
+func getClientConn() (*grpc.ClientConn, error) {
+	opts := middleware.GetClientOpts()
+	auth := base.Conf.Server.GetAuthority()
+	return grpc.Dial(auth, opts...)
+}
 
 func mustNotParseExtraArgs(c *cli.Context) (err error) {
 	rest := c.Args().Slice()
@@ -17,6 +26,7 @@ func mustNotParseExtraArgs(c *cli.Context) (err error) {
 	}
 	return
 }
+
 func mustParseSingleID(c *cli.Context) (id int64, err error) {
 	rest := c.Args().Slice()
 	if len(rest) != 1 {
