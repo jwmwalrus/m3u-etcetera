@@ -33,18 +33,29 @@ var (
 // CheckServerStatus If ServerCheckInterval is up, starts the server
 func CheckServerStatus() (err error) {
 	if time.Now().Unix()-LastCheck > ServerCheckInterval {
-		err = Serve(false, false)
+		err = Serve()
 	}
 
 	return
 }
 
 // Serve starts or stops the server
-func Serve(turnOff, force bool) (err error) {
+func Serve(o ...ServeOptions) (err error) {
+	options := ServeOptions{}
+	if len(o) > 0 {
+		options = o[0]
+	}
+	turnOff := options.TurnOff
+	force := options.Force
+	if force {
+		turnOff = true
+	}
+	noWait := options.NoWait
+
 	if isServerAlive() {
 		err = &ServerAlreadyRunning{}
 		if turnOff {
-			err = stopServer(force)
+			err = stopServer(force, noWait)
 		}
 		return
 	}
@@ -173,7 +184,7 @@ func startServer() (err error) {
 	return
 }
 
-func stopServer(force bool) (err error) {
+func stopServer(force, noWait bool) (err error) {
 	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts...)
@@ -189,9 +200,15 @@ func stopServer(force bool) (err error) {
 	}
 
 	err = &ServerStopped{}
-	if !res.GetGoingOff() {
+	if !res.GoingOff {
 		aux, _ := err.(*ServerStopped)
-		aux.Desc = res.GetReason()
+		aux.Desc = res.Reason
+	}
+
+	if noWait {
+		aux, _ := err.(*ServerStopped)
+		aux.Desc = "unconfirmed"
+		return
 	}
 
 	alive := true

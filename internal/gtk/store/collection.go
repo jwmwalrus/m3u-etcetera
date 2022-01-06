@@ -413,7 +413,7 @@ func updateArtistYearAlbumTree() {
 			int(CColTree),
 			all[i].artist+" ("+strconv.Itoa(len(all[i].ids))+")",
 		)
-		model.SetValue(artIter, int(CColTreeIDList), idListToString(all[i].ids))
+		model.SetValue(artIter, int(CColTreeIDList), IDListToString(all[i].ids))
 		for _, ya := range all[i].yearAlbum {
 			yaIter := model.Append(artIter)
 			model.SetValue(
@@ -421,7 +421,7 @@ func updateArtistYearAlbumTree() {
 				int(CColTree),
 				ya.yearAlbum+" ("+strconv.Itoa(len(ya.ids))+")",
 			)
-			model.SetValue(yaIter, int(CColTreeIDList), idListToString(ya.ids))
+			model.SetValue(yaIter, int(CColTreeIDList), IDListToString(ya.ids))
 			for _, t := range ya.title {
 				tIter := model.Append(yaIter)
 				model.SetValue(tIter, int(CColTree), t.title)
