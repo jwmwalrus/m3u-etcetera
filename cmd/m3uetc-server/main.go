@@ -19,7 +19,6 @@ import (
 func main() {
 	base.Load()
 	base.StartIdler()
-	base.RegisterUnloader(subscription.Unloader)
 
 	database.Open()
 
@@ -45,20 +44,25 @@ func main() {
 
 	reflection.Register(s)
 
-	base.RegisterUnloader(base.Unloader{
+	serverUnloader := base.Unloader{
 		Description: "StopServer",
 		Callback: func() error {
 			s.Stop()
 			listener.Close()
 			return nil
 		},
-	})
+	}
 
 	go func() {
 		if err := s.Serve(listener); err != nil {
 			log.Fatalf("Failed to serve: %v", err)
 		}
 	}()
+
+	base.RegisterUnloader(subscription.Unloader)
+	base.RegisterUnloader(serverUnloader)
+	base.RegisterUnloader(playback.Unloader)
+	base.RegisterUnloader(database.Unloader)
 
 	<-base.InterruptSignal
 

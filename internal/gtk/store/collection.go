@@ -19,20 +19,36 @@ import (
 // CollectionsTree defines the collections-tree type
 type CollectionsTree int
 
-// Album: Album > Title
-// Artist: Artist > Album > Title
-// Album Artist: Album Artist > Album > Title
-// Genre - Artist: Genre > Artist > Album > Title
-// Genre - Album Artist: Genre > Album Artist > Album > Title
-// Genre - Album: Genre > Album  > Artist > Title
-// Year - Artist: Year > Artist > Album > Title
-// Year - Album Artist: Year > Album Artist > Album > Title
-// Year - Album: Year > Album  > Artist > Title
-//  Artist - (Year - Album): Artist > (Year - Album) > Title
-//  Album Artist - (Year - Album): Album Artist > (Year - Album) > Title
 const (
+	// ArtistYearAlbumTree - Artist > Year - Album > Title
 	ArtistYearAlbumTree CollectionsTree = iota
+
+	// ArtistAlbumTree - Artist > Album > Title
+	ArtistAlbumTree
+
+	// AlbumTree - Album > Title
+	AlbumTree
+
+	// GenreArtistAlbumTree - Genre > Artist > Album > Title
+	GenreArtistAlbumTree
+
+	// YearArtistAlbumTree - Year > Artist > Album > Title
+	YearArtistAlbumTree
+
+	// CollectionArtistYearAlbumTree - Collection > Artist > Year - Album > Title
 	CollectionArtistYearAlbumTree
+
+	// CollectionArtistAlbumTree - Collection > Artist > Album > Title
+	CollectionArtistAlbumTree
+
+	// CollectionAlbumTree - Collection > Album > Title
+	CollectionAlbumTree
+
+	// CollectionGenreArtistAlbumTree - Collection > Genre > Artist > Album > Title
+	CollectionGenreArtistAlbumTree
+
+	// CollectionYearArtistAlbumTree - Collection > Year > Artist > Album > Title
+	CollectionYearArtistAlbumTree
 )
 
 func (tree CollectionsTree) String() string {
@@ -265,6 +281,7 @@ func updateCollections() bool {
 	case ArtistYearAlbumTree:
 		updateArtistYearAlbumTree()
 	default:
+		updateArtistYearAlbumTree()
 	}
 	return false
 }
@@ -393,22 +410,22 @@ func updateArtistYearAlbumTree() {
 		artIter := model.Append(nil)
 		model.SetValue(
 			artIter,
-			CColTree,
+			int(CColTree),
 			all[i].artist+" ("+strconv.Itoa(len(all[i].ids))+")",
 		)
-		model.SetValue(artIter, CColTreeIDList, idListToString(all[i].ids))
+		model.SetValue(artIter, int(CColTreeIDList), idListToString(all[i].ids))
 		for _, ya := range all[i].yearAlbum {
 			yaIter := model.Append(artIter)
 			model.SetValue(
 				yaIter,
-				CColTree,
+				int(CColTree),
 				ya.yearAlbum+" ("+strconv.Itoa(len(ya.ids))+")",
 			)
-			model.SetValue(yaIter, CColTreeIDList, idListToString(ya.ids))
+			model.SetValue(yaIter, int(CColTreeIDList), idListToString(ya.ids))
 			for _, t := range ya.title {
 				tIter := model.Append(yaIter)
-				model.SetValue(tIter, CColTree, t.title)
-				model.SetValue(tIter, CColTreeIDList, strconv.FormatInt(t.id, 10))
+				model.SetValue(tIter, int(CColTree), t.title)
+				model.SetValue(tIter, int(CColTreeIDList), strconv.FormatInt(t.id, 10))
 			}
 		}
 	}

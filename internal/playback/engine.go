@@ -247,6 +247,7 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 
 	switch msg.GetType() {
 	case gst.MessageEos:
+		log.Info("End of stream: %v", pb.Location)
 		e.debugChannel("End of stream: %v", pb.Location)
 		if !e.goingBack {
 			go pb.AddToHistory(e.lastPosition, e.duration)
@@ -264,6 +265,12 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 	case gst.MessageStateChanged:
 		e.prevState, e.state, _ = msg.ParseStateChanged()
 		// if (GST_MESSAGE_SRC (msg) == GST_OBJECT (data->playbin)) {
+		log.Info(
+			"Pipeline state changed",
+			map[string]interface{}{
+				"previousState": e.prevState,
+				"newState":      e.state,
+			})
 		e.debugChannel(
 			"Pipeline state changed",
 			map[string]interface{}{

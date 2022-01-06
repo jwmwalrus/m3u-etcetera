@@ -29,16 +29,19 @@ type columnDef struct {
 	ColType glib.Type
 }
 
+// TreeModelColumn defines a tree model column ID
+type TreeModelColumn int
+
 // CColTree column definition
 const (
-	CColTree = iota
+	CColTree TreeModelColumn = iota
 	CColTreeIDList
 	CColTreeKeywords
 )
 
 // CCol* column definition
 const (
-	CColCollectionID = iota
+	CColCollectionID TreeModelColumn = iota
 	CColName
 	CColDescription
 	CColLocation
@@ -53,7 +56,7 @@ const (
 
 // CTCol* column  definition
 const (
-	CTColCollectionTrackID = iota
+	CTColCollectionTrackID TreeModelColumn = iota
 	CTColCollectionID
 	CTColTrackID
 
@@ -86,8 +89,9 @@ const (
 
 // QCol*: queue-track/track column
 const (
-	QColQueueTrackID int = iota
+	QColQueueTrackID TreeModelColumn = iota
 	QColPosition
+	QColLastPosition
 	QColPlayed
 	QColLocation
 	QColPerspective
@@ -259,7 +263,7 @@ func init() {
 
 	// FIXME: Why doesn't make work here?
 	// CTColumns = make(storeColumns, CTColsN)
-	for i := 0; i < CTColsN; i++ {
+	for i := 0; i < int(CTColsN); i++ {
 		CColumns = append(CColumns, columnDef{})
 	}
 	CColumns[CTColCollectionTrackID] = columnDef{"CollectionTrack ID", glib.TYPE_INT64}
@@ -293,6 +297,7 @@ func init() {
 	QColumns = make(storeColumns, QColsN)
 	QColumns[QColQueueTrackID] = columnDef{"QueueTrack ID", glib.TYPE_INT64}
 	QColumns[QColPosition] = columnDef{"Position", glib.TYPE_INT}
+	QColumns[QColLastPosition] = columnDef{"Last Position", glib.TYPE_INT}
 	QColumns[QColPlayed] = columnDef{"Played", glib.TYPE_BOOLEAN}
 	QColumns[QColLocation] = columnDef{"Location (QT)", glib.TYPE_STRING}
 	QColumns[QColPerspective] = columnDef{"Perspective", glib.TYPE_INT}

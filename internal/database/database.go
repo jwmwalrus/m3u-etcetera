@@ -25,6 +25,15 @@ const (
 
 var (
 	conn *gorm.DB
+
+	// Unloader -
+	Unloader = base.Unloader{
+		Description: "CloseDatabase",
+		Callback: func() error {
+			Close()
+			return nil
+		},
+	}
 )
 
 // Close closes the application database
@@ -60,14 +69,6 @@ func Open() *gorm.DB {
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	onerror.Panic(err)
-
-	base.RegisterUnloader(base.Unloader{
-		Description: "CloseDatabase",
-		Callback: func() error {
-			Close()
-			return nil
-		},
-	})
 
 	models.SetConnection(conn)
 

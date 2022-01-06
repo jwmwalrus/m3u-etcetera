@@ -158,7 +158,7 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 }
 
 // MoveTo moves one queue track from one position to another
-func (q *Queue) MoveTo(from, to int) {
+func (q *Queue) MoveTo(to, from int) {
 	if from == to || from < 1 {
 		return
 	}

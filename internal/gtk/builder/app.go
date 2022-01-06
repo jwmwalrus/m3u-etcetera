@@ -43,6 +43,21 @@ func GetListStore(id string) (s *gtk.ListStore, err error) {
 	return
 }
 
+func GetMenu(id string) (m *gtk.Menu, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get menu: %v", err)
+		return
+	}
+	m, ok := obj.(*gtk.Menu)
+	if !ok {
+		err = fmt.Errorf("Unable to create menu: %v", err)
+		return
+	}
+
+	return
+}
+
 func GetNotebook(id string) (nb *gtk.Notebook, err error) {
 	obj, err := app.GetObject("perspective_panes")
 	if err != nil {

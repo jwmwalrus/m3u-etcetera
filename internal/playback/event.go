@@ -65,6 +65,15 @@ func (em EngineMode) String() string {
 
 var (
 	eng *engine
+
+	// Unloader -
+	Unloader = base.Unloader{
+		Description: "StopEngine",
+		Callback: func() error {
+			stopEngine()
+			return nil
+		},
+	}
 )
 
 // GetPlayback returns a copy of the current playback
@@ -253,14 +262,6 @@ func StartEngine() {
 
 	go eng.engineLoop()
 	models.PlaybackChanged <- struct{}{}
-
-	base.RegisterUnloader(base.Unloader{
-		Description: "StopEngine",
-		Callback: func() error {
-			StopEngine()
-			return nil
-		},
-	})
 	return
 }
 
@@ -271,8 +272,41 @@ func StopAll() {
 	StopStream()
 }
 
-// StopEngine stops the engine
-func StopEngine() {
+// StopStream stops the current stream
+func StopStream() {
+	log.Info("Stopping current playback")
+
+	if eng.lastEvent != stopAllEvent {
+		eng.lastEvent = stopStreamEvent
+		log.Infof("Firing the %v event", eng.lastEvent)
+	}
+
+	if !IsStreaming() {
+		return
+	}
+
+	// FIXME: this is a hack to avoid hanging/freezing
+	if IsPaused() {
+		eng.state = gst.StatePlaying
+		eng.playbin.SetState(eng.state)
+	}
+
+	eos := gst.NewEosEvent()
+	eng.playbin.SendEvent(eos)
+
+	return
+}
+
+func mockEngineLoop() {
+	aux := &models.Playback{}
+	aux.GetNextToPlay()
+	if aux != nil {
+		eng.pb = aux
+	}
+}
+
+// stopEngine stops the engine
+func stopEngine() {
 	if eng.mode == TestMode {
 		return
 	}
@@ -303,34 +337,4 @@ func StopEngine() {
 	}
 
 	return
-}
-
-// StopStream stops the current stream
-func StopStream() {
-	log.Info("Stopping current playback")
-
-	if eng.lastEvent != stopAllEvent {
-		eng.lastEvent = stopStreamEvent
-		log.Infof("Firing the %v event", eng.lastEvent)
-	}
-
-	if !IsStreaming() {
-		return
-	}
-
-	if IsPaused() {
-	}
-
-	eos := gst.NewEosEvent()
-	eng.playbin.SendEvent(eos)
-
-	return
-}
-
-func mockEngineLoop() {
-	aux := &models.Playback{}
-	aux.GetNextToPlay()
-	if aux != nil {
-		eng.pb = aux
-	}
 }

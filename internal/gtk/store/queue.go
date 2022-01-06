@@ -14,6 +14,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -48,6 +49,23 @@ func CreateQueueModel(idx m3uetcpb.Perspective) (model *gtk.ListStore, err error
 		podcastsModel = model
 	case m3uetcpb.Perspective_AUDIOBOOKS:
 		audiobooksModel = model
+	}
+	return
+}
+
+// ExecuteQueueAction sends an ExecuteQueueAction request
+func ExecuteQueueAction(req *m3uetcpb.ExecuteQueueActionRequest) (err error) {
+	cc, err := GetClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+	cl := m3uetcpb.NewQueueSvcClient(cc)
+	_, err = cl.ExecuteQueueAction(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		log.Error(s.Message())
+		return
 	}
 	return
 }
@@ -167,6 +185,15 @@ func updateQueueModels() bool {
 			if model.GetNColumns() == 0 {
 				continue
 			}
+
+			count := 0
+			for _, qt := range QStore.Data.QueueTracks {
+				if qt.Perspective != idx {
+					continue
+				}
+				count++
+			}
+
 			// model.Clear()
 			var iter *gtk.TreeIter
 			for _, qt := range QStore.Data.QueueTracks {
@@ -177,16 +204,18 @@ func updateQueueModels() bool {
 				err := model.Set(
 					iter,
 					[]int{
-						QColQueueTrackID,
-						QColPosition,
-						QColPlayed,
-						QColLocation,
-						QColPerspective,
-						QColTrackID,
+						int(QColQueueTrackID),
+						int(QColPosition),
+						int(QColLastPosition),
+						int(QColPlayed),
+						int(QColLocation),
+						int(QColPerspective),
+						int(QColTrackID),
 					},
 					[]interface{}{
 						qt.Id,
 						int(qt.Position),
+						int(count),
 						qt.Played,
 						qt.Location,
 						int(qt.Perspective),
@@ -203,28 +232,28 @@ func updateQueueModels() bool {
 						err = model.Set(
 							iter,
 							[]int{
-								QColFormat,
-								QColType,
-								QColTitle,
-								QColAlbum,
-								QColArtist,
-								QColAlbumartist,
-								QColComposer,
-								QColGenre,
+								int(QColFormat),
+								int(QColType),
+								int(QColTitle),
+								int(QColAlbum),
+								int(QColArtist),
+								int(QColAlbumartist),
+								int(QColComposer),
+								int(QColGenre),
 
-								QColYear,
-								QColTracknumber,
-								QColTracktotal,
-								QColDiscnumber,
-								QColDisctotal,
-								QColLyrics,
-								QColComment,
-								QColPlaycount,
+								int(QColYear),
+								int(QColTracknumber),
+								int(QColTracktotal),
+								int(QColDiscnumber),
+								int(QColDisctotal),
+								int(QColLyrics),
+								int(QColComment),
+								int(QColPlaycount),
 
-								QColRating,
-								QColDuration,
-								QColRemote,
-								QColLastplayed,
+								int(QColRating),
+								int(QColDuration),
+								int(QColRemote),
+								int(QColLastplayed),
 							},
 							[]interface{}{
 								t.Format,

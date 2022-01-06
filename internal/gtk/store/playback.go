@@ -28,6 +28,18 @@ var (
 	location, title, artist, album, extra string
 )
 
+func ExecutePlaybackAction(req *m3uetcpb.ExecutePlaybackActionRequest) (err error) {
+	cc, err := GetClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewPlaybackSvcClient(cc)
+	_, err = cl.ExecutePlaybackAction(context.Background(), req)
+	return
+}
+
 func subscribeToPlayback() {
 	log.Info("Subscribing to playback")
 

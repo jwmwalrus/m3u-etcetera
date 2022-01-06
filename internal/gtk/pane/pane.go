@@ -7,6 +7,10 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
+	audiobookspane "github.com/jwmwalrus/m3u-etcetera/internal/gtk/pane/audiobooks"
+	musicpane "github.com/jwmwalrus/m3u-etcetera/internal/gtk/pane/music"
+	podcastspane "github.com/jwmwalrus/m3u-etcetera/internal/gtk/pane/podcasts"
+	radiopane "github.com/jwmwalrus/m3u-etcetera/internal/gtk/pane/radio"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,22 +67,22 @@ func init() {
 		m3uetcpb.Perspective_MUSIC: paneData{
 			id:    "music_perspective_pane",
 			path:  "data/ui/pane/music.ui",
-			setup: setupMusic,
+			setup: musicpane.Setup,
 		},
 		m3uetcpb.Perspective_RADIO: paneData{
 			id:    "radio_perspective_pane",
 			path:  "data/ui/pane/radio.ui",
-			setup: setupRadio,
+			setup: radiopane.Setup,
 		},
 		m3uetcpb.Perspective_PODCASTS: paneData{
 			id:    "podcasts_perspective_pane",
 			path:  "data/ui/pane/podcasts.ui",
-			setup: setupPodcasts,
+			setup: podcastspane.Setup,
 		},
 		m3uetcpb.Perspective_AUDIOBOOKS: paneData{
 			id:    "audiobooks_perspective_pane",
 			path:  "data/ui/pane/audiobooks.ui",
-			setup: setupPodcasts,
+			setup: audiobookspane.Setup,
 		},
 	}
 }
