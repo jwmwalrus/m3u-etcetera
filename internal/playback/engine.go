@@ -60,14 +60,6 @@ func (e *engine) clearPendingPlayback() {
 	e.pb.ClearPending()
 }
 
-func (e *engine) debugChannel(format string, args ...interface{}) {
-	if e.mode == TestMode {
-		models.DbgChan <- map[string]interface{}{"format": format, "args": args}
-		return
-	}
-	log.Debugf(format, args...)
-}
-
 func (e *engine) engineLoop() {
 	log.Info("Starting engine loop")
 
@@ -94,7 +86,7 @@ loop:
 			if err != nil {
 				q, _ := models.GetActivePerspectiveIndex().GetPerspectiveQueue()
 				if qt := q.Pop(); qt != nil {
-					e.debugChannel("Popped successfully")
+					log.Debug("Popped successfully")
 					pb = e.addPlaybackFromQueue(qt)
 				}
 			}
@@ -102,7 +94,7 @@ loop:
 		}
 
 		if pb.ID > 0 && pb.Location != "" {
-			e.debugChannel("There is a playback")
+			log.Debug("There is a playback")
 			e.playStream(pb)
 			go func() {
 				models.PlaybackChanged <- struct{}{}
@@ -161,7 +153,7 @@ func (e *engine) playStream(pb *models.Playback) {
 	if e.pb == nil || pb.Location == "" {
 		return
 	}
-	e.debugChannel("Playback is valid")
+	log.Debug("Playback is valid")
 
 	var err error
 
@@ -171,7 +163,7 @@ func (e *engine) playStream(pb *models.Playback) {
 		return
 	}
 	defer func() { e.playbin = nil }()
-	e.debugChannel("Playbin created")
+	log.Debug("Playbin created")
 
 	if e.playbin == nil {
 		log.Error("Not all elements could be created")
@@ -193,7 +185,7 @@ func (e *engine) playStream(pb *models.Playback) {
 		log.Warn("Unable to start playback")
 		return
 	}
-	e.debugChannel("StateChangeReturn: %d\n", gst.StatePlaying)
+	log.Debugf("StateChangeReturn: %d\n", gst.StatePlaying)
 
 	bus := e.playbin.GetBus()
 
@@ -236,19 +228,18 @@ func (e *engine) playStream(pb *models.Playback) {
 		}
 	}
 
-	e.debugChannel("End of playback")
+	log.Debug("End of playback")
 	e.state = gst.StateNull
 	e.playbin.SetState(e.state)
 	return
 }
 
 func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
-	e.debugChannel(msg.GetName())
+	log.Debug(msg.GetName())
 
 	switch msg.GetType() {
 	case gst.MessageEos:
-		log.Info("End of stream: %v", pb.Location)
-		e.debugChannel("End of stream: %v", pb.Location)
+		log.Debugf("End of stream: %v", pb.Location)
 		if !e.goingBack {
 			go pb.AddToHistory(e.lastPosition, e.duration)
 		}
@@ -261,22 +252,15 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 	case gst.MessageWarning:
 		log.Warning(msg.GetName())
 	case gst.MessageInfo:
-		e.debugChannel(msg.GetName())
+		log.Debug(msg.GetName())
 	case gst.MessageStateChanged:
 		e.prevState, e.state, _ = msg.ParseStateChanged()
 		// if (GST_MESSAGE_SRC (msg) == GST_OBJECT (data->playbin)) {
-		log.Info(
-			"Pipeline state changed",
-			map[string]interface{}{
-				"previousState": e.prevState,
-				"newState":      e.state,
-			})
-		e.debugChannel(
-			"Pipeline state changed",
-			map[string]interface{}{
-				"previousState": e.prevState,
-				"newState":      e.state,
-			})
+		log.WithFields(log.Fields{
+			"previousState": e.prevState,
+			"newState":      e.state,
+		}).
+			Debug("Pipeline state changed")
 
 		if e.state == gst.StatePlaying {
 			/* We just moved to PLAYING. Check if seeking is possible */
@@ -285,17 +269,16 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 			if e.playbin.Query(q) {
 				e.seekEnabled, start, end = q.ParseSeeking(nil)
 				if e.seekEnabled {
-					e.debugChannel(
-						"Seeking is ENABLED",
-						log.Fields{
-							"start": start,
-							"end":   end,
-						})
+					log.WithFields(log.Fields{
+						"start": start,
+						"end":   end,
+					}).
+						Debug("Seeking is ENABLED")
 				} else {
-					e.debugChannel("Seeking is DISABLED for this stream")
+					log.Debug("Seeking is DISABLED for this stream")
 				}
 			} else {
-				e.debugChannel("Seeking query failed")
+				log.Debug("Seeking query failed")
 			}
 		}
 

@@ -29,34 +29,37 @@ type columnDef struct {
 	ColType glib.Type
 }
 
-// TreeModelColumn defines a tree model column ID
-type TreeModelColumn int
-
-// CColTree column definition
-const (
-	CColTree TreeModelColumn = iota
-	CColTreeIDList
-	CColTreeKeywords
-)
+// StoreModelColumn defines a tree model column ID
+type StoreModelColumn int
 
 // CCol* column definition
 const (
-	CColCollectionID TreeModelColumn = iota
+	CColCollectionID StoreModelColumn = iota
 	CColName
 	CColDescription
 	CColLocation
+	CColRemoteLocation
 	CColHidden
 	CColDisabled
 	CColRemote
 	CColScanned
 	CColTracks
+	CColTracksView
+	CColRescan
 
 	CColsN
 )
 
+// CColTree column definition
+const (
+	CColTree StoreModelColumn = iota
+	CColTreeIDList
+	CColTreeKeywords
+)
+
 // CTCol* column  definition
 const (
-	CTColCollectionTrackID TreeModelColumn = iota
+	CTColCollectionTrackID StoreModelColumn = iota
 	CTColCollectionID
 	CTColTrackID
 
@@ -89,7 +92,7 @@ const (
 
 // QCol*: queue-track/track column
 const (
-	QColQueueTrackID TreeModelColumn = iota
+	QColQueueTrackID StoreModelColumn = iota
 	QColPosition
 	QColLastPosition
 	QColPlayed
@@ -129,6 +132,7 @@ var (
 	wgplayback       sync.WaitGroup
 	wgqueue          sync.WaitGroup
 	wgcollections    sync.WaitGroup
+	forceExit        bool
 	perspectivesList []m3uetcpb.Perspective
 
 	// TreeColumn collections tree column
@@ -152,6 +156,7 @@ func GetClientConn() (*grpc.ClientConn, error) {
 	return getClientConn()
 }
 
+// IDListToString converts an ID list to a comma-separaterd string
 func IDListToString(ids []int64) (s string) {
 	if len(ids) < 1 {
 		return
@@ -161,6 +166,11 @@ func IDListToString(ids []int64) (s string) {
 		s += "," + strconv.FormatInt(ids[i], 10)
 	}
 	return
+}
+
+// SetForceExit sets forceExit to true
+func SetForceExit() {
+	forceExit = true
 }
 
 // StringToIDList parses the IDList column
@@ -215,7 +225,13 @@ func Unsubscribe() {
 	wgqueue.Wait()
 	wgcollections.Wait()
 
-	alive.Serve(alive.ServeOptions{TurnOff: true, NoWait: true})
+	alive.Serve(
+		alive.ServeOptions{
+			TurnOff: true,
+			NoWait:  true,
+			Force:   forceExit,
+		},
+	)
 
 	log.Info("Done unsubscribing")
 }
@@ -232,6 +248,7 @@ func sanityCheck() (err error) {
 	switch err.(type) {
 	case *alive.ServerAlreadyRunning,
 		*alive.ServerStarted:
+		log.Info(err)
 		err = nil
 	default:
 	}
@@ -257,44 +274,43 @@ func init() {
 	CColumns[CColName] = columnDef{"Name", glib.TYPE_STRING}
 	CColumns[CColDescription] = columnDef{"Description", glib.TYPE_STRING}
 	CColumns[CColLocation] = columnDef{"Location", glib.TYPE_STRING}
+	CColumns[CColRemoteLocation] = columnDef{"Remote Location", glib.TYPE_STRING}
 	CColumns[CColHidden] = columnDef{"Hidden", glib.TYPE_BOOLEAN}
 	CColumns[CColDisabled] = columnDef{"Disabled", glib.TYPE_BOOLEAN}
 	CColumns[CColRemote] = columnDef{"Remote", glib.TYPE_BOOLEAN}
 	CColumns[CColScanned] = columnDef{"Scanned", glib.TYPE_INT}
-	CColumns[CColTracks] = columnDef{"# Tracks", glib.TYPE_INT}
+	CColumns[CColTracks] = columnDef{"# Tracks", glib.TYPE_INT64}
+	CColumns[CColTracksView] = columnDef{"# Tracks", glib.TYPE_STRING}
+	CColumns[CColRescan] = columnDef{"Re-scan", glib.TYPE_BOOLEAN}
 
-	// FIXME: Why doesn't make work here?
-	// CTColumns = make(storeColumns, CTColsN)
-	for i := 0; i < int(CTColsN); i++ {
-		CColumns = append(CColumns, columnDef{})
-	}
-	CColumns[CTColCollectionTrackID] = columnDef{"CollectionTrack ID", glib.TYPE_INT64}
-	CColumns[CTColCollectionID] = columnDef{"Collection ID", glib.TYPE_INT64}
-	CColumns[CTColTrackID] = columnDef{"Track ID", glib.TYPE_INT64}
+	CTColumns = make(storeColumns, CTColsN)
+	CTColumns[CTColCollectionTrackID] = columnDef{"CollectionTrack ID", glib.TYPE_INT64}
+	CTColumns[CTColCollectionID] = columnDef{"Collection ID", glib.TYPE_INT64}
+	CTColumns[CTColTrackID] = columnDef{"Track ID", glib.TYPE_INT64}
 
-	CColumns[CTColLocation] = columnDef{"Location", glib.TYPE_STRING}
-	CColumns[CTColFormat] = columnDef{"Format", glib.TYPE_STRING}
-	CColumns[CTColType] = columnDef{"Type", glib.TYPE_STRING}
-	CColumns[CTColTitle] = columnDef{"Title", glib.TYPE_STRING}
-	CColumns[CTColAlbum] = columnDef{"Album", glib.TYPE_STRING}
-	CColumns[CTColArtist] = columnDef{"Artist", glib.TYPE_STRING}
-	CColumns[CTColAlbumartist] = columnDef{"Album Artist", glib.TYPE_STRING}
-	CColumns[CTColComposer] = columnDef{"Composer", glib.TYPE_STRING}
-	CColumns[CTColGenre] = columnDef{"Genre", glib.TYPE_STRING}
+	CTColumns[CTColLocation] = columnDef{"Location", glib.TYPE_STRING}
+	CTColumns[CTColFormat] = columnDef{"Format", glib.TYPE_STRING}
+	CTColumns[CTColType] = columnDef{"Type", glib.TYPE_STRING}
+	CTColumns[CTColTitle] = columnDef{"Title", glib.TYPE_STRING}
+	CTColumns[CTColAlbum] = columnDef{"Album", glib.TYPE_STRING}
+	CTColumns[CTColArtist] = columnDef{"Artist", glib.TYPE_STRING}
+	CTColumns[CTColAlbumartist] = columnDef{"Album Artist", glib.TYPE_STRING}
+	CTColumns[CTColComposer] = columnDef{"Composer", glib.TYPE_STRING}
+	CTColumns[CTColGenre] = columnDef{"Genre", glib.TYPE_STRING}
 
-	CColumns[CTColYear] = columnDef{"Year", glib.TYPE_INT}
-	CColumns[CTColTracknumber] = columnDef{"Track Number", glib.TYPE_INT}
-	CColumns[CTColTracktotal] = columnDef{"Track Total", glib.TYPE_INT}
-	CColumns[CTColDiscnumber] = columnDef{"Disc Number", glib.TYPE_INT}
-	CColumns[CTColDisctotal] = columnDef{"Disc Total", glib.TYPE_INT}
-	CColumns[CTColLyrics] = columnDef{"Lyrics", glib.TYPE_STRING}
-	CColumns[CTColComment] = columnDef{"Comment", glib.TYPE_STRING}
-	CColumns[CTColPlaycount] = columnDef{"Play Count", glib.TYPE_INT}
+	CTColumns[CTColYear] = columnDef{"Year", glib.TYPE_INT}
+	CTColumns[CTColTracknumber] = columnDef{"Track Number", glib.TYPE_INT}
+	CTColumns[CTColTracktotal] = columnDef{"Track Total", glib.TYPE_INT}
+	CTColumns[CTColDiscnumber] = columnDef{"Disc Number", glib.TYPE_INT}
+	CTColumns[CTColDisctotal] = columnDef{"Disc Total", glib.TYPE_INT}
+	CTColumns[CTColLyrics] = columnDef{"Lyrics", glib.TYPE_STRING}
+	CTColumns[CTColComment] = columnDef{"Comment", glib.TYPE_STRING}
+	CTColumns[CTColPlaycount] = columnDef{"Play Count", glib.TYPE_INT}
 
-	CColumns[CTColRating] = columnDef{"Rating", glib.TYPE_INT}
-	CColumns[CTColDuration] = columnDef{"Duration", glib.TYPE_INT64}
-	CColumns[CTColRemote] = columnDef{"Remote (T)", glib.TYPE_BOOLEAN}
-	CColumns[CTColLastplayed] = columnDef{"Last Played", glib.TYPE_INT64}
+	CTColumns[CTColRating] = columnDef{"Rating", glib.TYPE_INT}
+	CTColumns[CTColDuration] = columnDef{"Duration", glib.TYPE_INT64}
+	CTColumns[CTColRemote] = columnDef{"Remote (T)", glib.TYPE_BOOLEAN}
+	CTColumns[CTColLastplayed] = columnDef{"Last Played", glib.TYPE_INT64}
 
 	QColumns = make(storeColumns, QColsN)
 	QColumns[QColQueueTrackID] = columnDef{"QueueTrack ID", glib.TYPE_INT64}

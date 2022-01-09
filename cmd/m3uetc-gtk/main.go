@@ -44,7 +44,7 @@ func main() {
 
 	signals := make(map[string]interface{})
 
-	err = gtkui.AddPerspectives(builder, &signals)
+	err = gtkui.Setup(builder, &signals)
 	onerror.Panic(err)
 
 	builder.ConnectSignals(signals)

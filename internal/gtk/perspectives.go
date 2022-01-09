@@ -17,21 +17,14 @@ var (
 )
 
 // AddPerspectives sets the perspective panes
-func AddPerspectives(b *gtk.Builder, signals *map[string]interface{}) (err error) {
+func AddPerspectives(signals *map[string]interface{}) (err error) {
 	log.Info("Adding perspectives")
-
-	builder.SetupApp(b)
 
 	perspective, err = builder.GetComboBoxText("perspective")
 	if err != nil {
 		return
 	}
-
 	(*signals)["on_perspective_changed"] = onPerspectiveChanged
-
-	if err = setupPlayback(signals); err != nil {
-		return
-	}
 
 	notebook, err = builder.GetNotebook("perspective_panes")
 	if err != nil {
@@ -61,14 +54,4 @@ func onPerspectiveChanged(cbt *gtk.ComboBoxText) {
 	if idx, ok := m3uetcpb.Perspective_value[text]; ok {
 		notebook.SetCurrentPage(int(idx))
 	}
-}
-
-func init() {
-	perspectivesList = []m3uetcpb.Perspective{
-		m3uetcpb.Perspective_MUSIC,
-		m3uetcpb.Perspective_RADIO,
-		m3uetcpb.Perspective_PODCASTS,
-		m3uetcpb.Perspective_AUDIOBOOKS,
-	}
-
 }

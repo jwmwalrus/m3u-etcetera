@@ -153,7 +153,7 @@ func updatePlayback() bool {
 		)
 	} else {
 		prog.SetFraction(float64(0))
-		prog.SetText("")
+		prog.SetText("Not Playing")
 	}
 
 	un, err := url.QueryUnescape(location)

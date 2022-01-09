@@ -166,9 +166,9 @@ func startServer() (err error) {
 	err = &ServerStarted{PID: pid}
 
 	alive := false
-	for i := 0; i < 12; i++ {
+	for i := 0; i < base.ClientWaitTimeout; i++ {
 		if alive = isServerAlive(); !alive {
-			time.Sleep(5 * time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 		break
@@ -212,9 +212,9 @@ func stopServer(force, noWait bool) (err error) {
 	}
 
 	alive := true
-	for i := 0; i < 10; i++ {
+	for i := 0; i < base.ClientWaitTimeout; i++ {
 		if alive = isServerAlive(); alive {
-			time.Sleep(3 * time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 		break

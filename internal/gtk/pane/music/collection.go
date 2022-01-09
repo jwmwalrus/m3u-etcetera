@@ -13,10 +13,6 @@ type onMusicCollections struct {
 	selection interface{}
 }
 
-var (
-	musicCollectionsSignals = &onMusicCollections{}
-)
-
 func createMusicCollections() (err error) {
 	log.Info("Creating music collections view and model")
 
@@ -48,7 +44,7 @@ func createMusicCollections() (err error) {
 		view.InsertColumn(col, -1)
 	}
 
-	model, err := store.CreateCollectionsModel(store.ArtistYearAlbumTree)
+	model, err := store.CreateCollectionTreeModel(store.ArtistYearAlbumTree)
 	if err != nil {
 		return
 	}
@@ -125,7 +121,7 @@ func (omc *onMusicCollections) contextPlayNow(mi *gtk.MenuItem) {
 }
 
 func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
-	values, err := store.GetTreeStoreValues(tv, path, []store.TreeModelColumn{store.CColTree, store.CColTreeIDList})
+	values, err := store.GetTreeStoreValues(tv, path, []store.StoreModelColumn{store.CColTree, store.CColTreeIDList})
 	if err != nil {
 		log.Error(err)
 		return

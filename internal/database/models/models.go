@@ -40,9 +40,6 @@ var (
 	storageGuard          chan struct{}
 	globalCollectionEvent = CollectionEventNone
 
-	// DbgChan is a debug channel
-	DbgChan chan map[string]interface{}
-
 	// PlaybackChanged is the AfterCreate-hook channel for QueueTrack and Playback
 	PlaybackChanged chan struct{}
 )
@@ -120,7 +117,6 @@ func getSuffler(n int) []int {
 }
 
 func init() {
-	DbgChan = make(chan map[string]interface{})
 	storageGuard = make(chan struct{}, 1)
 	PlaybackChanged = make(chan struct{}, 1)
 }

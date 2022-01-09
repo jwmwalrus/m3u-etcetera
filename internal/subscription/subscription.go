@@ -86,7 +86,7 @@ func Broadcast(st Type, es ...Event) {
 		"st": st,
 		"es": es,
 	}).
-		Debug("Broadcasting")
+		Trace("Broadcasting")
 
 	if st == ToNone && len(es) > 0 {
 		id, ok := es[0].Data.(string)
@@ -129,7 +129,7 @@ func Broadcast(st Type, es ...Event) {
 // MustUnsubscribe checks if the event means unsubscribing
 func (s *Subscriber) MustUnsubscribe(e Event) bool {
 	log.WithField("e", e).
-		Debug("Checking if must unsubscribe")
+		Trace("Checking if must unsubscribe")
 
 	ud, ok := e.Data.(unsubscribeData)
 	if !ok {

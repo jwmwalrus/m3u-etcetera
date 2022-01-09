@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -73,7 +72,7 @@ func ExecuteQueueAction(req *m3uetcpb.ExecuteQueueActionRequest) (err error) {
 // GetQueueModel returns the queue model for the given perspective
 func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 	log.WithField("idx", idx).
-		Info("Getting queue model")
+		Debug("Returning queue model")
 
 	switch idx {
 	case m3uetcpb.Perspective_MUSIC:
@@ -167,10 +166,9 @@ func updateQueueModels() bool {
 			continue
 		}
 
-		iter, ok := model.GetIterFirst()
-		for ok {
-			model.Remove(iter)
-			ok = model.IterNext(iter)
+		_, ok := model.GetIterFirst()
+		if ok {
+			model.Clear()
 		}
 	}
 
@@ -224,7 +222,6 @@ func updateQueueModels() bool {
 				)
 				if err != nil {
 					log.Error(err)
-					os.Exit(0)
 					continue
 				}
 				for _, t := range QStore.Data.Tracks {

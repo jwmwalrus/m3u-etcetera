@@ -15,10 +15,6 @@ type onMusicQueue struct {
 	selection interface{}
 }
 
-var (
-	musicQueueSignals = &onMusicQueue{}
-)
-
 func createMusicQueue() (err error) {
 	log.Info("Creating music queue view and model")
 
@@ -75,27 +71,38 @@ func (omq *onMusicQueue) context(tv *gtk.TreeView, event *gdk.Event) {
 	}
 }
 
+func (omq *onMusicQueue) contextClear(mi *gtk.MenuItem) {
+	req := &m3uetcpb.ExecuteQueueActionRequest{
+		Action: m3uetcpb.QueueAction_Q_CLEAR,
+	}
+
+	if err := store.ExecuteQueueAction(req); err != nil {
+		log.Error(err)
+		return
+	}
+}
+
 func (omq *onMusicQueue) contextDelete(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.TreeModelColumn]interface{})
+	values, ok := omq.selection.(map[store.StoreModelColumn]interface{})
 	if !ok {
 		log.Error("There is no selection available for music queue context")
 		return
 	}
 	omq.selection = nil
 
-	req2 := &m3uetcpb.ExecuteQueueActionRequest{
+	req := &m3uetcpb.ExecuteQueueActionRequest{
 		Action:   m3uetcpb.QueueAction_Q_DELETE,
 		Position: int32(values[store.QColPosition].(int)),
 	}
 
-	if err := store.ExecuteQueueAction(req2); err != nil {
+	if err := store.ExecuteQueueAction(req); err != nil {
 		log.Error(err)
 		return
 	}
 }
 
 func (omq *onMusicQueue) contextEnqueue(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.TreeModelColumn]interface{})
+	values, ok := omq.selection.(map[store.StoreModelColumn]interface{})
 	if !ok {
 		log.Error("There is no selection available for music queue context")
 		return
@@ -121,7 +128,7 @@ func (omq *onMusicQueue) contextEnqueue(mi *gtk.MenuItem) {
 }
 
 func (omq *onMusicQueue) contextMove(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.TreeModelColumn]interface{})
+	values, ok := omq.selection.(map[store.StoreModelColumn]interface{})
 	if !ok {
 		log.Error("There is no selection available for music queue MOVE context")
 		return
@@ -150,20 +157,20 @@ func (omq *onMusicQueue) contextMove(mi *gtk.MenuItem) {
 		return
 	}
 
-	req2 := &m3uetcpb.ExecuteQueueActionRequest{
+	req := &m3uetcpb.ExecuteQueueActionRequest{
 		Action:       m3uetcpb.QueueAction_Q_MOVE,
 		Position:     int32(pos),
 		FromPosition: int32(fromPos),
 	}
 
-	if err := store.ExecuteQueueAction(req2); err != nil {
+	if err := store.ExecuteQueueAction(req); err != nil {
 		log.Error(err)
 		return
 	}
 }
 
 func (omq *onMusicQueue) contextPlayNow(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.TreeModelColumn]interface{})
+	values, ok := omq.selection.(map[store.StoreModelColumn]interface{})
 	if !ok {
 		log.Error("There is no selection available for music queue context")
 		return
@@ -204,7 +211,7 @@ func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *g
 	values, err := store.GetListStoreValues(
 		tv,
 		path,
-		[]store.TreeModelColumn{
+		[]store.StoreModelColumn{
 			store.QColPosition,
 			store.QColTrackID,
 			store.QColLocation,
@@ -221,16 +228,14 @@ func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *g
 	loc := values[store.QColLocation].(string)
 
 	req := &m3uetcpb.ExecutePlaybackActionRequest{
-		Action:    m3uetcpb.PlaybackAction_PB_PLAY,
-		Force:     true,
-		Ids:       []int64{},
-		Locations: []string{},
+		Action: m3uetcpb.PlaybackAction_PB_PLAY,
+		Force:  true,
 	}
 
 	if id > 0 {
-		req.Ids = append(req.Ids, id)
+		req.Ids = []int64{id}
 	} else {
-		req.Locations = append(req.Locations, loc)
+		req.Locations = []string{loc}
 	}
 
 	if err := store.ExecutePlaybackAction(req); err != nil {
@@ -253,7 +258,7 @@ func (omq *onMusicQueue) selChanged(sel *gtk.TreeSelection) {
 	var err error
 	omq.selection, err = store.GetTreeSelectionValues(
 		sel,
-		[]store.TreeModelColumn{
+		[]store.StoreModelColumn{
 			store.QColPosition,
 			store.QColTrackID,
 			store.QColLocation,

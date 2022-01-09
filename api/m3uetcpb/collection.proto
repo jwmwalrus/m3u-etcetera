@@ -54,10 +54,13 @@ message UpdateCollectionRequest {
     int64 id = 1;
     string new_name = 2;
     string new_description = 3;
-    bool enable = 4;
-    bool disable = 5;
-    bool make_remote = 6;
-    bool make_local = 7;
+    bool reset_description = 4;
+    string new_remote_location = 5;
+    bool reset_remote_location = 6;
+    bool enable = 7;
+    bool disable = 8;
+    bool make_remote = 9;
+    bool make_local = 10;
 }
 
 message ScanCollectionRequest {

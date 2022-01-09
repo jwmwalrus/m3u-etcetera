@@ -2,16 +2,23 @@ package builder
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gotk3/gotk3/gtk"
 )
 
-var (
-	app *gtk.Builder
-)
-
-func SetupApp(b *gtk.Builder) {
-	app = b
+func GetButton(id string) (btn *gtk.Button, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get button: %v", err)
+		return
+	}
+	btn, ok := obj.(*gtk.Button)
+	if !ok {
+		err = fmt.Errorf("Unable to create button: %v", err)
+		return
+	}
+	return
 }
 
 func GetComboBoxText(id string) (cbt *gtk.ComboBoxText, err error) {
@@ -23,6 +30,35 @@ func GetComboBoxText(id string) (cbt *gtk.ComboBoxText, err error) {
 	cbt, ok := obj.(*gtk.ComboBoxText)
 	if !ok {
 		err = fmt.Errorf("Unable to create combo-box-text: %v", err)
+		return
+	}
+	return
+}
+
+func GetDialog(id string) (dlg *gtk.Dialog, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get dialog: %v", err)
+		return
+	}
+	dlg, ok := obj.(*gtk.Dialog)
+	if !ok {
+		err = fmt.Errorf("Unable to create dialog: %v", err)
+		return
+	}
+	return
+}
+
+func GetLabel(id string) (l *gtk.Label, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get label object: %w", err)
+		return
+	}
+
+	l, ok := obj.(*gtk.Label)
+	if !ok {
+		err = fmt.Errorf("Unable to create label: %w", err)
 		return
 	}
 	return
@@ -72,6 +108,36 @@ func GetNotebook(id string) (nb *gtk.Notebook, err error) {
 	return
 }
 
+func GetPane(id string) (p *gtk.Paned, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get pane: %v", err)
+		return
+	}
+
+	p, ok := obj.(*gtk.Paned)
+	if !ok {
+		err = fmt.Errorf("Unable to create pane: %v", err)
+		return
+	}
+	return
+}
+
+func GetPopoverMenu(id string) (pm *gtk.PopoverMenu, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get popover-menu object: %w", err)
+		return
+	}
+
+	pm, ok := obj.(*gtk.PopoverMenu)
+	if !ok {
+		err = fmt.Errorf("Unable to create popover-menu: %w", err)
+		return
+	}
+	return
+}
+
 func GetProgressBar(id string) (p *gtk.ProgressBar, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -97,6 +163,20 @@ func GetTextView(id string) (tv *gtk.TextView, err error) {
 	tv, ok := obj.(*gtk.TextView)
 	if !ok {
 		err = fmt.Errorf("Unable to create text view: %w", err)
+		return
+	}
+	return
+}
+
+func GetToggleToolButton(id string) (btn *gtk.ToggleToolButton, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get button: %v", err)
+		return
+	}
+	btn, ok := obj.(*gtk.ToggleToolButton)
+	if !ok {
+		err = fmt.Errorf("Unable to create button: %v", err)
 		return
 	}
 	return
@@ -147,18 +227,14 @@ func GetTreeView(id string) (s *gtk.TreeView, err error) {
 	return
 }
 
-func SetTextView(id, val string) (err error) {
-	tv, err := GetTextView(id)
+func GetWindow() (window *gtk.ApplicationWindow, err error) {
+	obj, err := app.GetObject("window")
 	if err != nil {
-		return
+		log.Fatalf("Unable to get window: %v", err)
 	}
-
-	buf, err := tv.GetBuffer()
-	if err != nil {
-		err = fmt.Errorf("Unable to get buffer from text view: %w", err)
-		return
+	window, ok := obj.(*gtk.ApplicationWindow)
+	if !ok {
+		log.Fatalf("Unable to create window: %v", err)
 	}
-
-	buf.SetText(val)
 	return
 }

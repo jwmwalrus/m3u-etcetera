@@ -121,6 +121,18 @@ func (*CollectionSvc) UpdateCollection(_ context.Context, req *m3uetcpb.UpdateCo
 		coll.Description = req.NewDescription
 	}
 
+	if req.ResetDescription {
+		coll.Description = ""
+	}
+
+	if req.NewRemoteLocation != "" {
+		coll.Remotelocation = req.NewRemoteLocation
+	}
+
+	if req.ResetRemoteLocation {
+		coll.Remotelocation = ""
+	}
+
 	if req.Enable {
 		coll.Disabled = false
 	}

@@ -8,6 +8,11 @@ var (
 // collsFilter *gtk.TreeModelFilter
 )
 
+var (
+	musicCollectionsSignals = &onMusicCollections{}
+	musicQueueSignals       = &onMusicQueue{}
+)
+
 func Setup(signals *map[string]interface{}) (err error) {
 	log.Info("Setting up music")
 
@@ -34,6 +39,7 @@ func Setup(signals *map[string]interface{}) (err error) {
 	(*signals)["on_music_queue_view_context_down_activate"] = musicQueueSignals.contextMove
 	(*signals)["on_music_queue_view_context_bottom_activate"] = musicQueueSignals.contextMove
 	(*signals)["on_music_queue_view_context_delete_activate"] = musicQueueSignals.contextDelete
+	(*signals)["on_music_queue_view_context_clear_activate"] = musicQueueSignals.contextClear
 	(*signals)["on_music_queue_view_row_activated"] = musicQueueSignals.dblClicked
 
 	return
