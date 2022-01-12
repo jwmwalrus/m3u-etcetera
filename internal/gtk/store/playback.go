@@ -30,6 +30,7 @@ type playbackData struct {
 	coverFiles                   []string
 	window                       *gtk.ApplicationWindow
 	cover                        *gtk.Image
+	logoPixbuf                   *gdk.Pixbuf
 	playBtn                      *gtk.ToolButton
 	title, artist, source, extra *gtk.Label
 	prog                         *gtk.ProgressBar
@@ -158,7 +159,7 @@ func (pbd *playbackData) setCover() bool {
 			}
 
 			if fp == "" {
-				pbd.cover.SetFromIconName("face-smile", gtk.ICON_SIZE_DIALOG)
+				pbd.cover.SetFromPixbuf(pbd.logoPixbuf)
 				return false
 			}
 
@@ -172,7 +173,7 @@ func (pbd *playbackData) setCover() bool {
 	}
 
 	pbd.lastDir = ""
-	pbd.cover.SetFromIconName("face-smile", gtk.ICON_SIZE_DIALOG)
+	pbd.cover.SetFromPixbuf(pbd.logoPixbuf)
 	return false
 }
 
@@ -186,7 +187,12 @@ func (pbd *playbackData) setUI() (err error) {
 		return
 	}
 
-	pbdata.cover, err = builder.GetImage("cover")
+	pbd.cover, err = builder.GetImage("cover")
+	if err != nil {
+		return
+	}
+
+	pbd.logoPixbuf, err = gdk.PixbufNewFromFile("data/ui/logo.png")
 	if err != nil {
 		return
 	}
