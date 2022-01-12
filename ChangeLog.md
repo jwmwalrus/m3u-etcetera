@@ -9,6 +9,50 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.0] 2022-01-12
+
+Features, fixes and improvements, again
+
+### Fixed
+
+* The task `serve off --force` not woring while the GTK client is active
+
+### Added
+
+* Own Interceptors
+* Progress bar
+* Context menu to collections
+* Context menu to music queue
+* Settings menu
+    * Collections manager
+    * Quit all
+* Queries tab
+* Show cover if available
+* The `noWait` option to serve off
+* A hack to allow exiting the server while stream is paused
+
+### Modified
+
+* Improved Idler encapsulation
+* The `Off` method shold be exempted from going to the idle stack
+* Simplify client connections
+* Refactorings
+* Client connections should be handled from gtk/store
+* Obtaining values from GtkTreeModel should be handled in just one place
+* Anticipate gtk/pane becoming way too big to handle
+* Unloaders should be handled in a specific order. In particular:
+    * Engine must not be unloaded while server requests are possible;
+    * Database should still be available when unloading engine
+* Deduplicate covers during scanning
+* Minimize db interaction during playback
+* Allow non-printable characters in qparams
+* Use Label for title, artist, source in gtk, instead of TextView
+
+### Removed
+
+* CollectionTrack (since it was one-to-one)
+* Debug channel
+
 ## [0.8.0] 2022-01-03
 
 Even more features, fixes and improvements
@@ -30,7 +74,6 @@ Even more features, fixes and improvements
 * Allow explicitly forcing application's exit
 * Get rid of oneof in playback proto message
 * Use incerceptors for logging and idle handling
-
 
 ## [0.7.0] 2021-12-20
 
