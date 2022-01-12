@@ -34,6 +34,7 @@ type engine struct {
 	state        gst.StateOptions
 	playbin      *gst.Element
 	pb *models.Playback
+	t  *models.Track
 }
 
 func (e *engine) addPlaybackFromQueue(qt *models.QueueTrack) (pb *models.Playback) {
@@ -144,7 +145,7 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	e.pb = pb
 	e.terminate = false
-	defer func() { e.pb = nil }()
+	defer func() { e.pb = nil; e.t = nil }()
 
 	base.GetBusy(base.IdleStatusEngineLoop)
 	defer func() { base.GetFree(base.IdleStatusEngineLoop) }()

@@ -29,12 +29,12 @@ type columnDef struct {
 	ColType glib.Type
 }
 
-// StoreModelColumn defines a tree model column ID
-type StoreModelColumn int
+// ModelColumn defines a tree model column ID
+type ModelColumn int
 
 // CCol* column definition
 const (
-	CColCollectionID StoreModelColumn = iota
+	CColCollectionID ModelColumn = iota
 	CColName
 	CColDescription
 	CColLocation
@@ -50,49 +50,50 @@ const (
 	CColsN
 )
 
-// CColTree column definition
+// CColTree* column definition
 const (
-	CColTree StoreModelColumn = iota
+	CColTree ModelColumn = iota
 	CColTreeIDList
 	CColTreeKeywords
 )
 
-// CTCol* column  definition
+// TCol* column  definition
 const (
-	CTColCollectionTrackID StoreModelColumn = iota
-	CTColCollectionID
-	CTColTrackID
+	TColTrackID ModelColumn = iota
+	TColCollectionID
 
-	CTColLocation
-	CTColFormat
-	CTColType
-	CTColTitle
-	CTColAlbum
-	CTColArtist
-	CTColAlbumartist
-	CTColComposer
-	CTColGenre
+	TColLocation
+	TColFormat
+	TColType
+	TColTitle
+	TColAlbum
+	TColArtist
+	TColAlbumartist
+	TColComposer
+	TColGenre
 
-	CTColYear
-	CTColTracknumber
-	CTColTracktotal
-	CTColDiscnumber
-	CTColDisctotal
-	CTColLyrics
-	CTColComment
-	CTColPlaycount
+	TColYear
+	TColTracknumber
+	TColTracktotal
+	TColDiscnumber
+	TColDisctotal
+	TColLyrics
+	TColComment
+	TColPlaycount
 
-	CTColRating
-	CTColDuration
-	CTColRemote
-	CTColLastplayed
+	TColRating
+	TColDuration
+	TColRemote
+	TColLastplayed
+	TColNumber
+	TColToggleSelect
 
-	CTColsN
+	TColsN
 )
 
 // QCol*: queue-track/track column
 const (
-	QColQueueTrackID StoreModelColumn = iota
+	QColQueueTrackID ModelColumn = iota
 	QColPosition
 	QColLastPosition
 	QColPlayed
@@ -127,25 +128,55 @@ const (
 	QColsN
 )
 
+// QYCol*: query column
+const (
+	QYColQueryID ModelColumn = iota
+	QYColName
+	QYColDescription
+	QYColRandom
+	QYColRating
+	QYColLimit
+	QYColParams
+	QYColFrom
+	QYColTo
+	QYColCollectionIDs
+
+	QYColsN
+)
+
+// QYColTree*: query tree column
+const (
+	QYColTree ModelColumn = iota
+	QYColTreeIDList
+	QYColTreeKeywords
+)
+
 var (
 	wg               sync.WaitGroup
 	wgplayback       sync.WaitGroup
 	wgqueue          sync.WaitGroup
 	wgcollections    sync.WaitGroup
+	wgqueries        sync.WaitGroup
 	forceExit        bool
 	perspectivesList []m3uetcpb.Perspective
 
-	// TreeColumn collections tree column
-	TreeColumn storeColumns
+	// CTreeColumn collections tree column
+	CTreeColumn storeColumns
 
 	// CColumns collections columns
 	CColumns storeColumns
 
-	// CTColumns collection-tracks columns
-	CTColumns storeColumns
+	// TColumns tracks columns
+	TColumns storeColumns
 
 	// QColumns queue columns
 	QColumns storeColumns
+
+	// QYColumns query columns
+	QYColumns storeColumns
+
+	// QYTreeColumn collections tree column
+	QYTreeColumn storeColumns
 )
 
 // GetClientConn returns a valid client connection to the server
@@ -197,7 +228,7 @@ func Subscribe() {
 
 	log.Info("Subscribing")
 
-	wg.Add(3)
+	wg.Add(4)
 
 	wgplayback.Add(1)
 	go subscribeToPlayback()
@@ -207,6 +238,9 @@ func Subscribe() {
 
 	wgcollections.Add(1)
 	go subscribeToCollectionStore()
+
+	wgqueries.Add(1)
+	go subscribeToQueryStore()
 
 	wg.Wait()
 	log.Info("Done subscribing")
@@ -221,9 +255,11 @@ func Unsubscribe() {
 	unsubscribeFromPlayback()
 	unsubscribeFromQueueStore()
 	unsubscribeFromCollectionStore()
+	unsubscribeFromQueryStore()
 	wgplayback.Wait()
 	wgqueue.Wait()
 	wgcollections.Wait()
+	wgqueries.Wait()
 
 	alive.Serve(
 		alive.ServeOptions{
@@ -263,14 +299,14 @@ func init() {
 		m3uetcpb.Perspective_AUDIOBOOKS,
 	}
 
-	TreeColumn = storeColumns{
+	CTreeColumn = storeColumns{
 		columnDef{"Tree", glib.TYPE_STRING},
 		columnDef{"ID List", glib.TYPE_STRING},
 		columnDef{"Keywords", glib.TYPE_STRING},
 	}
 
 	CColumns = make(storeColumns, CColsN)
-	CColumns[CColCollectionID] = columnDef{"Collection ID", glib.TYPE_INT64}
+	CColumns[CColCollectionID] = columnDef{"ID", glib.TYPE_INT64}
 	CColumns[CColName] = columnDef{"Name", glib.TYPE_STRING}
 	CColumns[CColDescription] = columnDef{"Description", glib.TYPE_STRING}
 	CColumns[CColLocation] = columnDef{"Location", glib.TYPE_STRING}
@@ -283,37 +319,38 @@ func init() {
 	CColumns[CColTracksView] = columnDef{"# Tracks", glib.TYPE_STRING}
 	CColumns[CColRescan] = columnDef{"Re-scan", glib.TYPE_BOOLEAN}
 
-	CTColumns = make(storeColumns, CTColsN)
-	CTColumns[CTColCollectionTrackID] = columnDef{"CollectionTrack ID", glib.TYPE_INT64}
-	CTColumns[CTColCollectionID] = columnDef{"Collection ID", glib.TYPE_INT64}
-	CTColumns[CTColTrackID] = columnDef{"Track ID", glib.TYPE_INT64}
+	TColumns = make(storeColumns, TColsN)
+	TColumns[TColTrackID] = columnDef{"ID", glib.TYPE_INT64}
+	TColumns[TColCollectionID] = columnDef{"Collection ID", glib.TYPE_INT64}
 
-	CTColumns[CTColLocation] = columnDef{"Location", glib.TYPE_STRING}
-	CTColumns[CTColFormat] = columnDef{"Format", glib.TYPE_STRING}
-	CTColumns[CTColType] = columnDef{"Type", glib.TYPE_STRING}
-	CTColumns[CTColTitle] = columnDef{"Title", glib.TYPE_STRING}
-	CTColumns[CTColAlbum] = columnDef{"Album", glib.TYPE_STRING}
-	CTColumns[CTColArtist] = columnDef{"Artist", glib.TYPE_STRING}
-	CTColumns[CTColAlbumartist] = columnDef{"Album Artist", glib.TYPE_STRING}
-	CTColumns[CTColComposer] = columnDef{"Composer", glib.TYPE_STRING}
-	CTColumns[CTColGenre] = columnDef{"Genre", glib.TYPE_STRING}
+	TColumns[TColLocation] = columnDef{"Location", glib.TYPE_STRING}
+	TColumns[TColFormat] = columnDef{"Format", glib.TYPE_STRING}
+	TColumns[TColType] = columnDef{"Type", glib.TYPE_STRING}
+	TColumns[TColTitle] = columnDef{"Title", glib.TYPE_STRING}
+	TColumns[TColAlbum] = columnDef{"Album", glib.TYPE_STRING}
+	TColumns[TColArtist] = columnDef{"Artist", glib.TYPE_STRING}
+	TColumns[TColAlbumartist] = columnDef{"Album Artist", glib.TYPE_STRING}
+	TColumns[TColComposer] = columnDef{"Composer", glib.TYPE_STRING}
+	TColumns[TColGenre] = columnDef{"Genre", glib.TYPE_STRING}
 
-	CTColumns[CTColYear] = columnDef{"Year", glib.TYPE_INT}
-	CTColumns[CTColTracknumber] = columnDef{"Track Number", glib.TYPE_INT}
-	CTColumns[CTColTracktotal] = columnDef{"Track Total", glib.TYPE_INT}
-	CTColumns[CTColDiscnumber] = columnDef{"Disc Number", glib.TYPE_INT}
-	CTColumns[CTColDisctotal] = columnDef{"Disc Total", glib.TYPE_INT}
-	CTColumns[CTColLyrics] = columnDef{"Lyrics", glib.TYPE_STRING}
-	CTColumns[CTColComment] = columnDef{"Comment", glib.TYPE_STRING}
-	CTColumns[CTColPlaycount] = columnDef{"Play Count", glib.TYPE_INT}
+	TColumns[TColYear] = columnDef{"Year", glib.TYPE_INT}
+	TColumns[TColTracknumber] = columnDef{"Track Number", glib.TYPE_INT}
+	TColumns[TColTracktotal] = columnDef{"Track Total", glib.TYPE_INT}
+	TColumns[TColDiscnumber] = columnDef{"Disc Number", glib.TYPE_INT}
+	TColumns[TColDisctotal] = columnDef{"Disc Total", glib.TYPE_INT}
+	TColumns[TColLyrics] = columnDef{"Lyrics", glib.TYPE_STRING}
+	TColumns[TColComment] = columnDef{"Comment", glib.TYPE_STRING}
+	TColumns[TColPlaycount] = columnDef{"Play Count", glib.TYPE_INT}
 
-	CTColumns[CTColRating] = columnDef{"Rating", glib.TYPE_INT}
-	CTColumns[CTColDuration] = columnDef{"Duration", glib.TYPE_INT64}
-	CTColumns[CTColRemote] = columnDef{"Remote (T)", glib.TYPE_BOOLEAN}
-	CTColumns[CTColLastplayed] = columnDef{"Last Played", glib.TYPE_INT64}
+	TColumns[TColRating] = columnDef{"Rating", glib.TYPE_INT}
+	TColumns[TColDuration] = columnDef{"Duration", glib.TYPE_INT64}
+	TColumns[TColRemote] = columnDef{"Remote (T)", glib.TYPE_BOOLEAN}
+	TColumns[TColLastplayed] = columnDef{"Last Played", glib.TYPE_INT64}
+	TColumns[TColNumber] = columnDef{"#", glib.TYPE_INT}
+	TColumns[TColToggleSelect] = columnDef{"Select", glib.TYPE_BOOLEAN}
 
 	QColumns = make(storeColumns, QColsN)
-	QColumns[QColQueueTrackID] = columnDef{"QueueTrack ID", glib.TYPE_INT64}
+	QColumns[QColQueueTrackID] = columnDef{"ID", glib.TYPE_INT64}
 	QColumns[QColPosition] = columnDef{"Position", glib.TYPE_INT}
 	QColumns[QColLastPosition] = columnDef{"Last Position", glib.TYPE_INT}
 	QColumns[QColPlayed] = columnDef{"Played", glib.TYPE_BOOLEAN}
@@ -344,4 +381,24 @@ func init() {
 	QColumns[QColDuration] = columnDef{"Duration", glib.TYPE_STRING}
 	QColumns[QColRemote] = columnDef{"Remote (T)", glib.TYPE_BOOLEAN}
 	QColumns[QColLastplayed] = columnDef{"Last Played", glib.TYPE_INT64}
+
+	QYTreeColumn = storeColumns{
+		columnDef{"Tree", glib.TYPE_STRING},
+		columnDef{"ID List", glib.TYPE_STRING},
+		columnDef{"Keywords", glib.TYPE_STRING},
+	}
+
+	// NOTE: Will I ever use this?
+	QYColumns = make(storeColumns, QYColsN)
+	QYColumns[QYColQueryID] = columnDef{"ID", glib.TYPE_INT64}
+	QYColumns[QYColName] = columnDef{"Name", glib.TYPE_STRING}
+	QYColumns[QYColDescription] = columnDef{"Description", glib.TYPE_STRING}
+	QYColumns[QYColRandom] = columnDef{"Random", glib.TYPE_BOOLEAN}
+	QYColumns[QYColRating] = columnDef{"Rating", glib.TYPE_INT}
+	QYColumns[QYColLimit] = columnDef{"Limit", glib.TYPE_INT64}
+	QYColumns[QYColParams] = columnDef{"Params", glib.TYPE_STRING}
+	QYColumns[QYColFrom] = columnDef{"From", glib.TYPE_INT64}
+	QYColumns[QYColTo] = columnDef{"To", glib.TYPE_INT64}
+	QYColumns[QYColCollectionIDs] = columnDef{"Collection IDs", glib.TYPE_INT64}
+
 }

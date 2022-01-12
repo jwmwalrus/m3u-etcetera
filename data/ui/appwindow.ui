@@ -2,32 +2,6 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <object class="GtkTextBuffer" id="playback_artist_buffer">
-    <property name="text" translatable="yes">Artist</property>
-  </object>
-  <object class="GtkTextBuffer" id="playback_extra_buffer">
-    <property name="text" translatable="yes">--</property>
-  </object>
-  <object class="GtkTextBuffer" id="playback_source_buffer">
-    <property name="text" translatable="yes">Source</property>
-  </object>
-  <object class="GtkTextTagTable" id="playback_title_tagtable">
-    <child type="tag">
-      <object class="GtkTextTag" id="playback_title_tag_font">
-        <property name="font">Sans Regular 14</property>
-      </object>
-    </child>
-    <child type="tag">
-      <object class="GtkTextTag" id="playback_title_tag_weight">
-        <property name="font">Normal</property>
-        <property name="weight">700</property>
-      </object>
-    </child>
-  </object>
-  <object class="GtkTextBuffer" id="playback_title_buffer">
-    <property name="tag-table">playback_title_tagtable</property>
-    <property name="text" translatable="yes">Title</property>
-  </object>
   <object class="GtkPopoverMenu" id="settings_menu">
     <property name="can-focus">False</property>
     <child>
@@ -123,6 +97,7 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="margin-start">12</property>
                 <property name="label" translatable="yes">Collections</property>
               </object>
               <packing>
@@ -226,7 +201,7 @@
     <property name="can-focus">False</property>
     <property name="window-position">center</property>
     <property name="default-width">768</property>
-    <property name="default-height">1024</property>
+    <property name="default-height">576</property>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>
@@ -237,11 +212,13 @@
           <object class="GtkGrid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="hexpand">True</property>
             <child>
               <object class="GtkImage" id="cover">
+                <property name="width-request">150</property>
+                <property name="height-request">150</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="margin-end">12</property>
                 <property name="icon-name">face-smile</property>
                 <property name="icon_size">6</property>
               </object>
@@ -252,136 +229,18 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolbar" id="controls">
+              <object class="GtkLabel" id="playback_title">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="hexpand">False</property>
-                <child>
-                  <object class="GtkToolButton" id="control_prev">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="tooltip-text" translatable="yes">Previous</property>
-                    <property name="label" translatable="yes">Previous</property>
-                    <property name="use-underline">True</property>
-                    <property name="icon-name">media-seek-backward</property>
-                    <signal name="clicked" handler="on_control_prev_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToolButton" id="control_play">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="tooltip-text" translatable="yes">Play/Pause</property>
-                    <property name="label" translatable="yes">Play</property>
-                    <property name="use-underline">True</property>
-                    <property name="icon-name">media-playback-start</property>
-                    <signal name="clicked" handler="on_control_play_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToolButton" id="control_stop">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="tooltip-text" translatable="yes">Stop Playback</property>
-                    <property name="label" translatable="yes">Stop</property>
-                    <property name="use-underline">True</property>
-                    <property name="icon-name">media-playback-stop</property>
-                    <signal name="clicked" handler="on_control_stop_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToolButton" id="control_next">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="tooltip-text" translatable="yes">Next</property>
-                    <property name="label" translatable="yes">Next</property>
-                    <property name="use-underline">True</property>
-                    <property name="icon-name">media-seek-forward</property>
-                    <signal name="clicked" handler="on_control_next_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkSeparatorToolItem">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToolButton" id="control_shuffle">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="tooltip-text" translatable="yes">Shuffle</property>
-                    <property name="label" translatable="yes">Shuffle</property>
-                    <property name="use-underline">True</property>
-                    <property name="icon-name">media-playlist-shuffle</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToolButton" id="control_repeat">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="tooltip-text" translatable="yes">Repeat</property>
-                    <property name="label" translatable="yes">Repeat</property>
-                    <property name="use-underline">True</property>
-                    <property name="icon-name">media-playlist-repeat</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToolButton" id="control_dynamic">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="tooltip-text" translatable="yes">Dynamic mode</property>
-                    <property name="label" translatable="yes">Dynamic</property>
-                    <property name="use-underline">True</property>
-                    <property name="icon-name">help-faq</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">4</property>
-                <property name="width">3</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkTextView" id="playback_title">
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
                 <property name="hexpand">True</property>
-                <property name="editable">False</property>
-                <property name="buffer">playback_title_buffer</property>
+                <property name="label" translatable="yes">Title</property>
+                <property name="wrap">True</property>
+                <property name="xalign">0</property>
+                <attributes>
+                  <attribute name="font-desc" value="Sans Bold 16"/>
+                  <attribute name="style" value="normal"/>
+                  <attribute name="weight" value="book"/>
+                </attributes>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -390,12 +249,11 @@
               </packing>
             </child>
             <child>
-              <object class="GtkTextView" id="playback_artist">
+              <object class="GtkLabel" id="playback_artist">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="hexpand">True</property>
-                <property name="editable">False</property>
-                <property name="buffer">playback_artist_buffer</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">Artist</property>
+                <property name="xalign">0</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -404,12 +262,11 @@
               </packing>
             </child>
             <child>
-              <object class="GtkTextView" id="playback_source">
+              <object class="GtkLabel" id="playback_source">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="hexpand">True</property>
-                <property name="editable">False</property>
-                <property name="buffer">playback_source_buffer</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">Source</property>
+                <property name="xalign">0</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -418,12 +275,11 @@
               </packing>
             </child>
             <child>
-              <object class="GtkTextView" id="playback_extra">
+              <object class="GtkLabel" id="playback_extra">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="hexpand">True</property>
-                <property name="editable">False</property>
-                <property name="buffer">playback_extra_buffer</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">--</property>
+                <property name="xalign">0</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -435,13 +291,163 @@
               <object class="GtkProgressBar" id="progress">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="margin-top">16</property>
+                <property name="margin-top">12</property>
+                <property name="text" translatable="yes">Not Playing</property>
                 <property name="show-text">True</property>
               </object>
               <packing>
                 <property name="left-attach">0</property>
                 <property name="top-attach">5</property>
                 <property name="width">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <child>
+                  <object class="GtkToolbar" id="controls">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <child>
+                      <object class="GtkToolButton" id="control_prev">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Previous</property>
+                        <property name="label" translatable="yes">Previous</property>
+                        <property name="use-underline">True</property>
+                        <property name="icon-name">media-seek-backward</property>
+                        <signal name="clicked" handler="on_control_prev_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="homogeneous">True</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToolButton" id="control_play">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Play/Pause</property>
+                        <property name="label" translatable="yes">Play</property>
+                        <property name="use-underline">True</property>
+                        <property name="icon-name">media-playback-start</property>
+                        <signal name="clicked" handler="on_control_play_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="homogeneous">True</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToolButton" id="control_stop">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Stop Playback</property>
+                        <property name="label" translatable="yes">Stop</property>
+                        <property name="use-underline">True</property>
+                        <property name="icon-name">media-playback-stop</property>
+                        <signal name="clicked" handler="on_control_stop_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="homogeneous">True</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToolButton" id="control_next">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Next</property>
+                        <property name="label" translatable="yes">Next</property>
+                        <property name="use-underline">True</property>
+                        <property name="icon-name">media-seek-forward</property>
+                        <signal name="clicked" handler="on_control_next_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="homogeneous">True</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorToolItem">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="homogeneous">False</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <object class="GtkToolbar" id="control_toggles">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <child>
+                      <object class="GtkToolButton" id="control_toggle_shuffle">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Shuffle</property>
+                        <property name="label" translatable="yes">Shuffle</property>
+                        <property name="use-underline">True</property>
+                        <property name="icon-name">media-playlist-shuffle</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="homogeneous">True</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToolButton" id="control_toggle_repeat">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Repeat</property>
+                        <property name="label" translatable="yes">Repeat</property>
+                        <property name="use-underline">True</property>
+                        <property name="icon-name">media-playlist-repeat</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="homogeneous">True</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToolButton" id="control_toggle_dynamic">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Dynamic mode</property>
+                        <property name="label" translatable="yes">Dynamic</property>
+                        <property name="use-underline">True</property>
+                        <property name="icon-name">help-faq</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="homogeneous">True</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="pack-type">end</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">4</property>
+                <property name="width">3</property>
               </packing>
             </child>
           </object>

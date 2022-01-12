@@ -33,7 +33,7 @@ func createMusicCollections() (err error) {
 	for _, i := range qcols {
 		var col *gtk.TreeViewColumn
 		col, err = gtk.TreeViewColumnNewWithAttribute(
-			store.TreeColumn[i].Name,
+			store.CTreeColumn[i].Name,
 			renderer,
 			"text",
 			i,
@@ -66,12 +66,11 @@ func (omc *onMusicCollections) context(tv *gtk.TreeView, event *gdk.Event) {
 }
 
 func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
-	value, ok := omc.selection.(string)
+	value, ok := omc.getSelection().(string)
 	if !ok {
 		log.Error("There is no selection available for collection context")
 		return
 	}
-	omc.selection = nil
 
 	ids, err := store.StringToIDList(value)
 	if err != nil {
@@ -95,12 +94,11 @@ func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
 }
 
 func (omc *onMusicCollections) contextPlayNow(mi *gtk.MenuItem) {
-	value, ok := omc.selection.(string)
+	value, ok := omc.getSelection().(string)
 	if !ok {
 		log.Error("There is no selection available for collection context")
 		return
 	}
-	omc.selection = nil
 
 	ids, err := store.StringToIDList(value)
 	if err != nil {
@@ -121,7 +119,7 @@ func (omc *onMusicCollections) contextPlayNow(mi *gtk.MenuItem) {
 }
 
 func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
-	values, err := store.GetTreeStoreValues(tv, path, []store.StoreModelColumn{store.CColTree, store.CColTreeIDList})
+	values, err := store.GetTreeStoreValues(tv, path, []store.ModelColumn{store.CColTree, store.CColTreeIDList})
 	if err != nil {
 		log.Error(err)
 		return
@@ -153,6 +151,15 @@ func (omc *onMusicCollections) filtered(se *gtk.SearchEntry) {
 	}
 	store.FilterCollectionsBy(text)
 
+}
+
+func (omc *onMusicCollections) getSelection() (value interface{}) {
+	if omc.selection == nil {
+		return
+	}
+	value = omc.selection
+	omc.selection = nil
+	return
 }
 
 func (omc *onMusicCollections) selChanged(sel *gtk.TreeSelection) {

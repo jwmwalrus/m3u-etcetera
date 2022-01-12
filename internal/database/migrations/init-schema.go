@@ -28,7 +28,6 @@ func InitSchema(db *gorm.DB) (err error) {
 
 		// two foreign keys
 		&models.CollectionQuery{},
-		&models.CollectionTrack{},
 	)
 	onerror.Panic(err)
 

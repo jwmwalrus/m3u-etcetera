@@ -8,7 +8,7 @@ import (
 )
 
 // GetCollectionRenderer returns a renderer for any editable collection column
-func GetCollectionRenderer(col StoreModelColumn) (gtk.ICellRenderer, error) {
+func GetCollectionRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 
 	switch col {
 	case CColName, CColDescription, CColRemoteLocation:
@@ -21,7 +21,7 @@ func GetCollectionRenderer(col StoreModelColumn) (gtk.ICellRenderer, error) {
 			return nil, err
 		}
 		renderer.Connect("edited", func(cell *gtk.CellRendererText, pathString, newText string) {
-			onTextColumnEdited(col, cell, pathString, newText)
+			onTextColumnEdited(collectionsModel, col, cell, pathString, newText)
 		})
 		return renderer, nil
 
@@ -35,7 +35,7 @@ func GetCollectionRenderer(col StoreModelColumn) (gtk.ICellRenderer, error) {
 			return nil, err
 		}
 		renderer.Connect("toggled", func(cell *gtk.CellRendererToggle, pathString string) {
-			onBoolColumnToggled(col, cell, pathString)
+			onBoolColumnToggled(collectionsModel, col, cell, pathString)
 		})
 
 		return renderer, nil
@@ -44,9 +44,30 @@ func GetCollectionRenderer(col StoreModelColumn) (gtk.ICellRenderer, error) {
 	return nil, fmt.Errorf("The provided column is not editable: %v", col)
 }
 
-func onBoolColumnToggled(col StoreModelColumn, cell *gtk.CellRendererToggle, pathString string) {
-	model := collectionsModel
+// GetQueryResultsRenderer returns a renderer for any editable query column
+func GetQueryResultsRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 
+	switch col {
+	case TColToggleSelect:
+		renderer, err := gtk.CellRendererToggleNew()
+		if err != nil {
+			return nil, err
+		}
+		err = renderer.Set("activatable", true)
+		if err != nil {
+			return nil, err
+		}
+		renderer.Connect("toggled", func(cell *gtk.CellRendererToggle, pathString string) {
+			onBoolColumnToggled(queryResultsModel, col, cell, pathString)
+		})
+
+		return renderer, nil
+	}
+
+	return nil, fmt.Errorf("The provided column is not editable: %v", col)
+}
+
+func onBoolColumnToggled(model *gtk.ListStore, col ModelColumn, cell *gtk.CellRendererToggle, pathString string) {
 	iter, err := model.GetIterFromString(pathString)
 	if err != nil {
 		log.Error(err)
@@ -68,9 +89,7 @@ func onBoolColumnToggled(col StoreModelColumn, cell *gtk.CellRendererToggle, pat
 	model.SetValue(iter, int(col), !value.(bool))
 }
 
-func onTextColumnEdited(col StoreModelColumn, cell *gtk.CellRendererText, pathString, newText string) {
-	model := collectionsModel
-
+func onTextColumnEdited(model *gtk.ListStore, col ModelColumn, cell *gtk.CellRendererText, pathString, newText string) {
 	iter, err := model.GetIterFromString(pathString)
 	if err != nil {
 		log.Error(err)

@@ -22,11 +22,10 @@ var (
 
 	// CStore collection store
 	CStore struct {
-		subscriptionID  string
-		Mu              sync.Mutex
-		CollectionTrack []*m3uetcpb.CollectionTrack
-		Collection      []*m3uetcpb.Collection
-		Track           []*m3uetcpb.Track
+		subscriptionID string
+		Mu             sync.Mutex
+		Collection     []*m3uetcpb.Collection
+		Track          []*m3uetcpb.Track
 	}
 )
 
@@ -64,7 +63,7 @@ func ApplyCollectionChanges(o ...CollectionsOptions) {
 
 	iter, ok := model.GetIterFirst()
 	for ok {
-		row, err := GetListStoreModelValues(model, iter, []StoreModelColumn{CColCollectionID, CColName, CColDescription, CColRemoteLocation, CColDisabled, CColRemote, CColRescan})
+		row, err := GetListStoreModelValues(model, iter, []ModelColumn{CColCollectionID, CColName, CColDescription, CColRemoteLocation, CColDisabled, CColRemote, CColRescan})
 		if err != nil {
 			log.Error(err)
 			return
@@ -156,7 +155,7 @@ func CreateCollectionTreeModel(h collectionTreeHierarchy) (model *gtk.TreeStore,
 	log.WithField("hierarchy", h).
 		Info("Creating collections model")
 
-	cTree.model, err = gtk.TreeStoreNew(TreeColumn.getTypes()...)
+	cTree.model, err = gtk.TreeStoreNew(CTreeColumn.getTypes()...)
 	if err != nil {
 		return
 	}
@@ -205,11 +204,6 @@ func subscribeToCollectionStore() {
 
 	appendItem := func(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
 		switch res.Item.(type) {
-		case *m3uetcpb.SubscribeToCollectionStoreResponse_CollectionTrack:
-			CStore.CollectionTrack = append(
-				CStore.CollectionTrack,
-				res.GetCollectionTrack(),
-			)
 		case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
 			CStore.Collection = append(
 				CStore.Collection,
@@ -223,14 +217,6 @@ func subscribeToCollectionStore() {
 
 	changeItem := func(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
 		switch res.Item.(type) {
-		case *m3uetcpb.SubscribeToCollectionStoreResponse_CollectionTrack:
-			ct := res.GetCollectionTrack()
-			for i := range CStore.CollectionTrack {
-				if CStore.CollectionTrack[i].Id == ct.Id {
-					CStore.CollectionTrack[i] = ct
-					break
-				}
-			}
 		case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
 			c := res.GetCollection()
 			for i := range CStore.Collection {
@@ -252,16 +238,6 @@ func subscribeToCollectionStore() {
 
 	removeItem := func(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
 		switch res.Item.(type) {
-		case *m3uetcpb.SubscribeToCollectionStoreResponse_CollectionTrack:
-			ct := res.GetCollectionTrack()
-			n := len(CStore.CollectionTrack)
-			for i := range CStore.CollectionTrack {
-				if CStore.CollectionTrack[i].Id == ct.Id {
-					CStore.CollectionTrack[i] = CStore.CollectionTrack[n-1]
-					CStore.CollectionTrack = CStore.CollectionTrack[:n-1]
-					break
-				}
-			}
 		case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
 			c := res.GetCollection()
 			n := len(CStore.Collection)
@@ -298,14 +274,16 @@ func subscribeToCollectionStore() {
 			CStore.subscriptionID = res.SubscriptionId
 		}
 
+		cTree.lastEvent = res.Event
 		switch res.Event {
 		case m3uetcpb.CollectionEvent_CE_INITIAL:
-			CStore.CollectionTrack = []*m3uetcpb.CollectionTrack{}
+			cTree.initialMode = true
 			CStore.Collection = []*m3uetcpb.Collection{}
 			CStore.Track = []*m3uetcpb.Track{}
 		case m3uetcpb.CollectionEvent_CE_INITIAL_ITEM:
 			appendItem(res)
 		case m3uetcpb.CollectionEvent_CE_INITIAL_DONE:
+			cTree.initialMode = false
 			// pass
 		case m3uetcpb.CollectionEvent_CE_ITEM_ADDED:
 			appendItem(res)
@@ -313,11 +291,14 @@ func subscribeToCollectionStore() {
 			changeItem(res)
 		case m3uetcpb.CollectionEvent_CE_ITEM_REMOVED:
 			removeItem(res)
+		case m3uetcpb.CollectionEvent_CE_SCANNING:
+			cTree.scanningMode = true
+		case m3uetcpb.CollectionEvent_CE_SCANNING_DONE:
+			cTree.scanningMode = false
 		}
 
 		CStore.Mu.Unlock()
-		if res.Event != m3uetcpb.CollectionEvent_CE_INITIAL &&
-			res.Event != m3uetcpb.CollectionEvent_CE_INITIAL_ITEM {
+		if !cTree.initialMode && !cTree.scanningMode {
 			glib.IdleAdd(cTree.update)
 			glib.IdleAdd(updateCollectionsModel)
 		}

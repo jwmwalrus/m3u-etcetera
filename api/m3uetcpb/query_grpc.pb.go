@@ -25,6 +25,8 @@ type QuerySvcClient interface {
 	RemoveQuery(ctx context.Context, in *RemoveQueryRequest, opts ...grpc.CallOption) (*Empty, error)
 	ApplyQuery(ctx context.Context, in *ApplyQueryRequest, opts ...grpc.CallOption) (*ApplyQueryResponse, error)
 	QueryBy(ctx context.Context, in *QueryByRequest, opts ...grpc.CallOption) (*QueryByResponse, error)
+	SubscribeToQueryStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (QuerySvc_SubscribeToQueryStoreClient, error)
+	UnsubscribeFromQueryStore(ctx context.Context, in *UnsubscribeFromQueryStoreRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type querySvcClient struct {
@@ -98,6 +100,47 @@ func (c *querySvcClient) QueryBy(ctx context.Context, in *QueryByRequest, opts .
 	return out, nil
 }
 
+func (c *querySvcClient) SubscribeToQueryStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (QuerySvc_SubscribeToQueryStoreClient, error) {
+	stream, err := c.cc.NewStream(ctx, &QuerySvc_ServiceDesc.Streams[0], "/m3uetcpb.QuerySvc/SubscribeToQueryStore", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &querySvcSubscribeToQueryStoreClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type QuerySvc_SubscribeToQueryStoreClient interface {
+	Recv() (*SubscribeToQueryStoreResponse, error)
+	grpc.ClientStream
+}
+
+type querySvcSubscribeToQueryStoreClient struct {
+	grpc.ClientStream
+}
+
+func (x *querySvcSubscribeToQueryStoreClient) Recv() (*SubscribeToQueryStoreResponse, error) {
+	m := new(SubscribeToQueryStoreResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *querySvcClient) UnsubscribeFromQueryStore(ctx context.Context, in *UnsubscribeFromQueryStoreRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/m3uetcpb.QuerySvc/UnsubscribeFromQueryStore", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QuerySvcServer is the server API for QuerySvc service.
 // All implementations must embed UnimplementedQuerySvcServer
 // for forward compatibility
@@ -109,6 +152,8 @@ type QuerySvcServer interface {
 	RemoveQuery(context.Context, *RemoveQueryRequest) (*Empty, error)
 	ApplyQuery(context.Context, *ApplyQueryRequest) (*ApplyQueryResponse, error)
 	QueryBy(context.Context, *QueryByRequest) (*QueryByResponse, error)
+	SubscribeToQueryStore(*Empty, QuerySvc_SubscribeToQueryStoreServer) error
+	UnsubscribeFromQueryStore(context.Context, *UnsubscribeFromQueryStoreRequest) (*Empty, error)
 	mustEmbedUnimplementedQuerySvcServer()
 }
 
@@ -136,6 +181,12 @@ func (UnimplementedQuerySvcServer) ApplyQuery(context.Context, *ApplyQueryReques
 }
 func (UnimplementedQuerySvcServer) QueryBy(context.Context, *QueryByRequest) (*QueryByResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryBy not implemented")
+}
+func (UnimplementedQuerySvcServer) SubscribeToQueryStore(*Empty, QuerySvc_SubscribeToQueryStoreServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeToQueryStore not implemented")
+}
+func (UnimplementedQuerySvcServer) UnsubscribeFromQueryStore(context.Context, *UnsubscribeFromQueryStoreRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromQueryStore not implemented")
 }
 func (UnimplementedQuerySvcServer) mustEmbedUnimplementedQuerySvcServer() {}
 
@@ -276,6 +327,45 @@ func _QuerySvc_QueryBy_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _QuerySvc_SubscribeToQueryStore_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(QuerySvcServer).SubscribeToQueryStore(m, &querySvcSubscribeToQueryStoreServer{stream})
+}
+
+type QuerySvc_SubscribeToQueryStoreServer interface {
+	Send(*SubscribeToQueryStoreResponse) error
+	grpc.ServerStream
+}
+
+type querySvcSubscribeToQueryStoreServer struct {
+	grpc.ServerStream
+}
+
+func (x *querySvcSubscribeToQueryStoreServer) Send(m *SubscribeToQueryStoreResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _QuerySvc_UnsubscribeFromQueryStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsubscribeFromQueryStoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QuerySvcServer).UnsubscribeFromQueryStore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/m3uetcpb.QuerySvc/UnsubscribeFromQueryStore",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QuerySvcServer).UnsubscribeFromQueryStore(ctx, req.(*UnsubscribeFromQueryStoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // QuerySvc_ServiceDesc is the grpc.ServiceDesc for QuerySvc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -311,7 +401,17 @@ var QuerySvc_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "QueryBy",
 			Handler:    _QuerySvc_QueryBy_Handler,
 		},
+		{
+			MethodName: "UnsubscribeFromQueryStore",
+			Handler:    _QuerySvc_UnsubscribeFromQueryStore_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeToQueryStore",
+			Handler:       _QuerySvc_SubscribeToQueryStore_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/m3uetcpb/query.proto",
 }

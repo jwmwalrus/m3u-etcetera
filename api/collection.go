@@ -202,17 +202,6 @@ func (*CollectionSvc) SubscribeToCollectionStore(_ *m3uetcpb.Empty, stream m3uet
 		s.Event <- subscription.Event{Idx: int(models.CollectionEventInitial)}
 	}()
 
-	sendCollectionTrack := func(e m3uetcpb.CollectionEvent, ct models.ProtoOut) error {
-		res := &m3uetcpb.SubscribeToCollectionStoreResponse{
-			SubscriptionId: id,
-			Event:          e,
-			Item: &m3uetcpb.SubscribeToCollectionStoreResponse_CollectionTrack{
-				CollectionTrack: ct.ToProtobuf().(*m3uetcpb.CollectionTrack),
-			},
-		}
-		return stream.Send(res)
-	}
-
 	sendCollection := func(e m3uetcpb.CollectionEvent, c models.ProtoOut) error {
 		res := &m3uetcpb.SubscribeToCollectionStoreResponse{
 			SubscriptionId: id,
@@ -254,17 +243,7 @@ sLoop:
 					break sLoop
 				}
 
-				cts, cs, ts := models.GetCollectionStore()
-				for i := range cts {
-					err := sendCollectionTrack(
-						m3uetcpb.CollectionEvent_CE_INITIAL_ITEM,
-						cts[i],
-					)
-					if err != nil {
-						break sLoop
-					}
-				}
-
+				cs, ts := models.GetCollectionStore()
 				for i := range cs {
 					err := sendCollection(
 						m3uetcpb.CollectionEvent_CE_INITIAL_ITEM,
@@ -294,6 +273,22 @@ sLoop:
 				continue sLoop
 			}
 
+			if models.CollectionEvent(e.Idx) == models.CollectionEventScanning ||
+				models.CollectionEvent(e.Idx) == models.CollectionEventScanningDone {
+				eout := m3uetcpb.CollectionEvent_CE_SCANNING
+				if models.CollectionEvent(e.Idx) == models.CollectionEventScanningDone {
+					eout = m3uetcpb.CollectionEvent_CE_SCANNING_DONE
+				}
+				res := &m3uetcpb.SubscribeToCollectionStoreResponse{
+					SubscriptionId: id,
+					Event:          eout,
+				}
+				err := stream.Send(res)
+				if err != nil {
+					break sLoop
+				}
+			}
+
 			var eout m3uetcpb.CollectionEvent
 			var fn func(m3uetcpb.CollectionEvent, models.ProtoOut) error
 
@@ -311,8 +306,6 @@ sLoop:
 			}
 
 			switch e.Data.(type) {
-			case *models.CollectionTrack:
-				fn = sendCollectionTrack
 			case *models.Collection:
 				fn = sendCollection
 			case *models.Track:

@@ -72,9 +72,8 @@ message SubscribeToCollectionStoreResponse {
     string subscription_id = 1;
     CollectionEvent event = 2;
     oneof item {
-        CollectionTrack collection_track = 3;
-        Collection collection = 4;
-        Track track = 5;
+        Collection collection = 3;
+        Track track = 4;
     }
 }
 
@@ -98,13 +97,13 @@ message Collection {
     int64 updated_at = 102;
 }
 
-message CollectionTrack {
-    int64 id = 1;
-    int64 collection_id = 2;
-    int64 track_id = 3;
-    int64 created_at = 101;
-    int64 updated_at = 102;
-}
+/* message CollectionTrack { */
+/*     int64 id = 1; */
+/*     int64 collection_id = 2; */
+/*     int64 track_id = 3; */
+/*     int64 created_at = 101; */
+/*     int64 updated_at = 102; */
+/* } */
 
 enum CollectionEvent {
     CE_NONE = 0;
@@ -114,4 +113,6 @@ enum CollectionEvent {
     CE_ITEM_ADDED = 4;
     CE_ITEM_CHANGED = 5;
     CE_ITEM_REMOVED = 6;
+    CE_SCANNING = 7;
+    CE_SCANNING_DONE = 8;
 }

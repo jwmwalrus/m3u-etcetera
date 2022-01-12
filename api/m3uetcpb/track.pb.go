@@ -25,33 +25,34 @@ type Track struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          int64  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Location    string `protobuf:"bytes,2,opt,name=location,proto3" json:"location,omitempty"`
-	Format      string `protobuf:"bytes,3,opt,name=format,proto3" json:"format,omitempty"`
-	Type        string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Title       string `protobuf:"bytes,5,opt,name=title,proto3" json:"title,omitempty"`
-	Album       string `protobuf:"bytes,6,opt,name=album,proto3" json:"album,omitempty"`
-	Artist      string `protobuf:"bytes,7,opt,name=artist,proto3" json:"artist,omitempty"`
-	Albumartist string `protobuf:"bytes,8,opt,name=albumartist,proto3" json:"albumartist,omitempty"`
-	Composer    string `protobuf:"bytes,9,opt,name=composer,proto3" json:"composer,omitempty"`
-	Genre       string `protobuf:"bytes,10,opt,name=genre,proto3" json:"genre,omitempty"`
-	Comment     string `protobuf:"bytes,11,opt,name=comment,proto3" json:"comment,omitempty"`
-	Lyrics      string `protobuf:"bytes,12,opt,name=lyrics,proto3" json:"lyrics,omitempty"`
-	Cover       string `protobuf:"bytes,13,opt,name=cover,proto3" json:"cover,omitempty"`
-	Year        int32  `protobuf:"varint,14,opt,name=year,proto3" json:"year,omitempty"`
-	Tracknumber int32  `protobuf:"varint,15,opt,name=tracknumber,proto3" json:"tracknumber,omitempty"`
-	Tracktotal  int32  `protobuf:"varint,16,opt,name=tracktotal,proto3" json:"tracktotal,omitempty"`
-	Discnumber  int32  `protobuf:"varint,17,opt,name=discnumber,proto3" json:"discnumber,omitempty"`
-	Disctotal   int32  `protobuf:"varint,18,opt,name=disctotal,proto3" json:"disctotal,omitempty"`
-	Date        int64  `protobuf:"varint,19,opt,name=date,proto3" json:"date,omitempty"`
-	Duration    int64  `protobuf:"varint,20,opt,name=duration,proto3" json:"duration,omitempty"`
-	Rating      int32  `protobuf:"varint,21,opt,name=rating,proto3" json:"rating,omitempty"`
-	Playcount   int32  `protobuf:"varint,22,opt,name=playcount,proto3" json:"playcount,omitempty"`
-	Remote      bool   `protobuf:"varint,23,opt,name=remote,proto3" json:"remote,omitempty"`
-	Lastplayed  int64  `protobuf:"varint,24,opt,name=lastplayed,proto3" json:"lastplayed,omitempty"`
-	Tags        string `protobuf:"bytes,25,opt,name=tags,proto3" json:"tags,omitempty"`
-	CreatedAt   int64  `protobuf:"varint,101,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt   int64  `protobuf:"varint,102,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Id           int64  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Location     string `protobuf:"bytes,2,opt,name=location,proto3" json:"location,omitempty"`
+	Format       string `protobuf:"bytes,3,opt,name=format,proto3" json:"format,omitempty"`
+	Type         string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Title        string `protobuf:"bytes,5,opt,name=title,proto3" json:"title,omitempty"`
+	Album        string `protobuf:"bytes,6,opt,name=album,proto3" json:"album,omitempty"`
+	Artist       string `protobuf:"bytes,7,opt,name=artist,proto3" json:"artist,omitempty"`
+	Albumartist  string `protobuf:"bytes,8,opt,name=albumartist,proto3" json:"albumartist,omitempty"`
+	Composer     string `protobuf:"bytes,9,opt,name=composer,proto3" json:"composer,omitempty"`
+	Genre        string `protobuf:"bytes,10,opt,name=genre,proto3" json:"genre,omitempty"`
+	Comment      string `protobuf:"bytes,11,opt,name=comment,proto3" json:"comment,omitempty"`
+	Lyrics       string `protobuf:"bytes,12,opt,name=lyrics,proto3" json:"lyrics,omitempty"`
+	Cover        string `protobuf:"bytes,13,opt,name=cover,proto3" json:"cover,omitempty"`
+	Year         int32  `protobuf:"varint,14,opt,name=year,proto3" json:"year,omitempty"`
+	Tracknumber  int32  `protobuf:"varint,15,opt,name=tracknumber,proto3" json:"tracknumber,omitempty"`
+	Tracktotal   int32  `protobuf:"varint,16,opt,name=tracktotal,proto3" json:"tracktotal,omitempty"`
+	Discnumber   int32  `protobuf:"varint,17,opt,name=discnumber,proto3" json:"discnumber,omitempty"`
+	Disctotal    int32  `protobuf:"varint,18,opt,name=disctotal,proto3" json:"disctotal,omitempty"`
+	Date         int64  `protobuf:"varint,19,opt,name=date,proto3" json:"date,omitempty"`
+	Duration     int64  `protobuf:"varint,20,opt,name=duration,proto3" json:"duration,omitempty"`
+	Rating       int32  `protobuf:"varint,21,opt,name=rating,proto3" json:"rating,omitempty"`
+	Playcount    int32  `protobuf:"varint,22,opt,name=playcount,proto3" json:"playcount,omitempty"`
+	Remote       bool   `protobuf:"varint,23,opt,name=remote,proto3" json:"remote,omitempty"`
+	Lastplayed   int64  `protobuf:"varint,24,opt,name=lastplayed,proto3" json:"lastplayed,omitempty"`
+	Tags         string `protobuf:"bytes,25,opt,name=tags,proto3" json:"tags,omitempty"`
+	CollectionId int64  `protobuf:"varint,26,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	CreatedAt    int64  `protobuf:"varint,101,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt    int64  `protobuf:"varint,102,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 }
 
 func (x *Track) Reset() {
@@ -261,6 +262,13 @@ func (x *Track) GetTags() string {
 	return ""
 }
 
+func (x *Track) GetCollectionId() int64 {
+	if x != nil {
+		return x.CollectionId
+	}
+	return 0
+}
+
 func (x *Track) GetCreatedAt() int64 {
 	if x != nil {
 		return x.CreatedAt
@@ -280,7 +288,7 @@ var File_api_m3uetcpb_track_proto protoreflect.FileDescriptor
 var file_api_m3uetcpb_track_proto_rawDesc = []byte{
 	0x0a, 0x18, 0x61, 0x70, 0x69, 0x2f, 0x6d, 0x33, 0x75, 0x65, 0x74, 0x63, 0x70, 0x62, 0x2f, 0x74,
 	0x72, 0x61, 0x63, 0x6b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x08, 0x6d, 0x33, 0x75, 0x65,
-	0x74, 0x63, 0x70, 0x62, 0x22, 0xc3, 0x05, 0x0a, 0x05, 0x54, 0x72, 0x61, 0x63, 0x6b, 0x12, 0x0e,
+	0x74, 0x63, 0x70, 0x62, 0x22, 0xe8, 0x05, 0x0a, 0x05, 0x54, 0x72, 0x61, 0x63, 0x6b, 0x12, 0x0e,
 	0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1a,
 	0x0a, 0x08, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x08, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x66, 0x6f,
@@ -320,12 +328,15 @@ var file_api_m3uetcpb_track_proto_rawDesc = []byte{
 	0x52, 0x06, 0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x6c, 0x61, 0x73, 0x74,
 	0x70, 0x6c, 0x61, 0x79, 0x65, 0x64, 0x18, 0x18, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x6c, 0x61,
 	0x73, 0x74, 0x70, 0x6c, 0x61, 0x79, 0x65, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x61, 0x67, 0x73,
-	0x18, 0x19, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x61, 0x67, 0x73, 0x12, 0x1d, 0x0a, 0x0a,
-	0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18, 0x65, 0x20, 0x01, 0x28, 0x03,
-	0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x75,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18, 0x66, 0x20, 0x01, 0x28, 0x03, 0x52,
-	0x09, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x42, 0x0c, 0x5a, 0x0a, 0x2e, 0x2f,
-	0x6d, 0x33, 0x75, 0x65, 0x74, 0x63, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x18, 0x19, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x61, 0x67, 0x73, 0x12, 0x23, 0x0a, 0x0d,
+	0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x1a, 0x20,
+	0x01, 0x28, 0x03, 0x52, 0x0c, 0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x49,
+	0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18,
+	0x65, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74,
+	0x12, 0x1d, 0x0a, 0x0a, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18, 0x66,
+	0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x42,
+	0x0c, 0x5a, 0x0a, 0x2e, 0x2f, 0x6d, 0x33, 0x75, 0x65, 0x74, 0x63, 0x70, 0x62, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

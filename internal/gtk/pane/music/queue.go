@@ -83,7 +83,7 @@ func (omq *onMusicQueue) contextClear(mi *gtk.MenuItem) {
 }
 
 func (omq *onMusicQueue) contextDelete(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.StoreModelColumn]interface{})
+	values, ok := omq.selection.(map[store.ModelColumn]interface{})
 	if !ok {
 		log.Error("There is no selection available for music queue context")
 		return
@@ -102,7 +102,7 @@ func (omq *onMusicQueue) contextDelete(mi *gtk.MenuItem) {
 }
 
 func (omq *onMusicQueue) contextEnqueue(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.StoreModelColumn]interface{})
+	values, ok := omq.selection.(map[store.ModelColumn]interface{})
 	if !ok {
 		log.Error("There is no selection available for music queue context")
 		return
@@ -128,7 +128,7 @@ func (omq *onMusicQueue) contextEnqueue(mi *gtk.MenuItem) {
 }
 
 func (omq *onMusicQueue) contextMove(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.StoreModelColumn]interface{})
+	values, ok := omq.selection.(map[store.ModelColumn]interface{})
 	if !ok {
 		log.Error("There is no selection available for music queue MOVE context")
 		return
@@ -170,7 +170,7 @@ func (omq *onMusicQueue) contextMove(mi *gtk.MenuItem) {
 }
 
 func (omq *onMusicQueue) contextPlayNow(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.StoreModelColumn]interface{})
+	values, ok := omq.selection.(map[store.ModelColumn]interface{})
 	if !ok {
 		log.Error("There is no selection available for music queue context")
 		return
@@ -211,7 +211,7 @@ func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *g
 	values, err := store.GetListStoreValues(
 		tv,
 		path,
-		[]store.StoreModelColumn{
+		[]store.ModelColumn{
 			store.QColPosition,
 			store.QColTrackID,
 			store.QColLocation,
@@ -258,7 +258,7 @@ func (omq *onMusicQueue) selChanged(sel *gtk.TreeSelection) {
 	var err error
 	omq.selection, err = store.GetTreeSelectionValues(
 		sel,
-		[]store.StoreModelColumn{
+		[]store.ModelColumn{
 			store.QColPosition,
 			store.QColTrackID,
 			store.QColLocation,
@@ -270,30 +270,4 @@ func (omq *onMusicQueue) selChanged(sel *gtk.TreeSelection) {
 		return
 	}
 	log.Infof("Selected collection entres: %v", omq.selection)
-	/*
-		model, _, ok := sel.GetSelected()
-		if ok {
-			rows := sel.GetSelectedRows(model)
-
-			for l := rows; l != nil; l = l.Next() {
-				path := l.Data().(*gtk.TreePath)
-				iter, err := model.(*gtk.TreeModel).GetIter(path)
-				if err != nil {
-					log.Error(err)
-					return
-				}
-				value, err := model.(*gtk.TreeModel).GetValue(iter, 0)
-				if err != nil {
-					log.Error(err)
-					return
-				}
-				goval, err := value.GoValue()
-				if err != nil {
-					log.Error(err)
-					return
-				}
-				log.Debugf("Selected queue row: %v", goval)
-			}
-		}
-	*/
 }

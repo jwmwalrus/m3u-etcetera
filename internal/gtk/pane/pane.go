@@ -38,7 +38,7 @@ func Add(idx m3uetcpb.Perspective, nb *gtk.Notebook, signals *map[string]interfa
 	}
 
 	if err = builder.AddFromFile(data.path); err != nil {
-		err = fmt.Errorf("Unable to add file %v to builder: %w", data.path, err)
+		err = fmt.Errorf("Unable to add file %v to builder: %v", data.path, err)
 		return
 	}
 

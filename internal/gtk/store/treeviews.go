@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GetTreeSelectionValue(sel *gtk.TreeSelection, col StoreModelColumn) (value interface{}, err error) {
+func GetTreeSelectionValue(sel *gtk.TreeSelection, col ModelColumn) (value interface{}, err error) {
 	model, iter, ok := sel.GetSelected()
 	if ok {
 		var gval *glib.Value
@@ -26,8 +26,8 @@ func GetTreeSelectionValue(sel *gtk.TreeSelection, col StoreModelColumn) (value 
 	return
 }
 
-func GetTreeSelectionValues(sel *gtk.TreeSelection, cols []StoreModelColumn) (values map[StoreModelColumn]interface{}, err error) {
-	m := map[StoreModelColumn]interface{}{}
+func GetTreeSelectionValues(sel *gtk.TreeSelection, cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
+	m := map[ModelColumn]interface{}{}
 	for _, c := range cols {
 		var v interface{}
 		v, err = GetTreeSelectionValue(sel, c)
@@ -40,7 +40,7 @@ func GetTreeSelectionValues(sel *gtk.TreeSelection, cols []StoreModelColumn) (va
 	return
 }
 
-func GetListStoreModelValue(model *gtk.ListStore, iter *gtk.TreeIter, col StoreModelColumn) (value interface{}, err error) {
+func GetListStoreModelValue(model *gtk.ListStore, iter *gtk.TreeIter, col ModelColumn) (value interface{}, err error) {
 	gval, err := model.GetValue(iter, int(col))
 	if err != nil {
 		return
@@ -49,8 +49,8 @@ func GetListStoreModelValue(model *gtk.ListStore, iter *gtk.TreeIter, col StoreM
 	return
 }
 
-func GetListStoreModelValues(model *gtk.ListStore, iter *gtk.TreeIter, cols []StoreModelColumn) (values map[StoreModelColumn]interface{}, err error) {
-	m := map[StoreModelColumn]interface{}{}
+func GetListStoreModelValues(model *gtk.ListStore, iter *gtk.TreeIter, cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
+	m := map[ModelColumn]interface{}{}
 	for _, c := range cols {
 		var v interface{}
 		v, err = GetListStoreModelValue(model, iter, c)
@@ -63,7 +63,7 @@ func GetListStoreModelValues(model *gtk.ListStore, iter *gtk.TreeIter, cols []St
 	return
 }
 
-func GetListStoreValue(tv *gtk.TreeView, path *gtk.TreePath, col StoreModelColumn) (value interface{}, err error) {
+func GetListStoreValue(tv *gtk.TreeView, path *gtk.TreePath, col ModelColumn) (value interface{}, err error) {
 	imodel, err := tv.GetModel()
 	if err != nil {
 		return
@@ -86,8 +86,8 @@ func GetListStoreValue(tv *gtk.TreeView, path *gtk.TreePath, col StoreModelColum
 	return
 }
 
-func GetListStoreValues(tv *gtk.TreeView, path *gtk.TreePath, cols []StoreModelColumn) (values map[StoreModelColumn]interface{}, err error) {
-	m := map[StoreModelColumn]interface{}{}
+func GetListStoreValues(tv *gtk.TreeView, path *gtk.TreePath, cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
+	m := map[ModelColumn]interface{}{}
 	for _, c := range cols {
 		var v interface{}
 		v, err = GetListStoreValue(tv, path, c)
@@ -100,7 +100,7 @@ func GetListStoreValues(tv *gtk.TreeView, path *gtk.TreePath, cols []StoreModelC
 	return
 }
 
-func GetTreeStoreValue(tv *gtk.TreeView, path *gtk.TreePath, col StoreModelColumn) (value interface{}, err error) {
+func GetTreeStoreValue(tv *gtk.TreeView, path *gtk.TreePath, col ModelColumn) (value interface{}, err error) {
 	imodel, err := tv.GetModel()
 	if err != nil {
 		return
@@ -123,8 +123,8 @@ func GetTreeStoreValue(tv *gtk.TreeView, path *gtk.TreePath, col StoreModelColum
 	return
 }
 
-func GetTreeStoreValues(tv *gtk.TreeView, path *gtk.TreePath, cols []StoreModelColumn) (values map[StoreModelColumn]interface{}, err error) {
-	m := map[StoreModelColumn]interface{}{}
+func GetTreeStoreValues(tv *gtk.TreeView, path *gtk.TreePath, cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
+	m := map[ModelColumn]interface{}{}
 	for _, c := range cols {
 		var v interface{}
 		v, err = GetTreeStoreValue(tv, path, c)

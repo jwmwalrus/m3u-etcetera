@@ -1,6 +1,8 @@
 package models
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
 	"os"
@@ -9,7 +11,6 @@ import (
 	"time"
 
 	"github.com/dhowden/tag"
-	"github.com/google/uuid"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
@@ -46,14 +47,15 @@ type Track struct {
 	Date        int64  `json:"date" gorm:"index:idx_track_date"`
 	Duration    int64  `json:"duration"`
 
-	Rating     int    `json:"rating" gorm:"index:idx_track_rating"`
-	Playcount  int    `json:"playCount"`
-	Remote     bool   `json:"remote"` // if track is remote but not in a remote collection
-	Lastplayed int64  `json:"lastPlayed"`
-	Tags       string `json:"tags"`
-
-	CreatedAt int64 `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt int64 `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+	Rating       int        `json:"rating" gorm:"index:idx_track_rating"`
+	Playcount    int        `json:"playCount"`
+	Remote       bool       `json:"remote"` // if track is remote but not in a remote collection
+	Lastplayed   int64      `json:"lastPlayed"`
+	Tags         string     `json:"tags"`
+	CollectionID int64      `json:"collectionId" gorm:"index:idx_track_collection_id,not null"`
+	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`
+	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt    int64      `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
 // Create implements the DataCreator interface
@@ -159,6 +161,19 @@ func (t *Track) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
+// DeleteWithRemote removes a collection-track from collection, along with the track
+func (t *Track) DeleteWithRemote(withRemote bool) {
+	c := Collection{}
+	db.First(&c, t.CollectionID)
+
+	if !withRemote && (c.Remote || t.Remote) {
+		return
+	}
+
+	defer t.Delete()
+	return
+}
+
 func (t *Track) fillMissingTags(raw map[string]interface{}) {
 	var full, partial time.Time
 	for k, v := range raw {
@@ -205,15 +220,15 @@ func (t *Track) fillMissingTags(raw map[string]interface{}) {
 	}
 }
 
-func (t *Track) savePicture(p *tag.Picture) {
-	if p == nil {
+func (t *Track) savePicture(p *tag.Picture, sum string) {
+	if p == nil || base.Conf.Server.Collection.Scanning.SkipCover {
 		return
 	}
 
 	if p.Ext != "" && p.MIMEType != "" {
 		fn := t.Cover
 		if fn == "" {
-			fn = uuid.New().String() + "." + p.Ext
+			fn = sum + "." + p.Ext
 		}
 		file := filepath.Join(base.CoversDir, fn)
 		err := ioutil.WriteFile(file, p.Data, 0644)
@@ -263,39 +278,12 @@ func (t *Track) updateTags() (err error) {
 	t.Tracknumber, t.Tracktotal = m.Track()
 	t.Discnumber, t.Disctotal = m.Disc()
 	t.fillMissingTags(m.Raw())
-	t.savePicture(m.Picture())
 
-	return
-}
+	dir := filepath.Dir(t.Location)
+	hasher := md5.New()
+	hasher.Write([]byte(dir))
+	t.savePicture(m.Picture(), hex.EncodeToString(hasher.Sum(nil)))
 
-// AddTrackFromLocation adds a track, given its location
-func AddTrackFromLocation(location string, withTags bool) (t *Track, err error) {
-	doTag := false
-	t = &Track{}
-	if err := db.Where("location = ?", location).First(t).Error; err != nil {
-		t = &Track{
-			Location: location,
-		}
-		doTag = true
-	}
-
-	if withTags || doTag {
-		err = t.updateTags()
-		onerror.Log(err)
-	}
-
-	err = t.Save()
-	return
-}
-
-// AddTrackFromPath adds a track, given its location
-func AddTrackFromPath(path string, withTags bool) (t *Track, err error) {
-	var u string
-	if u, err = urlstr.PathToURL(path); err != nil {
-		return
-	}
-
-	t, err = AddTrackFromLocation(u, withTags)
 	return
 }
 

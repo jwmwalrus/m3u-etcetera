@@ -11,8 +11,10 @@ var (
 var (
 	musicCollectionsSignals = &onMusicCollections{}
 	musicQueueSignals       = &onMusicQueue{}
+	musicQuerySignals       = &onMusicQuery{}
 )
 
+// Setup sets the music pane
 func Setup(signals *map[string]interface{}) (err error) {
 	log.Info("Setting up music")
 
@@ -41,6 +43,22 @@ func Setup(signals *map[string]interface{}) (err error) {
 	(*signals)["on_music_queue_view_context_delete_activate"] = musicQueueSignals.contextDelete
 	(*signals)["on_music_queue_view_context_clear_activate"] = musicQueueSignals.contextClear
 	(*signals)["on_music_queue_view_row_activated"] = musicQueueSignals.dblClicked
+
+	if err = createMusicQueries(); err != nil {
+		return
+	}
+	(*signals)["on_queries_sel_changed"] = musicQuerySignals.selChanged
+	(*signals)["on_queries_view_button_press_event"] = musicQuerySignals.context
+	(*signals)["on_queries_view_context_append_activate"] = musicQuerySignals.contextAppend
+	(*signals)["on_queries_view_context_delete_activate"] = musicQuerySignals.contextDelete
+	(*signals)["on_queries_view_row_activated"] = musicQuerySignals.dblClicked
+	(*signals)["on_queries_filter_search_changed"] = musicQuerySignals.filtered
+
+	if err = musicQuerySignals.createDialog(); err != nil {
+		return
+	}
+	(*signals)["on_queries_add_clicked"] = musicQuerySignals.defineQuery
+	(*signals)["on_query_dialog_search_clicked"] = musicQuerySignals.doSearch
 
 	return
 }

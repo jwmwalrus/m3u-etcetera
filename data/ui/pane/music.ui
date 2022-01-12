@@ -40,7 +40,7 @@
     </child>
   </object>
   <object class="GtkPaned" id="music_perspective_pane">
-    <property name="height-request">400</property>
+    <property name="height-request">432</property>
     <property name="visible">True</property>
     <property name="can-focus">True</property>
     <child>
@@ -236,6 +236,7 @@
                         <property name="label" translatable="yes">Add</property>
                         <property name="use-underline">True</property>
                         <property name="icon-name">list-add</property>
+                        <signal name="clicked" handler="on_queries_add_clicked" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -279,11 +280,18 @@
                   <object class="GtkTreeView" id="queries_view">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <signal name="button-press-event" handler="on_queries_view_button_press_event" swapped="no"/>
+                    <signal name="row-activated" handler="on_queries_view_row_activated" swapped="no"/>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection" id="queries_sel">
+                        <signal name="changed" handler="on_queries_sel_changed" swapped="no"/>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
               <packing>
-                <property name="expand">False</property>
+                <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">1</property>
               </packing>
@@ -511,6 +519,36 @@
         <property name="label" translatable="yes">Clear queue</property>
         <property name="use-underline">True</property>
         <signal name="activate" handler="on_music_queue_view_context_clear_activate" swapped="no"/>
+      </object>
+    </child>
+  </object>
+  <object class="GtkMenu" id="queries_view_context">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <child>
+      <object class="GtkMenuItem" id="queries_view_context_append">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="tooltip-text" translatable="yes">Add the query results to the queue</property>
+        <property name="label" translatable="yes">Add to queue</property>
+        <property name="use-underline">True</property>
+        <signal name="activate" handler="on_queries_view_context_append_activate" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="queries_view_context_delete">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="tooltip-text" translatable="yes">Delete query</property>
+        <property name="label" translatable="yes">Delete</property>
+        <property name="use-underline">True</property>
+        <signal name="activate" handler="on_queries_view_context_delete_activate" swapped="no"/>
       </object>
     </child>
   </object>

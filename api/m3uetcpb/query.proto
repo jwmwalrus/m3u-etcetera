@@ -16,6 +16,9 @@ service QuerySvc {
 
     rpc ApplyQuery(ApplyQueryRequest) returns (ApplyQueryResponse);
     rpc QueryBy(QueryByRequest) returns (QueryByResponse);
+
+    rpc SubscribeToQueryStore(Empty) returns (stream SubscribeToQueryStoreResponse);
+    rpc UnsubscribeFromQueryStore(UnsubscribeFromQueryStoreRequest) returns (Empty);
 }
 
 message GetQueryRequest {
@@ -64,6 +67,16 @@ message QueryByResponse {
     repeated Track tracks = 1;
 }
 
+message SubscribeToQueryStoreResponse {
+    string subscription_id = 1;
+    QueryEvent event = 2;
+    Query query = 3;
+}
+
+message UnsubscribeFromQueryStoreRequest {
+    string subscription_id = 1;
+}
+
 message Query {
     int64 id = 1;
     string name = 2;
@@ -77,4 +90,14 @@ message Query {
     repeated int64 collection_ids = 10;
     int64 created_at = 101;
     int64 updated_at = 102;
+}
+
+enum QueryEvent {
+    QYE_NONE = 0;
+    QYE_INITIAL = 1;
+    QYE_INITIAL_ITEM = 2;
+    QYE_INITIAL_DONE = 3;
+    QYE_ITEM_ADDED = 4;
+    QYE_ITEM_CHANGED = 5;
+    QYE_ITEM_REMOVED = 6;
 }

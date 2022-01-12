@@ -3,12 +3,16 @@ package store
 import (
 	"context"
 	"fmt"
-	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
-	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -18,16 +22,28 @@ import (
 )
 
 type playbackData struct {
-	mu   sync.Mutex
-	data *m3uetcpb.SubscribeToPlaybackResponse
+	mu  sync.Mutex
+	res *m3uetcpb.SubscribeToPlaybackResponse
+
+	uiSet                        bool
+	lastDir                      string
+	coverFiles                   []string
+	window                       *gtk.ApplicationWindow
+	cover                        *gtk.Image
+	playBtn                      *gtk.ToolButton
+	title, artist, source, extra *gtk.Label
+	prog                         *gtk.ProgressBar
 }
 
-var (
-	pbres                                 playbackData
-	playbackID, trackID                   int64
-	location, title, artist, album, extra string
+const (
+	subtitle = "A playlist-centric music player"
 )
 
+var (
+	pbdata = &playbackData{}
+)
+
+// ExecutePlaybackAction -
 func ExecutePlaybackAction(req *m3uetcpb.ExecutePlaybackActionRequest) (err error) {
 	cc, err := GetClientConn()
 	if err != nil {
@@ -68,10 +84,11 @@ func subscribeToPlayback() {
 			break
 		}
 
-		pbres.mu.Lock()
-		pbres.data = res
-		pbres.mu.Unlock()
-		glib.IdleAdd(updatePlayback)
+		pbdata.mu.Lock()
+		pbdata.res = res
+		pbdata.mu.Unlock()
+		glib.IdleAdd(pbdata.updatePlayback)
+		glib.IdleAdd(pbdata.setCover)
 		if !wgdone {
 			wg.Done()
 			wgdone = true
@@ -82,9 +99,9 @@ func subscribeToPlayback() {
 func unsubscribeFromPlayback() {
 	log.Info("Unsubscribing from playback")
 
-	pbres.mu.Lock()
-	id := pbres.data.SubscriptionId
-	pbres.mu.Unlock()
+	pbdata.mu.Lock()
+	id := pbdata.res.SubscriptionId
+	pbdata.mu.Unlock()
 
 	var cc *grpc.ClientConn
 	var err error
@@ -109,42 +126,142 @@ func unsubscribeFromPlayback() {
 	}
 }
 
-func updatePlayback() bool {
+func (pbd *playbackData) setCover() bool {
+	pbd.mu.Lock()
+	defer func() { pbd.mu.Unlock() }()
+
+	if pbd.res.IsStreaming {
+		un, err := urlstr.URLToPath(pbd.res.Playback.Location)
+		if err != nil {
+			return false
+		}
+		dir := filepath.Dir(un)
+		if dir != pbd.lastDir {
+			pbd.lastDir = dir
+			fp := ""
+
+			trackCover := pbd.res.Track.Cover
+			coverFiles := pbd.coverFiles
+
+			for _, v := range coverFiles {
+				if _, err := os.Stat(filepath.Join(pbd.lastDir, v)); !os.IsNotExist(err) {
+					fp = v
+					break
+				}
+			}
+
+			if fp == "" && trackCover != "" {
+				trackCover = filepath.Join(base.CoversDir, trackCover)
+				if _, err := os.Stat(trackCover); !os.IsNotExist(err) {
+					fp = trackCover
+				}
+			}
+
+			if fp == "" {
+				pbd.cover.SetFromIconName("face-smile", gtk.ICON_SIZE_DIALOG)
+				return false
+			}
+
+			pixbuf, err := gdk.PixbufNewFromFileAtScale(fp, 150, 150, true)
+			if err != nil {
+				return false
+			}
+			pbd.cover.SetFromPixbuf(pixbuf)
+		}
+		return false
+	}
+
+	pbd.lastDir = ""
+	pbd.cover.SetFromIconName("face-smile", gtk.ICON_SIZE_DIALOG)
+	return false
+}
+
+func (pbd *playbackData) setUI() (err error) {
+	if pbd.uiSet {
+		return
+	}
+
+	pbd.window, err = builder.GetApplicationWindow()
+	if err != nil {
+		return
+	}
+
+	pbdata.cover, err = builder.GetImage("cover")
+	if err != nil {
+		return
+	}
+
+	pbd.title, err = builder.GetLabel("playback_title")
+	if err != nil {
+		return
+	}
+	pbd.artist, err = builder.GetLabel("playback_artist")
+	if err != nil {
+		return
+	}
+	pbd.source, err = builder.GetLabel("playback_source")
+	if err != nil {
+		return
+	}
+	pbd.extra, err = builder.GetLabel("playback_extra")
+	if err != nil {
+		return
+	}
+	pbd.prog, err = builder.GetProgressBar("progress")
+	if err != nil {
+		return
+	}
+	pbd.playBtn, err = builder.GetToolButton("control_play")
+	if err != nil {
+		return
+	}
+
+	for _, v := range base.Conf.GTK.Playback.CoverFilenames {
+		for _, ext := range []string{".jpeg", ".jpg", ".png"} {
+			pbd.coverFiles = append(pbd.coverFiles, v+ext)
+			pbd.coverFiles = append(pbd.coverFiles, strings.Title(v)+ext)
+		}
+	}
+
+	pbd.uiSet = true
+	return
+}
+
+func (pbd *playbackData) updatePlayback() bool {
+	if err := pbd.setUI(); err != nil {
+		log.Error(err)
+		return false
+	}
+
 	log.Debug("Updating playback")
 
-	pbres.mu.Lock()
+	pbd.mu.Lock()
 	iconName := "media-playback-pause"
-	if pbres.data.IsPaused {
+	if pbd.res.IsPaused {
 		iconName = "media-playback-start"
 	}
-	btn, err := builder.GetToolButton("control_play")
-	onerror.Warn(err)
-	if btn != nil {
-		btn.SetIconName(iconName)
-	}
+	pbd.playBtn.SetIconName(iconName)
 
+	var location, title, artist, album string
 	var duration, position int64
-	if pbres.data.IsStreaming {
-		playbackID = pbres.data.Playback.Id
-		location = pbres.data.Playback.Location
-		trackID = pbres.data.Playback.TrackId
 
-		title = pbres.data.Track.Title
-		artist = pbres.data.Track.Artist
-		album = pbres.data.Track.Album
-		duration = pbres.data.Track.Duration
-		position = pbres.data.Playback.Skip
+	if pbd.res.IsStreaming {
+		location = pbd.res.Playback.Location
+
+		title = pbd.res.Track.Title
+		artist = pbd.res.Track.Artist
+		album = pbd.res.Track.Album
+		duration = pbd.res.Track.Duration
+		position = pbd.res.Playback.Skip
 	} else {
-		playbackID, trackID = 0, 0
 		location = ""
 		title, artist, album = "", "", ""
 	}
-	pbres.mu.Unlock()
+	pbd.mu.Unlock()
 
-	prog, err := builder.GetProgressBar("progress")
 	if duration > 0 {
-		prog.SetFraction(float64(position) / float64(duration))
-		prog.SetText(
+		pbd.prog.SetFraction(float64(position) / float64(duration))
+		pbd.prog.SetText(
 			fmt.Sprintf(
 				"%v / %v",
 				time.Duration(position)*time.Nanosecond,
@@ -152,31 +269,37 @@ func updatePlayback() bool {
 			),
 		)
 	} else {
-		prog.SetFraction(float64(0))
-		prog.SetText("Not Playing")
+		pbd.prog.SetFraction(float64(0))
+		pbd.prog.SetText("Not Playing")
 	}
 
-	un, err := url.QueryUnescape(location)
-	if err != nil {
-		location = un
-	}
-
-	ltitle, lartist, lsource := title, artist, location
 	if title == "" {
-		ltitle = "Not Playing"
+		title = "Not Playing"
 	}
 	if artist != "" {
-		lartist = "by " + artist
+		artist = "by " + artist
 	}
 	if album != "" {
-		lsource = "from " + album
+		location = "from " + album
+	} else {
+		path, err := urlstr.URLToPath(location)
+		if err == nil {
+			location = path
+		}
 	}
-	err = builder.SetTextView("playback_title", ltitle)
-	onerror.Warn(err)
-	err = builder.SetTextView("playback_artist", lartist)
-	onerror.Warn(err)
-	err = builder.SetTextView("playback_source", lsource)
-	onerror.Warn(err)
 
+	truncateText := func(s string, max int) string {
+		if max > len(s) {
+			return s
+		}
+		return s[:max] + "..."
+	}
+	maxLen := 45
+	pbd.title.SetText(truncateText(title, maxLen))
+	pbd.title.SetTooltipText(title)
+	pbd.artist.SetText(truncateText(artist, maxLen))
+	pbd.artist.SetTooltipText(artist)
+	pbd.source.SetText(truncateText(location, maxLen))
+	pbd.source.SetTooltipText(location)
 	return false
 }

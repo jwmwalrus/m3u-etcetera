@@ -11,7 +11,7 @@ import (
 // CollectionEvent defines a collection event
 type CollectionEvent int
 
-// CollectionEvent definitions
+// CollectionEvent enum
 const (
 	CollectionEventNone CollectionEvent = iota
 	CollectionEventInitial
@@ -20,16 +20,21 @@ const (
 	CollectionEventItemAdded
 	CollectionEventItemChanged
 	CollectionEventItemRemoved
+	CollectionEventScanning
+	CollectionEventScanningDone
 )
 
 func (ce CollectionEvent) String() string {
 	return []string{
+		"none",
 		"initial",
 		"initial-item",
 		"initial-done",
 		"item-added",
 		"item-changed",
 		"item-removed",
+		"scanning",
+		"scanning-done",
 	}[ce]
 }
 

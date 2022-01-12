@@ -39,12 +39,24 @@ func ParseParams(params string) (qp []*QParam, err error) {
 		return
 	}
 
+	// NOTE: claiming utf-8 here
+	runes := []rune{}
+	for _, r := range params {
+		switch r {
+		case 9, 10, 11, 13:
+			runes = append(runes, 32)
+		default:
+			runes = append(runes, r)
+		}
+	}
+
+	str := string(runes)
 	out := []QParam{}
 
 	words := []string{}
 	literal := 0
 	from := 0
-	for i, r := range params {
+	for i, r := range str {
 		switch r {
 		case '[':
 			literal++
@@ -53,11 +65,11 @@ func ParseParams(params string) (qp []*QParam, err error) {
 			literal--
 			continue
 		case ' ':
-			words = append(words, params[from:i])
+			words = append(words, str[from:i])
 			from = i + 1
 		}
 	}
-	words = append(words, params[from:])
+	words = append(words, str[from:])
 
 	aux := []string{}
 	for i := 0; i < len(words); i++ {

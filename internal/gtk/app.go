@@ -14,21 +14,18 @@ var (
 )
 
 // Setup sets the whole GTK UI
-func Setup(b *gtk.Builder, signals *map[string]interface{}) (err error) {
-	builder.Setup(b)
+func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error) {
+	settingsMenuSignals.window = w
 
 	if err = builder.AddFromFile("data/ui/collections-dialog.ui"); err != nil {
-		err = fmt.Errorf("Unable to add collections-dialog file to builder: %w", err)
+		err = fmt.Errorf("Unable to add collections-dialog file to builder: %v", err)
 		return
 	}
 
-	dlg, err := setupCollectionsDialog()
-	if err != nil {
-		err = fmt.Errorf("Unable to setup collections-dialog: %w", err)
+	if err = settingsMenuSignals.createCollectionsDialog(); err != nil {
+		err = fmt.Errorf("Unable to setup collections-dialog: %v", err)
 		return
 	}
-	settingsMenuSignals.dlg = dlg
-
 	(*signals)["on_settings_quit_all_clicked"] = settingsMenuSignals.quitAll
 	(*signals)["on_settings_collections_edit_clicked"] = settingsMenuSignals.editCollections
 

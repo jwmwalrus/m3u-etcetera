@@ -49,6 +49,9 @@ type collectionTree struct {
 	filterVal         string
 	hierarchy         collectionTreeHierarchy
 	groupByCollection bool
+	lastEvent         m3uetcpb.CollectionEvent
+	initialMode       bool
+	scanningMode      bool
 }
 
 func (h collectionTreeHierarchy) String() string {
@@ -73,6 +76,10 @@ func (tree *collectionTree) updateArtistYearAlbumTree() {
 		return
 	}
 
+	if tree.model.GetNColumns() == 0 {
+		return
+	}
+
 	type titleType struct {
 		id       int64
 		title    string
@@ -93,10 +100,6 @@ func (tree *collectionTree) updateArtistYearAlbumTree() {
 		yearAlbum  []yearAlbumType
 	}
 
-	if tree.model.GetNColumns() == 0 {
-		return
-	}
-
 	_, ok := tree.model.GetIterFirst()
 	if ok {
 		tree.model.Clear()
@@ -106,7 +109,7 @@ func (tree *collectionTree) updateArtistYearAlbumTree() {
 	all := []artistType{}
 
 	getKeywords := func(t *m3uetcpb.Track) string {
-		list := strings.Split(t.Title, " ")
+		list := strings.Split(strings.ToLower(t.Title), " ")
 		list = append(list, strings.Split(strings.ToLower(t.Albumartist), " ")...)
 		list = append(list, strings.Split(strings.ToLower(t.Album), " ")...)
 		list = append(list, strconv.Itoa(int(t.Year)))
@@ -118,12 +121,9 @@ func (tree *collectionTree) updateArtistYearAlbumTree() {
 	for _, t := range CStore.Track {
 		if tree.filterVal != "" {
 			kw := getKeywords(t)
-			match := false
+			match := true
 			for _, s := range strings.Split(tree.filterVal, " ") {
-				match = match || strings.Contains(kw, s)
-				if match {
-					break
-				}
+				match = match && strings.Contains(kw, s)
 			}
 			if !match {
 				continue

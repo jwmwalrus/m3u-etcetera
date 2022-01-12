@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/urlstr"
@@ -65,6 +66,8 @@ func (c *Collection) Create() (err error) {
 func (c *Collection) Delete() (err error) {
 	log.Info("Deleting collection")
 
+	// TODO: broadcast scanning event
+
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
 
@@ -74,7 +77,7 @@ func (c *Collection) Delete() (err error) {
 		return
 	}
 
-	s := []CollectionTrack{}
+	s := []Track{}
 	if err = db.Where("collection_id = ?", c.ID).Find(&s).Error; err != nil {
 		return
 	}
@@ -82,18 +85,12 @@ func (c *Collection) Delete() (err error) {
 	nTrack := len(s)
 	doNotDelete := 0
 	for i := 0; i < nTrack; i++ {
-		trackID := s[i].TrackID
-
-		// delete coleccion-track
+		// delete track
 		if err := db.Delete(&s[i]).Error; err != nil {
 			onerror.Warn(err)
 			doNotDelete++
 			continue
 		}
-
-		// delete tracks
-		err := db.Delete(&Track{}, trackID).Error
-		onerror.Warn(err)
 		if 1%100 == 0 {
 			c.Scanned = int((float32(nTrack-i) / float32(nTrack)) * 100)
 			db.Save(c)
@@ -139,6 +136,7 @@ func (c *Collection) ToProtobuf() proto.Message {
 	onerror.Log(err)
 
 	// Unmatched
+	out.RemoteLocation = c.Remotelocation
 	out.CreatedAt = c.CreatedAt
 	out.UpdatedAt = c.UpdatedAt
 	return out
@@ -147,7 +145,7 @@ func (c *Collection) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (c *Collection) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+		if !base.FlagTestingMode {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
@@ -163,7 +161,7 @@ func (c *Collection) AfterCreate(tx *gorm.DB) error {
 // AfterSave is a GORM hook
 func (c *Collection) AfterSave(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+		if !base.FlagTestingMode {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
@@ -179,7 +177,7 @@ func (c *Collection) AfterSave(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (c *Collection) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+		if !base.FlagTestingMode {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
@@ -192,6 +190,38 @@ func (c *Collection) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
+// AddTrackFromLocation adds a track, given its location
+func (c *Collection) AddTrackFromLocation(location string, withTags bool) (t *Track, err error) {
+	doTag := false
+	t = &Track{}
+	if err := db.Where("location = ?", location).First(t).Error; err != nil {
+		t = &Track{
+			Location:     location,
+			CollectionID: c.ID,
+		}
+		doTag = true
+	}
+
+	if withTags || doTag {
+		err = t.updateTags()
+		onerror.Log(err)
+	}
+
+	err = t.Save()
+	return
+}
+
+// AddTrackFromPath adds a track, given its location
+func (c *Collection) AddTrackFromPath(path string, withTags bool) (t *Track, err error) {
+	var u string
+	if u, err = urlstr.PathToURL(path); err != nil {
+		return
+	}
+
+	t, err = c.AddTrackFromLocation(u, withTags)
+	return
+}
+
 // CountTracks counts tracks that belong to the collection
 func (c *Collection) CountTracks() {
 	log.Info("Counting tracks in collection")
@@ -201,7 +231,7 @@ func (c *Collection) CountTracks() {
 	}
 
 	var tracks int64
-	if err := db.Model(&CollectionTrack{}).Where("collection_id = ?", c.ID).Count(&tracks).Error; err != nil {
+	if err := db.Model(&Track{}).Where("collection_id = ?", c.ID).Count(&tracks).Error; err != nil {
 		return
 	}
 	c.Tracks = tracks
@@ -217,19 +247,17 @@ func (c *Collection) Scan(withTags bool) {
 
 	log.Info("Scanning collection")
 
-	globalCollectionEvent = CollectionEventInitial
-	defer func() {
-		globalCollectionEvent = CollectionEventNone
-
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
-			subscription.Broadcast(
-				subscription.ToCollectionStoreEvent,
-				subscription.Event{Idx: int(CollectionEventInitial)})
-		}
-	}()
-
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
+
+	subscription.Broadcast(
+		subscription.ToCollectionStoreEvent,
+		subscription.Event{Idx: int(CollectionEventScanning)})
+	defer func() {
+		subscription.Broadcast(
+			subscription.ToCollectionStoreEvent,
+			subscription.Event{Idx: int(CollectionEventScanningDone)})
+	}()
 
 	var err error
 	var realPath string
@@ -303,31 +331,18 @@ func (c *Collection) Scan(withTags bool) {
 			return nil
 		}
 
-		var t *Track
 		iTrack++
 
-		if t, err = AddTrackFromPath(path, withTags); err != nil {
+		if _, err = c.AddTrackFromPath(path, withTags); err != nil {
 			log.Warn(err)
 			scanErr++
 			return nil
 		}
 
-		ct := CollectionTrack{}
-		if err = db.Where("collection_id = ? AND track_id = ?", c.ID, t.ID).First(&ct).Error; err != nil {
-			ct = CollectionTrack{
-				CollectionID: c.ID,
-				TrackID:      t.ID,
-			}
-			if err = db.Save(&ct).Error; err != nil {
-				log.Error(err)
-				scanErr++
-				return nil
-			}
-		}
-
 		if iTrack%100 == 0 {
 			c.Scanned = int((float32(iTrack) / float32(nTrack)) * 100)
-			db.Save(c)
+			err = c.Save()
+			onerror.Log(err)
 		}
 
 		return nil
@@ -352,141 +367,18 @@ func (c *Collection) Verify() {
 		return
 	}
 
-	s := []CollectionTrack{}
-	if err := db.Preload("track").Where("collection_id = ?", c.ID).Find(&s).Error; err != nil {
+	s := []Track{}
+	if err := db.Where("collection_id = ?", c.ID).Find(&s).Error; err != nil {
 		return
 	}
 
-	for _, ct := range s {
-		if urlstr.URLExists(ct.Track.Location) {
+	for _, t := range s {
+		if urlstr.URLExists(t.Location) {
 			continue
 		}
 
-		ct.DeleteWithRemote(true)
+		t.DeleteWithRemote(true)
 	}
-}
-
-// CollectionTrack defines a collection__track row
-type CollectionTrack struct {
-	ID           int64      `json:"id" gorm:"primaryKey"`
-	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt    int64      `json:"updatedAt" gorm:"autoUpdateTime:nano"`
-	CollectionID int64      `json:"collectionId" gorm:"index:idx_collection_track_collection_id,not null"`
-	TrackID      int64      `json:"trackId" gorm:"index:idx_collection_track_track_id,not null"`
-	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`
-	Track        Track      `json:"track" gorm:"foreignKey:TrackID"`
-}
-
-// Create implements DataWriter interface
-func (ct *CollectionTrack) Create() error {
-	return db.Create(ct).Error
-}
-
-// Save implements DataWriter interface
-func (ct *CollectionTrack) Save() error {
-	return db.Save(ct).Error
-}
-
-// Delete implements DataWriter interface
-func (ct *CollectionTrack) Delete() error {
-	return db.Delete(&ct).Error
-}
-
-// ToProtobuf implements ProtoOut interface
-func (ct *CollectionTrack) ToProtobuf() proto.Message {
-	bv, err := json.Marshal(ct)
-	if err != nil {
-		log.Error(err)
-		return &m3uetcpb.CollectionTrack{}
-	}
-
-	out := &m3uetcpb.CollectionTrack{}
-	err = json.Unmarshal(bv, out)
-	onerror.Log(err)
-
-	// Unmatched
-	out.CreatedAt = ct.CreatedAt
-	out.UpdatedAt = ct.UpdatedAt
-	return out
-}
-
-// AfterCreate is a GORM hook
-func (ct *CollectionTrack) AfterCreate(tx *gorm.DB) error {
-	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
-			subscription.Broadcast(
-				subscription.ToCollectionStoreEvent,
-				subscription.Event{
-					Idx:  int(CollectionEventItemAdded),
-					Data: ct,
-				},
-			)
-		}
-	}()
-	return nil
-}
-
-// AfterSave is a GORM hook
-func (ct *CollectionTrack) AfterSave(tx *gorm.DB) error {
-	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
-			subscription.Broadcast(
-				subscription.ToCollectionStoreEvent,
-				subscription.Event{
-					Idx:  int(CollectionEventItemChanged),
-					Data: ct,
-				},
-			)
-		}
-	}()
-	return nil
-}
-
-// AfterDelete is a GORM hook
-func (ct *CollectionTrack) AfterDelete(tx *gorm.DB) error {
-	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
-			subscription.Broadcast(
-				subscription.ToCollectionStoreEvent,
-				subscription.Event{
-					Idx:  int(CollectionEventItemRemoved),
-					Data: ct,
-				},
-			)
-		}
-	}()
-	return nil
-}
-
-// DeleteWithRemote removes a collection-track from collection, along with the track
-func (ct *CollectionTrack) DeleteWithRemote(withRemote bool) {
-	c := Collection{}
-	t := Track{}
-	db.First(&t, ct.TrackID)
-	db.First(&c, ct.CollectionID)
-
-	if !withRemote && (c.Remote || t.Remote) {
-		return
-	}
-
-	defer t.Delete()
-
-	err := ct.Delete()
-	onerror.Log(err)
-	return
-}
-
-// DeleteIfTransient removes a collection-track from the transient collection, along with the track
-func (ct *CollectionTrack) DeleteIfTransient(withRemote bool) (err error) {
-	c := Collection{}
-	db.First(&c, ct.CollectionID)
-
-	if c.Idx != int(TransientCollection) {
-		return
-	}
-
-	ct.DeleteWithRemote(withRemote)
-	return
 }
 
 // CollectionQuery Defines a collection query
@@ -516,7 +408,7 @@ func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) (ts []*Track) {
 
 	list := []Track{}
 	err := tx.
-		Joins("JOIN collection_track ON collection_track.track_id = track.id AND collection_track.collection_id = ?", cq.CollectionID).
+		Joins("JOIN collection ON track.collection_id = collection.id AND track.collection_id = ?", cq.CollectionID).
 		Debug().
 		Find(&list).
 		Error
@@ -616,19 +508,19 @@ func GetAllCollections() (s []*Collection) {
 }
 
 // GetApplicableCollectionQueries returns all the collections that can be applied to the given query
-func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQuery) {
+func GetApplicableCollectionQueries(qy *Query, ids ...int64) (cqs []*CollectionQuery) {
 	cqs = []*CollectionQuery{}
 
 	list := []CollectionQuery{}
 	var err error
 
-	if q.ID > 0 {
-		s := q.GetCollections()
+	if qy.ID > 0 {
+		s := qy.GetCollections()
 		if len(s) > 0 {
 			err = db.
 				Joins("JOIN collection on collection_query.collection_id = "+
 					"collection.id and collection.hidden = 0 and collection.disabled = 0").
-				Where("query_id = ?", q.ID).
+				Where("query_id = ?", qy.ID).
 				Find(&list).
 				Error
 		} else {
@@ -637,7 +529,7 @@ func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQu
 				return
 			}
 			for _, x := range cs {
-				c := CollectionQuery{CollectionID: x.ID, QueryID: q.ID}
+				c := CollectionQuery{CollectionID: x.ID, QueryID: qy.ID}
 				list = append(list, c)
 			}
 		}
@@ -674,26 +566,36 @@ func GetApplicableCollectionQueries(q *Query, ids ...int64) (cqs []*CollectionQu
 }
 
 // GetCollectionStore returns all valid collection tracks
-func GetCollectionStore() (cts []*CollectionTrack, cs []*Collection, ts []*Track) {
-	cts = []*CollectionTrack{}
+func GetCollectionStore() (cs []*Collection, ts []*Track) {
 	cs = []*Collection{}
 	ts = []*Track{}
 
-	ctList := []CollectionTrack{}
 	cList := []Collection{}
 	tList := []Track{}
-	db.Find(&ctList)
-	db.Find(&cList)
-	db.Find(&tList)
 
-	for i := range ctList {
-		cts = append(cts, &ctList[i])
-	}
-	for i := range cList {
-		cs = append(cs, &cList[i])
-	}
+	db.Preload("Collection").
+		Joins("JOIN collection ON track.collection_id = collection.id AND collection.hidden = 0").
+		Find(&tList)
+
+	collmap := map[int64]Collection{}
 	for i := range tList {
+		if _, ok := collmap[tList[i].CollectionID]; !ok {
+			collmap[tList[i].CollectionID] = tList[i].Collection
+		}
 		ts = append(ts, &tList[i])
+	}
+
+	for _, v := range collmap {
+		cList = append(cList, v)
+	}
+
+	sort.Slice(cList, func(i, j int) bool {
+		return cList[i].ID < cList[j].ID
+	})
+
+	for i := range cList {
+		cList[i].CountTracks()
+		cs = append(cs, &cList[i])
 	}
 	return
 }

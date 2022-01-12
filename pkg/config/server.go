@@ -27,13 +27,28 @@ const (
 
 // Server server-related config
 type Server struct {
-	Scheme     string   `json:"scheme"`
-	Host       string   `json:"host"`
-	Port       int      `json:"port"`
-	APIVersion string   `json:"apiVersion"`
-	Database   Database `json:"database"`
-	Playback   Playback `json:"playback"`
-	Query      Query    `json:"query"`
+	Scheme     string `json:"scheme"`
+	Host       string `json:"host"`
+	Port       int    `json:"port"`
+	APIVersion string `json:"apiVersion"`
+
+	Database struct {
+		Backup bool `json:"backup"`
+	} `json:"database"`
+
+	Playback struct {
+		PlayedThreshold int `json:"playedThreshold"`
+	} `json:"playback"`
+
+	Query struct {
+		Limit int `json:"limit"`
+	} `json:"query"`
+
+	Collection struct {
+		Scanning struct {
+			SkipCover bool `json:"skipCover"`
+		} `json:"scanning"`
+	} `json:"collection"`
 }
 
 // SetDefaults provides default settings
@@ -54,9 +69,15 @@ func (s *Server) SetDefaults() {
 		s.APIVersion = DefaultServerAPIVersion
 	}
 
-	s.Database.SetDefaults()
-	s.Playback.SetDefaults()
-	s.Query.SetDefaults()
+	s.Database.Backup = true
+
+	if s.Playback.PlayedThreshold == 0 {
+		s.Playback.PlayedThreshold = DefaultPlayedThreshold
+	}
+
+	if s.Query.Limit == 0 {
+		s.Query.Limit = DefaultQueryLimit
+	}
 }
 
 // GetAuthority returns the authority portion of the playback URI
@@ -67,38 +88,4 @@ func (s *Server) GetAuthority() string {
 // GetURI returns the playback URI
 func (s *Server) GetURI() string {
 	return s.Scheme + "://" + s.GetAuthority()
-}
-
-// Database database-related config
-type Database struct {
-	Backup bool `json:"backup"`
-}
-
-// SetDefaults provides default settings
-func (db *Database) SetDefaults() {
-	db.Backup = true
-}
-
-// Playback playback-related config
-type Playback struct {
-	PlayedThreshold int `json:"playedThreshold"`
-}
-
-// SetDefaults provides default settings
-func (pb *Playback) SetDefaults() {
-	if pb.PlayedThreshold == 0 {
-		pb.PlayedThreshold = DefaultPlayedThreshold
-	}
-}
-
-// Query query-related config
-type Query struct {
-	Limit int `json:"limit"`
-}
-
-// SetDefaults provides default settings
-func (q *Query) SetDefaults() {
-	if q.Limit == 0 {
-		q.Limit = DefaultQueryLimit
-	}
 }

@@ -84,16 +84,18 @@ func GetPlayback() (pb *models.Playback, t *models.Track) {
 
 	log.Info("Obtaining current playback")
 
-	pb = &models.Playback{}
-	if err := pb.Read(eng.pb.ID); err != nil {
-		log.Error(err)
-		return
-	}
+	pbcopy := *eng.pb
+	pb = &pbcopy
 	if pb.TrackID > 0 {
 		t = &models.Track{}
-		if err := t.Read(pb.TrackID); err != nil {
-			log.Error(err)
-			return
+		if eng.t != nil {
+			t = eng.t
+		} else {
+			if err := t.Read(pb.TrackID); err != nil {
+				log.Error(err)
+				return
+			}
+			eng.t = t
 		}
 	} else {
 		var err error
