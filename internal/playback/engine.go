@@ -1,7 +1,7 @@
 package playback
 
 import (
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/jwmwalrus/bnp/urlstr"
@@ -18,11 +18,16 @@ const (
 
 var (
 	quitEngineLoop chan struct{}
-	prevInHistory chan struct{}
+)
+
+type playbackHint int
+
+const (
+	hintNone playbackHint = iota
+	hintPrevInHistory
 )
 
 type engine struct {
-	goingBack bool
 	terminate    bool
 	seekEnabled  bool
 	seekDone     bool
@@ -30,6 +35,7 @@ type engine struct {
 	duration     int64
 	mode         EngineMode
 	lastEvent    engineEvent
+	hint         playbackHint
 	prevState    gst.StateOptions
 	state        gst.StateOptions
 	playbin      *gst.Element
@@ -72,9 +78,6 @@ loop:
 		select {
 		case <-quitEngineLoop:
 			break loop
-		case <-prevInHistory:
-			pb = e.getPrevInHistory()
-			break signals
 		case <-models.PlaybackChanged:
 			switch e.lastEvent {
 			case stopAllEvent:
@@ -83,7 +86,13 @@ loop:
 			default:
 			}
 
-			err := pb.GetNextToPlay()
+			var err error
+			switch e.getPlaybackHint() {
+			case hintPrevInHistory:
+				pb, err = e.getPrevInHistory()
+			default:
+				err = pb.GetNextToPlay()
+			}
 			if err != nil {
 				q, _ := models.GetActivePerspectiveIndex().GetPerspectiveQueue()
 				if qt := q.Pop(); qt != nil {
@@ -110,29 +119,40 @@ loop:
 	log.Infof("Firing the %v event", e.lastEvent)
 }
 
-func (e *engine) getPrevInHistory() (pb *models.Playback) {
+func (e *engine) getPlaybackHint(keep ...bool) (h playbackHint) {
+	h = e.hint
+
+	reset := true
+	if len(keep) > 0 {
+		reset = !keep[0]
+	}
+	if reset {
+		e.hint = hintNone
+	}
+	return
+}
+
+func (e *engine) getPrevInHistory() (pb *models.Playback, err error) {
 	log.Info("Obtaining previous track in history")
 
 	h := models.PlaybackHistory{}
 
-	if e.playbin != nil {
-		if err := h.FindLastBy(fmt.Sprintf("location <> %v", e.pb.Location)); err != nil {
-			return
-		}
-	} else {
-		if err := h.ReadLast(); err != nil {
-			return
-		}
+	if err = h.ReadLast(); err != nil {
+		log.Error(err)
+		return
 	}
 
 	if h.TrackID > 0 {
 		t := &models.Track{}
-		if err := t.Read(h.TrackID); err != nil {
-			pb = models.AddPlaybackTrack(t)
+		if err = t.Read(h.TrackID); err != nil {
+			log.Error(err)
 			return
 		}
+		pb = models.AddPlaybackTrack(t)
 	} else if h.Location != "" {
 		pb = models.AddPlaybackLocation(h.Location)
+	} else {
+		err = errors.New("History entry lacks both track and location")
 	}
 	return
 }
@@ -140,8 +160,6 @@ func (e *engine) getPrevInHistory() (pb *models.Playback) {
 func (e *engine) playStream(pb *models.Playback) {
 	log.WithField("pb", *pb).
 		Info("Starting playStream")
-
-	defer func() { e.goingBack = false }()
 
 	e.pb = pb
 	e.terminate = false
@@ -241,7 +259,7 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 	switch msg.GetType() {
 	case gst.MessageEos:
 		log.Debugf("End of stream: %v", pb.Location)
-		if !e.goingBack {
+		if e.getPlaybackHint(true) != hintPrevInHistory {
 			go pb.AddToHistory(e.lastPosition, e.duration)
 		}
 		e.terminate = true
@@ -292,6 +310,10 @@ func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
 	msg = nil
 }
 
+func (e *engine) setPlaybackHint(h playbackHint) {
+	e.hint = h
+}
+
 func (e *engine) softReset() {
 	log.Info("Doing a soft reset on playback data")
 	e.state = gst.StateNull
@@ -303,7 +325,7 @@ func init() {
 		state:     gst.StateNull,
 		lastEvent: noLoopEvent,
 		mode:      NormalMode,
+		hint:      hintNone,
 	}
 	quitEngineLoop = make(chan struct{})
-	prevInHistory = make(chan struct{})
 }

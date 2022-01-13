@@ -217,18 +217,23 @@ func PlayStreams(force bool, locations []string, ids []int64) {
 
 // PreviousStream plays the previous stream in history
 func PreviousStream() {
-	if !IsStreaming() {
-		return
-	}
-
 	eng.lastEvent = previousEvent
 	log.Infof("Firing the %v event", eng.lastEvent)
 
-	eng.goingBack = true
+	eng.clearPendingPlayback()
 
+	if IsStreaming() {
+		/*
+			if eng.playingFromList {
+				hint = hintPrevInPlaylist
+			}
+		*/
+		eng.setPlaybackHint(hintPrevInHistory)
+	} else {
+		eng.setPlaybackHint(hintPrevInHistory)
+	}
 	StopStream()
-	prevInHistory <- struct{}{}
-	return
+	models.PlaybackChanged <- struct{}{}
 }
 
 // SeekInStream seek a position in the current stream
