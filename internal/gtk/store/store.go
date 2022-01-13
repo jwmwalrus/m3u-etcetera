@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	"github.com/gotk3/gotk3/glib"
-	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )

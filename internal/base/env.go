@@ -3,15 +3,14 @@ package base
 import (
 	"fmt"
 	"io"
-	"math/rand"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"runtime"
 	"syscall"
-	"time"
 
 	"github.com/adrg/xdg"
+	"github.com/jwmwalrus/bnp/stringing"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/config"
 	"github.com/pborman/getopt/v2"
 	log "github.com/sirupsen/logrus"
@@ -42,7 +41,6 @@ var (
 	configFile string
 	lockFile   string
 	logFile    *lumberjack.Logger
-	randomSeed *rand.Rand
 
 	logFilename = "app.log"
 
@@ -125,16 +123,6 @@ func parseArgs() (args []string) {
 	return
 }
 
-func GetRandomString(n int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = charset[randomSeed.Intn(len(charset))]
-	}
-	return string(b)
-}
-
 func resolveSeverity() {
 	givenSeverity := FlagSeverity
 
@@ -170,9 +158,7 @@ func init() {
 	InterruptSignal = make(chan os.Signal, 1)
 	signal.Notify(InterruptSignal, os.Interrupt, syscall.SIGTERM)
 
-	randomSeed = rand.New(
-		rand.NewSource(time.Now().UnixNano()))
-	InstanceSuffix = GetRandomString(8)
+	InstanceSuffix = stringing.GetRandomString(8)
 
 	// XDG-related
 	DataDir = filepath.Join(xdg.DataHome, AppDirName)

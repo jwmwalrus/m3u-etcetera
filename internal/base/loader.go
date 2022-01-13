@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/jwmwalrus/bnp/env"
-	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
 

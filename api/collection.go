@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

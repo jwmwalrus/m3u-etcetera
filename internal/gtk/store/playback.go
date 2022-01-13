@@ -12,6 +12,7 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/stringing"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
@@ -294,18 +295,12 @@ func (pbd *playbackData) updatePlayback() bool {
 		}
 	}
 
-	truncateText := func(s string, max int) string {
-		if max > len(s) {
-			return s
-		}
-		return s[:max] + "..."
-	}
 	maxLen := 45
-	pbd.title.SetText(truncateText(title, maxLen))
+	pbd.title.SetText(stringing.TruncateText(title, maxLen))
 	pbd.title.SetTooltipText(title)
-	pbd.artist.SetText(truncateText(artist, maxLen))
+	pbd.artist.SetText(stringing.TruncateText(artist, maxLen))
 	pbd.artist.SetTooltipText(artist)
-	pbd.source.SetText(truncateText(location, maxLen))
+	pbd.source.SetText(stringing.TruncateText(location, maxLen))
 	pbd.source.SetTooltipText(location)
 	return false
 }

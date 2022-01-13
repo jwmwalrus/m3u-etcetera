@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/dhowden/tag"
-	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/onerror"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 

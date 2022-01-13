@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	gtkui "github.com/jwmwalrus/m3u-etcetera/internal/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/store"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
 

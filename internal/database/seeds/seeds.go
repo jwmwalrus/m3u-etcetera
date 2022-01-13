@@ -1,7 +1,7 @@
 package seeds
 
 import (
-	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/onerror"
 	"github.com/jwmwalrus/seater"
 	"gorm.io/gorm"
 )

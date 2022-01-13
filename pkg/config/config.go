@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/onerror"
 	"github.com/nightlyone/lockfile"
 )
 

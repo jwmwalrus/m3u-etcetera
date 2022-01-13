@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/go-gormigrate/gormigrate/v2"
-	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/migrations"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
+	"github.com/jwmwalrus/onerror"
 
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
