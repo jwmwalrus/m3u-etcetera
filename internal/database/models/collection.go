@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -149,7 +148,7 @@ func (c *Collection) AfterCreate(tx *gorm.DB) error {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
-					Idx:  int(CollectionEventItemAdded),
+					Idx:  int(CollectionEventInitial),
 					Data: c,
 				},
 			)
@@ -165,7 +164,7 @@ func (c *Collection) AfterSave(tx *gorm.DB) error {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
-					Idx:  int(CollectionEventItemChanged),
+					Idx:  int(CollectionEventInitial),
 					Data: c,
 				},
 			)
@@ -181,7 +180,7 @@ func (c *Collection) AfterDelete(tx *gorm.DB) error {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
-					Idx:  int(CollectionEventItemRemoved),
+					Idx:  int(CollectionEventInitial),
 					Data: c,
 				},
 			)
@@ -573,25 +572,14 @@ func GetCollectionStore() (cs []*Collection, ts []*Track) {
 	cList := []Collection{}
 	tList := []Track{}
 
-	db.Preload("Collection").
-		Joins("JOIN collection ON track.collection_id = collection.id AND collection.hidden = 0").
+	db.Joins("JOIN collection ON track.collection_id = collection.id AND collection.hidden = 0 AND collection.disabled = 0").
 		Find(&tList)
+	db.Where("hidden = 0").
+		Find(&cList)
 
-	collmap := map[int64]Collection{}
 	for i := range tList {
-		if _, ok := collmap[tList[i].CollectionID]; !ok {
-			collmap[tList[i].CollectionID] = tList[i].Collection
-		}
 		ts = append(ts, &tList[i])
 	}
-
-	for _, v := range collmap {
-		cList = append(cList, v)
-	}
-
-	sort.Slice(cList, func(i, j int) bool {
-		return cList[i].ID < cList[j].ID
-	})
 
 	for i := range cList {
 		cList[i].CountTracks()

@@ -231,6 +231,7 @@ func (q *Queue) Pop() (qt *QueueTrack) {
 
 	log.Info("Found location to pop from queue:", qt.Location)
 	err = db.Save(&s).Error
+	onerror.Log(err)
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 	return
