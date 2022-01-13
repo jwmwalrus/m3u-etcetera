@@ -234,7 +234,7 @@ sLoop:
 			case models.QueryEventItemChanged:
 				eout = m3uetcpb.QueryEvent_QYE_ITEM_CHANGED
 			case models.QueryEventItemRemoved:
-				eout = m3uetcpb.QueryEvent_QYE_ITEM_CHANGED
+				eout = m3uetcpb.QueryEvent_QYE_ITEM_REMOVED
 			default:
 				log.Errorf("Ignoring unsupported query event: %v", e.Idx)
 				continue sLoop
