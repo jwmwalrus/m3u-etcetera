@@ -77,6 +77,22 @@ func GetEntry(id string) (e *gtk.Entry, err error) {
 	return
 }
 
+func GetHeaderBar(id string) (hb *gtk.HeaderBar, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get header-bar object: %v", err)
+		return
+	}
+
+	hb, ok := obj.(*gtk.HeaderBar)
+	if !ok {
+		err = fmt.Errorf("Unable to create header-bar: %v", err)
+		return
+	}
+
+	return
+}
+
 func GetImage(id string) (im *gtk.Image, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {

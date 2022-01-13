@@ -29,7 +29,7 @@ type playbackData struct {
 	uiSet                        bool
 	lastDir                      string
 	coverFiles                   []string
-	window                       *gtk.ApplicationWindow
+	headerbar                    *gtk.HeaderBar
 	cover                        *gtk.Image
 	logoPixbuf                   *gdk.Pixbuf
 	playBtn                      *gtk.ToolButton
@@ -38,7 +38,7 @@ type playbackData struct {
 }
 
 const (
-	subtitle = "A playlist-centric music player"
+	defaultSubtitle = "A playlist-centric music player"
 )
 
 var (
@@ -178,12 +178,8 @@ func (pbd *playbackData) setCover() bool {
 	return false
 }
 
-func (pbd *playbackData) setUI() (err error) {
-	if pbd.uiSet {
-		return
-	}
-
-	pbd.window, err = builder.GetApplicationWindow()
+func (pbd *playbackData) setPlaybackUI() (err error) {
+	pbd.headerbar, err = builder.GetHeaderBar("window_headerbar")
 	if err != nil {
 		return
 	}
@@ -235,11 +231,6 @@ func (pbd *playbackData) setUI() (err error) {
 }
 
 func (pbd *playbackData) updatePlayback() bool {
-	if err := pbd.setUI(); err != nil {
-		log.Error(err)
-		return false
-	}
-
 	log.Debug("Updating playback")
 
 	pbd.mu.Lock()
@@ -280,11 +271,16 @@ func (pbd *playbackData) updatePlayback() bool {
 		pbd.prog.SetText("Not Playing")
 	}
 
+	maxLen := 45
+	subtitle := stringing.TruncateText(title, maxLen)
 	if title == "" {
 		title = "Not Playing"
 	}
 	if artist != "" {
 		artist = "by " + artist
+		if subtitle != "" {
+			subtitle += " (" + stringing.TruncateText(artist, maxLen) + ")"
+		}
 	}
 	if album != "" {
 		location = "from " + album
@@ -295,7 +291,12 @@ func (pbd *playbackData) updatePlayback() bool {
 		}
 	}
 
-	maxLen := 45
+	if subtitle != "" {
+		pbd.headerbar.SetSubtitle(subtitle)
+	} else {
+		pbd.headerbar.SetSubtitle(defaultSubtitle)
+	}
+
 	pbd.title.SetText(stringing.TruncateText(title, maxLen))
 	pbd.title.SetTooltipText(title)
 	pbd.artist.SetText(stringing.TruncateText(artist, maxLen))
