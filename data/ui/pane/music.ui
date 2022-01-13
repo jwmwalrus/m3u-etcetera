@@ -365,7 +365,9 @@
                     <signal name="button-press-event" handler="on_music_queue_view_button_press_event" swapped="no"/>
                     <signal name="row-activated" handler="on_music_queue_view_row_activated" swapped="no"/>
                     <child internal-child="selection">
-                      <object class="GtkTreeSelection"/>
+                      <object class="GtkTreeSelection" id="music_queue_sel">
+                        <signal name="changed" handler="on_music_queue_sel_changed" swapped="no"/>
+                      </object>
                     </child>
                   </object>
                 </child>

@@ -1,6 +1,8 @@
 package musicpane
 
 import (
+	"strings"
+
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -66,20 +68,13 @@ func (omc *onMusicCollections) context(tv *gtk.TreeView, event *gdk.Event) {
 }
 
 func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
-	value, ok := omc.getSelection().(string)
-	if !ok {
-		log.Error("There is no selection available for collection context")
-		return
-	}
-
-	ids, err := store.StringToIDList(value)
-	if err != nil {
-		log.Error(err)
+	ids := omc.getSelection()
+	if len(ids) == 0 {
 		return
 	}
 
 	action := m3uetcpb.QueueAction_Q_APPEND
-	if mi.GetLabel() == "Preppend" {
+	if strings.Contains(mi.GetLabel(), "Preppend") {
 		action = m3uetcpb.QueueAction_Q_PREPPEND
 	}
 	req := &m3uetcpb.ExecuteQueueActionRequest{
@@ -94,15 +89,8 @@ func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
 }
 
 func (omc *onMusicCollections) contextPlayNow(mi *gtk.MenuItem) {
-	value, ok := omc.getSelection().(string)
-	if !ok {
-		log.Error("There is no selection available for collection context")
-		return
-	}
-
-	ids, err := store.StringToIDList(value)
-	if err != nil {
-		log.Error(err)
+	ids := omc.getSelection()
+	if len(ids) == 0 {
 		return
 	}
 
@@ -153,12 +141,25 @@ func (omc *onMusicCollections) filtered(se *gtk.SearchEntry) {
 
 }
 
-func (omc *onMusicCollections) getSelection() (value interface{}) {
-	if omc.selection == nil {
+func (omc *onMusicCollections) getSelection(keep ...bool) (ids []int64) {
+	value, ok := omc.selection.(string)
+	if !ok {
+		log.Error("There is no selection available for collection context")
 		return
 	}
-	value = omc.selection
-	omc.selection = nil
+
+	ids, err := store.StringToIDList(value)
+	if err != nil {
+		log.Errorf("Error parsing selection value for collection context: %v", err)
+	}
+
+	reset := true
+	if len(keep) > 0 {
+		reset = !keep[0]
+	}
+	if reset {
+		omc.selection = nil
+	}
 	return
 }
 

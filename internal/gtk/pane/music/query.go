@@ -67,18 +67,7 @@ func createMusicQueries() (err error) {
 func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
 	btn := gdk.EventButtonNewFromEvent(event)
 	if btn.Button() == gdk.BUTTON_SECONDARY {
-		value, ok := omqy.getSelection(true).(string)
-		if !ok {
-			log.Error("There is no selection available for collection context")
-			return
-		}
-
-		ids, err := store.StringToIDList(value)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
+		ids := omqy.getSelection(true)
 		if len(ids) != 1 {
 			return
 		}
@@ -93,15 +82,9 @@ func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
 }
 
 func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
-	value, ok := omqy.getSelection().(string)
-	if !ok {
-		log.Error("There is no selection available for collection context")
-		return
-	}
-
-	ids, err := store.StringToIDList(value)
-	if err != nil {
-		log.Error(err)
+	ids := omqy.getSelection()
+	if len(ids) != 1 {
+		log.Error("Query selection vanished?")
 		return
 	}
 
@@ -116,15 +99,9 @@ func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
 }
 
 func (omqy *onMusicQuery) contextDelete(mi *gtk.MenuItem) {
-	value, ok := omqy.getSelection().(string)
-	if !ok {
-		log.Error("There is no selection available for music query context")
-		return
-	}
-
-	ids, err := store.StringToIDList(value)
-	if err != nil {
-		log.Error(err)
+	ids := omqy.getSelection()
+	if len(ids) != 1 {
+		log.Error("Query selection vanished?")
 		return
 	}
 
@@ -448,11 +425,18 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 	return
 }
 
-func (omqy *onMusicQuery) getSelection(keep ...bool) (value interface{}) {
-	if omqy.selection == nil {
+func (omqy *onMusicQuery) getSelection(keep ...bool) (ids []int64) {
+	value, ok := omqy.selection.(string)
+	if !ok {
+		log.Error("There is no selection available for query context")
 		return
 	}
-	value = omqy.selection
+
+	ids, err := store.StringToIDList(value)
+	if err != nil {
+		log.Errorf("Failed to parse ids: %v", err)
+	}
+
 	reset := true
 	if len(keep) > 0 {
 		reset = !keep[0]

@@ -83,12 +83,10 @@ func (omq *onMusicQueue) contextClear(mi *gtk.MenuItem) {
 }
 
 func (omq *onMusicQueue) contextDelete(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.ModelColumn]interface{})
-	if !ok {
-		log.Error("There is no selection available for music queue context")
+	values := omq.getSelection()
+	if len(values) == 0 {
 		return
 	}
-	omq.selection = nil
 
 	req := &m3uetcpb.ExecuteQueueActionRequest{
 		Action:   m3uetcpb.QueueAction_Q_DELETE,
@@ -102,12 +100,10 @@ func (omq *onMusicQueue) contextDelete(mi *gtk.MenuItem) {
 }
 
 func (omq *onMusicQueue) contextEnqueue(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.ModelColumn]interface{})
-	if !ok {
-		log.Error("There is no selection available for music queue context")
+	values := omq.getSelection()
+	if len(values) == 0 {
 		return
 	}
-	omq.selection = nil
 
 	id := values[store.QColTrackID].(int64)
 	loc := values[store.QColLocation].(string)
@@ -128,12 +124,10 @@ func (omq *onMusicQueue) contextEnqueue(mi *gtk.MenuItem) {
 }
 
 func (omq *onMusicQueue) contextMove(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.ModelColumn]interface{})
-	if !ok {
-		log.Error("There is no selection available for music queue MOVE context")
+	values := omq.getSelection()
+	if len(values) == 0 {
 		return
 	}
-	omq.selection = nil
 
 	label := mi.GetLabel()
 	fromPos := values[store.QColPosition].(int)
@@ -170,16 +164,14 @@ func (omq *onMusicQueue) contextMove(mi *gtk.MenuItem) {
 }
 
 func (omq *onMusicQueue) contextPlayNow(mi *gtk.MenuItem) {
-	values, ok := omq.selection.(map[store.ModelColumn]interface{})
-	if !ok {
-		log.Error("There is no selection available for music queue context")
+	values := omq.getSelection()
+	if len(values) == 0 {
 		return
 	}
-	omq.selection = nil
 
 	id := values[store.QColTrackID].(int64)
 	loc := values[store.QColLocation].(string)
-	pos, ok := values[store.QColPosition].(int)
+	pos := values[store.QColPosition].(int)
 
 	req := &m3uetcpb.ExecutePlaybackActionRequest{
 		Action: m3uetcpb.PlaybackAction_PB_PLAY,
@@ -252,6 +244,25 @@ func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *g
 		log.Error(err)
 		return
 	}
+}
+
+func (omq *onMusicQueue) getSelection(keep ...bool) (values map[store.ModelColumn]interface{}) {
+	values, ok := omq.selection.(map[store.ModelColumn]interface{})
+	if !ok {
+		log.Error("There is no selection available for music queue context")
+		values = map[store.ModelColumn]interface{}{}
+		return
+	}
+
+	reset := true
+	if len(keep) > 0 {
+		reset = !keep[0]
+	}
+
+	if reset {
+		omq.selection = nil
+	}
+	return
 }
 
 func (omq *onMusicQueue) selChanged(sel *gtk.TreeSelection) {
