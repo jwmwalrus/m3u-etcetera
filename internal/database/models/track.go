@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dhowden/tag"
@@ -217,6 +218,28 @@ func (t *Track) fillMissingTags(raw map[string]interface{}) {
 	}
 	if unano != 0 && t.Date == 0 {
 		t.Date = unano
+	}
+
+	unesc := ""
+	unesc, _ = urlstr.URLToPath(t.Location)
+	if strings.TrimSpace(t.Title) == "" {
+		t.Title = "[Unknown]"
+		if unesc != "" {
+			t.Title += " (" + filepath.Base(unesc) + ")"
+		}
+	}
+	if strings.TrimSpace(t.Album) == "" {
+		t.Album = "[Unknown]"
+		if unesc != "" {
+			t.Album += " (" + filepath.Dir(unesc) + ")"
+		}
+	}
+	if strings.TrimSpace(t.Artist) == "" &&
+		strings.TrimSpace(t.Albumartist) == "" {
+		t.Artist = "[Unknown]"
+	}
+	if strings.TrimSpace(t.Genre) == "" {
+		t.Genre = "[Unknown]"
 	}
 }
 

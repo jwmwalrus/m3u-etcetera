@@ -122,7 +122,7 @@ func (tree *collectionTree) updateArtistYearAlbumTree() {
 		if tree.filterVal != "" {
 			kw := getKeywords(t)
 			match := true
-			for _, s := range strings.Split(tree.filterVal, " ") {
+			for _, s := range strings.Split(strings.ToLower(tree.filterVal), " ") {
 				match = match && strings.Contains(kw, s)
 			}
 			if !match {

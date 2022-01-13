@@ -194,7 +194,7 @@ func queueAction(c *cli.Context) (err error) {
 				if t.Id != qt.TrackId {
 					continue
 				}
-				s = fmt.Sprintf("%s -- By: %v (from: %v)", t.Title, t.Artist, t.Album)
+				s = fmt.Sprintf("%s -- by: %v (from: %v)", t.Title, t.Artist, t.Album)
 				break
 			}
 			if s != "" {
