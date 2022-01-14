@@ -112,7 +112,7 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, 
 		log.Error(err)
 		return
 	}
-	log.Infof("Doouble-clicked column value: %v", values[store.CColTree])
+	log.Debugf("Doouble-clicked column value: %v", values[store.CColTree])
 
 	ids, err := store.StringToIDList(values[store.CColTreeIDList].(string))
 	if err != nil {
@@ -144,7 +144,7 @@ func (omc *onMusicCollections) filtered(se *gtk.SearchEntry) {
 func (omc *onMusicCollections) getSelection(keep ...bool) (ids []int64) {
 	value, ok := omc.selection.(string)
 	if !ok {
-		log.Error("There is no selection available for collection context")
+		log.Debug("There is no selection available for collection context")
 		return
 	}
 

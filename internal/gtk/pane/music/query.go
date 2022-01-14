@@ -254,7 +254,7 @@ func (omqy *onMusicQuery) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *
 		log.Error(err)
 		return
 	}
-	log.Infof("Doouble-clicked column value: %v", values[store.CColTree])
+	log.Debugf("Doouble-clicked column value: %v", values[store.CColTree])
 
 	ids, err := store.StringToIDList(values[store.QYColTreeIDList].(string))
 	if err != nil {
@@ -428,7 +428,7 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 func (omqy *onMusicQuery) getSelection(keep ...bool) (ids []int64) {
 	value, ok := omqy.selection.(string)
 	if !ok {
-		log.Error("There is no selection available for query context")
+		log.Debug("There is no selection available for query context")
 		return
 	}
 
@@ -446,6 +446,13 @@ func (omqy *onMusicQuery) getSelection(keep ...bool) (ids []int64) {
 		omqy.selection = nil
 	}
 	return
+}
+
+func (omqy *onMusicQuery) resetDialog() error {
+	omqy.resultsLabel.SetVisible(false)
+
+	qy := &m3uetcpb.Query{}
+	return omqy.setQuery(qy)
 }
 
 func (omqy *onMusicQuery) selChanged(sel *gtk.TreeSelection) {
@@ -490,11 +497,4 @@ func (omqy *onMusicQuery) setQuery(qy *m3uetcpb.Query) (err error) {
 	omqy.to.SetText(to)
 
 	return
-}
-
-func (omqy *onMusicQuery) resetDialog() error {
-	omqy.resultsLabel.SetVisible(false)
-
-	qy := &m3uetcpb.Query{}
-	return omqy.setQuery(qy)
 }

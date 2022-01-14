@@ -213,7 +213,7 @@ func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *g
 		log.Error(err)
 		return
 	}
-	log.Infof("Doouble-clicked column values: %v", values[store.CColTree])
+	log.Debugf("Doouble-clicked column values: %v", values[store.CColTree])
 
 	id := values[store.QColTrackID].(int64)
 	pos := values[store.QColPosition].(int)
@@ -249,7 +249,7 @@ func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *g
 func (omq *onMusicQueue) getSelection(keep ...bool) (values map[store.ModelColumn]interface{}) {
 	values, ok := omq.selection.(map[store.ModelColumn]interface{})
 	if !ok {
-		log.Error("There is no selection available for music queue context")
+		log.Debug("There is no selection available for music queue context")
 		values = map[store.ModelColumn]interface{}{}
 		return
 	}
@@ -280,5 +280,5 @@ func (omq *onMusicQueue) selChanged(sel *gtk.TreeSelection) {
 		log.Error(err)
 		return
 	}
-	log.Infof("Selected collection entres: %v", omq.selection)
+	log.Debugf("Selected collection entres: %v", omq.selection)
 }
