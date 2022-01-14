@@ -64,8 +64,7 @@ func (q *Queue) Add(locations []string, ids []int64) {
 		}
 
 		qt := QueueTrack{Location: t.Location, TrackID: v}
-		err = q.appendTo(&qt)
-		onerror.Log(err)
+		onerror.Log(q.appendTo(&qt))
 	}
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
@@ -145,13 +144,11 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 		}
 
 		qt := QueueTrack{Location: t.Location, TrackID: ids[i], Position: position}
-		err := q.insertInto(&qt)
-		onerror.Log(err)
+		onerror.Log(q.insertInto(&qt))
 	}
 	for i := len(locations) - 1; i >= 0; i-- {
 		qt := QueueTrack{Location: locations[i], Position: position}
-		err := q.insertInto(&qt)
-		onerror.Log(err)
+		onerror.Log(q.insertInto(&qt))
 	}
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
@@ -230,8 +227,7 @@ func (q *Queue) Pop() (qt *QueueTrack) {
 	s = reasignQueueTrackPositions(s)
 
 	log.Info("Found location to pop from queue:", qt.Location)
-	err = db.Save(&s).Error
-	onerror.Log(err)
+	onerror.Log(db.Save(&s).Error)
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 	return
@@ -353,8 +349,7 @@ func (qt *QueueTrack) ToProtobuf() proto.Message {
 
 	// Unmatched
 	q := Queue{}
-	err = q.Read(qt.QueueID)
-	onerror.Log(err)
+	onerror.Log(q.Read(qt.QueueID))
 
 	out.Perspective = m3uetcpb.Perspective(q.Perspective.Idx)
 	out.TrackId = qt.TrackID
@@ -455,8 +450,7 @@ func findQueueTrack(qt *QueueTrack) {
 		return
 	}
 	qt.TrackID = t.ID
-	err := qt.Save()
-	onerror.Log(err)
+	onerror.Log(qt.Save())
 	return
 }
 

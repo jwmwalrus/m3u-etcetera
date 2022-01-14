@@ -78,8 +78,7 @@ func Open() *gorm.DB {
 	m := gormigrate.New(conn, gormigrate.DefaultOptions, migrations.All())
 
 	m.InitSchema(migrations.InitSchema)
-	err = m.Migrate()
-	onerror.Panic(err)
+	onerror.Panic(m.Migrate())
 
 	go func() {
 		conn.Where("played = 1").Delete(models.Playback{})

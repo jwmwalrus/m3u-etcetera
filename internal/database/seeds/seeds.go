@@ -25,6 +25,5 @@ func All(db *gorm.DB) {
 		},
 	})
 
-	err := h.RunAll()
-	onerror.Panic(err)
+	onerror.Panic(h.RunAll())
 }

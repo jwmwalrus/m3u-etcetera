@@ -72,7 +72,6 @@ func Unload() {
 
 	for _, u := range unloadRegistry {
 		log.Infof("Calling unloader: %v", u.Description)
-		err := u.Callback()
-		onerror.Log(err)
+		onerror.Log(u.Callback())
 	}
 }

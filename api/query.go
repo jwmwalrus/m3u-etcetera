@@ -145,13 +145,11 @@ func (*QuerySvc) QueryBy(_ context.Context, req *m3uetcpb.QueryByRequest) (*m3ue
 
 	if qy.Name != "" {
 		go func() {
-			var err error
 			if len(req.Query.CollectionIds) > 0 {
-				err = qy.SaveBound(qybs)
-			} else {
-				err = qy.Save()
+				onerror.Log(qy.SaveBound(qybs))
+				return
 			}
-			onerror.Log(err)
+			onerror.Log(qy.Save())
 		}()
 	}
 
@@ -221,8 +219,7 @@ sLoop:
 					SubscriptionId: id,
 					Event:          m3uetcpb.QueryEvent_QYE_INITIAL_DONE,
 				}
-				err = stream.Send(res)
-				onerror.Log(err)
+				onerror.Log(stream.Send(res))
 				continue sLoop
 			}
 

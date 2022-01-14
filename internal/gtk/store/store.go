@@ -223,11 +223,9 @@ func StringToIDList(s string) (ids []int64, err error) {
 
 // Subscribe start subscriptions to the server
 func Subscribe() {
-	err := pbdata.setPlaybackUI()
-	onerror.Panic(err)
+	onerror.Panic(pbdata.setPlaybackUI())
 
-	err = sanityCheck()
-	onerror.Panic(err)
+	onerror.Panic(sanityCheck())
 
 	log.Info("Subscribing")
 

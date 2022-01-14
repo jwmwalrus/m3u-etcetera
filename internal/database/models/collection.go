@@ -106,7 +106,6 @@ func (c *Collection) Delete() (err error) {
 
 	// delete collection
 	err = c.Delete()
-	onerror.Log(err)
 	return
 }
 
@@ -202,8 +201,7 @@ func (c *Collection) AddTrackFromLocation(location string, withTags bool) (t *Tr
 	}
 
 	if withTags || doTag {
-		err = t.updateTags()
-		onerror.Log(err)
+		onerror.Log(t.updateTags())
 	}
 
 	err = t.Save()
@@ -340,8 +338,7 @@ func (c *Collection) Scan(withTags bool) {
 
 		if iTrack%100 == 0 {
 			c.Scanned = int((float32(iTrack) / float32(nTrack)) * 100)
-			err = c.Save()
-			onerror.Log(err)
+			onerror.Log(c.Save())
 		}
 
 		return nil
@@ -351,8 +348,7 @@ func (c *Collection) Scan(withTags bool) {
 	}
 	log.Infof("ScanCollection Summary:\nTracks expected: %v\nTracks found: %v\nUnsupported tracks: %v\nScanning Errors: %v", iTrack, nTrack, unsupp, scanErr)
 	c.Scanned = 100
-	err = c.Save()
-	onerror.Log(err)
+	onerror.Log(c.Save())
 	return
 }
 

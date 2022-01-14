@@ -85,7 +85,6 @@
                     <child>
                       <object class="GtkCheckButton" id="collections_hierarchy_grouped">
                         <property name="label" translatable="yes">Group</property>
-                        <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">False</property>
                         <property name="tooltip-text" translatable="yes">Group by collection</property>

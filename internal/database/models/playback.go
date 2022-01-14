@@ -77,11 +77,11 @@ func (pb *Playback) AddToHistory(position, duration int64) {
 			TrackID:  pb.TrackID,
 			Duration: position,
 		}
-		err := h.Create()
-		onerror.Log(err)
+		onerror.Log(h.Create())
 		if pb.TrackID > 0 {
 			t := &Track{}
-			if t, err = pb.GetTrack(); err != nil {
+			t, err := pb.GetTrack()
+			if err != nil {
 				log.Error(err)
 				return
 			}
@@ -93,8 +93,7 @@ func (pb *Playback) AddToHistory(position, duration int64) {
 			if t.Duration == 0 {
 				t.Duration = duration
 			}
-			err = t.Save()
-			onerror.Warn(err)
+			onerror.Warn(t.Save())
 		}
 	}()
 	return
@@ -130,8 +129,7 @@ func (pb *Playback) FindTrack() {
 		return
 	}
 	pb.TrackID = t.ID
-	err := pb.Save()
-	onerror.Log(err)
+	onerror.Log(pb.Save())
 	return
 }
 
@@ -196,7 +194,6 @@ func AddPlaybackTrack(t *Track) (pb *Playback) {
 		Info("Adding playback entry by track")
 
 	pb = &Playback{Location: t.Location, TrackID: t.ID}
-	err := pb.Create()
-	onerror.Log(err)
+	onerror.Log(pb.Create())
 	return
 }

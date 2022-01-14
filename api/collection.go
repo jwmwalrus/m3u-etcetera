@@ -95,8 +95,7 @@ func (*CollectionSvc) RemoveCollection(_ context.Context, req *m3uetcpb.RemoveCo
 	}
 
 	go func() {
-		err := coll.Delete()
-		onerror.Log(err)
+		onerror.Log(coll.Delete())
 	}()
 
 	return &m3uetcpb.Empty{}, nil
@@ -268,8 +267,7 @@ sLoop:
 					SubscriptionId: id,
 					Event:          m3uetcpb.CollectionEvent_CE_INITIAL_DONE,
 				}
-				err = stream.Send(res)
-				onerror.Log(err)
+				onerror.Log(stream.Send(res))
 				continue sLoop
 			}
 
