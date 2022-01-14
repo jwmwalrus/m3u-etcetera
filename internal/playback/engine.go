@@ -176,11 +176,12 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	var err error
 
-	e.playbin, err = gst.ElementFactoryMake("playbin", "playbin")
+	e.playbin, err = gst.ElementFactoryMake("playbin", "m3uetc-playbin")
 	if err != nil {
 		log.Error(err)
 		return
 	}
+
 	defer func() { e.playbin = nil }()
 	log.Debug("Playbin created")
 
