@@ -168,7 +168,7 @@ func CreateCollectionTreeModel(h collectionTreeHierarchy) (model *gtk.TreeStore,
 // FilterCollectionsBy filters the collections by the given value
 func FilterCollectionsBy(val string) {
 	cTree.filterVal = val
-	cTree.update()
+	cTree.rebuild()
 }
 
 // GetCollectionsModel returns the current collections model
