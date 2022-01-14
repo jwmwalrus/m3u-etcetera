@@ -9,6 +9,27 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.10.0] 2022-01-14
+
+UI improvements and updated dependencies
+
+### Fixed
+
+* Query tree not refreshing properly after delete
+* Play previous
+* Issues with TreeView selections
+
+### Added
+
+* Display logo as cover
+* Set application's subtitle to current playback
+
+### Modified
+
+* Updated dependencies
+* Issue initial event after any collection change
+* Reimplement collection tree
+
 ## [0.9.0] 2022-01-12
 
 Features, fixes and improvements, again
