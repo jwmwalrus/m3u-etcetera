@@ -8,11 +8,12 @@ import (
 func seedCollection(db *gorm.DB) (err error) {
 	create := func(idx models.CollectionIndex) error {
 		coll := models.Collection{
-			Idx:      int(idx),
-			Name:     idx.String(),
-			Location: idx.String(),
-			Hidden:   true,
-			Scanned:  100,
+			Idx:           int(idx),
+			Name:          idx.String(),
+			Location:      idx.String(),
+			Hidden:        true,
+			Scanned:       100,
+			PerspectiveID: 1,
 		}
 		if err := db.Create(&coll).Error; err != nil {
 			return err

@@ -17,8 +17,10 @@ service QuerySvc {
     rpc ApplyQuery(ApplyQueryRequest) returns (ApplyQueryResponse);
     rpc QueryBy(QueryByRequest) returns (QueryByResponse);
 
-    rpc SubscribeToQueryStore(Empty) returns (stream SubscribeToQueryStoreResponse);
-    rpc UnsubscribeFromQueryStore(UnsubscribeFromQueryStoreRequest) returns (Empty);
+    rpc SubscribeToQueryStore(Empty)
+        returns (stream SubscribeToQueryStoreResponse);
+    rpc UnsubscribeFromQueryStore(UnsubscribeFromQueryStoreRequest)
+        returns (Empty);
 }
 
 message GetQueryRequest {
@@ -63,6 +65,7 @@ message ApplyQueryResponse {
 message QueryByRequest {
     Query query = 1;
 }
+
 message QueryByResponse {
     repeated Track tracks = 1;
 }

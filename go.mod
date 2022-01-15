@@ -44,3 +44,5 @@ require (
 )
 
 replace github.com/notedit/gst => github.com/jwmwalrus/gst v0.0.8-0.20220113011551-ec329359072c
+
+replace github.com/jwmwalrus/bnp => ../bnp

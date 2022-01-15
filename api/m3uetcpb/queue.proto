@@ -14,7 +14,8 @@ service QueueSvc {
 
     rpc SubscribeToQueueStore(Empty)
         returns (stream SubscribeToQueueStoreResponse);
-    rpc UnsubscribeFromQueueStore(UnsubscribeFromQueueStoreRequest) returns (Empty);
+    rpc UnsubscribeFromQueueStore(UnsubscribeFromQueueStoreRequest)
+        returns (Empty);
 }
 
 message GetQueueRequest {

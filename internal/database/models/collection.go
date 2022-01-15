@@ -40,19 +40,21 @@ func (idx CollectionIndex) Get() (c *Collection, err error) {
 
 // Collection defines a collection row
 type Collection struct {
-	ID             int64  `json:"id" gorm:"primaryKey"`
-	Idx            int    `json:"idx" gorm:"not null"`
-	Name           string `json:"name" gorm:"index:unique_idx_collection_name,not null"`
-	Description    string `json:"description"`
-	Location       string `json:"location" gorm:"uniqueIndex:unique_idx_collection_location,not null"`
-	Remotelocation string `json:"remoteLocation"`
-	Hidden         bool   `json:"hidden"`
-	Disabled       bool   `json:"disabled"`
-	Remote         bool   `json:"remote"`
-	Scanned        int    `json:"scanned"`
-	Tracks         int64  `json:"tracks" gorm:"-"`
-	CreatedAt      int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt      int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+	ID             int64       `json:"id" gorm:"primaryKey"`
+	Idx            int         `json:"idx" gorm:"not null"`
+	Name           string      `json:"name" gorm:"index:unique_idx_collection_name,not null"`
+	Description    string      `json:"description"`
+	Location       string      `json:"location" gorm:"uniqueIndex:unique_idx_collection_location,not null"`
+	Remotelocation string      `json:"remoteLocation"`
+	Hidden         bool        `json:"hidden"`
+	Disabled       bool        `json:"disabled"`
+	Remote         bool        `json:"remote"`
+	Scanned        int         `json:"scanned"`
+	Tracks         int64       `json:"tracks" gorm:"-"`
+	PerspectiveID  int64       `json:"perspectiveId" gorm:"index:idx_collection_perspective_id,not null"`
+	Perspective    Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
+	CreatedAt      int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt      int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
 // Create implements DataCreator interface
@@ -110,9 +112,11 @@ func (c *Collection) Delete() (err error) {
 }
 
 // Read implements DataReader interface
-func (c *Collection) Read(id int64) (err error) {
-	err = db.First(c, id).Error
-	return
+func (c *Collection) Read(id int64) error {
+	return db.Joins("Perspective").
+		// Joins("JOIN perspective ON collection.perspective_id = perspective.id").
+		First(c, id).
+		Error
 }
 
 // Save implements DataUpdater interface
@@ -135,6 +139,7 @@ func (c *Collection) ToProtobuf() proto.Message {
 
 	// Unmatched
 	out.RemoteLocation = c.Remotelocation
+	out.Perspective = m3uetcpb.Perspective(c.Perspective.Idx)
 	out.CreatedAt = c.CreatedAt
 	out.UpdatedAt = c.UpdatedAt
 	return out
@@ -143,7 +148,7 @@ func (c *Collection) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (c *Collection) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
+		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
@@ -159,7 +164,7 @@ func (c *Collection) AfterCreate(tx *gorm.DB) error {
 // AfterSave is a GORM hook
 func (c *Collection) AfterSave(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
+		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
@@ -175,7 +180,7 @@ func (c *Collection) AfterSave(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (c *Collection) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
+		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
@@ -243,6 +248,8 @@ func (c *Collection) Scan(withTags bool) {
 	}
 
 	log.Info("Scanning collection")
+	globalCollectionEvent = CollectionEventScanning
+	defer func() { globalCollectionEvent = CollectionEventNone }()
 
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
@@ -570,7 +577,10 @@ func GetCollectionStore() (cs []*Collection, ts []*Track) {
 
 	db.Joins("JOIN collection ON track.collection_id = collection.id AND collection.hidden = 0 AND collection.disabled = 0").
 		Find(&tList)
-	db.Where("hidden = 0").
+
+	db.Joins("Perspective").
+		// Joins("JOIN perspective ON collection.perspective_id = perspective.id").
+		Where("hidden = 0").
 		Find(&cList)
 
 	for i := range tList {

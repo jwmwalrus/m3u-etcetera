@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -61,7 +62,7 @@ func (pb *Playback) ToProtobuf() proto.Message {
 }
 
 // AddToHistory adds unplayed playback to history and marks it as played
-func (pb *Playback) AddToHistory(position, duration int64) {
+func (pb *Playback) AddToHistory(position, duration int64, freeze bool) {
 	log.WithFields(log.Fields{
 		"pb":       *pb,
 		"position": position,
@@ -69,7 +70,10 @@ func (pb *Playback) AddToHistory(position, duration int64) {
 	}).
 		Info("Adding playback to history")
 
-	pb.Played = true
+	if !freeze {
+		pb.Played = true
+	}
+	pb.Skip = position
 	pb.Save()
 	go func() {
 		h := PlaybackHistory{
@@ -99,8 +103,21 @@ func (pb *Playback) AddToHistory(position, duration int64) {
 	return
 }
 
+// BeforeCreate is a GORM hook
+func (pb *Playback) BeforeCreate(tx *gorm.DB) error {
+	fmt.Println("BeforeCreate location:", pb.Location)
+	return nil
+}
+
+// BeforeSave is a GORM hook
+func (pb *Playback) BeforeSave(tx *gorm.DB) error {
+	fmt.Println("BeforeSave location:", pb.Location)
+	return nil
+}
+
 // AfterCreate is a GORM hook
 func (pb *Playback) AfterCreate(tx *gorm.DB) error {
+	fmt.Println("AfterCreate location:", pb.Location)
 	go func() {
 		if !base.FlagTestingMode && !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
 			PlaybackChanged <- struct{}{}
@@ -136,6 +153,9 @@ func (pb *Playback) FindTrack() {
 // GetNextToPlay returns the next playback entry to play
 func (pb *Playback) GetNextToPlay() (err error) {
 	err = db.Where("played = 0").First(pb).Error
+	if err == nil && pb.ID == 0 {
+		err = fmt.Errorf("There's nothing in the playback queue")
+	}
 	return
 }
 

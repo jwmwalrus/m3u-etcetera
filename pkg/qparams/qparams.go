@@ -1,7 +1,6 @@
 package qparams
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -35,7 +34,7 @@ func ParseParams(params string) (qp []*QParam, err error) {
 	qp = []*QParam{}
 
 	if len(params) == 0 {
-		err = errors.New("Cannot parse empty string")
+		err = fmt.Errorf("Cannot parse empty string")
 		return
 	}
 

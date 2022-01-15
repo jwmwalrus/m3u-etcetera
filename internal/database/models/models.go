@@ -99,11 +99,6 @@ type ProtoOut interface {
 	ToProtobuf() proto.Message
 }
 
-// DataFinder defines an interface to query the DB
-type DataFinder interface {
-	FindBy(query interface{}) (err error)
-}
-
 // SetConnection sets the database connection for the whole package
 func SetConnection(conn *gorm.DB) {
 	db = conn

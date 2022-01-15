@@ -1,0 +1,176 @@
+syntax = 'proto3';
+
+package m3uetcpb;
+
+option go_package = './m3uetcpb';
+
+import 'api/m3uetcpb/common.proto';
+import 'api/m3uetcpb/perspective.proto';
+import 'api/m3uetcpb/playlist.proto';
+import 'api/m3uetcpb/track.proto';
+
+service PlaybarSvc {
+    rpc GetPlaybar(GetPlaybarRequest) returns (GetPlaybarResponse);
+    rpc GetPlaylist(GetPlaylistRequest) returns (GetPlaylistResponse);
+    rpc GetAllPlaylists(GetAllPlaylistsRequest) returns (GetAllPlaylistsResponse);
+    rpc GetPlaylistGroup(GetPlaylistGroupRequest) returns (GetPlaylistGroupResponse);
+    rpc GetAllPlaylistGroups(GetAllPlaylistGroupsRequest) returns (GetAllPlaylistGroupsResponse);
+
+    rpc ExecutePlaybarAction(ExecutePlaybarActionRequest) returns (Empty);
+    rpc ExecutePlaylistAction(ExecutePlaylistActionRequest) returns (ExecutePlaylistActionResponse);
+    rpc ExecutePlaylistGroupAction(ExecutePlaylistGroupActionRequest) returns (ExecutePlaylistGroupActionResponse);
+    rpc ExecutePlaylistTrackAction(ExecutePlaylistTrackActionRequest) returns (Empty);
+
+    rpc SubscribeToPlaybarStore(Empty)
+        returns (stream SubscribeToPlaybarStoreResponse);
+    rpc UnsubscribeFromPlaybarStore(UnsubscribeFromPlaybarStoreRequest)
+        returns (Empty);
+}
+
+message GetPlaybarRequest {
+    Perspective perspective = 1;
+}
+
+message GetPlaybarResponse {
+    repeated Playlist playlists = 1;
+}
+
+message GetPlaylistRequest {
+    int64 id = 1;
+    int32 limit = 2;
+}
+
+message GetPlaylistResponse {
+    Playlist playlist = 1;
+    repeated PlaylistTrack playlist_tracks = 2;
+    repeated Track tracks = 3;
+}
+
+message GetAllPlaylistsRequest {
+    Perspective perspective = 1;
+    int32 limit = 2;
+}
+
+message GetAllPlaylistsResponse {
+    repeated Playlist playlists = 1;
+}
+
+message GetPlaylistGroupRequest {
+    int64 id = 1;
+}
+
+message GetPlaylistGroupResponse {
+    PlaylistGroup playlist_group = 1;
+}
+
+message GetAllPlaylistGroupsRequest {
+    Perspective perspective = 1;
+    int32 limit = 2;
+}
+
+message GetAllPlaylistGroupsResponse {
+    repeated PlaylistGroup playlist_groups = 1;
+}
+
+message ExecutePlaybarActionRequest {
+    PlaybarAction action = 1;
+    int32 position = 2;
+    repeated int64 ids = 3;
+}
+
+message ExecutePlaylistActionRequest {
+    PlaylistAction action = 1;
+    int64 id = 2;
+    string name = 3;
+    string description = 4;
+    bool reset_description = 5;
+    int64 playlist_group_id = 6;
+}
+
+message ExecutePlaylistActionResponse {
+    int64 id = 1;
+}
+
+message ExecutePlaylistGroupActionRequest {
+    PlaylistGroupAction action = 1;
+    int64 id = 2;
+    string name = 3;
+    string description = 4;
+    bool reset_description = 5;
+}
+
+message ExecutePlaylistGroupActionResponse {
+    int64 id = 1;
+}
+
+message ExecutePlaylistTrackActionRequest {
+    PlaylistTrackAction action = 1;
+    int64 playlist_id = 2;
+    int32 position = 3;
+    int32 from_position = 4;
+    repeated int64 track_ids = 5;
+    repeated string locations = 6;
+}
+
+message SubscribeToPlaybarStoreResponse {
+    string subscription_id = 1;
+    PlaybarEvent event = 2;
+    oneof item {
+        // All the groups
+        PlaylistGroup playlist_group = 3;
+        // All the playlists
+        Playlist playlist = 4;
+
+        // Only for the open playlists
+        PlaylistTrack playlist_track = 5;
+        Track track = 6;
+    }
+}
+
+message UnsubscribeFromPlaybarStoreRequest {
+    string subscription_id = 1;
+}
+
+enum PlaybarAction {
+    BAR_NONE = 0;
+    BAR_OPEN = 1;
+    BAR_ACTIVATE = 2;
+    BAR_DEACTIVATE = 3;
+    BAR_CLOSE = 4;
+}
+
+enum PlaylistAction {
+    PL_NONE = 0;
+    PL_CREATE = 1;
+    PL_UPDATE = 2;
+    PL_DESTROY = 3;
+}
+
+enum PlaylistGroupAction {
+    PG_NONE = 0;
+    PG_CREATE = 1;
+    PG_UPDATE = 2;
+    PG_DESTROY = 3;
+    PG_ADD_PLAYLISTS = 4;
+    PG_REMOVE_PLAYLISTS = 5;
+}
+
+enum PlaylistTrackAction {
+    PT_NONE = 0;
+    PT_APPEND = 1;
+    PT_INSERT = 2;
+    PT_PREPPEND = 3;
+    PT_DELETE = 4;
+    PT_CLEAR = 5;
+    PT_MOVE = 6;
+}
+
+enum PlaybarEvent {
+    BE_NONE = 0;
+    BE_INITIAL = 1;
+    BE_INITIAL_ITEM = 2;
+    BE_INITIAL_DONE = 3;
+    BE_ITEM_ADDED = 4;
+    BE_ITEM_CHANGED = 5;
+    BE_ITEM_REMOVED = 6;
+}

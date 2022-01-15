@@ -5,6 +5,7 @@ package m3uetcpb;
 option go_package = './m3uetcpb';
 
 import 'api/m3uetcpb/common.proto';
+import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/track.proto';
 
 service CollectionSvc {
@@ -40,6 +41,7 @@ message AddCollectionRequest {
     string location = 3;
     bool disabled = 4;
     bool remote = 5;
+    Perspective perspective = 6;
 }
 
 message AddCollectionResponse {
@@ -93,17 +95,10 @@ message Collection {
     bool remote = 9;
     int32 scanned = 10;
     int64 tracks = 11;
+    Perspective perspective = 12;
     int64 created_at = 101;
     int64 updated_at = 102;
 }
-
-/* message CollectionTrack { */
-/*     int64 id = 1; */
-/*     int64 collection_id = 2; */
-/*     int64 track_id = 3; */
-/*     int64 created_at = 101; */
-/*     int64 updated_at = 102; */
-/* } */
 
 enum CollectionEvent {
     CE_NONE = 0;

@@ -63,11 +63,13 @@ func (*CollectionSvc) AddCollection(_ context.Context, req *m3uetcpb.AddCollecti
 		name = req.Name
 	}
 
+	perspID := models.PerspectiveIndex(req.Perspective).Get().ID
 	coll := models.Collection{
-		Name:     name,
-		Location: req.Location,
-		Disabled: req.Disabled,
-		Remote:   req.Remote,
+		Name:          name,
+		Location:      req.Location,
+		Disabled:      req.Disabled,
+		Remote:        req.Remote,
+		PerspectiveID: perspID,
 	}
 
 	if err := coll.Create(); err != nil {

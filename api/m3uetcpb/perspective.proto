@@ -4,8 +4,7 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-service PerspectiveSvc {
-}
+service PerspectiveSvc {}
 
 enum Perspective {
     MUSIC = 0;

@@ -2,7 +2,7 @@ package alive
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -80,7 +80,7 @@ func findBinary(bin string) (path string, err error) {
 		if os.IsNotExist(err) {
 			var s os.FileInfo
 			if s, err = os.Stat(".git"); os.IsExist(err) && s.IsDir() {
-				err = errors.New("Reached .git without finding binary")
+				err = fmt.Errorf("Reached .git without finding binary")
 				return
 			}
 			rel = filepath.Join("..", rel)
@@ -89,7 +89,7 @@ func findBinary(bin string) (path string, err error) {
 				return
 			}
 			if path == string(filepath.Separator) || path == "" {
-				err = errors.New("Reached root without finding binary")
+				err = fmt.Errorf("Reached root without finding binary")
 				return
 			}
 		} else {

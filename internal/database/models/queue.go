@@ -15,7 +15,8 @@ import (
 // GetPerspectiveQueue returns the queue associated to the perspective index
 func (idx PerspectiveIndex) GetPerspectiveQueue() (q *Queue, err error) {
 	q = &Queue{}
-	err = db.Preload("Perspective").Joins("JOIN perspective ON queue.perspective_id = perspective.id AND perspective.idx = ?", int(idx)).First(q).Error
+	err = db.Preload("Perspective").
+		Joins("JOIN perspective ON queue.perspective_id = perspective.id AND perspective.idx = ?", int(idx)).First(q).Error
 	return
 
 }
@@ -31,9 +32,8 @@ type Queue struct { // too transient
 
 // Read implements the DataReader interface
 func (q *Queue) Read(id int64) (err error) {
-	err = db.
-		Preload("Perspective").
-		Joins("JOIN perspective ON queue.perspective_id = perspective.id").
+	err = db.Joins("Perspective").
+		// Joins("JOIN perspective ON queue.perspective_id = perspective.id").
 		First(q, id).Error
 	return
 }

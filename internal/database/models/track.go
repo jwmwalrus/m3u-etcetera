@@ -66,21 +66,18 @@ func (t *Track) Create() (err error) {
 }
 
 // Delete implements the DataDeleter interface
-func (t *Track) Delete() {
-	err := db.Delete(&Track{}, t.ID).Error
-	onerror.Log(err)
+func (t *Track) Delete() error {
+	return db.Delete(&Track{}, t.ID).Error
 }
 
 // Read implements the DataReader interface
-func (t *Track) Read(id int64) (err error) {
-	err = db.First(t, id).Error
-	return
+func (t *Track) Read(id int64) error {
+	return db.First(t, id).Error
 }
 
 // Save implements the DataUpdater interface
-func (t *Track) Save() (err error) {
-	err = db.Save(t).Error
-	return
+func (t *Track) Save() error {
+	return db.Save(t).Error
 }
 
 // ToProtobuf implements the ProtoOut interface
@@ -108,16 +105,10 @@ func (t *Track) ToProtobuf() proto.Message {
 	return out
 }
 
-// FindBy implements the DataFinder interface
-func (t *Track) FindBy(query interface{}) (err error) {
-	err = db.Where(query).First(t).Error
-	return
-}
-
 // AfterCreate is a GORM hook
 func (t *Track) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
@@ -133,7 +124,7 @@ func (t *Track) AfterCreate(tx *gorm.DB) error {
 // AfterSave is a GORM hook
 func (t *Track) AfterSave(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
@@ -149,7 +140,7 @@ func (t *Track) AfterSave(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (t *Track) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
+		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
@@ -162,7 +153,22 @@ func (t *Track) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
-// DeleteWithRemote removes a collection-track from collection, along with the track
+// DeleteIfTransient removes a track only if it belongs
+// to the transient collection
+func (t *Track) DeleteIfTransient() (err error) {
+	c := Collection{}
+	err = db.Find(&c, t.CollectionID).Error
+	if err != nil {
+		return
+	}
+	if c.Idx == int(TransientCollection) {
+		err = t.Delete()
+		return
+	}
+	return
+}
+
+// DeleteWithRemote removes a track from collection
 func (t *Track) DeleteWithRemote(withRemote bool) {
 	c := Collection{}
 	db.First(&c, t.CollectionID)
@@ -172,6 +178,19 @@ func (t *Track) DeleteWithRemote(withRemote bool) {
 	}
 
 	defer t.Delete()
+	return
+}
+
+func (t *Track) createTransient() (err error) {
+	c, err := TransientCollection.Get()
+	if err != nil {
+		return
+	}
+	t.CollectionID = c.ID
+	if err = t.updateTags(); err != nil {
+		return
+	}
+	err = t.Save()
 	return
 }
 

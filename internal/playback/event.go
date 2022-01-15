@@ -151,7 +151,9 @@ func NextStream() (err error) {
 		return
 	}
 
+	eng.setPlaybackHint(hintNextInPlaylist)
 	StopStream()
+	models.PlaybackChanged <- struct{}{}
 	return
 }
 
@@ -222,18 +224,34 @@ func PreviousStream() {
 
 	eng.clearPendingPlayback()
 
+	var hint playbackHint
 	if IsStreaming() {
-		/*
-			if eng.playingFromList {
-				hint = hintPrevInPlaylist
-			}
-		*/
-		eng.setPlaybackHint(hintPrevInHistory)
+		if eng.pt != nil {
+			hint = hintPrevInPlaylist
+		} else {
+			hint = hintPrevInHistory
+		}
 	} else {
-		eng.setPlaybackHint(hintPrevInHistory)
+		hint = hintPrevInHistory
 	}
+	eng.setPlaybackHint(hint)
 	StopStream()
 	models.PlaybackChanged <- struct{}{}
+}
+
+// QuitPlayingFromBar stops reproducing a playlist
+func QuitPlayingFromBar(pl *models.Playlist) {
+	eng.lastEvent = stopPlaybarEvent
+	log.WithField("pl", *pl).
+		Infof("Firing the %v event", eng.lastEvent)
+
+	if !(pl.Open && pl.Active) {
+		return
+	}
+
+	pl.Playbar.DeactivateEntry(pl)
+	quitPlayingFromList()
+	return
 }
 
 // SeekInStream seek a position in the current stream
@@ -267,6 +285,7 @@ func StartEngine() {
 		return
 	}
 
+	eng.resumeActivePlaylist()
 	go eng.engineLoop()
 	models.PlaybackChanged <- struct{}{}
 	return
@@ -304,6 +323,24 @@ func StopStream() {
 	return
 }
 
+// TryPlayingFromBar starts a playlist in the playbar
+func TryPlayingFromBar(pl *models.Playlist, position int) {
+	eng.lastEvent = playbarEvent
+	log.WithField("pl", pl).
+		Infof("Firing the %v event", eng.lastEvent)
+
+	bar := models.Playbar{}
+	if err := bar.Read(pl.PlaybarID); err != nil {
+		log.Error(err)
+		return
+	}
+
+	bar.ActivateEntry(pl)
+	tryPlayingFromList(pl, position)
+
+	return
+}
+
 func mockEngineLoop() {
 	aux := &models.Playback{}
 	aux.GetNextToPlay()
@@ -312,7 +349,16 @@ func mockEngineLoop() {
 	}
 }
 
-// stopEngine stops the engine
+func quitPlayingFromList() {
+	eng.lastEvent = stopPlaylistEvent
+	log.Infof("Firing the %v event", eng.lastEvent)
+
+	eng.setPlaybackHint(hintStopPlaylist)
+	StopStream()
+	models.PlaybackChanged <- struct{}{}
+	return
+}
+
 func stopEngine() {
 	if eng.mode == TestMode {
 		return
@@ -323,6 +369,7 @@ func stopEngine() {
 	}
 	log.Info("Stopping engine")
 
+	eng.freezePlayback = true
 	StopAll()
 
 	for i := 0; i < base.ServerWaitTimeout; i++ {
@@ -344,4 +391,19 @@ func stopEngine() {
 	}
 
 	return
+}
+
+func tryPlayingFromList(pl *models.Playlist, position int) {
+	eng.lastEvent = playlistEvent
+	log.Infof("Firing the %v event", eng.lastEvent)
+
+	pt, err := pl.GetTrackAt(position)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	eng.pt = pt
+	eng.setPlaybackHint(hintStartPlaylist)
+	StopStream()
+	models.PlaybackChanged <- struct{}{}
 }
