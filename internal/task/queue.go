@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -48,14 +47,14 @@ func Queue() *cli.Command {
 				Aliases: []string{"del", "remove", "rem"},
 				Flags: []cli.Flag{
 					&cli.IntFlag{
-						Name:     "position",
+						Name:     "pos",
 						Aliases:  []string{"p"},
-						Usage:    "delete the (1-based) position given by `POS`",
+						Usage:    "delete the (1-based) `POSITION` given by `POS`",
 						Required: true,
 					},
 				},
-				Usage:       "queue delete --position POS",
-				Description: "Delete position in queue",
+				Usage:       "queue delete --pos POSITION",
+				Description: "Delete `POSITION` in queue",
 				Action:      queueDestroyAction,
 			},
 			{
@@ -63,9 +62,9 @@ func Queue() *cli.Command {
 				Aliases: []string{"ins"},
 				Flags: []cli.Flag{
 					&cli.IntFlag{
-						Name:        "position",
+						Name:        "pos",
 						Aliases:     []string{"p"},
-						Usage:       "insert at the (1-based) position given by `POS`",
+						Usage:       "insert at the (1-based) `POSITION`",
 						Value:       1,
 						DefaultText: "1",
 					},
@@ -74,7 +73,7 @@ func Queue() *cli.Command {
 						Usage: "Use IDs instead of locations",
 					},
 				},
-				Usage:       "queue insert --position POS [location ... | --ids id ...]",
+				Usage:       "queue insert --pos POSITION [location ... | --ids id ...]",
 				Description: "Insert into queue at the queven position",
 				Action:      queueCreateAction,
 			},
@@ -102,13 +101,13 @@ func Queue() *cli.Command {
 						Value:   "music",
 					},
 					&cli.Int64Flag{
-						Name:     "from-position",
+						Name:     "from-pos",
 						Aliases:  []string{"from"},
 						Usage:    "Move this `POSITION`",
 						Required: true,
 					},
 					&cli.Int64Flag{
-						Name:     "to-position",
+						Name:     "to-pos",
 						Aliases:  []string{"to"},
 						Usage:    "Move to this `POSITION`",
 						Required: true,
@@ -218,12 +217,12 @@ func queueCreateAction(c *cli.Context) (err error) {
 
 	rest := c.Args().Slice()
 	if len(rest) < 1 {
-		err = errors.New("I need a list of locations or IDs")
+		err = fmt.Errorf("I need a list of locations or IDs")
 		return
 	}
 
-	if c.Command.Name == "insert" && c.Int("position") < 1 {
-		err = errors.New("I need a position to insert")
+	if c.Command.Name == "insert" && c.Int("pos") < 1 {
+		err = fmt.Errorf("I need a position to insert")
 		return
 	}
 
@@ -243,7 +242,7 @@ func queueCreateAction(c *cli.Context) (err error) {
 	}
 
 	if req.Action == m3uetcpb.QueueAction_Q_INSERT {
-		req.Position = int32(c.Int("position"))
+		req.Position = int32(c.Int("pos"))
 	}
 
 	cc, err := getClientConn()
@@ -256,7 +255,7 @@ func queueCreateAction(c *cli.Context) (err error) {
 	_, err = cl.ExecuteQueueAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		err = errors.New(s.Message())
+		err = fmt.Errorf(s.Message())
 		return
 	}
 
@@ -271,8 +270,8 @@ func queueDestroyAction(c *cli.Context) (err error) {
 		return
 	}
 
-	if c.Command.Name == "delete" && c.Int("position") < 1 {
-		err = errors.New("I need a position to delete")
+	if c.Command.Name == "delete" && c.Int("pos") < 1 {
+		err = fmt.Errorf("I need a position to delete")
 		return
 	}
 
@@ -282,7 +281,7 @@ func queueDestroyAction(c *cli.Context) (err error) {
 	}
 
 	if req.Action == m3uetcpb.QueueAction_Q_DELETE {
-		req.Position = int32(c.Int("position"))
+		req.Position = int32(c.Int("pos"))
 	}
 
 	cc, err := getClientConn()
@@ -311,8 +310,8 @@ func queueMoveAction(c *cli.Context) (err error) {
 	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
 	req := &m3uetcpb.ExecuteQueueActionRequest{
 		Action:       m3uetcpb.QueueAction(action),
-		FromPosition: int32(c.Int("from-position")),
-		Position:     int32(c.Int("to-position")),
+		FromPosition: int32(c.Int("from-pos")),
+		Position:     int32(c.Int("to-pos")),
 	}
 
 	persp := strings.ToLower(c.String("perspective"))

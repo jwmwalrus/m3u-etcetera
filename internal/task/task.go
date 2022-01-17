@@ -1,11 +1,10 @@
 package task
 
 import (
-	"errors"
 	"fmt"
-	"net/url"
 	"strconv"
 
+	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/urfave/cli/v2"
@@ -21,7 +20,7 @@ func getClientConn() (*grpc.ClientConn, error) {
 func mustNotParseExtraArgs(c *cli.Context) (err error) {
 	rest := c.Args().Slice()
 	if len(rest) > 0 {
-		err = errors.New("Too many values in command")
+		err = fmt.Errorf("Too many values in command")
 		return
 	}
 	return
@@ -30,7 +29,7 @@ func mustNotParseExtraArgs(c *cli.Context) (err error) {
 func mustParseSingleID(c *cli.Context) (id int64, err error) {
 	rest := c.Args().Slice()
 	if len(rest) != 1 {
-		err = errors.New("I need one ID")
+		err = fmt.Errorf("I need one ID")
 		return
 	}
 
@@ -39,7 +38,7 @@ func mustParseSingleID(c *cli.Context) (id int64, err error) {
 		return
 	}
 	if id < 1 {
-		err = errors.New("I need one ID greater than zero")
+		err = fmt.Errorf("I need one ID greater than zero")
 		return
 	}
 	return
@@ -62,14 +61,11 @@ func parseIDs(ids []string) (parsed []int64, err error) {
 
 func parseLocations(locations []string) (parsed []string, err error) {
 	for _, v := range locations {
-		var u *url.URL
-		if u, err = url.Parse(v); err != nil {
+		var u string
+		if u, err = urlstr.PathToURL(v); err != nil {
 			return
 		}
-		if u.Scheme == "" {
-			u.Scheme = "file"
-		}
-		parsed = append(parsed, u.String())
+		parsed = append(parsed, u)
 	}
 	return
 }

@@ -48,6 +48,10 @@ func main() {
 			task.Queue(),
 			task.Collection(),
 			task.Query(),
+			task.Playbar(),
+			task.Playlist(),
+			task.Playtrack(),
+			task.Playgroup(),
 		},
 	}
 

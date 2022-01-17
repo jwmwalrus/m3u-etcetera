@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -384,7 +383,7 @@ func queryUpdateAction(c *cli.Context) (err error) {
 	}
 
 	if c.Int64("id") < 1 {
-		err = errors.New("I need an ID greater than zero")
+		err = fmt.Errorf("I need an ID greater than zero")
 		return
 	}
 

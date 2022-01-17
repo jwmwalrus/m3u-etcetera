@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -217,7 +216,7 @@ func collectionInfoAction(c *cli.Context) (err error) {
 func collectionAddAction(c *cli.Context) (err error) {
 	rest := c.Args().Slice()
 	if len(rest) != 2 {
-		err = errors.New("I need name and path")
+		err = fmt.Errorf("I need name and path")
 		return
 	}
 

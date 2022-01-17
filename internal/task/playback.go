@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -69,8 +68,8 @@ func Playback() *cli.Command {
 			},
 			{
 				Name:        "jump",
-				Usage:       "playback jump POS",
-				Description: "jumps to a position in the current playback",
+				Usage:       "playback jump POSITION",
+				Description: "jumps to a `POSITION` in the current playback",
 				Action:      playbackJumpAction,
 			},
 		},
@@ -164,7 +163,7 @@ func playbackPlayAction(c *cli.Context) (err error) {
 		req.Force = c.Bool("force")
 	} else {
 		if len(rest) > 0 {
-			err = errors.New("Too many values in command")
+			err = fmt.Errorf("Too many values in command")
 			return
 		}
 	}
@@ -179,7 +178,7 @@ func playbackPlayAction(c *cli.Context) (err error) {
 	_, err = cl.ExecutePlaybackAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		err = errors.New(s.Message())
+		err = fmt.Errorf(s.Message())
 		return
 	}
 
