@@ -93,7 +93,6 @@ func subscribeToPlayback() {
 		pbdata.mu.Unlock()
 		glib.IdleAdd(pbdata.updatePlayback)
 		glib.IdleAdd(pbdata.setCover)
-		glib.IdleAdd(updatePlaybarModel)
 		if !wgdone {
 			wg.Done()
 			wgdone = true
@@ -243,6 +242,7 @@ func (pbd *playbackData) updatePlayback() bool {
 	var location, title, artist, album string
 	var duration, position int64
 
+	oldTrackID := pbd.trackID
 	if pbd.res.IsStreaming {
 		pbd.trackID = pbd.res.Track.Id
 		location = pbd.res.Playback.Location
@@ -305,5 +305,9 @@ func (pbd *playbackData) updatePlayback() bool {
 	pbd.artist.SetTooltipText(artist)
 	pbd.source.SetText(stringing.TruncateText(location, maxLen))
 	pbd.source.SetTooltipText(location)
+
+	if oldTrackID != pbd.trackID {
+		updatePlaybarModel()
+	}
 	return false
 }
