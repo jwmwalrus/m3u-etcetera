@@ -18,6 +18,7 @@ const (
 	ToQueueStoreEvent
 	ToCollectionStoreEvent
 	ToQueryStoreEvent
+	ToPlaybarStoreEvent
 )
 
 func (st Type) String() string {
@@ -26,6 +27,7 @@ func (st Type) String() string {
 		"subscribed-to-playback-event",
 		"subscribed-to-queue-store-event",
 		"subscribed-to-query-store-event",
+		"subscribed-to-playbar-store-event",
 	}[st]
 }
 

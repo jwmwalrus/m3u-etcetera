@@ -147,8 +147,8 @@ func (qy *Query) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterSave is a GORM hook
-func (qy *Query) AfterSave(tx *gorm.DB) error {
+// AfterUpdate is a GORM hook
+func (qy *Query) AfterUpdate(tx *gorm.DB) error {
 	go func() {
 		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
 			subscription.Broadcast(

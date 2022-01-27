@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
@@ -164,9 +163,6 @@ func (*QuerySvc) QueryBy(_ context.Context, req *m3uetcpb.QueryByRequest) (*m3ue
 
 // SubscribeToQueryStore implements m3uetcpb.QuerySvcServer
 func (*QuerySvc) SubscribeToQueryStore(_ *m3uetcpb.Empty, stream m3uetcpb.QuerySvc_SubscribeToQueryStoreServer) error {
-
-	base.GetBusy(base.IdleStatusSubscription)
-	defer func() { base.GetFree(base.IdleStatusSubscription) }()
 
 	s, id := subscription.Subscribe(subscription.ToQueryStoreEvent)
 	defer func() { s.Unsubscribe() }()

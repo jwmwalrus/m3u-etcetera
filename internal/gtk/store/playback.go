@@ -18,6 +18,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -26,6 +27,7 @@ type playbackData struct {
 	mu  sync.Mutex
 	res *m3uetcpb.SubscribeToPlaybackResponse
 
+	trackID                      int64
 	uiSet                        bool
 	lastDir                      string
 	coverFiles                   []string
@@ -91,6 +93,7 @@ func subscribeToPlayback() {
 		pbdata.mu.Unlock()
 		glib.IdleAdd(pbdata.updatePlayback)
 		glib.IdleAdd(pbdata.setCover)
+		glib.IdleAdd(updatePlaybarModel)
 		if !wgdone {
 			wg.Done()
 			wgdone = true
@@ -122,10 +125,7 @@ func unsubscribeFromPlayback() {
 			SubscriptionId: id,
 		},
 	)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	onerror.Log(err)
 }
 
 func (pbd *playbackData) setCover() bool {
@@ -244,6 +244,7 @@ func (pbd *playbackData) updatePlayback() bool {
 	var duration, position int64
 
 	if pbd.res.IsStreaming {
+		pbd.trackID = pbd.res.Track.Id
 		location = pbd.res.Playback.Location
 
 		title = pbd.res.Track.Title
@@ -252,6 +253,7 @@ func (pbd *playbackData) updatePlayback() bool {
 		duration = pbd.res.Track.Duration
 		position = pbd.res.Playback.Skip
 	} else {
+		pbd.trackID = 0
 		location = ""
 		title, artist, album = "", "", ""
 	}

@@ -78,7 +78,7 @@ func Queue() *cli.Command {
 				Action:      queueCreateAction,
 			},
 			{
-				Name:    "preppend",
+				Name:    "prepend",
 				Aliases: []string{"prep", "top"},
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
@@ -86,8 +86,8 @@ func Queue() *cli.Command {
 						Usage: "Use IDs instead of locations",
 					},
 				},
-				Usage:       "queue preppend [location ... | --ids id ...]",
-				Description: "Preppend to queue",
+				Usage:       "queue prepend [location ... | --ids id ...]",
+				Description: "Prepend to queue",
 				Action:      queueCreateAction,
 			},
 			{

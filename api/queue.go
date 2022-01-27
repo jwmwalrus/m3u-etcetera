@@ -6,7 +6,6 @@ import (
 
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"google.golang.org/grpc"
@@ -49,7 +48,7 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 	if slice.Contains(
 		[]m3uetcpb.QueueAction{
 			m3uetcpb.QueueAction_Q_APPEND,
-			m3uetcpb.QueueAction_Q_PREPPEND,
+			m3uetcpb.QueueAction_Q_PREPEND,
 		},
 		req.Action,
 	) {
@@ -75,7 +74,7 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 			q.Add(req.Locations, req.Ids)
 		case m3uetcpb.QueueAction_Q_INSERT:
 			q.InsertAt(int(req.Position), req.Locations, req.Ids)
-		case m3uetcpb.QueueAction_Q_PREPPEND:
+		case m3uetcpb.QueueAction_Q_PREPEND:
 			q.InsertAt(0, req.Locations, req.Ids)
 		case m3uetcpb.QueueAction_Q_DELETE:
 			q.DeleteAt(int(req.Position))
@@ -92,9 +91,6 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 
 // SubscribeToQueueStore implements m3uetcpb.QueueSvcServer
 func (*QueueSvc) SubscribeToQueueStore(_ *m3uetcpb.Empty, stream m3uetcpb.QueueSvc_SubscribeToQueueStoreServer) error {
-
-	base.GetBusy(base.IdleStatusSubscription)
-	defer func() { base.GetFree(base.IdleStatusSubscription) }()
 
 	s, id := subscription.Subscribe(subscription.ToQueueStoreEvent)
 	defer func() { s.Unsubscribe() }()

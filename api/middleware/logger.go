@@ -75,7 +75,7 @@ func logBefore(lt loggerType, ctx context.Context, fullMethod string, start time
 	return newCtx
 }
 
-func logAfter(ctx context.Context, err error, finish time.Time) {
+func logAfter(ctx context.Context, err error, finish time.Time, debug bool) {
 	lf := ctx.Value(loggerKey).(log.Fields)
 	s := status.Convert(err)
 	code := s.Code()
@@ -100,7 +100,11 @@ func logAfter(ctx context.Context, err error, finish time.Time) {
 		codes.NotFound,
 		codes.AlreadyExists,
 		codes.Unauthenticated:
-		entry.Info(msg)
+		if debug {
+			entry.Debug(msg)
+		} else {
+			entry.Info(msg)
+		}
 	case codes.DeadlineExceeded,
 		codes.PermissionDenied,
 		codes.ResourceExhausted,

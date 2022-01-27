@@ -87,6 +87,10 @@ const (
 	TColLastplayed
 	TColNumber
 	TColToggleSelect
+	TColPosition
+	TColLastPosition
+	TColDynamic
+	TColFontWeight
 
 	TColsN
 )
@@ -151,17 +155,23 @@ const (
 	QYColTreeKeywords
 )
 
-var (
-	wg               sync.WaitGroup
-	wgplayback       sync.WaitGroup
-	wgqueue          sync.WaitGroup
-	wgcollections    sync.WaitGroup
-	wgqueries        sync.WaitGroup
-	forceExit        bool
-	perspectivesList []m3uetcpb.Perspective
+// PLColTree*: query tree column
+const (
+	PLColTree ModelColumn = iota
+	PLColTreeIDList
+	PLColTreeKeywords
+)
 
-	// CTreeColumn collections tree column
-	CTreeColumn storeColumns
+var (
+	wg                    sync.WaitGroup
+	wgplayback            sync.WaitGroup
+	wgqueue               sync.WaitGroup
+	wgcollections         sync.WaitGroup
+	wgplaybar             sync.WaitGroup
+	wgqueries             sync.WaitGroup
+	forceExit             bool
+	perspectivesList      []m3uetcpb.Perspective
+	perspectiveQueuesList []m3uetcpb.Perspective
 
 	// CColumns collections columns
 	CColumns storeColumns
@@ -175,8 +185,14 @@ var (
 	// QYColumns query columns
 	QYColumns storeColumns
 
-	// QYTreeColumn collections tree column
+	// CTreeColumn collections tree column
+	CTreeColumn storeColumns
+
+	// QYTreeColumn query tree column
 	QYTreeColumn storeColumns
+
+	// PLTreeColumn playlist tree column
+	PLTreeColumn storeColumns
 )
 
 // GetClientConn returns a valid client connection to the server
@@ -229,7 +245,7 @@ func Subscribe() {
 
 	log.Info("Subscribing")
 
-	wg.Add(4)
+	wg.Add(5)
 
 	wgplayback.Add(1)
 	go subscribeToPlayback()
@@ -239,6 +255,9 @@ func Subscribe() {
 
 	wgcollections.Add(1)
 	go subscribeToCollectionStore()
+
+	wgplaybar.Add(1)
+	go subscribeToPlaybarStore()
 
 	wgqueries.Add(1)
 	go subscribeToQueryStore()
@@ -256,10 +275,12 @@ func Unsubscribe() {
 	unsubscribeFromPlayback()
 	unsubscribeFromQueueStore()
 	unsubscribeFromCollectionStore()
+	unsubscribeFromPlaybarStore()
 	unsubscribeFromQueryStore()
 	wgplayback.Wait()
 	wgqueue.Wait()
 	wgcollections.Wait()
+	wgplaybar.Wait()
 	wgqueries.Wait()
 
 	alive.Serve(
@@ -300,6 +321,19 @@ func init() {
 		m3uetcpb.Perspective_AUDIOBOOKS,
 	}
 
+	perspectiveQueuesList = []m3uetcpb.Perspective{
+		m3uetcpb.Perspective_MUSIC,
+		m3uetcpb.Perspective_PODCASTS,
+		m3uetcpb.Perspective_AUDIOBOOKS,
+	}
+
+	barTree.pplt = map[m3uetcpb.Perspective]playlistTree{
+		m3uetcpb.Perspective_MUSIC:      {},
+		m3uetcpb.Perspective_RADIO:      {},
+		m3uetcpb.Perspective_PODCASTS:   {},
+		m3uetcpb.Perspective_AUDIOBOOKS: {},
+	}
+
 	CTreeColumn = storeColumns{
 		columnDef{"Tree", glib.TYPE_STRING},
 		columnDef{"ID List", glib.TYPE_STRING},
@@ -323,7 +357,6 @@ func init() {
 	TColumns = make(storeColumns, TColsN)
 	TColumns[TColTrackID] = columnDef{"ID", glib.TYPE_INT64}
 	TColumns[TColCollectionID] = columnDef{"Collection ID", glib.TYPE_INT64}
-
 	TColumns[TColLocation] = columnDef{"Location", glib.TYPE_STRING}
 	TColumns[TColFormat] = columnDef{"Format", glib.TYPE_STRING}
 	TColumns[TColType] = columnDef{"Type", glib.TYPE_STRING}
@@ -344,11 +377,15 @@ func init() {
 	TColumns[TColPlaycount] = columnDef{"Play Count", glib.TYPE_INT}
 
 	TColumns[TColRating] = columnDef{"Rating", glib.TYPE_INT}
-	TColumns[TColDuration] = columnDef{"Duration", glib.TYPE_INT64}
+	TColumns[TColDuration] = columnDef{"Duration", glib.TYPE_STRING}
 	TColumns[TColRemote] = columnDef{"Remote (T)", glib.TYPE_BOOLEAN}
 	TColumns[TColLastplayed] = columnDef{"Last Played", glib.TYPE_INT64}
 	TColumns[TColNumber] = columnDef{"#", glib.TYPE_INT}
 	TColumns[TColToggleSelect] = columnDef{"Select", glib.TYPE_BOOLEAN}
+	TColumns[TColPosition] = columnDef{"#", glib.TYPE_INT}
+	TColumns[TColLastPosition] = columnDef{"#", glib.TYPE_INT}
+	TColumns[TColDynamic] = columnDef{"Dynamic", glib.TYPE_BOOLEAN}
+	TColumns[TColFontWeight] = columnDef{"Font weight", glib.TYPE_INT}
 
 	QColumns = make(storeColumns, QColsN)
 	QColumns[QColQueueTrackID] = columnDef{"ID", glib.TYPE_INT64}
@@ -401,5 +438,11 @@ func init() {
 	QYColumns[QYColFrom] = columnDef{"From", glib.TYPE_INT64}
 	QYColumns[QYColTo] = columnDef{"To", glib.TYPE_INT64}
 	QYColumns[QYColCollectionIDs] = columnDef{"Collection IDs", glib.TYPE_INT64}
+
+	PLTreeColumn = storeColumns{
+		columnDef{"Tree", glib.TYPE_STRING},
+		columnDef{"ID List", glib.TYPE_STRING},
+		columnDef{"Keywords", glib.TYPE_STRING},
+	}
 
 }

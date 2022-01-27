@@ -4,7 +4,7 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-import 'api/m3uetcpb/common.proto';
+import 'api/m3uetcpb/empty.proto';
 import 'api/m3uetcpb/track.proto';
 
 service QuerySvc {

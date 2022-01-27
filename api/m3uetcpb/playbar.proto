@@ -4,7 +4,7 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-import 'api/m3uetcpb/common.proto';
+import 'api/m3uetcpb/empty.proto';
 import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/playlist.proto';
 import 'api/m3uetcpb/track.proto';
@@ -80,11 +80,12 @@ message ExecutePlaybarActionRequest {
 
 message ExecutePlaylistActionRequest {
     PlaylistAction action = 1;
-    int64 id = 2;
-    string name = 3;
-    string description = 4;
-    bool reset_description = 5;
-    int64 playlist_group_id = 6;
+    Perspective perspective = 2;
+    int64 id = 3;
+    string name = 4;
+    string description = 5;
+    bool reset_description = 6;
+    int64 playlist_group_id = 7;
 }
 
 message ExecutePlaylistActionResponse {
@@ -115,15 +116,17 @@ message ExecutePlaylistTrackActionRequest {
 message SubscribeToPlaybarStoreResponse {
     string subscription_id = 1;
     PlaybarEvent event = 2;
+    int64 active_playlist_id = 3;
     oneof item {
-        // All the groups
-        PlaylistGroup playlist_group = 3;
-        // All the playlists
-        Playlist playlist = 4;
+        // Only for open playlists
+        Playlist open_playlist = 4;
+        PlaylistTrack open_playlist_track = 5;
+        Track open_track = 6;
 
-        // Only for the open playlists
-        PlaylistTrack playlist_track = 5;
-        Track track = 6;
+        // All the groups
+        PlaylistGroup playlist_group = 7;
+        // All the playlists
+        Playlist playlist = 8;
     }
 }
 
@@ -159,7 +162,7 @@ enum PlaylistTrackAction {
     PT_NONE = 0;
     PT_APPEND = 1;
     PT_INSERT = 2;
-    PT_PREPPEND = 3;
+    PT_PREPEND = 3;
     PT_DELETE = 4;
     PT_CLEAR = 5;
     PT_MOVE = 6;
@@ -173,4 +176,6 @@ enum PlaybarEvent {
     BE_ITEM_ADDED = 4;
     BE_ITEM_CHANGED = 5;
     BE_ITEM_REMOVED = 6;
+    BE_OPEN_ITEMS = 7;
+    BE_OPEN_ITEMS_DONE = 8;
 }

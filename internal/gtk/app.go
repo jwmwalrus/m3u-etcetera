@@ -6,6 +6,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/playlists"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,6 +47,10 @@ func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error
 	}
 
 	if err = AddPerspectives(signals); err != nil {
+		return
+	}
+
+	if err = playlists.Setup(signals); err != nil {
 		return
 	}
 	return

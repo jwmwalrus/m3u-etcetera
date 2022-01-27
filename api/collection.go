@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
@@ -191,9 +190,6 @@ func (*CollectionSvc) DiscoverCollections(_ context.Context, _ *m3uetcpb.Empty) 
 
 // SubscribeToCollectionStore implements m3uetcpb.CollectionSvcServer
 func (*CollectionSvc) SubscribeToCollectionStore(_ *m3uetcpb.Empty, stream m3uetcpb.CollectionSvc_SubscribeToCollectionStoreServer) error {
-
-	base.GetBusy(base.IdleStatusSubscription)
-	defer func() { base.GetFree(base.IdleStatusSubscription) }()
 
 	s, id := subscription.Subscribe(subscription.ToCollectionStoreEvent)
 	defer func() { s.Unsubscribe() }()

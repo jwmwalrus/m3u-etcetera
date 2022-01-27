@@ -4,7 +4,7 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-import 'api/m3uetcpb/common.proto';
+import 'api/m3uetcpb/empty.proto';
 import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/track.proto';
 
@@ -62,7 +62,7 @@ enum QueueAction {
     Q_NONE = 0;
     Q_APPEND = 1;
     Q_INSERT = 2;
-    Q_PREPPEND = 3;
+    Q_PREPEND = 3;
     Q_DELETE = 4;
     Q_CLEAR = 5;
     Q_MOVE = 6;

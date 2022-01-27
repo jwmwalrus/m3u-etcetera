@@ -80,6 +80,13 @@ type Perspective struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
+// Read implements the DataReader interface
+func (p *Perspective) Read(id int64) (err error) {
+	return db.
+		First(p, id).
+		Error
+}
+
 // GetActivePerspectiveIndex returns the index for the active perspective
 func GetActivePerspectiveIndex() (idx PerspectiveIndex) {
 	var err error

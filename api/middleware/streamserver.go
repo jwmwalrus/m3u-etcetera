@@ -24,7 +24,7 @@ func streamServerInterceptor() grpc.StreamServerInterceptor {
 		wrapped := wrapServerStream(stream)
 		wrapped.wrappedContext = newCtx
 		err := handler(req, wrapped)
-		logAfter(newCtx, err, time.Now())
+		logAfter(newCtx, err, time.Now(), false)
 
 		return err
 	}
@@ -36,7 +36,7 @@ func (w *wrappedServerStream) Context() context.Context {
 
 func (w *wrappedServerStream) SendMsg(m interface{}) error {
 	err := w.ServerStream.SendMsg(m)
-	logAfter(w.wrappedContext, err, time.Now())
+	logAfter(w.wrappedContext, err, time.Now(), true)
 	return err
 }
 

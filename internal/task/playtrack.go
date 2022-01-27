@@ -40,7 +40,7 @@ func Playtrack() *cli.Command {
 				Action:      playtrackExecuteAction,
 			},
 			{
-				Name:    "preppend",
+				Name:    "prepend",
 				Aliases: []string{"prep"},
 				Flags: []cli.Flag{
 					&cli.Int64Flag{
@@ -54,7 +54,7 @@ func Playtrack() *cli.Command {
 						Usage: "Use IDs instead of locations",
 					},
 				},
-				Usage:       "playtrack preppend --playlist PL ID|location ...",
+				Usage:       "playtrack prepend --playlist PL ID|location ...",
 				Description: "Add track(s) at the beginning of playlist",
 				Action:      playtrackExecuteAction,
 			},
@@ -222,7 +222,7 @@ func playtrackExecuteAction(c *cli.Context) (err error) {
 		return
 	}
 	if (c.Command.Name == "append" ||
-		c.Command.Name == "preppend" ||
+		c.Command.Name == "prepend" ||
 		c.Command.Name == "insert") && len(rest) < 1 {
 		err = fmt.Errorf("I need a list of locations or IDs")
 		return

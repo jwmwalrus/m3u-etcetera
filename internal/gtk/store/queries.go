@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -14,17 +13,22 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 )
 
-var (
-	queryTreeModel    *gtk.TreeStore
-	queryResultsModel *gtk.ListStore
-	queriesFilterVal  string
+type queryTreeModel struct {
+	model     *gtk.TreeStore
+	filterVal string
+}
 
-	// QYStore query store
-	QYStore struct {
+var (
+	queryTree         queryTreeModel
+	queryResultsModel *gtk.ListStore
+
+	// QYData query store
+	QYData struct {
 		subscriptionID string
 		Mu             sync.Mutex
 		Query          []*m3uetcpb.Query
@@ -43,7 +47,7 @@ func AddQuery(req *m3uetcpb.AddQueryRequest) (err error) {
 	_, err = cl.AddQuery(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		err = errors.New(s.Message())
+		err = fmt.Errorf(s.Message())
 		return
 	}
 	return
@@ -60,7 +64,7 @@ func ApplyQuery(req *m3uetcpb.ApplyQueryRequest) (err error) {
 	res, err := cl.ApplyQuery(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		err = errors.New(s.Message())
+		err = fmt.Errorf(s.Message())
 		return
 	}
 
@@ -77,7 +81,7 @@ func ApplyQuery(req *m3uetcpb.ApplyQueryRequest) (err error) {
 	err = ExecutePlaybackAction(req2)
 	if err != nil {
 		s := status.Convert(err)
-		err = errors.New(s.Message())
+		err = fmt.Errorf(s.Message())
 		return
 	}
 	return
@@ -96,12 +100,12 @@ func ClearQueryResults() {
 func CreateQueryTreeModel() (model *gtk.TreeStore, err error) {
 	log.Info("Creating queries model")
 
-	queryTreeModel, err = gtk.TreeStoreNew(QYTreeColumn.getTypes()...)
+	queryTree.model, err = gtk.TreeStoreNew(QYTreeColumn.getTypes()...)
 	if err != nil {
 		return
 	}
 
-	model = queryTreeModel
+	model = queryTree.model
 	return
 }
 
@@ -120,25 +124,25 @@ func CreateQueryResultsModel() (model *gtk.ListStore, err error) {
 
 // FilterQueriesBy filters the collections by the given value
 func FilterQueriesBy(val string) {
-	queriesFilterVal = val
-	updateQueryTree()
+	queryTree.filterVal = val
+	queryTree.update()
 }
 
-func GetQuery(id int64) (qy *m3uetcpb.Query) {
-	QYStore.Mu.Lock()
-	for _, v := range QYStore.Query {
+func GetQuery(id int64) *m3uetcpb.Query {
+	QYData.Mu.Lock()
+	defer QYData.Mu.Unlock()
+
+	for _, v := range QYData.Query {
 		if v.Id == id {
-			qy = v
-			break
+			return v
 		}
 	}
-	QYStore.Mu.Unlock()
-	return
+	return nil
 }
 
 // GetQueryTreeModel returns the current collections model
 func GetQueryTreeModel() *gtk.TreeStore {
-	return queryTreeModel
+	return queryTree.model
 }
 
 func GetQueryResultsSelections() (ids []int64, err error) {
@@ -178,14 +182,15 @@ func QueryBy(req *m3uetcpb.QueryByRequest) (err error, count int) {
 	res, err := cl.QueryBy(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		err = errors.New(s.Message())
+		err = fmt.Errorf(s.Message())
 		return
 	}
 
-	QYStore.Mu.Lock()
-	QYStore.tracks = res.Tracks
+	QYData.Mu.Lock()
+	QYData.tracks = res.Tracks
 	count = len(res.Tracks)
-	QYStore.Mu.Unlock()
+	QYData.Mu.Unlock()
+
 	glib.IdleAdd(updateQueryResults)
 	return
 }
@@ -201,7 +206,7 @@ func RemoveQuery(req *m3uetcpb.RemoveQueryRequest) (err error) {
 	_, err = cl.RemoveQuery(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		err = errors.New(s.Message())
+		err = fmt.Errorf(s.Message())
 		return
 	}
 	return
@@ -218,7 +223,7 @@ func UpdateQuery(req *m3uetcpb.UpdateQueryRequest) (err error) {
 	_, err = cl.UpdateQuery(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		err = errors.New(s.Message())
+		err = fmt.Errorf(s.Message())
 		return
 	}
 	return
@@ -246,28 +251,33 @@ func subscribeToQueryStore() {
 	}
 
 	appendItem := func(res *m3uetcpb.SubscribeToQueryStoreResponse) {
-		QYStore.Query = append(
-			QYStore.Query,
+		for _, qy := range QYData.Query {
+			if qy.Id == res.Query.Id {
+				return
+			}
+		}
+		QYData.Query = append(
+			QYData.Query,
 			res.Query,
 		)
 	}
 
 	changeItem := func(res *m3uetcpb.SubscribeToQueryStoreResponse) {
 		qy := res.Query
-		for i := range QYStore.Query {
-			if QYStore.Query[i].Id == qy.Id {
-				QYStore.Query[i] = qy
+		for i := range QYData.Query {
+			if QYData.Query[i].Id == qy.Id {
+				QYData.Query[i] = qy
 				break
 			}
 		}
 	}
 
 	removeItem := func(res *m3uetcpb.SubscribeToQueryStoreResponse) {
-		n := len(QYStore.Query)
-		for i := range QYStore.Query {
-			if QYStore.Query[i].Id == res.Query.Id {
-				QYStore.Query[i] = QYStore.Query[n-1]
-				QYStore.Query = QYStore.Query[:n-1]
+		n := len(QYData.Query)
+		for i := range QYData.Query {
+			if QYData.Query[i].Id == res.Query.Id {
+				QYData.Query[i] = QYData.Query[n-1]
+				QYData.Query = QYData.Query[:n-1]
 				break
 			}
 		}
@@ -280,15 +290,15 @@ func subscribeToQueryStore() {
 			break
 		}
 
-		QYStore.Mu.Lock()
+		QYData.Mu.Lock()
 
-		if QYStore.subscriptionID == "" {
-			QYStore.subscriptionID = res.SubscriptionId
+		if QYData.subscriptionID == "" {
+			QYData.subscriptionID = res.SubscriptionId
 		}
 
 		switch res.Event {
 		case m3uetcpb.QueryEvent_QYE_INITIAL:
-			QYStore.Query = []*m3uetcpb.Query{}
+			QYData.Query = []*m3uetcpb.Query{}
 		case m3uetcpb.QueryEvent_QYE_INITIAL_ITEM:
 			appendItem(res)
 		case m3uetcpb.QueryEvent_QYE_INITIAL_DONE:
@@ -300,11 +310,11 @@ func subscribeToQueryStore() {
 		case m3uetcpb.QueryEvent_QYE_ITEM_REMOVED:
 			removeItem(res)
 		}
-		QYStore.Mu.Unlock()
+		QYData.Mu.Unlock()
 
 		if res.Event != m3uetcpb.QueryEvent_QYE_INITIAL &&
 			res.Event != m3uetcpb.QueryEvent_QYE_INITIAL_ITEM {
-			glib.IdleAdd(updateQueryTree)
+			glib.IdleAdd(queryTree.update)
 		}
 		if !wgdone {
 			wg.Done()
@@ -316,9 +326,9 @@ func subscribeToQueryStore() {
 func unsubscribeFromQueryStore() {
 	log.Info("Unsubscribing from query store")
 
-	QYStore.Mu.Lock()
-	id := QYStore.subscriptionID
-	QYStore.Mu.Unlock()
+	QYData.Mu.Lock()
+	id := QYData.subscriptionID
+	QYData.Mu.Unlock()
 
 	cc, err := getClientConn()
 	if err != nil {
@@ -334,16 +344,13 @@ func unsubscribeFromQueryStore() {
 			SubscriptionId: id,
 		},
 	)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	onerror.Log(err)
 }
 
-func updateQueryTree() bool {
+func (qyt *queryTreeModel) update() bool {
 	log.Info("Updating queries model")
 
-	model := queryTreeModel
+	model := qyt.model
 	if model == nil {
 		return false
 	}
@@ -405,12 +412,12 @@ func updateQueryTree() bool {
 		return strings.Join(list, ",")
 	}
 
-	QYStore.Mu.Lock()
-	for _, qy := range QYStore.Query {
-		if queriesFilterVal != "" {
+	QYData.Mu.Lock()
+	for _, qy := range QYData.Query {
+		if qyt.filterVal != "" {
 			kw := getKeywords(qy)
 			match := false
-			for _, s := range strings.Split(queriesFilterVal, " ") {
+			for _, s := range strings.Split(qyt.filterVal, " ") {
 				match = match || strings.Contains(kw, s)
 				if match {
 					break
@@ -428,7 +435,7 @@ func updateQueryTree() bool {
 		all.unbounded = append(all.unbounded, queryType{qy.Id, qy.Name, getKeywords(qy)})
 		all.ids = append(all.ids, qy.Id)
 	}
-	QYStore.Mu.Unlock()
+	QYData.Mu.Unlock()
 
 	sort.SliceStable(all.unbounded, func(i, j int) bool {
 		return all.unbounded[i].name < all.unbounded[j].name
@@ -459,9 +466,9 @@ func updateQueryResults() bool {
 		model.Clear()
 	}
 
-	QYStore.Mu.Lock()
+	QYData.Mu.Lock()
 	var iter *gtk.TreeIter
-	for i, t := range QYStore.tracks {
+	for i, t := range QYData.tracks {
 		iter = model.Append()
 		err := model.Set(
 			iter,
@@ -527,6 +534,6 @@ func updateQueryResults() bool {
 			return false
 		}
 	}
-	QYStore.Mu.Unlock()
+	QYData.Mu.Unlock()
 	return false
 }

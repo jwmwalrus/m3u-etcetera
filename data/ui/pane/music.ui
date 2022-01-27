@@ -9,18 +9,18 @@
       <object class="GtkMenuItem" id="collections_view_context_append">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Append to queue</property>
+        <property name="label" translatable="yes">Append</property>
         <property name="use-underline">True</property>
         <signal name="activate" handler="on_collections_view_context_append_activate" swapped="no"/>
       </object>
     </child>
     <child>
-      <object class="GtkMenuItem" id="collections_view_context_preppend">
+      <object class="GtkMenuItem" id="collections_view_context_prepend">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Preppend to queue</property>
+        <property name="label" translatable="yes">Prepend</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_collections_view_context_preppend_activate" swapped="no"/>
+        <signal name="activate" handler="on_collections_view_context_prepend_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -165,16 +165,55 @@
           </packing>
         </child>
         <child>
-          <object class="GtkBox" id="playlists">
+          <object class="GtkBox" id="music_playlists">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="orientation">vertical</property>
             <child>
-              <object class="GtkButton">
-                <property name="label" translatable="yes">button</property>
+              <object class="GtkBox">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkToolbar">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <child>
+                      <object class="GtkToolButton" id="music_playlists_add_group">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">Add group</property>
+                        <property name="label" translatable="yes">Add group</property>
+                        <property name="use-underline">True</property>
+                        <property name="icon-name">list-add</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="homogeneous">True</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSearchEntry" id="music_playlists_filter">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="primary-icon-name">edit-find-symbolic</property>
+                    <property name="primary-icon-activatable">False</property>
+                    <property name="primary-icon-sensitive">False</property>
+                    <signal name="search-changed" handler="on_music_playlists_filter_search_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -183,15 +222,26 @@
               </packing>
             </child>
             <child>
-              <object class="GtkTreeView">
+              <object class="GtkScrolledWindow">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection"/>
+                <property name="shadow-type">in</property>
+                <child>
+                  <object class="GtkTreeView" id="music_playlists_view">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <signal name="button-press-event" handler="on_music_playlists_view_button_press_event" swapped="no"/>
+                    <signal name="row-activated" handler="on_music_playlists_view_row_activated" swapped="no"/>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection" id="music_playlists_sel">
+                        <signal name="changed" handler="on_music_playlists_sel_changed" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
                 </child>
               </object>
               <packing>
-                <property name="expand">False</property>
+                <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">1</property>
               </packing>
@@ -347,6 +397,7 @@
       <object class="GtkNotebook" id="music_playbar">
         <property name="visible">True</property>
         <property name="can-focus">True</property>
+        <property name="scrollable">True</property>
         <child>
           <object class="GtkBox" id="music_queue">
             <property name="visible">True</property>
@@ -391,24 +442,13 @@
             <property name="tab-fill">False</property>
           </packing>
         </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child type="tab">
-          <placeholder/>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child type="tab">
-          <placeholder/>
-        </child>
         <child type="action-start">
-          <object class="GtkButton">
+          <object class="GtkButton" id="music_playlist_new">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
             <property name="tooltip-text" translatable="yes">New playlist</property>
+            <signal name="clicked" handler="on_music_playlist_new_clicked" swapped="no"/>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
@@ -427,6 +467,46 @@
         <property name="resize">True</property>
         <property name="shrink">True</property>
       </packing>
+    </child>
+  </object>
+  <object class="GtkMenu" id="music_playlists_view_context">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <child>
+      <object class="GtkMenuItem" id="music_playlists_view_context_open">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="tooltip-text" translatable="yes">Open playlist</property>
+        <property name="label" translatable="yes">Open</property>
+        <property name="use-underline">True</property>
+        <signal name="activate" handler="on_music_playlists_view_context_open_activate" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="music_playlists_view_context_edit">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="tooltip-text" translatable="yes">Edit playlist properties</property>
+        <property name="label" translatable="yes">Edit properties</property>
+        <property name="use-underline">True</property>
+        <signal name="activate" handler="on_music_playlists_view_context_edit_activate" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="music_playlists_view_context_delete">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="tooltip-text" translatable="yes">Delete playlist</property>
+        <property name="label" translatable="yes">Delete</property>
+        <property name="use-underline">True</property>
+        <signal name="activate" handler="on_music_playlists_view_context_delete_activate" swapped="no"/>
+      </object>
     </child>
   </object>
   <object class="GtkMenu" id="music_queue_view_context">
@@ -502,7 +582,7 @@
       <object class="GtkMenuItem" id="music_queue_view_context_delete">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Delete</property>
+        <property name="label" translatable="yes">Remove from queue</property>
         <property name="use-underline">True</property>
         <signal name="activate" handler="on_music_queue_view_context_delete_activate" swapped="no"/>
       </object>

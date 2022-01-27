@@ -1,7 +1,8 @@
-package musicpane
+package playlists
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
@@ -11,14 +12,27 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type onMusicQueue struct {
-	selection interface{}
+type OnQueue struct {
+	selection              interface{}
+	perspective            m3uetcpb.Perspective
+	view                   *gtk.TreeView
+	queueID, contextMenuID string
 }
 
-func createMusicQueue() (err error) {
-	log.Info("Creating music queue view and model")
+func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (oq *OnQueue, err error) {
+	log.WithFields(log.Fields{
+		"perspective": p,
+		"queueID":     queueID,
+		"queueMenuID": contextMenuID,
+	}).
+		Info("Creating queue view and model")
 
-	view, err := builder.GetTreeView("music_queue_view")
+	oq = &OnQueue{}
+	oq.perspective = p
+	oq.queueID = queueID
+	oq.contextMenuID = contextMenuID
+
+	oq.view, err = builder.GetTreeView(oq.queueID)
 	if err != nil {
 		return
 	}
@@ -48,21 +62,21 @@ func createMusicQueue() (err error) {
 		if err != nil {
 			return
 		}
-		view.InsertColumn(col, -1)
+		oq.view.InsertColumn(col, -1)
 	}
 
-	model, err := store.CreateQueueModel(m3uetcpb.Perspective_MUSIC)
+	model, err := store.CreateQueueModel(oq.perspective)
 	if err != nil {
 		return
 	}
-	view.SetModel(model)
+	oq.view.SetModel(model)
 	return
 }
 
-func (omq *onMusicQueue) context(tv *gtk.TreeView, event *gdk.Event) {
+func (oq *OnQueue) Context(tv *gtk.TreeView, event *gdk.Event) {
 	btn := gdk.EventButtonNewFromEvent(event)
 	if btn.Button() == gdk.BUTTON_SECONDARY {
-		menu, err := builder.GetMenu("music_queue_view_context")
+		menu, err := builder.GetMenu(oq.contextMenuID)
 		if err != nil {
 			log.Error(err)
 			return
@@ -71,9 +85,10 @@ func (omq *onMusicQueue) context(tv *gtk.TreeView, event *gdk.Event) {
 	}
 }
 
-func (omq *onMusicQueue) contextClear(mi *gtk.MenuItem) {
+func (oq *OnQueue) ContextClear(mi *gtk.MenuItem) {
 	req := &m3uetcpb.ExecuteQueueActionRequest{
-		Action: m3uetcpb.QueueAction_Q_CLEAR,
+		Perspective: oq.perspective,
+		Action:      m3uetcpb.QueueAction_Q_CLEAR,
 	}
 
 	if err := store.ExecuteQueueAction(req); err != nil {
@@ -82,8 +97,8 @@ func (omq *onMusicQueue) contextClear(mi *gtk.MenuItem) {
 	}
 }
 
-func (omq *onMusicQueue) contextDelete(mi *gtk.MenuItem) {
-	values := omq.getSelection()
+func (oq *OnQueue) ContextDelete(mi *gtk.MenuItem) {
+	values := oq.getSelection()
 	if len(values) == 0 {
 		return
 	}
@@ -99,8 +114,8 @@ func (omq *onMusicQueue) contextDelete(mi *gtk.MenuItem) {
 	}
 }
 
-func (omq *onMusicQueue) contextEnqueue(mi *gtk.MenuItem) {
-	values := omq.getSelection()
+func (oq *OnQueue) ContextEnqueue(mi *gtk.MenuItem) {
+	values := oq.getSelection()
 	if len(values) == 0 {
 		return
 	}
@@ -123,8 +138,8 @@ func (omq *onMusicQueue) contextEnqueue(mi *gtk.MenuItem) {
 	}
 }
 
-func (omq *onMusicQueue) contextMove(mi *gtk.MenuItem) {
-	values := omq.getSelection()
+func (oq *OnQueue) ContextMove(mi *gtk.MenuItem) {
+	values := oq.getSelection()
 	if len(values) == 0 {
 		return
 	}
@@ -163,8 +178,8 @@ func (omq *onMusicQueue) contextMove(mi *gtk.MenuItem) {
 	}
 }
 
-func (omq *onMusicQueue) contextPlayNow(mi *gtk.MenuItem) {
-	values := omq.getSelection()
+func (oq *OnQueue) ContextPlayNow(mi *gtk.MenuItem) {
+	values := oq.getSelection()
 	if len(values) == 0 {
 		return
 	}
@@ -199,7 +214,7 @@ func (omq *onMusicQueue) contextPlayNow(mi *gtk.MenuItem) {
 	}
 }
 
-func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
+func (oq *OnQueue) DblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
 	values, err := store.GetListStoreValues(
 		tv,
 		path,
@@ -213,7 +228,7 @@ func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *g
 		log.Error(err)
 		return
 	}
-	log.Debugf("Doouble-clicked column values: %v", values[store.CColTree])
+	log.Debugf("Doouble-clicked column values: %v", values)
 
 	id := values[store.QColTrackID].(int64)
 	pos := values[store.QColPosition].(int)
@@ -229,6 +244,8 @@ func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *g
 	} else {
 		req.Locations = []string{loc}
 	}
+
+	time.Sleep(200 * time.Millisecond)
 
 	if err := store.ExecutePlaybackAction(req); err != nil {
 		log.Error(err)
@@ -246,10 +263,10 @@ func (omq *onMusicQueue) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *g
 	}
 }
 
-func (omq *onMusicQueue) getSelection(keep ...bool) (values map[store.ModelColumn]interface{}) {
-	values, ok := omq.selection.(map[store.ModelColumn]interface{})
+func (oq *OnQueue) getSelection(keep ...bool) (values map[store.ModelColumn]interface{}) {
+	values, ok := oq.selection.(map[store.ModelColumn]interface{})
 	if !ok {
-		log.Debug("There is no selection available for music queue context")
+		log.Debug("There is no selection available for queue context")
 		values = map[store.ModelColumn]interface{}{}
 		return
 	}
@@ -260,14 +277,14 @@ func (omq *onMusicQueue) getSelection(keep ...bool) (values map[store.ModelColum
 	}
 
 	if reset {
-		omq.selection = nil
+		oq.selection = nil
 	}
 	return
 }
 
-func (omq *onMusicQueue) selChanged(sel *gtk.TreeSelection) {
+func (oq *OnQueue) SelChanged(sel *gtk.TreeSelection) {
 	var err error
-	omq.selection, err = store.GetTreeSelectionValues(
+	oq.selection, err = store.GetTreeSelectionValues(
 		sel,
 		[]store.ModelColumn{
 			store.QColPosition,
@@ -280,5 +297,5 @@ func (omq *onMusicQueue) selChanged(sel *gtk.TreeSelection) {
 		log.Error(err)
 		return
 	}
-	log.Debugf("Selected collection entres: %v", omq.selection)
+	log.Debugf("Selected collection entres: %v", oq.selection)
 }

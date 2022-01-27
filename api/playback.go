@@ -6,7 +6,6 @@ import (
 
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
@@ -103,9 +102,6 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.Execu
 
 // SubscribeToPlayback implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty, stream m3uetcpb.PlaybackSvc_SubscribeToPlaybackServer) error {
-
-	base.GetBusy(base.IdleStatusSubscription)
-	defer func() { base.GetFree(base.IdleStatusSubscription) }()
 
 	s, id := subscription.Subscribe(subscription.ToPlaybackEvent)
 	defer func() { s.Unsubscribe() }()

@@ -1,7 +1,6 @@
 package musicpane
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -469,7 +468,7 @@ func (omqy *onMusicQuery) setQuery(qy *m3uetcpb.Query) (err error) {
 	store.ClearQueryResults()
 
 	if qy == nil {
-		err = errors.New("Received nil query to set")
+		err = fmt.Errorf("Received nil query to set")
 		return
 	}
 

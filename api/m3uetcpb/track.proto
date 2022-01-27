@@ -33,6 +33,7 @@ message Track {
     int64 lastplayed = 24;
     string tags = 25;
     int64 collection_id = 26;
+    bool dangling = 27;
 
     int64 created_at = 101;
     int64 updated_at = 102;

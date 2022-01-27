@@ -32,26 +32,26 @@ const (
 	YearArtistAlbumTree
 )
 
-func (h collectionTreeHierarchy) getGuide(groupByColl bool) map[int]entryType {
+func (h collectionTreeHierarchy) getGuide(groupByColl bool) map[int]collectionEntryType {
 	switch h {
 	case ArtistYearAlbumTree:
-		return map[int]entryType{1: artistEntry, 2: yearAlbumEntry, 3: titleEntry}
+		return map[int]collectionEntryType{1: artistEntry, 2: yearAlbumEntry, 3: titleEntry}
 	case ArtistAlbumTree:
-		return map[int]entryType{1: artistEntry, 2: albumEntry, 3: titleEntry}
+		return map[int]collectionEntryType{1: artistEntry, 2: albumEntry, 3: titleEntry}
 	case AlbumTree:
-		return map[int]entryType{1: albumEntry, 2: titleEntry}
+		return map[int]collectionEntryType{1: albumEntry, 2: titleEntry}
 	case GenreArtistAlbumTree:
-		return map[int]entryType{1: genreEntry, 2: artistEntry, 3: albumEntry, 4: titleEntry}
+		return map[int]collectionEntryType{1: genreEntry, 2: artistEntry, 3: albumEntry, 4: titleEntry}
 	case YearArtistAlbumTree:
-		return map[int]entryType{1: yearEntry, 2: artistEntry, 3: albumEntry, 4: titleEntry}
+		return map[int]collectionEntryType{1: yearEntry, 2: artistEntry, 3: albumEntry, 4: titleEntry}
 	}
 	return nil
 }
 
-type entryType int
+type collectionEntryType int
 
 const (
-	titleEntry entryType = iota
+	titleEntry collectionEntryType = iota
 	albumEntry
 	yearAlbumEntry
 	artistEntry
@@ -60,7 +60,7 @@ const (
 	collectionEntry
 )
 
-func (et entryType) getLabel(t *m3uetcpb.Track) string {
+func (et collectionEntryType) getLabel(t *m3uetcpb.Track) string {
 	switch et {
 	case titleEntry:
 		return t.Title
@@ -84,23 +84,23 @@ func (et entryType) getLabel(t *m3uetcpb.Track) string {
 	return ""
 }
 
-func (et entryType) getSorts(t *m3uetcpb.Track) (int, int) {
+func (et collectionEntryType) getSorts(t *m3uetcpb.Track) (int, int) {
 	if et == titleEntry {
 		return int(t.Discnumber), int(t.Tracknumber)
 	}
 	return 0, 0
 }
 
-type treeEntry struct {
-	et                    entryType
+type collectionTreeEntry struct {
+	et                    collectionEntryType
 	sort1, sort2          int
 	label, keywords, path string
 	ids                   []int64
 	index                 map[string]int
-	child                 []treeEntry
+	child                 []collectionTreeEntry
 }
 
-func (te *treeEntry) appendNode(model *gtk.TreeStore, iter *gtk.TreeIter) {
+func (te *collectionTreeEntry) appendNode(model *gtk.TreeStore, iter *gtk.TreeIter) {
 	te.ids = te.getIDs()
 
 	suffix := ""
@@ -124,11 +124,11 @@ func (te *treeEntry) appendNode(model *gtk.TreeStore, iter *gtk.TreeIter) {
 	}
 }
 
-func (te *treeEntry) completeTree(level int, guide map[int]entryType, t *m3uetcpb.Track) {
+func (te *collectionTreeEntry) completeTree(level int, guide map[int]collectionEntryType, t *m3uetcpb.Track) {
 	label := guide[level].getLabel(t)
 	idx, ok := te.index[label]
 	if !ok {
-		te.child = append(te.child, treeEntry{})
+		te.child = append(te.child, collectionTreeEntry{})
 		idx = len(te.child) - 1
 		te.child[idx].fillValues(guide[level], label, te.keywords, t)
 		te.index[label] = idx
@@ -139,9 +139,9 @@ func (te *treeEntry) completeTree(level int, guide map[int]entryType, t *m3uetcp
 	}
 }
 
-func (te *treeEntry) fillValues(et entryType, label, kw string, t *m3uetcpb.Track) {
+func (te *collectionTreeEntry) fillValues(et collectionEntryType, label, kw string, t *m3uetcpb.Track) {
 	sort1, sort2 := et.getSorts(t)
-	*te = treeEntry{
+	*te = collectionTreeEntry{
 		et:       et,
 		sort1:    sort1,
 		sort2:    sort2,
@@ -154,7 +154,7 @@ func (te *treeEntry) fillValues(et entryType, label, kw string, t *m3uetcpb.Trac
 	}
 }
 
-func (te *treeEntry) getIDs() (ids []int64) {
+func (te *collectionTreeEntry) getIDs() (ids []int64) {
 	if len(te.child) > 0 {
 		for i := range te.child {
 			ids = append(ids, te.child[i].getIDs()...)
@@ -166,7 +166,7 @@ func (te *treeEntry) getIDs() (ids []int64) {
 	return
 }
 
-func (te *treeEntry) sort() {
+func (te *collectionTreeEntry) sort() {
 	if len(te.child) == 0 {
 		return
 	}
@@ -216,7 +216,7 @@ func (tree *collectionTree) rebuild() {
 	}
 
 	rootIndex := map[string]int{}
-	root := []treeEntry{}
+	root := []collectionTreeEntry{}
 
 	getKeywords := func(t *m3uetcpb.Track) string {
 		list := strings.Split(strings.ToLower(t.Title), " ")
@@ -227,8 +227,8 @@ func (tree *collectionTree) rebuild() {
 		return strings.Join(list, ",")
 	}
 
-	CStore.Mu.Lock()
-	for _, t := range CStore.Track {
+	CData.Mu.Lock()
+	for _, t := range CData.Track {
 		if tree.filterVal != "" {
 			kw := getKeywords(t)
 			match := true
@@ -246,14 +246,14 @@ func (tree *collectionTree) rebuild() {
 		label := guide[level].getLabel(t)
 		idx, ok := rootIndex[label]
 		if !ok {
-			root = append(root, treeEntry{})
+			root = append(root, collectionTreeEntry{})
 			idx = len(root) - 1
 			rootIndex[label] = idx
 			root[idx].fillValues(guide[level], label, kw, t)
 		}
 		root[idx].completeTree(level+1, guide, t)
 	}
-	CStore.Mu.Unlock()
+	CData.Mu.Unlock()
 
 	sort.Slice(root, func(i, j int) bool {
 		return root[i].label < root[j].label

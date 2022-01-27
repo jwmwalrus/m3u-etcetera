@@ -2,11 +2,13 @@ package api
 
 import (
 	"context"
+	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,8 +22,7 @@ type PlaybarSvc struct {
 // GetPlaybar implements m3uetcpb.PlaybarSvcServer
 func (*PlaybarSvc) GetPlaybar(_ context.Context, req *m3uetcpb.GetPlaybarRequest) (*m3uetcpb.GetPlaybarResponse, error) {
 
-	bar, err := models.PerspectiveIndex(req.Perspective).
-		GetPerspectivePlaybar()
+	bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 	if err != nil {
 		return nil,
 			grpc.Errorf(codes.Internal,
@@ -75,8 +76,7 @@ func (*PlaybarSvc) GetPlaylist(_ context.Context, req *m3uetcpb.GetPlaylistReque
 
 // GetAllPlaylists implements m3uetcpb.PlaybarSvcServer
 func (*PlaybarSvc) GetAllPlaylists(_ context.Context, req *m3uetcpb.GetAllPlaylistsRequest) (*m3uetcpb.GetAllPlaylistsResponse, error) {
-	bar, err := models.PerspectiveIndex(req.Perspective).
-		GetPerspectivePlaybar()
+	bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 	if err != nil {
 		return nil,
 			grpc.Errorf(codes.Internal,
@@ -116,7 +116,7 @@ func (*PlaybarSvc) GetPlaylistGroup(_ context.Context, req *m3uetcpb.GetPlaylist
 
 // GetAllPlaylistGroups implements m3uetcpb.PlaybarSvcServer
 func (*PlaybarSvc) GetAllPlaylistGroups(_ context.Context, req *m3uetcpb.GetAllPlaylistGroupsRequest) (*m3uetcpb.GetAllPlaylistGroupsResponse, error) {
-	bar, err := models.PerspectiveIndex(req.Perspective).GetPerspectivePlaybar()
+	bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 	if err != nil {
 		return nil,
 			grpc.Errorf(codes.Internal,
@@ -216,13 +216,19 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context, req *m3uetcpb.Execut
 		}
 	}
 
+	if req.Action == m3uetcpb.PlaylistAction_PL_DESTROY && pl.Open {
+		return nil,
+			grpc.Errorf(codes.InvalidArgument,
+				"A playlist cannot be deleted while open")
+	}
+
 	switch req.Action {
 	case m3uetcpb.PlaylistAction_PL_CREATE:
-		bar, err := models.DefaultPerspective.GetPerspectivePlaybar()
+		bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 		if err != nil {
 			return nil,
 				grpc.Errorf(codes.Internal,
-					"Error obtaining default perspective:", err)
+					"Error obtaining perspective:", err)
 		}
 
 		pl, err = bar.CreateEntry(req.Name, req.Description)
@@ -277,7 +283,7 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context, req *m3uetcpb.E
 					"Playlist Group with ID=%v does not exist: %v",
 					req.Id, err)
 		}
-		bar, err = models.PerspectiveIndex(pg.Perspective.Idx).GetPerspectivePlaybar()
+		bar, err = models.PerspectiveIndex(pg.Perspective.Idx).GetPlaybar()
 		if err != nil {
 			return nil,
 				grpc.Errorf(codes.Internal, "Error obtaining perspective:", err)
@@ -286,7 +292,7 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context, req *m3uetcpb.E
 
 	switch req.Action {
 	case m3uetcpb.PlaylistGroupAction_PG_CREATE:
-		bar, err := models.DefaultPerspective.GetPerspectivePlaybar()
+		bar, err := models.DefaultPerspective.GetPlaybar()
 		if err != nil {
 			return nil, grpc.Errorf(codes.Internal, "Error obtaining default perspective:", err)
 		}
@@ -335,8 +341,8 @@ func (*PlaybarSvc) ExecutePlaylistTrackAction(_ context.Context, req *m3uetcpb.E
 		switch req.Action {
 		case m3uetcpb.PlaylistTrackAction_PT_APPEND:
 			bar.AppendToPlaylist(pl, req.TrackIds, req.Locations)
-		case m3uetcpb.PlaylistTrackAction_PT_PREPPEND:
-			bar.PreppendToPlaylist(pl, req.TrackIds, req.Locations)
+		case m3uetcpb.PlaylistTrackAction_PT_PREPEND:
+			bar.PrependToPlaylist(pl, req.TrackIds, req.Locations)
 		case m3uetcpb.PlaylistTrackAction_PT_INSERT:
 			bar.InsertIntoPlaylist(pl, int(req.Position), req.TrackIds, req.Locations)
 		case m3uetcpb.PlaylistTrackAction_PT_DELETE:
@@ -353,7 +359,212 @@ func (*PlaybarSvc) ExecutePlaylistTrackAction(_ context.Context, req *m3uetcpb.E
 
 // SubscribeToPlaybarStore implements m3uetcpb.PlaybarSvcServer
 func (*PlaybarSvc) SubscribeToPlaybarStore(_ *m3uetcpb.Empty, stream m3uetcpb.PlaybarSvc_SubscribeToPlaybarStoreServer) error {
-	// TODO: implement
+
+	s, id := subscription.Subscribe(subscription.ToPlaybarStoreEvent)
+	defer func() { s.Unsubscribe() }()
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		s.Event <- subscription.Event{Idx: int(models.PlaybarEventInitial)}
+	}()
+
+	sendPlaylistGroup := func(e m3uetcpb.PlaybarEvent, c models.ProtoOut) error {
+		res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
+			SubscriptionId:   id,
+			Event:            e,
+			ActivePlaylistId: models.GetActiveEntry().ID,
+			Item: &m3uetcpb.SubscribeToPlaybarStoreResponse_PlaylistGroup{
+				PlaylistGroup: c.ToProtobuf().(*m3uetcpb.PlaylistGroup),
+			},
+		}
+		return stream.Send(res)
+	}
+
+	sendPlaylist := func(e m3uetcpb.PlaybarEvent, c models.ProtoOut) error {
+		res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
+			SubscriptionId:   id,
+			Event:            e,
+			ActivePlaylistId: models.GetActiveEntry().ID,
+			Item: &m3uetcpb.SubscribeToPlaybarStoreResponse_Playlist{
+				Playlist: c.ToProtobuf().(*m3uetcpb.Playlist),
+			},
+		}
+		return stream.Send(res)
+	}
+
+	sendOpenPlaylist := func(e m3uetcpb.PlaybarEvent, c models.ProtoOut) error {
+		res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
+			SubscriptionId:   id,
+			Event:            e,
+			ActivePlaylistId: models.GetActiveEntry().ID,
+			Item: &m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylist{
+				OpenPlaylist: c.ToProtobuf().(*m3uetcpb.Playlist),
+			},
+		}
+		return stream.Send(res)
+	}
+
+	sendOpenPlaylistTrack := func(e m3uetcpb.PlaybarEvent, t models.ProtoOut) error {
+		res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
+			SubscriptionId:   id,
+			Event:            e,
+			ActivePlaylistId: models.GetActiveEntry().ID,
+			Item: &m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylistTrack{
+				OpenPlaylistTrack: t.ToProtobuf().(*m3uetcpb.PlaylistTrack),
+			},
+		}
+		return stream.Send(res)
+	}
+
+	sendOpenTrack := func(e m3uetcpb.PlaybarEvent, t models.ProtoOut) error {
+		res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
+			SubscriptionId:   id,
+			Event:            e,
+			ActivePlaylistId: models.GetActiveEntry().ID,
+			Item: &m3uetcpb.SubscribeToPlaybarStoreResponse_OpenTrack{
+				OpenTrack: t.ToProtobuf().(*m3uetcpb.Track),
+			},
+		}
+		return stream.Send(res)
+	}
+
+	sendingOpenItems := false
+
+sLoop:
+	for {
+
+		select {
+		case e := <-s.Event:
+			if s.MustUnsubscribe(e) {
+				break sLoop
+			}
+
+			if models.PlaybarEvent(e.Idx) == models.PlaybarEventInitial {
+				res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
+					SubscriptionId: id,
+					Event:          m3uetcpb.PlaybarEvent_BE_INITIAL,
+				}
+				err := stream.Send(res)
+				if err != nil {
+					break sLoop
+				}
+
+				pgs, pls, opls, opts, ots := models.GetPlaybarStore()
+				for i := range pgs {
+					err := sendPlaylistGroup(
+						m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM,
+						pgs[i],
+					)
+					if err != nil {
+						break sLoop
+					}
+				}
+
+				for i := range pls {
+					err := sendPlaylist(
+						m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM,
+						pls[i],
+					)
+					if err != nil {
+						break sLoop
+					}
+				}
+
+				for i := range opls {
+					err := sendOpenPlaylist(
+						m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM,
+						opls[i],
+					)
+					if err != nil {
+						break sLoop
+					}
+				}
+
+				for i := range opts {
+					err := sendOpenPlaylistTrack(
+						m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM,
+						opts[i],
+					)
+					if err != nil {
+						break sLoop
+					}
+				}
+
+				for i := range ots {
+					err := sendOpenTrack(
+						m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM,
+						ots[i],
+					)
+					if err != nil {
+						break sLoop
+					}
+				}
+
+				res = &m3uetcpb.SubscribeToPlaybarStoreResponse{
+					SubscriptionId: id,
+					Event:          m3uetcpb.PlaybarEvent_BE_INITIAL_DONE,
+				}
+				onerror.Log(stream.Send(res))
+				continue sLoop
+			}
+
+			var eout m3uetcpb.PlaybarEvent
+			var fn func(m3uetcpb.PlaybarEvent, models.ProtoOut) error
+
+			switch models.PlaybarEvent(e.Idx) {
+			case models.PlaybarEventItemAdded:
+				eout = m3uetcpb.PlaybarEvent_BE_ITEM_ADDED
+			case models.PlaybarEventItemChanged:
+				eout = m3uetcpb.PlaybarEvent_BE_ITEM_CHANGED
+			case models.PlaybarEventItemRemoved:
+				eout = m3uetcpb.PlaybarEvent_BE_ITEM_REMOVED
+			case models.PlaybarEventOpenItems:
+				eout := m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS
+				res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
+					SubscriptionId: id,
+					Event:          eout,
+				}
+				onerror.Log(stream.Send(res))
+				sendingOpenItems = true
+				continue sLoop
+			case models.PlaybarEventOpenItemsDone:
+				eout := m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_DONE
+				res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
+					SubscriptionId: id,
+					Event:          eout,
+				}
+				onerror.Log(stream.Send(res))
+				sendingOpenItems = false
+				continue sLoop
+			default:
+				log.Errorf("Ignoring unsupported playbar event: %v", e.Idx)
+				continue sLoop
+
+			}
+
+			switch e.Data.(type) {
+			case *models.PlaylistGroup:
+				fn = sendPlaylistGroup
+			case *models.Playlist:
+				if sendingOpenItems {
+					fn = sendOpenPlaylist
+				} else {
+					fn = sendPlaylist
+				}
+			case *models.PlaylistTrack:
+				fn = sendOpenPlaylistTrack
+			case *models.Track:
+				fn = sendOpenTrack
+			default:
+				log.Errorf("Ignoring unsupported data for %v: %+v", e.Idx, e.Data)
+				continue sLoop
+			}
+
+			if err := fn(eout, e.Data.(models.ProtoOut)); err != nil {
+				break sLoop
+			}
+		}
+	}
 	return nil
 }
 

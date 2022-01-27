@@ -2,13 +2,17 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
+	"gorm.io/gorm"
 )
 
 // PlaylistGroupIndex -
@@ -57,13 +61,12 @@ func (pg *PlaylistGroup) Create() (err error) {
 
 // Delete implements the DataDeleter interface
 func (pg *PlaylistGroup) Delete() error {
-	return db.Delete(&Track{}, pg.ID).Error
+	return db.Delete(pg).Error
 }
 
 // Read implements the DataReader interface
 func (pg *PlaylistGroup) Read(id int64) (err error) {
 	return db.Joins("Perspective").
-		// Joins("JOIN perspective ON playlist_group.perspective_id = perspective.id").
 		First(pg, id).
 		Error
 }
@@ -90,6 +93,54 @@ func (pg *PlaylistGroup) ToProtobuf() proto.Message {
 	out.CreatedAt = pg.CreatedAt
 	out.UpdatedAt = pg.UpdatedAt
 	return out
+}
+
+// AfterCreate is a GORM hook
+func (pg *PlaylistGroup) AfterCreate(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode {
+			subscription.Broadcast(
+				subscription.ToPlaybarStoreEvent,
+				subscription.Event{
+					Idx:  int(PlaybarEventItemAdded),
+					Data: pg,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterUpdate is a GORM hook
+func (pg *PlaylistGroup) AfterUpdate(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode {
+			subscription.Broadcast(
+				subscription.ToPlaybarStoreEvent,
+				subscription.Event{
+					Idx:  int(PlaybarEventItemChanged),
+					Data: pg,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterDelete is a GORM hook
+func (pg *PlaylistGroup) AfterDelete(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode {
+			subscription.Broadcast(
+				subscription.ToPlaybarStoreEvent,
+				subscription.Event{
+					Idx:  int(PlaybarEventItemRemoved),
+					Data: pg,
+				},
+			)
+		}
+	}()
+	return nil
 }
 
 // Playlist defines a playlist
@@ -132,25 +183,23 @@ func (pl *Playlist) Delete() (err error) {
 		return
 	}
 
-	for _, v := range pqys {
-		if err := db.Where("id > 0").Delete(&v).Error; err != nil {
+	for i := range pqys {
+		if err := pqys[i].Delete(); err != nil {
 			log.Warn(err)
-			continue
 		}
 	}
 
-	for _, v := range pts {
-		onerror.Log(v.Delete())
+	for i := range pts {
+		onerror.Log(pts[i].Delete())
 	}
 
-	err = db.Delete(&Playlist{}, pl.ID).Error
+	err = db.Delete(pl).Error
 	return
 }
 
 // Read implements the DataReader interface
 func (pl *Playlist) Read(id int64) (err error) {
 	return db.Joins("Playbar").
-		// Joins("JOIN playbar ON playlist.playbar_id = playbar.id").
 		First(pl, id).
 		Error
 }
@@ -175,10 +224,84 @@ func (pl *Playlist) ToProtobuf() proto.Message {
 
 	// Unmatched
 	out.PlaylistGroupId = pl.PlaylistGroupID
+	bar := Playbar{}
+	bar.Read(pl.PlaybarID)
+	if bar.ID == 0 || bar.PerspectiveID == 0 {
+		fmt.Println(fmt.Sprintf("shameful playlist: %+v", pl))
+	}
+	out.Perspective = m3uetcpb.Perspective(bar.getPerspectiveIndex())
 	out.Transient = pl.IsTransient()
 	out.CreatedAt = pl.CreatedAt
 	out.UpdatedAt = pl.UpdatedAt
 	return out
+}
+
+// AfterCreate is a GORM hook
+func (pl *Playlist) AfterCreate(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode {
+			subscription.Broadcast(
+				subscription.ToPlaybarStoreEvent,
+				subscription.Event{
+					Idx:  int(PlaybarEventItemAdded),
+					Data: pl,
+				},
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterUpdate is a GORM hook
+func (pl *Playlist) AfterUpdate(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode {
+			selist := []subscription.Event{
+				{Idx: int(PlaybarEventItemChanged), Data: pl},
+				{Idx: int(PlaybarEventOpenItems)},
+			}
+
+			pts, ts := pl.GetTracks(0)
+			event := int(PlaybarEventItemAdded)
+			if !pl.Open {
+				event = int(PlaybarEventItemRemoved)
+			}
+
+			selist = append(selist, subscription.Event{Idx: event, Data: pl})
+
+			for i := range pts {
+				selist = append(selist, subscription.Event{Idx: event, Data: pts[i]})
+			}
+
+			for i := range ts {
+				selist = append(selist, subscription.Event{Idx: event, Data: ts[i]})
+			}
+
+			selist = append(selist, subscription.Event{Idx: int(PlaybarEventOpenItemsDone)})
+
+			subscription.Broadcast(
+				subscription.ToPlaybarStoreEvent,
+				selist...,
+			)
+		}
+	}()
+	return nil
+}
+
+// AfterDelete is a GORM hook
+func (pl *Playlist) AfterDelete(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode {
+			subscription.Broadcast(
+				subscription.ToPlaybarStoreEvent,
+				subscription.Event{
+					Idx:  int(PlaybarEventItemRemoved),
+					Data: pl,
+				},
+			)
+		}
+	}()
+	return nil
 }
 
 // Count returns the number of tracks in a playlist
@@ -203,12 +326,12 @@ func (pl *Playlist) DeleteDynamicTracks() {
 		return
 	}
 
-	for _, v := range pts {
+	for i := range pts {
 		t := Track{}
-		if err := t.Read(v.TrackID); err != nil {
+		if err := t.Read(pts[i].TrackID); err != nil {
 			continue
 		}
-		v.Delete()
+		pts[i].Delete()
 		t.DeleteIfTransient()
 	}
 }
@@ -218,7 +341,6 @@ func (pl *Playlist) GetQueries() (pqs []*PlaylistQuery) {
 	pqs = []*PlaylistQuery{}
 	s := []PlaylistQuery{}
 	err := db.Joins("Query").
-		// Joins("JOIN query ON playlist_query.query_id = query.id").
 		Where("playlist_id = ?", pl.ID).
 		Find(&s).
 		Error
@@ -241,36 +363,47 @@ func (pl *Playlist) GetTrackAfter(curr PlaylistTrack, previous bool) (pt *Playli
 		return
 	}
 
-	tx := db.Joins("Playlist").
-		Joins("Track")
-		// Joins("JOIN playlist ON playlist_track.playlist_id = playlist.id").
-		// Joins("JOIN track ON playlist_track.track_id = track.id")
+	after := &PlaylistTrack{}
 
 	if previous {
-		err = tx.Where("playlist_id = ? AND position < ?", pl.ID, curr.Position).
+		db.Where("playlist_id = ? AND position < ?", pl.ID, curr.Position).
 			Order("position DESC").
 			Limit(1).
-			Find(&pt).
-			Error
+			Find(after)
 	} else {
-		err = tx.Where("playlist_id = ? AND position > ?", pl.ID, curr.Position).
+		db.Where("playlist_id = ? AND position > ?", pl.ID, curr.Position).
 			Order("position ASC").
 			Limit(1).
-			Find(&pt).
-			Error
+			Find(after)
 	}
+
+	if after.ID == 0 {
+		err = fmt.Errorf("There is no track after")
+		return
+	}
+
+	pt = &PlaylistTrack{}
+	err = db.Joins("Playlist").
+		Joins("Track").
+		First(pt, after.ID).
+		Error
 	return
 }
 
 // GetTrackAt returns the track at the given position
 func (pl *Playlist) GetTrackAt(position int) (pt *PlaylistTrack, err error) {
+	at := &PlaylistTrack{}
+	err = db.Where("playlist_id = ? AND position = ?", pl.ID, position).
+		First(at).
+		Error
+	if err != nil {
+		return
+	}
+
+	pt = &PlaylistTrack{}
 	err = db.Joins("Playlist").
 		Joins("Track").
-		// Joins("JOIN playlist ON playlist_track.playlist_id = playlist.id").
-		// Joins("JOIN track ON playlist_track.track_id = track.id").
-		Where("playlist_id = ? AND position = ?", pl.ID, position).
-		Order("position DESC").
-		First(&pt).
+		First(pt, at.ID).
 		Error
 	return
 }
@@ -282,7 +415,6 @@ func (pl *Playlist) GetTracks(limit int) (pts []*PlaylistTrack, ts []*Track) {
 
 	s := []PlaylistTrack{}
 	tx := db.Joins("Track").
-		// Joins("JOIN track ON playlist_track.track_id = track.id").
 		Where("playlist_id = ?", pl.ID).
 		Order("position ASC")
 
@@ -360,8 +492,6 @@ func (pt *PlaylistTrack) Delete() error {
 func (pt *PlaylistTrack) Read(id int64) (err error) {
 	return db.Joins("Playlist").
 		Joins("Track").
-		// Joins("JOIN playlist ON playlist_track.playlist_id = playlist.id").
-		// Joins("JOIN track ON playlist_track.track_id = track.id").
 		First(pt, id).
 		Error
 }
@@ -386,6 +516,57 @@ func (pt *PlaylistTrack) ToProtobuf() proto.Message {
 	return out
 }
 
+// AfterCreate is a GORM hook
+func (pt *PlaylistTrack) AfterCreate(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode {
+			pt.broadcast(PlaybarEventItemAdded)
+		}
+	}()
+	return nil
+}
+
+// AfterUpdate is a GORM hook
+func (pt *PlaylistTrack) AfterUpdate(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode {
+			pt.broadcast(PlaybarEventItemChanged)
+		}
+	}()
+	return nil
+}
+
+// AfterDelete is a GORM hook
+func (pt *PlaylistTrack) AfterDelete(tx *gorm.DB) error {
+	go func() {
+		if !base.FlagTestingMode {
+			pt.broadcast(PlaybarEventItemRemoved)
+		}
+	}()
+	return nil
+}
+
+func (pt *PlaylistTrack) broadcast(event PlaybarEvent) {
+	t := &Track{}
+	err := t.Read(pt.TrackID)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	eslist := []subscription.Event{
+		{Idx: int(PlaybarEventOpenItems)},
+		{Idx: int(event), Data: pt},
+		{Idx: int(event), Data: t},
+		{Idx: int(PlaybarEventOpenItemsDone)},
+	}
+
+	subscription.Broadcast(
+		subscription.ToPlaybarStoreEvent,
+		eslist...,
+	)
+}
+
 // PlaylistQuery Defines a playlist query
 type PlaylistQuery struct {
 	ID         int64    `json:"id" gorm:"primaryKey"`
@@ -397,6 +578,11 @@ type PlaylistQuery struct {
 	Query      Query    `json:"query" gorm:"foreignKey:QueryID"`
 }
 
+// Delete implements the DataDeleter interface
+func (pqy *PlaylistQuery) Delete() error {
+	return db.Delete(pqy).Error
+}
+
 // FindPlaylistsIn returns the tracks for the given IDs
 func FindPlaylistsIn(ids []int64) (pls []*Playlist, notFound []int64) {
 	pls = []*Playlist{}
@@ -405,7 +591,9 @@ func FindPlaylistsIn(ids []int64) (pls []*Playlist, notFound []int64) {
 	}
 
 	list := []Playlist{}
-	err := db.Where("id in ?", ids).Find(&list).Error
+	err := db.Where("id in ?", ids).
+		Find(&list).
+		Error
 	if err != nil {
 		log.Error(err)
 		return
@@ -427,25 +615,27 @@ func FindPlaylistsIn(ids []int64) (pls []*Playlist, notFound []int64) {
 
 // GetActivePlaylistTrack deletes a playlist
 func GetActivePlaylistTrack() (pt *PlaylistTrack) {
-	pt = &PlaylistTrack{}
 	pb := Playback{}
 	err := pb.GetNextToPlay()
 	if err != nil || pb.ID == 0 || pb.TrackID == 0 {
 		return
 	}
 
+	active := &PlaylistTrack{}
 	err = db.
 		Joins("JOIN playlist ON playlist_track.playlist_id = playlist.id").
 		Where("playlist.active = 1 AND playlist_track.track_id = ?", pb.TrackID).
-		First(pt).
+		First(active).
 		Error
-	if err == nil && pt.PlaylistID > 0 {
-		err = db.Joins("Playlist").
-			Joins("Track").
-			Where("playlist_id = ? AND track_id = ?", pt.PlaylistID, pb.TrackID).
-			First(pt).
-			Error
+	if err != nil {
+		return
 	}
+
+	pt = &PlaylistTrack{}
+	err = db.Joins("Playlist").
+		Joins("Track").
+		First(pt, active.ID).
+		Error
 	onerror.Log(err)
 	return
 }

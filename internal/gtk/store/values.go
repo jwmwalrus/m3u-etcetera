@@ -1,7 +1,7 @@
 package store
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -70,7 +70,7 @@ func GetListStoreValue(tv *gtk.TreeView, path *gtk.TreePath, col ModelColumn) (v
 	}
 	model, ok := imodel.(*gtk.ListStore)
 	if !ok {
-		err = errors.New("Unable to get model from treeview")
+		err = fmt.Errorf("Unable to get model from treeview")
 		return
 	}
 	iter, err := model.GetIter(path)
@@ -107,7 +107,7 @@ func GetTreeStoreValue(tv *gtk.TreeView, path *gtk.TreePath, col ModelColumn) (v
 	}
 	model, ok := imodel.(*gtk.TreeStore)
 	if !ok {
-		err = errors.New("Unable to get model from treeview")
+		err = fmt.Errorf("Unable to get model from treeview")
 		return
 	}
 	iter, err := model.GetIter(path)

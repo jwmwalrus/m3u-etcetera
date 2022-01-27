@@ -154,7 +154,7 @@ func GetMenu(id string) (m *gtk.Menu, err error) {
 }
 
 func GetNotebook(id string) (nb *gtk.Notebook, err error) {
-	obj, err := app.GetObject("perspective_panes")
+	obj, err := app.GetObject(id)
 	if err != nil {
 		err = fmt.Errorf("Unable to get notebook: %v", err)
 		return

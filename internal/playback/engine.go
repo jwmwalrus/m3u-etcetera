@@ -169,7 +169,7 @@ func (e *engine) getNextInPlaylist(goingBack bool) (pb *models.Playback) {
 
 	pt, err := e.pt.Playlist.GetTrackAfter(*e.pt, goingBack)
 	if err != nil {
-		log.Error(err)
+		log.Info(err)
 		return
 	}
 

@@ -20,8 +20,8 @@ var (
 
 	collectionsModel *gtk.ListStore
 
-	// CStore collection store
-	CStore struct {
+	// CData collection store
+	CData struct {
 		subscriptionID string
 		Mu             sync.Mutex
 		Collection     []*m3uetcpb.Collection
@@ -36,9 +36,7 @@ type CollectionsOptions struct {
 }
 
 // SetDefaults -
-func (co *CollectionsOptions) SetDefaults() {
-	co = &CollectionsOptions{}
-}
+func (co *CollectionsOptions) SetDefaults() {}
 
 // ApplyCollectionChanges applies collection changes
 func ApplyCollectionChanges(o ...CollectionsOptions) {
@@ -69,7 +67,7 @@ func ApplyCollectionChanges(o ...CollectionsOptions) {
 			return
 		}
 		id := row[CColCollectionID].(int64)
-		for _, c := range CStore.Collection {
+		for _, c := range CData.Collection {
 			if id != c.Id {
 				continue
 			}
@@ -205,12 +203,24 @@ func subscribeToCollectionStore() {
 	appendItem := func(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
 		switch res.Item.(type) {
 		case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
-			CStore.Collection = append(
-				CStore.Collection,
-				res.GetCollection(),
+			item := res.GetCollection()
+			for _, c := range CData.Collection {
+				if c.Id == item.Id {
+					return
+				}
+			}
+			CData.Collection = append(
+				CData.Collection,
+				item,
 			)
 		case *m3uetcpb.SubscribeToCollectionStoreResponse_Track:
-			CStore.Track = append(CStore.Track, res.GetTrack())
+			item := res.GetTrack()
+			for _, t := range CData.Track {
+				if t.Id == item.Id {
+					return
+				}
+			}
+			CData.Track = append(CData.Track, item)
 		default:
 		}
 	}
@@ -219,17 +229,17 @@ func subscribeToCollectionStore() {
 		switch res.Item.(type) {
 		case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
 			c := res.GetCollection()
-			for i := range CStore.Collection {
-				if CStore.Collection[i].Id == c.Id {
-					CStore.Collection[i] = c
+			for i := range CData.Collection {
+				if CData.Collection[i].Id == c.Id {
+					CData.Collection[i] = c
 					break
 				}
 			}
 		case *m3uetcpb.SubscribeToCollectionStoreResponse_Track:
 			t := res.GetTrack()
-			for i := range CStore.Track {
-				if CStore.Track[i].Id == t.Id {
-					CStore.Track[i] = t
+			for i := range CData.Track {
+				if CData.Track[i].Id == t.Id {
+					CData.Track[i] = t
 					break
 				}
 			}
@@ -240,21 +250,21 @@ func subscribeToCollectionStore() {
 		switch res.Item.(type) {
 		case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
 			c := res.GetCollection()
-			n := len(CStore.Collection)
-			for i := range CStore.Collection {
-				if CStore.Collection[i].Id == c.Id {
-					CStore.Collection[i] = CStore.Collection[n-1]
-					CStore.Collection = CStore.Collection[:n-1]
+			n := len(CData.Collection)
+			for i := range CData.Collection {
+				if CData.Collection[i].Id == c.Id {
+					CData.Collection[i] = CData.Collection[n-1]
+					CData.Collection = CData.Collection[:n-1]
 					break
 				}
 			}
 		case *m3uetcpb.SubscribeToCollectionStoreResponse_Track:
 			t := res.GetTrack()
-			n := len(CStore.Track)
-			for i := range CStore.Track {
-				if CStore.Track[i].Id == t.Id {
-					CStore.Track[i] = CStore.Track[n-1]
-					CStore.Track = CStore.Track[:n-1]
+			n := len(CData.Track)
+			for i := range CData.Track {
+				if CData.Track[i].Id == t.Id {
+					CData.Track[i] = CData.Track[n-1]
+					CData.Track = CData.Track[:n-1]
 					break
 				}
 			}
@@ -268,18 +278,18 @@ func subscribeToCollectionStore() {
 			break
 		}
 
-		CStore.Mu.Lock()
+		CData.Mu.Lock()
 
-		if CStore.subscriptionID == "" {
-			CStore.subscriptionID = res.SubscriptionId
+		if CData.subscriptionID == "" {
+			CData.subscriptionID = res.SubscriptionId
 		}
 
 		cTree.lastEvent = res.Event
 		switch res.Event {
 		case m3uetcpb.CollectionEvent_CE_INITIAL:
 			cTree.initialMode = true
-			CStore.Collection = []*m3uetcpb.Collection{}
-			CStore.Track = []*m3uetcpb.Track{}
+			CData.Collection = []*m3uetcpb.Collection{}
+			CData.Track = []*m3uetcpb.Track{}
 		case m3uetcpb.CollectionEvent_CE_INITIAL_ITEM:
 			appendItem(res)
 		case m3uetcpb.CollectionEvent_CE_INITIAL_DONE:
@@ -297,7 +307,7 @@ func subscribeToCollectionStore() {
 			cTree.scanningMode = false
 		}
 
-		CStore.Mu.Unlock()
+		CData.Mu.Unlock()
 		if !cTree.initialMode && !cTree.scanningMode {
 			glib.IdleAdd(cTree.update)
 			glib.IdleAdd(updateCollectionsModel)
@@ -312,9 +322,9 @@ func subscribeToCollectionStore() {
 func unsubscribeFromCollectionStore() {
 	log.Info("Unsubscribing from collection store")
 
-	CStore.Mu.Lock()
-	id := CStore.subscriptionID
-	CStore.Mu.Unlock()
+	CData.Mu.Lock()
+	id := CData.subscriptionID
+	CData.Mu.Unlock()
 
 	var cc *grpc.ClientConn
 	var err error
@@ -333,10 +343,7 @@ func unsubscribeFromCollectionStore() {
 			SubscriptionId: id,
 		},
 	)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	onerror.Log(err)
 }
 
 func updateCollectionsModel() bool {
@@ -356,10 +363,10 @@ func updateCollectionsModel() bool {
 		model.Clear()
 	}
 
-	CStore.Mu.Lock()
-	if len(CStore.Collection) > 0 {
+	CData.Mu.Lock()
+	if len(CData.Collection) > 0 {
 		var iter *gtk.TreeIter
-		for _, c := range CStore.Collection {
+		for _, c := range CData.Collection {
 			iter = model.Append()
 			tracks := strconv.FormatInt(c.Tracks, 10)
 			if c.Scanned != 100 {
@@ -397,6 +404,6 @@ func updateCollectionsModel() bool {
 			onerror.Log(err)
 		}
 	}
-	CStore.Mu.Unlock()
+	CData.Mu.Unlock()
 	return false
 }

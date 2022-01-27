@@ -9,11 +9,11 @@ require (
 	github.com/go-testfixtures/testfixtures/v3 v3.6.1
 	github.com/gotk3/gotk3 v0.6.2-0.20211226093840-cf265f40b836
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/jwmwalrus/bnp v1.8.0
+	github.com/jwmwalrus/bnp v1.8.1
 	github.com/jwmwalrus/onerror v0.1.0
 	github.com/jwmwalrus/seater v0.1.1
 	github.com/nightlyone/lockfile v1.0.0
-	github.com/notedit/gst v0.0.9
+	github.com/notedit/gst v0.1.0
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/rodaine/table v1.0.1
 	github.com/sirupsen/logrus v1.8.1
@@ -43,6 +43,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-replace github.com/notedit/gst => github.com/jwmwalrus/gst v0.0.8-0.20220113011551-ec329359072c
+// replace github.com/notedit/gst => github.com/jwmwalrus/gst v0.0.8-0.20220113011551-ec329359072c
 
-replace github.com/jwmwalrus/bnp => ../bnp
+// replace github.com/jwmwalrus/bnp => ../bnp

@@ -36,7 +36,7 @@ func AddPerspectives(signals *map[string]interface{}) (err error) {
 	}
 
 	for _, v := range perspectivesList {
-		err = pane.Add(m3uetcpb.Perspective(v), notebook, signals)
+		err = pane.Add(v, notebook, signals)
 		if err != nil {
 			return
 		}

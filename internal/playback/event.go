@@ -82,7 +82,7 @@ func GetPlayback() (pb *models.Playback, t *models.Track) {
 		return
 	}
 
-	log.Info("Obtaining current playback")
+	log.Debug("Obtaining current playback")
 
 	pbcopy := *eng.pb
 	pb = &pbcopy

@@ -7,6 +7,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/store"
 	log "github.com/sirupsen/logrus"
 )
@@ -73,18 +74,37 @@ func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
 		return
 	}
 
-	action := m3uetcpb.QueueAction_Q_APPEND
-	if strings.Contains(mi.GetLabel(), "Preppend") {
-		action = m3uetcpb.QueueAction_Q_PREPPEND
-	}
-	req := &m3uetcpb.ExecuteQueueActionRequest{
-		Action: action,
-		Ids:    ids,
-	}
+	plID := playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
 
-	if err := store.ExecuteQueueAction(req); err != nil {
-		log.Error(err)
-		return
+	if plID > 0 {
+		action := m3uetcpb.PlaylistTrackAction_PT_APPEND
+		if strings.Contains(mi.GetLabel(), "Prepend") {
+			action = m3uetcpb.PlaylistTrackAction_PT_PREPEND
+		}
+		req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
+			PlaylistId: plID,
+			Action:     action,
+			TrackIds:   ids,
+		}
+
+		if err := store.ExecutePlaylistTrackAction(req); err != nil {
+			log.Error(err)
+			return
+		}
+	} else {
+		action := m3uetcpb.QueueAction_Q_APPEND
+		if strings.Contains(mi.GetLabel(), "Prepend") {
+			action = m3uetcpb.QueueAction_Q_PREPEND
+		}
+		req := &m3uetcpb.ExecuteQueueActionRequest{
+			Action: action,
+			Ids:    ids,
+		}
+
+		if err := store.ExecuteQueueAction(req); err != nil {
+			log.Error(err)
+			return
+		}
 	}
 }
 
@@ -120,14 +140,29 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, 
 		return
 	}
 
-	req := &m3uetcpb.ExecuteQueueActionRequest{
-		Action: m3uetcpb.QueueAction_Q_APPEND,
-		Ids:    ids,
-	}
+	plID := playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
 
-	if err := store.ExecuteQueueAction(req); err != nil {
-		log.Error(err)
-		return
+	if plID > 0 {
+		req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
+			PlaylistId: plID,
+			Action:     m3uetcpb.PlaylistTrackAction_PT_APPEND,
+			TrackIds:   ids,
+		}
+
+		if err := store.ExecutePlaylistTrackAction(req); err != nil {
+			log.Error(err)
+			return
+		}
+	} else {
+		req := &m3uetcpb.ExecuteQueueActionRequest{
+			Action: m3uetcpb.QueueAction_Q_APPEND,
+			Ids:    ids,
+		}
+
+		if err := store.ExecuteQueueAction(req); err != nil {
+			log.Error(err)
+			return
+		}
 	}
 }
 

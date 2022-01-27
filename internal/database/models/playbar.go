@@ -7,12 +7,42 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetPerspectivePlaybar returns the playbar associated to the given perspective
-func (idx PerspectiveIndex) GetPerspectivePlaybar() (bar *Playbar, err error) {
+// GetPlaybar returns the playbar associated to the given perspective
+func (idx PerspectiveIndex) GetPlaybar() (bar *Playbar, err error) {
 	bar = &Playbar{}
 	err = db.Joins("JOIN perspective ON playbar.perspective_id = perspective.id AND perspective.idx = ?", int(idx)).First(bar).Error
 	return
 
+}
+
+// PlaybarEvent defines a collection event
+type PlaybarEvent int
+
+// PlaybarEvent enum
+const (
+	PlaybarEventNone PlaybarEvent = iota
+	PlaybarEventInitial
+	_
+	_
+	PlaybarEventItemAdded
+	PlaybarEventItemChanged
+	PlaybarEventItemRemoved
+	PlaybarEventOpenItems
+	PlaybarEventOpenItemsDone
+)
+
+func (ce PlaybarEvent) String() string {
+	return []string{
+		"none",
+		"initial",
+		"initial-item",
+		"initial-done",
+		"item-added",
+		"item-changed",
+		"item-removed",
+		"open-item",
+		"open-item-done",
+	}[ce]
 }
 
 // Playbar defines the playlist bar for each perspective
@@ -105,14 +135,13 @@ func (b *Playbar) ClearPlaylist(pl *Playlist) {
 func (b *Playbar) CloseEntry(pl *Playlist) {
 	pl.DeleteDynamicTracks()
 
-	if pl.IsTransient() {
-		onerror.Log(pl.Delete())
-		return
-	}
-
 	pl.Open = false
 	pl.Active = false
 	onerror.Log(pl.Save())
+
+	if pl.IsTransient() {
+		onerror.Log(pl.Delete())
+	}
 }
 
 // CreateEntry creates a playlist
@@ -217,7 +246,6 @@ func (b *Playbar) GetAllEntries(limit int) (pls []*Playlist) {
 
 	s := []Playlist{}
 	tx := db.Joins("Playbar").
-		// Joins("JOIN playbar ON playlist.playbar_id = playbar.id").
 		Where("playbar_id = ?", b.ID)
 	if limit > 0 {
 		tx.Limit(limit)
@@ -239,7 +267,6 @@ func (b *Playbar) GetAllGroups(limit int) (pgs []*PlaylistGroup) {
 
 	s := []PlaylistGroup{}
 	tx := db.Joins("Perspective").
-		// Joins("JOIN perspective ON playlist_group.perspective_id = perspective.id").
 		Where("perspective_id = ?", b.PerspectiveID)
 	if limit > 0 {
 		tx.Limit(limit)
@@ -363,7 +390,7 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 	moved = append(moved, afterPiv...)
 
 	moved = reasignPlaylistTrackPositions(moved)
-	onerror.Log(db.Save(&pts).Error)
+	onerror.Log(db.Save(&moved).Error)
 }
 
 // OpenEntry opens the given playbar entry
@@ -372,8 +399,8 @@ func (b *Playbar) OpenEntry(pl *Playlist) {
 	onerror.Log(pl.Save())
 }
 
-// PreppendToPlaylist -
-func (b *Playbar) PreppendToPlaylist(pl *Playlist, trackIds []int64, locations []string) {
+// PrependToPlaylist -
+func (b *Playbar) PrependToPlaylist(pl *Playlist, trackIds []int64, locations []string) {
 	b.InsertIntoPlaylist(pl, 0, trackIds, locations)
 }
 
@@ -444,7 +471,107 @@ func (b *Playbar) UpdateGroup(pg *PlaylistGroup, name, descr string, resetDescr 
 	return
 }
 
+func (b *Playbar) getPerspectiveIndex() (idx PerspectiveIndex) {
+	p := Perspective{}
+	if err := p.Read(b.PerspectiveID); err != nil {
+		log.Error(err)
+		return
+	}
+	idx = PerspectiveIndex(p.Idx)
+	return
+}
+
+// DeactivatePlaybars deactivates all playbars
 func DeactivatePlaybars() {
 	err := db.Model(&Playlist{}).Where("active = 1").Update("active", 0).Error
 	onerror.Log(err)
+}
+
+// GetActiveEntry returns the active playlist
+func GetActiveEntry() *Playlist {
+	pl := Playlist{}
+	db.Where("active = 1").First(&pl)
+	return &pl
+}
+
+// GetOpenEntries returns the list of open entries
+func GetOpenEntries() (pls []*Playlist, pts []*PlaylistTrack, ts []*Track) {
+	pls = []*Playlist{}
+	pts = []*PlaylistTrack{}
+	ts = []*Track{}
+
+	pllist := []Playlist{}
+	err := db.Where("open = 1").Find(&pllist).Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	for i := range pllist {
+		pls = append(pls, &pllist[i])
+	}
+
+	ptlist := []PlaylistTrack{}
+	err = db.Preload("Track").
+		Joins("JOIN playlist ON playlist_track.playlist_id = playlist.id").
+		Where("playlist.open = 1").
+		Order("playlist_id").
+		Find(&ptlist).
+		Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	for i := range ptlist {
+		pts = append(pts, &ptlist[i])
+		ts = append(ts, &ptlist[i].Track)
+	}
+	return
+}
+
+// GetPlaybarStore returns the initial status of the playbar store
+func GetPlaybarStore() (
+	pgs []*PlaylistGroup,
+	pls []*Playlist,
+	opls []*Playlist,
+	opts []*PlaylistTrack,
+	ots []*Track,
+) {
+	pgs = []*PlaylistGroup{}
+	pls = []*Playlist{}
+	opls = []*Playlist{}
+	opts = []*PlaylistTrack{}
+	ots = []*Track{}
+
+	pglist := []PlaylistGroup{}
+	err := db.Joins("Perspective").
+		Where("hidden = 0").
+		Order("perspective_id").
+		Find(&pglist).
+		Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	pllist := []Playlist{}
+	err = db.Joins("Playbar").
+		Order("playbar_id").
+		Find(&pllist).
+		Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for i := range pglist {
+		pgs = append(pgs, &pglist[i])
+	}
+
+	for i := range pllist {
+		pls = append(pls, &pllist[i])
+	}
+
+	opls, opts, ots = GetOpenEntries()
+
+	return
 }

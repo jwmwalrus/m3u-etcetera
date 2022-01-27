@@ -81,8 +81,8 @@ func Open() *gorm.DB {
 	onerror.Panic(m.Migrate())
 
 	go func() {
-		conn.Where("played = 1").Delete(models.Playback{})
-		conn.Where("played = 1").Delete(models.Queue{})
+		conn.Where("played = 1").Delete(&models.Playback{})
+		conn.Where("played = 1").Delete(&models.Queue{})
 	}()
 
 	log.WithField("dsn", DSN()).

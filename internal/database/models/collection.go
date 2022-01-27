@@ -38,6 +38,36 @@ func (idx CollectionIndex) Get() (c *Collection, err error) {
 	return
 }
 
+// CollectionEvent defines a collection event
+type CollectionEvent int
+
+// CollectionEvent enum
+const (
+	CollectionEventNone CollectionEvent = iota
+	CollectionEventInitial
+	_
+	_
+	CollectionEventItemAdded
+	CollectionEventItemChanged
+	CollectionEventItemRemoved
+	CollectionEventScanning
+	CollectionEventScanningDone
+)
+
+func (ce CollectionEvent) String() string {
+	return []string{
+		"none",
+		"initial",
+		"initial-item",
+		"initial-done",
+		"item-added",
+		"item-changed",
+		"item-removed",
+		"scanning",
+		"scanning-done",
+	}[ce]
+}
+
 // Collection defines a collection row
 type Collection struct {
 	ID             int64       `json:"id" gorm:"primaryKey"`
@@ -134,8 +164,7 @@ func (c *Collection) ToProtobuf() proto.Message {
 	}
 
 	out := &m3uetcpb.Collection{}
-	err = json.Unmarshal(bv, out)
-	onerror.Log(err)
+	json.Unmarshal(bv, out)
 
 	// Unmatched
 	out.RemoteLocation = c.Remotelocation
@@ -161,8 +190,8 @@ func (c *Collection) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterSave is a GORM hook
-func (c *Collection) AfterSave(tx *gorm.DB) error {
+// AfterUpdate is a GORM hook
+func (c *Collection) AfterUpdate(tx *gorm.DB) error {
 	go func() {
 		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
 			subscription.Broadcast(

@@ -67,7 +67,7 @@ func (t *Track) Create() (err error) {
 
 // Delete implements the DataDeleter interface
 func (t *Track) Delete() error {
-	return db.Delete(&Track{}, t.ID).Error
+	return db.Delete(t).Error
 }
 
 // Read implements the DataReader interface
@@ -93,6 +93,14 @@ func (t *Track) ToProtobuf() proto.Message {
 	onerror.Log(err)
 
 	// Unmatched
+	if !t.Remote {
+		path, err := urlstr.URLToPath(t.Location)
+		if err == nil {
+			if _, err = os.Stat(path); os.IsNotExist(err) {
+				out.Dangling = true
+			}
+		}
+	}
 	out.Albumartist = t.Albumartist
 	out.Tracknumber = int32(t.Tracknumber)
 	out.Tracktotal = int32(t.Tracktotal)
@@ -121,8 +129,8 @@ func (t *Track) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterSave is a GORM hook
-func (t *Track) AfterSave(tx *gorm.DB) error {
+// AfterUpdate is a GORM hook
+func (t *Track) AfterUpdate(tx *gorm.DB) error {
 	go func() {
 		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
 			subscription.Broadcast(

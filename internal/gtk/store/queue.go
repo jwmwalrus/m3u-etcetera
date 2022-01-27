@@ -11,21 +11,21 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
 var (
-	musicModel      *gtk.ListStore
-	radioModel      *gtk.ListStore
-	podcastsModel   *gtk.ListStore
-	audiobooksModel *gtk.ListStore
+	musicQueueModel      *gtk.ListStore
+	podcastsQueueModel   *gtk.ListStore
+	audiobooksQueueModel *gtk.ListStore
 
-	// QStore queue store
-	QStore struct {
-		Mu   sync.Mutex
-		Data *m3uetcpb.SubscribeToQueueStoreResponse
+	// QData queue store
+	QData struct {
+		Mu  sync.Mutex
+		res *m3uetcpb.SubscribeToQueueStoreResponse
 	}
 )
 
@@ -41,13 +41,11 @@ func CreateQueueModel(idx m3uetcpb.Perspective) (model *gtk.ListStore, err error
 
 	switch idx {
 	case m3uetcpb.Perspective_MUSIC:
-		musicModel = model
-	case m3uetcpb.Perspective_RADIO:
-		radioModel = model
+		musicQueueModel = model
 	case m3uetcpb.Perspective_PODCASTS:
-		podcastsModel = model
+		podcastsQueueModel = model
 	case m3uetcpb.Perspective_AUDIOBOOKS:
-		audiobooksModel = model
+		audiobooksQueueModel = model
 	}
 	return
 }
@@ -76,13 +74,11 @@ func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 
 	switch idx {
 	case m3uetcpb.Perspective_MUSIC:
-		return musicModel
-	case m3uetcpb.Perspective_RADIO:
-		return musicModel
+		return musicQueueModel
 	case m3uetcpb.Perspective_PODCASTS:
-		return musicModel
+		return musicQueueModel
 	case m3uetcpb.Perspective_AUDIOBOOKS:
-		return musicModel
+		return musicQueueModel
 	default:
 		return nil
 	}
@@ -116,9 +112,9 @@ func subscribeToQueueStore() {
 			break
 		}
 
-		QStore.Mu.Lock()
-		QStore.Data = res
-		QStore.Mu.Unlock()
+		QData.Mu.Lock()
+		QData.res = res
+		QData.Mu.Unlock()
 		glib.IdleAdd(updateQueueModels)
 		if !wgdone {
 			wg.Done()
@@ -130,9 +126,9 @@ func subscribeToQueueStore() {
 func unsubscribeFromQueueStore() {
 	log.Info("Unsuubscribing from queue store")
 
-	QStore.Mu.Lock()
-	id := QStore.Data.SubscriptionId
-	QStore.Mu.Unlock()
+	QData.Mu.Lock()
+	id := QData.res.SubscriptionId
+	QData.Mu.Unlock()
 
 	var cc *grpc.ClientConn
 	var err error
@@ -151,16 +147,13 @@ func unsubscribeFromQueueStore() {
 			SubscriptionId: id,
 		},
 	)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	onerror.Log(err)
 }
 
 func updateQueueModels() bool {
 	log.Info("Updating all queue models")
 
-	for _, idx := range perspectivesList {
+	for _, idx := range perspectiveQueuesList {
 		model := GetQueueModel(idx)
 		if model == nil {
 			continue
@@ -172,9 +165,9 @@ func updateQueueModels() bool {
 		}
 	}
 
-	QStore.Mu.Lock()
-	if QStore.Data != nil {
-		for _, idx := range perspectivesList {
+	QData.Mu.Lock()
+	if QData.res != nil {
+		for _, idx := range perspectiveQueuesList {
 			model := GetQueueModel(idx)
 			if model == nil {
 				continue
@@ -185,7 +178,7 @@ func updateQueueModels() bool {
 			}
 
 			count := 0
-			for _, qt := range QStore.Data.QueueTracks {
+			for _, qt := range QData.res.QueueTracks {
 				if qt.Perspective != idx {
 					continue
 				}
@@ -194,7 +187,7 @@ func updateQueueModels() bool {
 
 			// model.Clear()
 			var iter *gtk.TreeIter
-			for _, qt := range QStore.Data.QueueTracks {
+			for _, qt := range QData.res.QueueTracks {
 				if qt.Perspective != idx {
 					continue
 				}
@@ -224,7 +217,7 @@ func updateQueueModels() bool {
 					log.Error(err)
 					continue
 				}
-				for _, t := range QStore.Data.Tracks {
+				for _, t := range QData.res.Tracks {
 					if qt.TrackId == t.Id {
 						err = model.Set(
 							iter,
@@ -237,16 +230,15 @@ func updateQueueModels() bool {
 								int(QColAlbumartist),
 								int(QColComposer),
 								int(QColGenre),
-
 								int(QColYear),
 								int(QColTracknumber),
+
 								int(QColTracktotal),
 								int(QColDiscnumber),
 								int(QColDisctotal),
 								int(QColLyrics),
 								int(QColComment),
 								int(QColPlaycount),
-
 								int(QColRating),
 								int(QColDuration),
 								int(QColRemote),
@@ -282,6 +274,6 @@ func updateQueueModels() bool {
 			}
 		}
 	}
-	QStore.Mu.Unlock()
+	QData.Mu.Unlock()
 	return false
 }
