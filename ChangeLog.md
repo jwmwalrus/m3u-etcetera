@@ -9,6 +9,10 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.11.0] 2022-01-27
+
+Implement playbars
+
 ## [0.10.0] 2022-01-14
 
 UI improvements and updated dependencies
