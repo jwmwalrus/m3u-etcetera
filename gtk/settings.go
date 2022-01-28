@@ -2,8 +2,8 @@ package gtkui
 
 import (
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
-	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/store"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	log "github.com/sirupsen/logrus"
 )
 

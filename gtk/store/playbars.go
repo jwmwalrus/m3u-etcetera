@@ -36,11 +36,12 @@ var (
 		Playlist          []*m3uetcpb.Playlist
 	}
 
-	playlistTrackToTrack   map[int64]*m3uetcpb.Track
-	PerspectiveToPlaylists map[m3uetcpb.Perspective][]*m3uetcpb.Playlist
-	playlists              = []*playlistModel{}
-	updatePlaybarView      func()
-	barTree                playbarsTree
+	playlistTrackToTrack    map[int64]*m3uetcpb.Track
+	playlistToPlaylistGroup map[int64]*m3uetcpb.PlaylistGroup
+	PerspectiveToPlaylists  map[m3uetcpb.Perspective][]*m3uetcpb.Playlist
+	playlists               = []*playlistModel{}
+	updatePlaybarView       func()
+	barTree                 playbarsTree
 )
 
 // CreatePlaylistModel creates a playlist model
@@ -175,21 +176,6 @@ func GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 	for _, pl := range BData.OpenPlaylist {
 		if pl.Id == id {
 			return pl
-		}
-	}
-	return nil
-}
-
-// GetPlaylistGroup returns the playlist for the given id.
-func GetPlaylistGroup(id int64) (pg *m3uetcpb.PlaylistGroup) {
-	log.WithField("id", id).
-		Info("Returning playlist group")
-
-	// BData.Mu.Lock()
-	// defer BData.Mu.Unlock()
-	for _, pg := range BData.PlaylistGroup {
-		if pg.Id == id {
-			return pg
 		}
 	}
 	return nil
@@ -459,6 +445,18 @@ func updatePlaybarMaps() {
 			}
 		}
 		playlistTrackToTrack[pt.Id] = t
+	}
+
+	playlistToPlaylistGroup = map[int64]*m3uetcpb.PlaylistGroup{}
+	for _, pl := range BData.Playlist {
+		pg := &m3uetcpb.PlaylistGroup{}
+		for i := range BData.PlaylistGroup {
+			if pl.PlaylistGroupId == BData.PlaylistGroup[i].Id {
+				pg = BData.PlaylistGroup[i]
+				break
+			}
+		}
+		playlistToPlaylistGroup[pl.Id] = pg
 	}
 
 	PerspectiveToPlaylists = map[m3uetcpb.Perspective][]*m3uetcpb.Playlist{}

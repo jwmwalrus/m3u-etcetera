@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/m3u-etcetera/internal/task"
+	"github.com/jwmwalrus/m3u-etcetera/task"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )

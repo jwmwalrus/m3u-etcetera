@@ -21,8 +21,8 @@ const (
 func (et playlistEntryType) getLabel(pl *m3uetcpb.Playlist) string {
 	switch et {
 	case playlistGroupEntry:
-		pg := GetPlaylistGroup(pl.PlaylistGroupId)
-		if pg != nil {
+		pg := playlistToPlaylistGroup[pl.Id]
+		if pg.Id > 0 {
 			return pg.Name
 		}
 		return "."

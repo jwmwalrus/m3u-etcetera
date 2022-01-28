@@ -5,8 +5,8 @@ import (
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
-	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/pane"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/pane"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,8 +16,7 @@ var (
 	notebook         *gtk.Notebook
 )
 
-// AddPerspectives sets the perspective panes
-func AddPerspectives(signals *map[string]interface{}) (err error) {
+func addPerspectives(signals *map[string]interface{}) (err error) {
 	log.Info("Adding perspectives")
 
 	perspective, err = builder.GetComboBoxText("perspective")

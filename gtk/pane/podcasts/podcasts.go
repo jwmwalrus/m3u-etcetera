@@ -2,7 +2,7 @@ package podcastspane
 
 import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/playlists"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 )
 
 var (

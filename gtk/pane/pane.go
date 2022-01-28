@@ -6,11 +6,11 @@ import (
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/gtk/builder"
-	audiobookspane "github.com/jwmwalrus/m3u-etcetera/internal/gtk/pane/audiobooks"
-	musicpane "github.com/jwmwalrus/m3u-etcetera/internal/gtk/pane/music"
-	podcastspane "github.com/jwmwalrus/m3u-etcetera/internal/gtk/pane/podcasts"
-	radiopane "github.com/jwmwalrus/m3u-etcetera/internal/gtk/pane/radio"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	audiobookspane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/audiobooks"
+	musicpane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/music"
+	podcastspane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/podcasts"
+	radiopane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/radio"
 	log "github.com/sirupsen/logrus"
 )
 
