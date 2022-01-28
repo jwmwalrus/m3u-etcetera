@@ -12,8 +12,6 @@ func GetClientOpts() (opts []grpc.DialOption) {
 
 // GetServerOpts returns the server middleware
 func GetServerOpts() (opts []grpc.ServerOption) {
-	// opts = append(opts, getLoggerOpts()...)
-
 	opts = append(
 		opts,
 		grpc.UnaryInterceptor(unaryServerInterceptor()),
