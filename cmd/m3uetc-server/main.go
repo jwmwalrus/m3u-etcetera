@@ -11,6 +11,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/m3u-etcetera/mpris"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -60,6 +61,9 @@ func main() {
 		}
 	}()
 
+	mprisInstance := mpris.New()
+
+	base.RegisterUnloader(mprisInstance.Unloader)
 	base.RegisterUnloader(subscription.Unloader)
 	base.RegisterUnloader(serverUnloader)
 	base.RegisterUnloader(playback.Unloader)

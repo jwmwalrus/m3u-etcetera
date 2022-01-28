@@ -7,8 +7,8 @@ require (
 	github.com/dhowden/tag v0.0.0-20201120070457-d52dcb253c63
 	github.com/go-gormigrate/gormigrate/v2 v2.0.0
 	github.com/go-testfixtures/testfixtures/v3 v3.6.1
+	github.com/godbus/dbus/v5 v5.0.6
 	github.com/gotk3/gotk3 v0.6.2-0.20211226093840-cf265f40b836
-	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/jwmwalrus/bnp v1.8.1
 	github.com/jwmwalrus/onerror v0.1.0
 	github.com/jwmwalrus/seater v0.1.1

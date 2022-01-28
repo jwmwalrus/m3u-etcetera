@@ -145,8 +145,9 @@ func (pbd *playbackData) setCover() bool {
 			coverFiles := pbd.coverFiles
 
 			for _, v := range coverFiles {
-				if _, err := os.Stat(filepath.Join(pbd.lastDir, v)); !os.IsNotExist(err) {
-					fp = v
+				dirfile := filepath.Join(pbd.lastDir, v)
+				if _, err := os.Stat(dirfile); !os.IsNotExist(err) {
+					fp = dirfile
 					break
 				}
 			}
@@ -188,7 +189,7 @@ func (pbd *playbackData) setPlaybackUI() (err error) {
 		return
 	}
 
-	pbd.logoPixbuf, err = gdk.PixbufNewFromFile("data/ui/logo.png")
+	pbd.logoPixbuf, err = gdk.PixbufNewFromFile("data/images/m3u-etcetera.png")
 	if err != nil {
 		return
 	}

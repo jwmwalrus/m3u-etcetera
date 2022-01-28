@@ -30,6 +30,35 @@ var (
 		SupportedFileExtensionFLAC,
 	}
 
+	SupportedURISchemes = []string{
+		"file",
+		"http",
+	}
+
+	SupportedMIMETypes = []string{
+		"audio/x-mp3",
+		"application/x-id3",
+		"audio/mpeg",
+		"audio/x-mpeg",
+		"audio/x-mpeg-3",
+		"audio/mpeg3",
+		"audio/mp3",
+		"audio/x-m4a",
+		"audio/mpc",
+		"audio/x-mpc",
+		"audio/mp",
+		"audio/x-mp",
+		"application/ogg",
+		"application/x-ogg",
+		"audio/vorbis",
+		"audio/x-vorbis",
+		"audio/ogg",
+		"audio/x-ogg",
+		"audio/x-flac",
+		"application/x-flac",
+		"audio/flac",
+	}
+
 	// IgnoredFileExtensions supported file extensons
 	IgnoredFileExtensions = []string{
 		".bmp",
