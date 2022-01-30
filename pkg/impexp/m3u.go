@@ -83,7 +83,7 @@ func (mi *M3U) Parse(f io.Reader) (err error) {
 					ti[piv].ArtistTitle = strings.TrimSpace(subm[2])
 				}
 			case "#PLAYLIST":
-				name = lines[i]
+				name = strings.TrimSpace(lines[i])
 			case "#EXTALB":
 				subm := extalb.FindStringSubmatch(lines[i])
 				if len(subm) < 2 {
