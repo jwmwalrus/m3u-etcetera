@@ -177,18 +177,10 @@ func playtrackAction(c *cli.Context) (err error) {
 
 	cl := m3uetcpb.NewPlaybarSvcClient(cc)
 
-	req := &m3uetcpb.GetPlaybarRequest{}
-
-	persp := strings.ToLower(c.String("perspective"))
-	if strings.HasPrefix("radio", persp) {
-		req.Perspective = m3uetcpb.Perspective_RADIO
-	} else if strings.HasPrefix("podcasts", persp) {
-		req.Perspective = m3uetcpb.Perspective_PODCASTS
-	} else if strings.HasPrefix("audiobooks", persp) {
-		req.Perspective = m3uetcpb.Perspective_AUDIOBOOKS
-	} else {
-		req.Perspective = m3uetcpb.Perspective_MUSIC
+	req := &m3uetcpb.GetPlaybarRequest{
+		Perspective: getPerspective(c),
 	}
+
 	res, err := cl.GetPlaybar(context.Background(), req)
 	if err != nil {
 		return

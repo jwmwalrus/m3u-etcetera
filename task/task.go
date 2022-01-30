@@ -3,8 +3,10 @@ package task
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/jwmwalrus/bnp/urlstr"
+	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/urfave/cli/v2"
@@ -15,6 +17,20 @@ func getClientConn() (*grpc.ClientConn, error) {
 	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	return grpc.Dial(auth, opts...)
+}
+
+func getPerspective(c *cli.Context) (p m3uetcpb.Perspective) {
+	persp := strings.ToLower(c.String("perspective"))
+	if strings.HasPrefix("radio", persp) {
+		p = m3uetcpb.Perspective_RADIO
+	} else if strings.HasPrefix("podcasts", persp) {
+		p = m3uetcpb.Perspective_PODCASTS
+	} else if strings.HasPrefix("audiobooks", persp) {
+		p = m3uetcpb.Perspective_AUDIOBOOKS
+	} else {
+		p = m3uetcpb.Perspective_MUSIC
+	}
+	return
 }
 
 func mustNotParseExtraArgs(c *cli.Context) (err error) {

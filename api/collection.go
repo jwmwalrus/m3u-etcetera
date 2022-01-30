@@ -283,6 +283,7 @@ sLoop:
 				if err != nil {
 					break sLoop
 				}
+				continue sLoop
 			}
 
 			var eout m3uetcpb.CollectionEvent

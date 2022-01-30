@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -225,17 +226,35 @@ func (c *Collection) AfterDelete(tx *gorm.DB) error {
 // AddTrackFromLocation adds a track, given its location
 func (c *Collection) AddTrackFromLocation(location string, withTags bool) (t *Track, err error) {
 	doTag := false
-	t = &Track{}
-	if err := db.Where("location = ?", location).First(t).Error; err != nil {
-		t = &Track{
+	newt := &Track{}
+	if err2 := db.Where("location = ?", location).First(newt).Error; err2 != nil {
+		newt = &Track{
 			Location:     location,
 			CollectionID: c.ID,
 		}
 		doTag = true
+	} else {
+		trColl, err2 := TransientCollection.Get()
+		if err2 != nil {
+			err = err2
+			return
+		}
+
+		if newt.CollectionID != trColl.ID {
+			err = fmt.Errorf("Track already belongs to another collection")
+			return
+		}
+		log.WithField("location", newt.Location).Info("Reusing transient track")
+		newt.CollectionID = c.ID
 	}
 
+	t = newt
+
 	if withTags || doTag {
-		onerror.Log(t.updateTags())
+		err2 := t.updateTags()
+		if err2 != nil {
+			log.WithField("location", t.Location)
+		}
 	}
 
 	err = t.Save()
@@ -292,15 +311,9 @@ func (c *Collection) Scan(withTags bool) {
 			subscription.Event{Idx: int(CollectionEventScanningDone)})
 	}()
 
-	var err error
-	var realPath string
-	if realPath, err = filepath.EvalSymlinks(c.Location); err != nil {
-		log.Error(err)
-		return
-	}
-
 	var u *url.URL
-	if u, err = url.Parse(realPath); err != nil {
+	var err error
+	if u, err = url.Parse(c.Location); err != nil {
 		log.Error(err)
 		return
 	}
@@ -310,13 +323,13 @@ func (c *Collection) Scan(withTags bool) {
 		u.Scheme = "fi;e"
 	}
 
-	var d string
-	if d, err = url.PathUnescape(u.Path); err != nil {
+	var rootDir string
+	if rootDir, err = url.PathUnescape(u.Path); err != nil {
 		log.Error(err)
 		return
 	}
-	if _, err = os.Stat(d); os.IsNotExist(err) {
-		if fi, err := os.Lstat(d); err != nil || fi.Mode()&os.ModeSymlink == 0 {
+	if _, err = os.Stat(rootDir); os.IsNotExist(err) {
+		if fi, err := os.Lstat(rootDir); err != nil || fi.Mode()&os.ModeSymlink == 0 {
 			log.Warn(err)
 			return
 		}
@@ -326,7 +339,7 @@ func (c *Collection) Scan(withTags bool) {
 	defer func() { base.GetFree(base.IdleStatusDbOperations) }()
 
 	var iTrack, nTrack, unsupp, scanErr int
-	err = filepath.Walk(d, func(path string, i os.FileInfo, err error) error {
+	err = filepath.Walk(rootDir, func(path string, i os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -342,7 +355,7 @@ func (c *Collection) Scan(withTags bool) {
 		return
 	}
 
-	err = filepath.Walk(d, func(path string, i os.FileInfo, err error) error {
+	err = filepath.Walk(rootDir, func(path string, i os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

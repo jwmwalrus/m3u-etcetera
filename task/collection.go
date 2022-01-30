@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
@@ -225,6 +226,11 @@ func collectionAddAction(c *cli.Context) (err error) {
 		Location: rest[1],
 		Disabled: c.Bool("disabled"),
 		Remote:   c.Bool("remote"),
+	}
+
+	req.Location, err = urlstr.PathToURL(rest[1])
+	if err != nil {
+		return
 	}
 
 	cc, err := getClientConn()

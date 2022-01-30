@@ -7,6 +7,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/task"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -37,8 +38,18 @@ func main() {
 		Description: "A playlist-centric music player",
 		ExitErrHandler: func(c *cli.Context, err error) {
 			if err != nil {
-				log.Error(err)
-				fmt.Fprintf(c.App.ErrWriter, err.Error()+"\n")
+				s, ok := status.FromError(err)
+				if !ok {
+					log.Error(err)
+					fmt.Fprintf(c.App.ErrWriter, err.Error()+"\n")
+					return
+				}
+
+				log.WithFields(log.Fields{
+					"code":    s.Code(),
+					"details": s.Details(),
+				}).Error(s.Message())
+				fmt.Fprintf(c.App.ErrWriter, s.Message()+"\n")
 			}
 		},
 		EnableBashCompletion: true,

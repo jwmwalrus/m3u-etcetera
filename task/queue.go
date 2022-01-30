@@ -146,17 +146,8 @@ func queueAction(c *cli.Context) (err error) {
 		return
 	}
 
-	req := &m3uetcpb.GetQueueRequest{}
-
-	persp := strings.ToLower(c.String("perspective"))
-	if strings.HasPrefix("radio", persp) {
-		req.Perspective = m3uetcpb.Perspective_RADIO
-	} else if strings.HasPrefix("podcasts", persp) {
-		req.Perspective = m3uetcpb.Perspective_PODCASTS
-	} else if strings.HasPrefix("audiobooks", persp) {
-		req.Perspective = m3uetcpb.Perspective_AUDIOBOOKS
-	} else {
-		req.Perspective = m3uetcpb.Perspective_MUSIC
+	req := &m3uetcpb.GetQueueRequest{
+		Perspective: getPerspective(c),
 	}
 
 	if c.Int("limit") > 0 {
@@ -309,20 +300,10 @@ func queueMoveAction(c *cli.Context) (err error) {
 
 	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
 	req := &m3uetcpb.ExecuteQueueActionRequest{
+		Perspective:  getPerspective(c),
 		Action:       m3uetcpb.QueueAction(action),
 		FromPosition: int32(c.Int("from-pos")),
 		Position:     int32(c.Int("to-pos")),
-	}
-
-	persp := strings.ToLower(c.String("perspective"))
-	if strings.HasPrefix("radio", persp) {
-		req.Perspective = m3uetcpb.Perspective_RADIO
-	} else if strings.HasPrefix("podcasts", persp) {
-		req.Perspective = m3uetcpb.Perspective_PODCASTS
-	} else if strings.HasPrefix("audiobooks", persp) {
-		req.Perspective = m3uetcpb.Perspective_AUDIOBOOKS
-	} else {
-		req.Perspective = m3uetcpb.Perspective_MUSIC
 	}
 
 	cc, err := getClientConn()

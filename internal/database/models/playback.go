@@ -103,21 +103,8 @@ func (pb *Playback) AddToHistory(position, duration int64, freeze bool) {
 	return
 }
 
-// BeforeCreate is a GORM hook
-func (pb *Playback) BeforeCreate(tx *gorm.DB) error {
-	fmt.Println("BeforeCreate location:", pb.Location)
-	return nil
-}
-
-// BeforeSave is a GORM hook
-func (pb *Playback) BeforeSave(tx *gorm.DB) error {
-	fmt.Println("BeforeSave location:", pb.Location)
-	return nil
-}
-
 // AfterCreate is a GORM hook
 func (pb *Playback) AfterCreate(tx *gorm.DB) error {
-	fmt.Println("AfterCreate location:", pb.Location)
 	go func() {
 		if !base.FlagTestingMode && !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
 			PlaybackChanged <- struct{}{}

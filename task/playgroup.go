@@ -104,17 +104,9 @@ func playgroupAction(c *cli.Context) (err error) {
 
 	cl := m3uetcpb.NewPlaybarSvcClient(cc)
 
-	req := &m3uetcpb.GetAllPlaylistGroupsRequest{Limit: int32(c.Int("limit"))}
-
-	persp := strings.ToLower(c.String("perspective"))
-	if strings.HasPrefix("radio", persp) {
-		req.Perspective = m3uetcpb.Perspective_RADIO
-	} else if strings.HasPrefix("podcasts", persp) {
-		req.Perspective = m3uetcpb.Perspective_PODCASTS
-	} else if strings.HasPrefix("audiobooks", persp) {
-		req.Perspective = m3uetcpb.Perspective_AUDIOBOOKS
-	} else {
-		req.Perspective = m3uetcpb.Perspective_MUSIC
+	req := &m3uetcpb.GetAllPlaylistGroupsRequest{
+		Perspective: getPerspective(c),
+		Limit:       int32(c.Int("limit")),
 	}
 
 	res, err := cl.GetAllPlaylistGroups(context.Background(), req)
