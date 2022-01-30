@@ -9,7 +9,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -463,8 +462,6 @@ func (*PlaybarSvc) SubscribeToPlaybarStore(_ *m3uetcpb.Empty, stream m3uetcpb.Pl
 		return stream.Send(res)
 	}
 
-	sendingOpenItems := false
-
 sLoop:
 	for {
 
@@ -475,16 +472,18 @@ sLoop:
 			}
 
 			if models.PlaybarEvent(e.Idx) == models.PlaybarEventInitial {
-				res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
-					SubscriptionId: id,
-					Event:          m3uetcpb.PlaybarEvent_BE_INITIAL,
-				}
-				err := stream.Send(res)
+				err := stream.Send(
+					&m3uetcpb.SubscribeToPlaybarStoreResponse{
+						SubscriptionId: id,
+						Event:          m3uetcpb.PlaybarEvent_BE_INITIAL,
+					},
+				)
 				if err != nil {
 					return err
 				}
 
 				pgs, pls, opls, opts, ots := models.GetPlaybarStore()
+
 				for i := range pgs {
 					err := sendPlaylistGroup(
 						m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM,
@@ -535,11 +534,74 @@ sLoop:
 					}
 				}
 
-				res = &m3uetcpb.SubscribeToPlaybarStoreResponse{
-					SubscriptionId: id,
-					Event:          m3uetcpb.PlaybarEvent_BE_INITIAL_DONE,
+				err = stream.Send(
+					&m3uetcpb.SubscribeToPlaybarStoreResponse{
+						SubscriptionId: id,
+						Event:          m3uetcpb.PlaybarEvent_BE_INITIAL_DONE,
+					},
+				)
+				if err != nil {
+					return err
 				}
-				onerror.Log(stream.Send(res))
+				continue sLoop
+			}
+
+			if models.PlaybarEvent(e.Idx) == models.PlaybarEventOpenItems {
+				pl := &models.Playlist{}
+				err := pl.Read(e.Data.(int64))
+				if err != nil {
+					return err
+				}
+
+				err = stream.Send(
+					&m3uetcpb.SubscribeToPlaybarStoreResponse{
+						SubscriptionId: id,
+						Event:          m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS,
+					},
+				)
+				if err != nil {
+					return err
+				}
+
+				err = sendOpenPlaylist(
+					m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM,
+					pl,
+				)
+				if err != nil {
+					return err
+				}
+
+				opts, ots := pl.GetTracks(0)
+
+				for i := range opts {
+					err := sendOpenPlaylistTrack(
+						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM,
+						opts[i],
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				for i := range ots {
+					err := sendOpenTrack(
+						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM,
+						ots[i],
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				err = stream.Send(
+					&m3uetcpb.SubscribeToPlaybarStoreResponse{
+						SubscriptionId: id,
+						Event:          m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_DONE,
+					},
+				)
+				if err != nil {
+					return err
+				}
 				continue sLoop
 			}
 
@@ -553,24 +615,6 @@ sLoop:
 				eout = m3uetcpb.PlaybarEvent_BE_ITEM_CHANGED
 			case models.PlaybarEventItemRemoved:
 				eout = m3uetcpb.PlaybarEvent_BE_ITEM_REMOVED
-			case models.PlaybarEventOpenItems:
-				eout := m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS
-				res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
-					SubscriptionId: id,
-					Event:          eout,
-				}
-				onerror.Log(stream.Send(res))
-				sendingOpenItems = true
-				continue sLoop
-			case models.PlaybarEventOpenItemsDone:
-				eout := m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_DONE
-				res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
-					SubscriptionId: id,
-					Event:          eout,
-				}
-				onerror.Log(stream.Send(res))
-				sendingOpenItems = false
-				continue sLoop
 			default:
 				log.Errorf("Ignoring unsupported playbar event: %v", e.Idx)
 				continue sLoop
@@ -581,15 +625,7 @@ sLoop:
 			case *models.PlaylistGroup:
 				fn = sendPlaylistGroup
 			case *models.Playlist:
-				if sendingOpenItems {
-					fn = sendOpenPlaylist
-				} else {
-					fn = sendPlaylist
-				}
-			case *models.PlaylistTrack:
-				fn = sendOpenPlaylistTrack
-			case *models.Track:
-				fn = sendOpenTrack
+				fn = sendPlaylist
 			default:
 				log.Errorf("Ignoring unsupported data for %v: %+v", e.Idx, e.Data)
 				continue sLoop

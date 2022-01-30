@@ -124,10 +124,15 @@ type playlistTree struct {
 
 type playbarsTree struct {
 	pplt               map[m3uetcpb.Perspective]playlistTree
+	initialMode        bool
 	receivingOpenItems bool
 }
 
 func (bt *playbarsTree) update() bool {
+	if bt.initialMode || bt.receivingOpenItems {
+		return false
+	}
+
 	log.Info("Updating playlist models")
 
 	for _, p := range perspectivesList {

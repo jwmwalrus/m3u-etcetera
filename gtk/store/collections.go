@@ -200,77 +200,6 @@ func subscribeToCollectionStore() {
 		return
 	}
 
-	appendItem := func(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
-		switch res.Item.(type) {
-		case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
-			item := res.GetCollection()
-			for _, c := range CData.Collection {
-				if c.Id == item.Id {
-					return
-				}
-			}
-			CData.Collection = append(
-				CData.Collection,
-				item,
-			)
-		case *m3uetcpb.SubscribeToCollectionStoreResponse_Track:
-			item := res.GetTrack()
-			for _, t := range CData.Track {
-				if t.Id == item.Id {
-					return
-				}
-			}
-			CData.Track = append(CData.Track, item)
-		default:
-		}
-	}
-
-	changeItem := func(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
-		switch res.Item.(type) {
-		case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
-			c := res.GetCollection()
-			for i := range CData.Collection {
-				if CData.Collection[i].Id == c.Id {
-					CData.Collection[i] = c
-					break
-				}
-			}
-		case *m3uetcpb.SubscribeToCollectionStoreResponse_Track:
-			t := res.GetTrack()
-			for i := range CData.Track {
-				if CData.Track[i].Id == t.Id {
-					CData.Track[i] = t
-					break
-				}
-			}
-		}
-	}
-
-	removeItem := func(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
-		switch res.Item.(type) {
-		case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
-			c := res.GetCollection()
-			n := len(CData.Collection)
-			for i := range CData.Collection {
-				if CData.Collection[i].Id == c.Id {
-					CData.Collection[i] = CData.Collection[n-1]
-					CData.Collection = CData.Collection[:n-1]
-					break
-				}
-			}
-		case *m3uetcpb.SubscribeToCollectionStoreResponse_Track:
-			t := res.GetTrack()
-			n := len(CData.Track)
-			for i := range CData.Track {
-				if CData.Track[i].Id == t.Id {
-					CData.Track[i] = CData.Track[n-1]
-					CData.Track = CData.Track[:n-1]
-					break
-				}
-			}
-		}
-	}
-
 	for {
 		res, err := stream.Recv()
 		if err != nil {
@@ -291,16 +220,15 @@ func subscribeToCollectionStore() {
 			CData.Collection = []*m3uetcpb.Collection{}
 			CData.Track = []*m3uetcpb.Track{}
 		case m3uetcpb.CollectionEvent_CE_INITIAL_ITEM:
-			appendItem(res)
+			appendCDataItem(res)
 		case m3uetcpb.CollectionEvent_CE_INITIAL_DONE:
 			cTree.initialMode = false
-			// pass
 		case m3uetcpb.CollectionEvent_CE_ITEM_ADDED:
-			appendItem(res)
+			appendCDataItem(res)
 		case m3uetcpb.CollectionEvent_CE_ITEM_CHANGED:
-			changeItem(res)
+			changeCDataItem(res)
 		case m3uetcpb.CollectionEvent_CE_ITEM_REMOVED:
-			removeItem(res)
+			removeCDataItem(res)
 		case m3uetcpb.CollectionEvent_CE_SCANNING:
 			cTree.scanningMode = true
 		case m3uetcpb.CollectionEvent_CE_SCANNING_DONE:
@@ -308,13 +236,84 @@ func subscribeToCollectionStore() {
 		}
 
 		CData.Mu.Unlock()
-		if !cTree.initialMode && !cTree.scanningMode {
-			glib.IdleAdd(cTree.update)
-			glib.IdleAdd(updateCollectionsModel)
-		}
+
+		glib.IdleAdd(cTree.update)
+		glib.IdleAdd(updateCollectionsModel)
+
 		if !wgdone {
 			wg.Done()
 			wgdone = true
+		}
+	}
+}
+
+func appendCDataItem(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
+	switch res.Item.(type) {
+	case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
+		item := res.GetCollection()
+		for _, c := range CData.Collection {
+			if c.Id == item.Id {
+				return
+			}
+		}
+		CData.Collection = append(
+			CData.Collection,
+			item,
+		)
+	case *m3uetcpb.SubscribeToCollectionStoreResponse_Track:
+		item := res.GetTrack()
+		for _, t := range CData.Track {
+			if t.Id == item.Id {
+				return
+			}
+		}
+		CData.Track = append(CData.Track, item)
+	default:
+	}
+}
+
+func changeCDataItem(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
+	switch res.Item.(type) {
+	case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
+		c := res.GetCollection()
+		for i := range CData.Collection {
+			if CData.Collection[i].Id == c.Id {
+				CData.Collection[i] = c
+				break
+			}
+		}
+	case *m3uetcpb.SubscribeToCollectionStoreResponse_Track:
+		t := res.GetTrack()
+		for i := range CData.Track {
+			if CData.Track[i].Id == t.Id {
+				CData.Track[i] = t
+				break
+			}
+		}
+	}
+}
+
+func removeCDataItem(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
+	switch res.Item.(type) {
+	case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
+		c := res.GetCollection()
+		n := len(CData.Collection)
+		for i := range CData.Collection {
+			if CData.Collection[i].Id == c.Id {
+				CData.Collection[i] = CData.Collection[n-1]
+				CData.Collection = CData.Collection[:n-1]
+				break
+			}
+		}
+	case *m3uetcpb.SubscribeToCollectionStoreResponse_Track:
+		t := res.GetTrack()
+		n := len(CData.Track)
+		for i := range CData.Track {
+			if CData.Track[i].Id == t.Id {
+				CData.Track[i] = CData.Track[n-1]
+				CData.Track = CData.Track[:n-1]
+				break
+			}
 		}
 	}
 }
@@ -347,6 +346,10 @@ func unsubscribeFromCollectionStore() {
 }
 
 func updateCollectionsModel() bool {
+	if cTree.initialMode || cTree.scanningMode {
+		return false
+	}
+
 	log.Info("Updating collection model")
 
 	model := collectionsModel

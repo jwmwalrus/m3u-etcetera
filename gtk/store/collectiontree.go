@@ -199,6 +199,10 @@ type collectionTree struct {
 }
 
 func (tree *collectionTree) rebuild() {
+	if tree.initialMode || tree.scanningMode {
+		return
+	}
+
 	if tree.model == nil {
 		return
 	}

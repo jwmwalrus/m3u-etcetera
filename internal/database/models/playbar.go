@@ -36,7 +36,8 @@ const (
 	PlaybarEventItemChanged
 	PlaybarEventItemRemoved
 	PlaybarEventOpenItems
-	PlaybarEventOpenItemsDone
+	_
+	_
 )
 
 func (ce PlaybarEvent) String() string {
@@ -48,8 +49,9 @@ func (ce PlaybarEvent) String() string {
 		"item-added",
 		"item-changed",
 		"item-removed",
-		"open-item",
-		"open-item-done",
+		"open-items",
+		"open-items-item",
+		"open-items-done",
 	}[ce]
 }
 
@@ -148,7 +150,7 @@ func (b *Playbar) CloseEntry(pl *Playlist) {
 	onerror.Log(pl.Save())
 
 	if pl.IsTransient() {
-		onerror.Log(pl.Delete())
+		go pl.DeleteDelayed()
 	}
 }
 
@@ -158,6 +160,7 @@ func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error
 	var groupID int64
 	pl = &Playlist{}
 
+	shouldBeOpen := false
 	if name != "" {
 		plname = name
 
@@ -176,6 +179,7 @@ func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error
 			return
 		}
 		groupID = pg.ID
+		shouldBeOpen = true
 	}
 
 	pl = &Playlist{
@@ -185,6 +189,11 @@ func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error
 		PlaylistGroupID: groupID,
 	}
 	err = pl.Create()
+
+	if shouldBeOpen {
+		pl.Open = true
+		err = pl.Save()
+	}
 	return
 }
 
@@ -491,6 +500,10 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 
 // OpenEntry opens the given playbar entry
 func (b *Playbar) OpenEntry(pl *Playlist) {
+	if pl.IsTransient() {
+		go pl.DeleteDelayed()
+		return
+	}
 	pl.Open = true
 	onerror.Log(pl.Save())
 }

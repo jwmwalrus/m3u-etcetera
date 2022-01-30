@@ -198,6 +198,12 @@ func (pl *Playlist) Delete() (err error) {
 	return
 }
 
+// DeleteDelayed deletes a playlist after 5 seconds
+func (pl *Playlist) DeleteDelayed() {
+	time.Sleep(5 * time.Second)
+	onerror.Log(pl.Delete())
+}
+
 // Read implements the DataReader interface
 func (pl *Playlist) Read(id int64) (err error) {
 	return db.Joins("Playbar").
@@ -255,37 +261,7 @@ func (pl *Playlist) AfterCreate(tx *gorm.DB) error {
 
 // AfterUpdate is a GORM hook
 func (pl *Playlist) AfterUpdate(tx *gorm.DB) error {
-	go func() {
-		if !base.FlagTestingMode {
-			selist := []subscription.Event{
-				{Idx: int(PlaybarEventItemChanged), Data: pl},
-				{Idx: int(PlaybarEventOpenItems)},
-			}
-
-			pts, ts := pl.GetTracks(0)
-			event := int(PlaybarEventItemAdded)
-			if !pl.Open {
-				event = int(PlaybarEventItemRemoved)
-			}
-
-			selist = append(selist, subscription.Event{Idx: event, Data: pl})
-
-			for i := range pts {
-				selist = append(selist, subscription.Event{Idx: event, Data: pts[i]})
-			}
-
-			for i := range ts {
-				selist = append(selist, subscription.Event{Idx: event, Data: ts[i]})
-			}
-
-			selist = append(selist, subscription.Event{Idx: int(PlaybarEventOpenItemsDone)})
-
-			subscription.Broadcast(
-				subscription.ToPlaybarStoreEvent,
-				selist...,
-			)
-		}
-	}()
+	go broadcastOpenPlaylist(pl.ID)
 	return nil
 }
 
@@ -519,50 +495,20 @@ func (pt *PlaylistTrack) ToProtobuf() proto.Message {
 
 // AfterCreate is a GORM hook
 func (pt *PlaylistTrack) AfterCreate(tx *gorm.DB) error {
-	go pt.broadcast(PlaybarEventItemAdded)
+	go broadcastOpenPlaylist(pt.PlaylistID)
 	return nil
 }
 
 // AfterUpdate is a GORM hook
 func (pt *PlaylistTrack) AfterUpdate(tx *gorm.DB) error {
-	go pt.broadcast(PlaybarEventItemChanged)
+	go broadcastOpenPlaylist(pt.PlaylistID)
 	return nil
 }
 
 // AfterDelete is a GORM hook
 func (pt *PlaylistTrack) AfterDelete(tx *gorm.DB) error {
-	go pt.broadcast(PlaybarEventItemRemoved)
+	go broadcastOpenPlaylist(pt.PlaylistID)
 	return nil
-}
-
-func (pt *PlaylistTrack) broadcast(event PlaybarEvent) {
-	if base.FlagTestingMode {
-		return
-	}
-	t := &Track{}
-	for i := 0; i < 25; i++ {
-		err := db.First(t, pt.TrackID).Error
-		if err == nil {
-			break
-		}
-		time.Sleep(200 * time.Millisecond)
-	}
-	if t.ID == 0 {
-		log.Errorf("Database lock issue: error reading track")
-		return
-	}
-
-	eslist := []subscription.Event{
-		{Idx: int(PlaybarEventOpenItems)},
-		{Idx: int(event), Data: pt},
-		{Idx: int(event), Data: t},
-		{Idx: int(PlaybarEventOpenItemsDone)},
-	}
-
-	subscription.Broadcast(
-		subscription.ToPlaybarStoreEvent,
-		eslist...,
-	)
 }
 
 // PlaylistQuery Defines a playlist query
@@ -660,6 +606,20 @@ func GetTransientNameForPlaylist() string {
 	}
 
 	return ""
+}
+
+func broadcastOpenPlaylist(id int64) {
+	if base.FlagTestingMode {
+		return
+	}
+
+	subscription.Broadcast(
+		subscription.ToPlaybarStoreEvent,
+		subscription.Event{
+			Idx:  int(PlaybarEventOpenItems),
+			Data: id,
+		},
+	)
 }
 
 func reasignPlaylistTrackPositions(s []PlaylistTrack) []PlaylistTrack {

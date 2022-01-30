@@ -196,5 +196,6 @@ enum PlaybarEvent {
     BE_ITEM_CHANGED = 5;
     BE_ITEM_REMOVED = 6;
     BE_OPEN_ITEMS = 7;
-    BE_OPEN_ITEMS_DONE = 8;
+    BE_OPEN_ITEMS_ITEM = 8;
+    BE_OPEN_ITEMS_DONE = 9;
 }

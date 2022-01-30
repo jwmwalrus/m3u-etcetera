@@ -16,6 +16,8 @@ var (
 	playlistDlg     *gtk.Dialog
 )
 
+// GetFocused returns the ID of the focused playlist
+// for the given perspective
 func GetFocused(p m3uetcpb.Perspective) int64 {
 	nb, err := builder.GetNotebook(perspToNotebook[p])
 	if err != nil {
@@ -32,6 +34,7 @@ func GetFocused(p m3uetcpb.Perspective) int64 {
 	return 0
 }
 
+// Setup kickstarts playlists
 func Setup(signals *map[string]interface{}) (err error) {
 	store.SetUpdatePlaybarViewFn(updatePlaybarView)
 
@@ -57,17 +60,7 @@ func createPlaylist(btn *gtk.Button, p m3uetcpb.Perspective) {
 		Action:      m3uetcpb.PlaylistAction_PL_CREATE,
 		Perspective: p,
 	}
-	res, err := store.ExecutePlaylistAction(req)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	req2 := &m3uetcpb.ExecutePlaybarActionRequest{
-		Action: m3uetcpb.PlaybarAction_BAR_OPEN,
-		Ids:    []int64{res.Id},
-	}
-
-	err = store.ExecutePlaybarAction(req2)
+	_, err := store.ExecutePlaylistAction(req)
 	if err != nil {
 		log.Error(err)
 		return
