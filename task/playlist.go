@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -90,6 +91,21 @@ func Playlist() *cli.Command {
 				Description: "Delete playlist identified by the given `ID`",
 				Action:      playlistExecuteAction,
 			},
+			{
+				Name:    "import",
+				Aliases: []string{"imp"},
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "perspective",
+						Aliases: []string{"persp"},
+						Usage:   "Applies to perspective",
+						Value:   "music",
+					},
+				},
+				Usage:       "playlist import [<flags> ...] locations ...",
+				Description: "Imports a playlist from a supported file format (e.g., M3U)",
+				Action:      playlistImportAction,
+			},
 		},
 		Before: checkServerStatus,
 		Action: playlistAction,
@@ -126,17 +142,9 @@ func playlistAction(c *cli.Context) (err error) {
 
 	cl := m3uetcpb.NewPlaybarSvcClient(cc)
 
-	req := &m3uetcpb.GetAllPlaylistsRequest{Limit: int32(c.Int("limit"))}
-
-	persp := strings.ToLower(c.String("perspective"))
-	if strings.HasPrefix("radio", persp) {
-		req.Perspective = m3uetcpb.Perspective_RADIO
-	} else if strings.HasPrefix("podcasts", persp) {
-		req.Perspective = m3uetcpb.Perspective_PODCASTS
-	} else if strings.HasPrefix("audiobooks", persp) {
-		req.Perspective = m3uetcpb.Perspective_AUDIOBOOKS
-	} else {
-		req.Perspective = m3uetcpb.Perspective_MUSIC
+	req := &m3uetcpb.GetAllPlaylistsRequest{
+		Perspective: getPerspective(c),
+		Limit:       int32(c.Int("limit")),
 	}
 
 	res, err := cl.GetAllPlaylists(context.Background(), req)
@@ -266,5 +274,60 @@ func showPlaylist(c *cli.Context, id int64) (err error) {
 		tbl.AddRow(pt.Position, t.Title, artist, t.Album, pt.Dynamic)
 	}
 	tbl.Print()
+	return
+}
+
+func playlistImportAction(c *cli.Context) (err error) {
+
+	rest := c.Args().Slice()
+	if len(rest) < 1 {
+		err = fmt.Errorf("I need a list of locations to playlists")
+		return
+	}
+
+	req := &m3uetcpb.ImportPlaylistsRequest{
+		Perspective: getPerspective(c),
+	}
+
+	if req.Locations, err = parseLocations(rest); err != nil {
+		return
+	}
+
+	cc, err := getClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	stream, err := cl.ImportPlaylists(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		err = fmt.Errorf(s.Message())
+		return
+	}
+
+	for {
+		var res *m3uetcpb.ImportPlaylistsResponse
+		res, err = stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+				break
+			}
+			return
+		}
+
+		fmt.Printf("ID: %d\n", res.Id)
+		if len(res.ImportErrors) > 0 {
+			fmt.Printf("\tThere were errors during import:\n")
+			for _, ie := range res.ImportErrors {
+				fmt.Printf("\t\t%s\n", ie)
+			}
+			fmt.Printf("\n")
+		}
+
+	}
+
 	return
 }

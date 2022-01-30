@@ -2,8 +2,12 @@ package gtkui
 
 import (
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -152,6 +156,106 @@ func (osm *onSettingsMenu) hide() {
 		}
 	}
 	osm.pm.Popdown()
+}
+
+func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
+	dlg, err := gtk.FileChooserDialogNewWith2Buttons(
+		"Import playlist",
+		osm.window,
+		gtk.FILE_CHOOSER_ACTION_SAVE,
+		"Import",
+		gtk.RESPONSE_APPLY,
+		"Cancel",
+		gtk.RESPONSE_CANCEL,
+	)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	filter, err := gtk.FileFilterNew()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for _, v := range base.SupportedPlaylistExtensions {
+		filter.AddPattern("*" + v)
+	}
+	dlg.AddFilter(filter)
+	dlg.ShowAll()
+	res := dlg.Run()
+	switch res {
+	case gtk.RESPONSE_APPLY:
+		// TODO: implement
+	case gtk.RESPONSE_CANCEL:
+	default:
+	}
+	dlg.Destroy()
+}
+
+func (osm *onSettingsMenu) openFile(btn *gtk.Button) {
+	osm.hide()
+
+	dlg, err := gtk.FileChooserDialogNewWith2Buttons(
+		"Open file",
+		osm.window,
+		gtk.FILE_CHOOSER_ACTION_SAVE,
+		"Open",
+		gtk.RESPONSE_APPLY,
+		"Cancel",
+		gtk.RESPONSE_CANCEL,
+	)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	defer dlg.Destroy()
+
+	filter, err := gtk.FileFilterNew()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for _, v := range base.SupportedFileExtensions {
+		filter.AddPattern("*" + v)
+	}
+	dlg.AddFilter(filter)
+	dlg.ShowAll()
+	res := dlg.Run()
+	switch res {
+	case gtk.RESPONSE_APPLY:
+		loc := dlg.GetURI()
+
+		plID := playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
+
+		if plID > 0 {
+			action := m3uetcpb.PlaylistTrackAction_PT_APPEND
+			req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
+				PlaylistId: plID,
+				Action:     action,
+				Locations:  []string{loc},
+			}
+
+			err := store.ExecutePlaylistTrackAction(req)
+			onerror.Log(err)
+		} else {
+			action := m3uetcpb.QueueAction_Q_APPEND
+			req := &m3uetcpb.ExecuteQueueActionRequest{
+				Action:    action,
+				Locations: []string{loc},
+			}
+
+			err := store.ExecuteQueueAction(req)
+			onerror.Log(err)
+		}
+	case gtk.RESPONSE_CANCEL:
+	default:
+	}
+}
+
+func (osm *onSettingsMenu) openURL(btn *gtk.Button) {
 }
 
 func (osm *onSettingsMenu) quitAll(btn *gtk.Button) {

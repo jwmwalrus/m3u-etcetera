@@ -1,0 +1,6 @@
+#EXTM3U
+#PLAYLIST: PL1
+#EXTINF:300,Artist 1 - Title 1
+../../data/testing/audio1/track01.ogg
+#EXTINF:300,Artist 2 - Title 1
+../../data/testing/audio2/track01.ogg

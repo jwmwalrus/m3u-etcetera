@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
@@ -357,6 +358,40 @@ func (*PlaybarSvc) ExecutePlaylistTrackAction(_ context.Context, req *m3uetcpb.E
 	return &m3uetcpb.Empty{}, nil
 }
 
+// ImportPlaylists implements m3uetcpb.PlaybarSvcServer
+func (*PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest, stream m3uetcpb.PlaybarSvc_ImportPlaylistsServer) error {
+	bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
+	if err != nil {
+		return grpc.Errorf(codes.Internal,
+			"Error while obtaining perspective playbar: %v", err)
+	}
+
+	if len(req.Locations) < 1 {
+		return grpc.Errorf(codes.InvalidArgument,
+			"At least one playlist location is required")
+	}
+
+	for _, l := range req.Locations {
+		pl, msgs, err := bar.ImportPlaylist(l)
+		if err != nil {
+			un, err2 := urlstr.URLToPath(l)
+			if err2 != nil {
+				un = l
+			}
+			return grpc.Errorf(codes.InvalidArgument,
+				"Error importing playlist at `%v`: %v", un, err)
+		}
+		req := &m3uetcpb.ImportPlaylistsResponse{Id: pl.ID, ImportErrors: msgs}
+		err = stream.Send(req)
+		if err != nil {
+			return grpc.Errorf(codes.Internal,
+				"Error sending stream: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // SubscribeToPlaybarStore implements m3uetcpb.PlaybarSvcServer
 func (*PlaybarSvc) SubscribeToPlaybarStore(_ *m3uetcpb.Empty, stream m3uetcpb.PlaybarSvc_SubscribeToPlaybarStoreServer) error {
 
@@ -446,7 +481,7 @@ sLoop:
 				}
 				err := stream.Send(res)
 				if err != nil {
-					break sLoop
+					return err
 				}
 
 				pgs, pls, opls, opts, ots := models.GetPlaybarStore()
@@ -456,7 +491,7 @@ sLoop:
 						pgs[i],
 					)
 					if err != nil {
-						break sLoop
+						return err
 					}
 				}
 
@@ -466,7 +501,7 @@ sLoop:
 						pls[i],
 					)
 					if err != nil {
-						break sLoop
+						return err
 					}
 				}
 
@@ -476,7 +511,7 @@ sLoop:
 						opls[i],
 					)
 					if err != nil {
-						break sLoop
+						return err
 					}
 				}
 
@@ -486,7 +521,7 @@ sLoop:
 						opts[i],
 					)
 					if err != nil {
-						break sLoop
+						return err
 					}
 				}
 
@@ -496,7 +531,7 @@ sLoop:
 						ots[i],
 					)
 					if err != nil {
-						break sLoop
+						return err
 					}
 				}
 
@@ -561,7 +596,7 @@ sLoop:
 			}
 
 			if err := fn(eout, e.Data.(models.ProtoOut)); err != nil {
-				break sLoop
+				return err
 			}
 		}
 	}

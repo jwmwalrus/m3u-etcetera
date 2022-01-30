@@ -42,6 +42,10 @@ func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error
 		return
 	}
 
+	(*signals)["on_settings_open_file_clicked"] = settingsMenuSignals.openFile
+	(*signals)["on_settings_open_url_clicked"] = settingsMenuSignals.openURL
+	(*signals)["on_settings_import_playlist_clicked"] = settingsMenuSignals.importPlaylist
+
 	if err = setupPlayback(signals); err != nil {
 		return
 	}

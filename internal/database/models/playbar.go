@@ -2,7 +2,15 @@ package models
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
+	"github.com/jwmwalrus/bnp/stringing"
+	"github.com/jwmwalrus/bnp/urlstr"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
@@ -298,6 +306,94 @@ func (b *Playbar) GetAllOpenEntries() (pls []*Playlist) {
 	for i := range s {
 		pls = append(pls, &s[i])
 	}
+	return
+}
+
+// ImportPlaylist creates a playlist from the given location, if supported
+func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, err error) {
+	path, err := urlstr.URLToPath(location)
+	if err != nil {
+		return
+	}
+
+	if !base.IsSupportedPlaylist(path) {
+		err = fmt.Errorf("Unsupported playlist format: %v", location)
+	}
+
+	def, err := impexp.NewFromPath(path)
+	if err != nil {
+		return
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+
+	err = def.Parse(f)
+	if err != nil {
+		return
+	}
+
+	name := def.Name()
+
+	if name == "" {
+		name = strings.Join([]string{
+			strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
+			stringing.GetRandomString(8),
+			def.Type(),
+		}, "-")
+	}
+
+	pg, err := DefaultPlaylistGroup.Get()
+	if err != nil {
+		return
+	}
+
+	pl = &Playlist{
+		PlaylistGroupID: pg.ID,
+		PlaybarID:       b.ID,
+		Name:            name,
+		Description: "Imported from " + filepath.Base(path) +
+			" on " + time.Now().Format(time.RFC3339),
+	}
+
+	err = pl.Save()
+	if err != nil {
+		return
+	}
+
+	pts := []PlaylistTrack{}
+	for _, dt := range def.Tracks() {
+		t := Track{}
+		err2 := db.Where("location = ?", dt.Location).First(&t).Error
+		if err2 != nil {
+			t = Track{Location: dt.Location}
+			err2 := t.createTransientWithRaw(dt.ToRaw())
+			if err2 != nil {
+				msgs = append(
+					msgs,
+					fmt.Sprintf("Error creating track at `%v`: %v", dt.Location, err2))
+				continue
+			}
+		}
+
+		pts = append(pts, PlaylistTrack{PlaylistID: pl.ID, TrackID: t.ID})
+	}
+
+	pts = reasignPlaylistTrackPositions(pts)
+	for i := range pts {
+		err2 := db.Save(&pts[i]).Error
+		if err2 != nil {
+			t := Track{}
+			t.Read(pts[i].TrackID)
+			msgs = append(
+				msgs,
+				fmt.Sprintf("Error saving playlist track at `%v`: %v", t.Location, err2),
+			)
+		}
+	}
+
 	return
 }
 

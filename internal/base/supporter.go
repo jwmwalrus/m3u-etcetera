@@ -7,34 +7,29 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 )
 
-const (
-	// SupportedFileExtensionMP3 supported mp3
-	SupportedFileExtensionMP3 = ".mp3"
-
-	// SupportedFileExtensionM4A supported m4a
-	SupportedFileExtensionM4A = ".m4a"
-
-	// SupportedFileExtensionOGG supported ogg
-	SupportedFileExtensionOGG = ".ogg"
-
-	// SupportedFileExtensionFLAC supported flac
-	SupportedFileExtensionFLAC = ".flac"
-)
-
 var (
-	// SupportedFileExtensions supported file extensons
+	// SupportedFileExtensions -
 	SupportedFileExtensions = []string{
-		SupportedFileExtensionMP3,
-		SupportedFileExtensionM4A,
-		SupportedFileExtensionOGG,
-		SupportedFileExtensionFLAC,
+		".mp3",
+		".m4a",
+		".ogg",
+		".flac",
 	}
 
+	// SupportedPlaylistExtensions -
+	SupportedPlaylistExtensions = []string{
+		".m3u",
+		".m3u8",
+		// ".pls",
+	}
+
+	// SupportedURISchemes -
 	SupportedURISchemes = []string{
 		"file",
 		"http",
 	}
 
+	// SupportedMIMETypes -
 	SupportedMIMETypes = []string{
 		"audio/x-mp3",
 		"application/x-id3",
@@ -59,7 +54,7 @@ var (
 		"audio/flac",
 	}
 
-	// IgnoredFileExtensions supported file extensons
+	// IgnoredFileExtensions -
 	IgnoredFileExtensions = []string{
 		".bmp",
 		".db",
@@ -83,6 +78,21 @@ func IsSupportedURL(s string) bool {
 // IsSupportedFile returns true if the path is supported
 func IsSupportedFile(path string) bool {
 	return slice.Contains(SupportedFileExtensions, filepath.Ext(path))
+}
+
+// IsSupportedPlaylistURL returns true if the path is supported
+func IsSupportedPlaylistURL(s string) bool {
+	path, err := urlstr.URLToPath(s)
+	if err != nil {
+		return false
+	}
+
+	return IsSupportedPlaylist(path)
+}
+
+// IsSupportedFile returns true if the path is supported
+func IsSupportedPlaylist(path string) bool {
+	return slice.Contains(SupportedPlaylistExtensions, filepath.Ext(path))
 }
 
 // IsIgnoredFile returns true if the path should be ignored

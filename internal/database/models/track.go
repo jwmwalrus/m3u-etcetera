@@ -202,12 +202,43 @@ func (t *Track) createTransient() (err error) {
 	return
 }
 
+func (t *Track) createTransientWithRaw(raw map[string]interface{}) (err error) {
+	c, err := TransientCollection.Get()
+	if err != nil {
+		return
+	}
+	t.CollectionID = c.ID
+	if err = t.updateTags(); err != nil {
+		return
+	}
+
+	t.fillMissingTags(raw)
+	err = t.Save()
+	return
+}
+
 func (t *Track) fillMissingTags(raw map[string]interface{}) {
+	var title, album, artist, albumArtist, genre string
 	var full, partial time.Time
 	for k, v := range raw {
 		str, _ := v.(string)
 		switch k {
-		case "TDAT", "TRDA", "TDRL", "TDRC", "TDOR":
+		case "TIT2":
+			title = v.(string)
+		case "TALB":
+			album = v.(string)
+		case "TPE1":
+			artist = v.(string)
+		case "TPE2":
+			albumArtist = v.(string)
+		case "TCON":
+			genre = v.(string)
+		case "TLEN":
+			msec, err := strconv.ParseInt(str, 10, 64)
+			if err == nil && t.Duration == 0 {
+				t.Duration = msec * 1e6
+			}
+		case "TDAT", "TRDA", "TDRL", "TDRC", "TDOR", "TYER":
 			var dt time.Time
 			dt, err := time.Parse("2006-01-02", str)
 			if err != nil && str != "0000" {
@@ -223,14 +254,10 @@ func (t *Track) fillMissingTags(raw map[string]interface{}) {
 			} else if full.IsZero() {
 				full = dt
 			}
-		case "TLEN":
-			msec, err := strconv.ParseInt(str, 10, 64)
-			if err == nil && t.Duration == 0 {
-				t.Duration = msec * 1e6
-			}
 		default:
 		}
 	}
+
 	var year int
 	var unano int64
 	if !full.IsZero() {
@@ -250,23 +277,41 @@ func (t *Track) fillMissingTags(raw map[string]interface{}) {
 	unesc := ""
 	unesc, _ = urlstr.URLToPath(t.Location)
 	if strings.TrimSpace(t.Title) == "" {
-		t.Title = "[Unknown]"
-		if unesc != "" {
-			t.Title += " (" + filepath.Base(unesc) + ")"
+		if title != "" {
+			t.Title = title
+		} else {
+			t.Title = "[Unknown]"
+			if unesc != "" {
+				t.Title += " (" + filepath.Base(unesc) + ")"
+			}
 		}
 	}
 	if strings.TrimSpace(t.Album) == "" {
-		t.Album = "[Unknown]"
-		if unesc != "" {
-			t.Album += " (" + filepath.Dir(unesc) + ")"
+		if album != "" {
+			t.Album = album
+		} else {
+			t.Album = "[Unknown]"
+			if unesc != "" {
+				t.Album += " (" + filepath.Dir(unesc) + ")"
+			}
 		}
 	}
 	if strings.TrimSpace(t.Artist) == "" &&
 		strings.TrimSpace(t.Albumartist) == "" {
-		t.Artist = "[Unknown]"
+		if artist != "" {
+			t.Artist = artist
+		} else if albumArtist != "" {
+			t.Artist = albumArtist
+		} else {
+			t.Artist = "[Unknown]"
+		}
 	}
 	if strings.TrimSpace(t.Genre) == "" {
-		t.Genre = "[Unknown]"
+		if genre != "" {
+			t.Genre = genre
+		} else {
+			t.Genre = "[Unknown]"
+		}
 	}
 }
 
@@ -308,31 +353,34 @@ func (t *Track) updateTags() (err error) {
 	}
 	defer f.Close()
 
-	m, err := tag.ReadFrom(f)
-	if err != nil {
-		log.Error(err)
-		return err
+	m, err2 := tag.ReadFrom(f)
+	if err2 != nil {
+		log.WithField("location", t.Location).
+			Error(err2)
 	}
 
-	t.Format = string(m.Format())
-	t.Type = string(m.FileType())
-	t.Title = m.Title()
-	t.Album = m.Album()
-	t.Artist = m.Artist()
-	t.Albumartist = m.AlbumArtist()
-	t.Composer = m.Composer()
-	t.Genre = m.Genre()
-	// t.Comment = m.Comment()
-	// t.Lyrics = m.Lyrics()
-	t.Year = m.Year()
-	t.Tracknumber, t.Tracktotal = m.Track()
-	t.Discnumber, t.Disctotal = m.Disc()
-	t.fillMissingTags(m.Raw())
+	raw := map[string]interface{}{}
+	if m != nil {
+		t.Format = string(m.Format())
+		t.Type = string(m.FileType())
+		t.Title = m.Title()
+		t.Album = m.Album()
+		t.Artist = m.Artist()
+		t.Albumartist = m.AlbumArtist()
+		t.Composer = m.Composer()
+		t.Genre = m.Genre()
+		t.Year = m.Year()
+		t.Tracknumber, t.Tracktotal = m.Track()
+		t.Discnumber, t.Disctotal = m.Disc()
 
-	dir := filepath.Dir(t.Location)
-	hasher := md5.New()
-	hasher.Write([]byte(dir))
-	t.savePicture(m.Picture(), hex.EncodeToString(hasher.Sum(nil)))
+		dir := filepath.Dir(t.Location)
+		hasher := md5.New()
+		hasher.Write([]byte(dir))
+		t.savePicture(m.Picture(), hex.EncodeToString(hasher.Sum(nil)))
+
+		raw = m.Raw()
+	}
+	t.fillMissingTags(raw)
 
 	return
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -227,7 +228,7 @@ func (pl *Playlist) ToProtobuf() proto.Message {
 	bar := Playbar{}
 	bar.Read(pl.PlaybarID)
 	if bar.ID == 0 || bar.PerspectiveID == 0 {
-		fmt.Println(fmt.Sprintf("shameful playlist: %+v", pl))
+		fmt.Println(fmt.Sprintf("SHAMEFUL PLAYLIST: %+v", pl))
 	}
 	out.Perspective = m3uetcpb.Perspective(bar.getPerspectiveIndex())
 	out.Transient = pl.IsTransient()
@@ -518,39 +519,36 @@ func (pt *PlaylistTrack) ToProtobuf() proto.Message {
 
 // AfterCreate is a GORM hook
 func (pt *PlaylistTrack) AfterCreate(tx *gorm.DB) error {
-	go func() {
-		if !base.FlagTestingMode {
-			pt.broadcast(PlaybarEventItemAdded)
-		}
-	}()
+	go pt.broadcast(PlaybarEventItemAdded)
 	return nil
 }
 
 // AfterUpdate is a GORM hook
 func (pt *PlaylistTrack) AfterUpdate(tx *gorm.DB) error {
-	go func() {
-		if !base.FlagTestingMode {
-			pt.broadcast(PlaybarEventItemChanged)
-		}
-	}()
+	go pt.broadcast(PlaybarEventItemChanged)
 	return nil
 }
 
 // AfterDelete is a GORM hook
 func (pt *PlaylistTrack) AfterDelete(tx *gorm.DB) error {
-	go func() {
-		if !base.FlagTestingMode {
-			pt.broadcast(PlaybarEventItemRemoved)
-		}
-	}()
+	go pt.broadcast(PlaybarEventItemRemoved)
 	return nil
 }
 
 func (pt *PlaylistTrack) broadcast(event PlaybarEvent) {
+	if base.FlagTestingMode {
+		return
+	}
 	t := &Track{}
-	err := t.Read(pt.TrackID)
-	if err != nil {
-		log.Error(err)
+	for i := 0; i < 25; i++ {
+		err := db.First(t, pt.TrackID).Error
+		if err == nil {
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	if t.ID == 0 {
+		log.Errorf("Database lock issue: error reading track")
 		return
 	}
 

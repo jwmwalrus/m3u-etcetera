@@ -27,6 +27,7 @@ type PlaybarSvcClient interface {
 	ExecutePlaylistAction(ctx context.Context, in *ExecutePlaylistActionRequest, opts ...grpc.CallOption) (*ExecutePlaylistActionResponse, error)
 	ExecutePlaylistGroupAction(ctx context.Context, in *ExecutePlaylistGroupActionRequest, opts ...grpc.CallOption) (*ExecutePlaylistGroupActionResponse, error)
 	ExecutePlaylistTrackAction(ctx context.Context, in *ExecutePlaylistTrackActionRequest, opts ...grpc.CallOption) (*Empty, error)
+	ImportPlaylists(ctx context.Context, in *ImportPlaylistsRequest, opts ...grpc.CallOption) (PlaybarSvc_ImportPlaylistsClient, error)
 	SubscribeToPlaybarStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybarSvc_SubscribeToPlaybarStoreClient, error)
 	UnsubscribeFromPlaybarStore(ctx context.Context, in *UnsubscribeFromPlaybarStoreRequest, opts ...grpc.CallOption) (*Empty, error)
 }
@@ -120,8 +121,40 @@ func (c *playbarSvcClient) ExecutePlaylistTrackAction(ctx context.Context, in *E
 	return out, nil
 }
 
+func (c *playbarSvcClient) ImportPlaylists(ctx context.Context, in *ImportPlaylistsRequest, opts ...grpc.CallOption) (PlaybarSvc_ImportPlaylistsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &PlaybarSvc_ServiceDesc.Streams[0], "/m3uetcpb.PlaybarSvc/ImportPlaylists", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &playbarSvcImportPlaylistsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type PlaybarSvc_ImportPlaylistsClient interface {
+	Recv() (*ImportPlaylistsResponse, error)
+	grpc.ClientStream
+}
+
+type playbarSvcImportPlaylistsClient struct {
+	grpc.ClientStream
+}
+
+func (x *playbarSvcImportPlaylistsClient) Recv() (*ImportPlaylistsResponse, error) {
+	m := new(ImportPlaylistsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *playbarSvcClient) SubscribeToPlaybarStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybarSvc_SubscribeToPlaybarStoreClient, error) {
-	stream, err := c.cc.NewStream(ctx, &PlaybarSvc_ServiceDesc.Streams[0], "/m3uetcpb.PlaybarSvc/SubscribeToPlaybarStore", opts...)
+	stream, err := c.cc.NewStream(ctx, &PlaybarSvc_ServiceDesc.Streams[1], "/m3uetcpb.PlaybarSvc/SubscribeToPlaybarStore", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,6 +207,7 @@ type PlaybarSvcServer interface {
 	ExecutePlaylistAction(context.Context, *ExecutePlaylistActionRequest) (*ExecutePlaylistActionResponse, error)
 	ExecutePlaylistGroupAction(context.Context, *ExecutePlaylistGroupActionRequest) (*ExecutePlaylistGroupActionResponse, error)
 	ExecutePlaylistTrackAction(context.Context, *ExecutePlaylistTrackActionRequest) (*Empty, error)
+	ImportPlaylists(*ImportPlaylistsRequest, PlaybarSvc_ImportPlaylistsServer) error
 	SubscribeToPlaybarStore(*Empty, PlaybarSvc_SubscribeToPlaybarStoreServer) error
 	UnsubscribeFromPlaybarStore(context.Context, *UnsubscribeFromPlaybarStoreRequest) (*Empty, error)
 	mustEmbedUnimplementedPlaybarSvcServer()
@@ -209,6 +243,9 @@ func (UnimplementedPlaybarSvcServer) ExecutePlaylistGroupAction(context.Context,
 }
 func (UnimplementedPlaybarSvcServer) ExecutePlaylistTrackAction(context.Context, *ExecutePlaylistTrackActionRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecutePlaylistTrackAction not implemented")
+}
+func (UnimplementedPlaybarSvcServer) ImportPlaylists(*ImportPlaylistsRequest, PlaybarSvc_ImportPlaylistsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ImportPlaylists not implemented")
 }
 func (UnimplementedPlaybarSvcServer) SubscribeToPlaybarStore(*Empty, PlaybarSvc_SubscribeToPlaybarStoreServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToPlaybarStore not implemented")
@@ -391,6 +428,27 @@ func _PlaybarSvc_ExecutePlaylistTrackAction_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PlaybarSvc_ImportPlaylists_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ImportPlaylistsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(PlaybarSvcServer).ImportPlaylists(m, &playbarSvcImportPlaylistsServer{stream})
+}
+
+type PlaybarSvc_ImportPlaylistsServer interface {
+	Send(*ImportPlaylistsResponse) error
+	grpc.ServerStream
+}
+
+type playbarSvcImportPlaylistsServer struct {
+	grpc.ServerStream
+}
+
+func (x *playbarSvcImportPlaylistsServer) Send(m *ImportPlaylistsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _PlaybarSvc_SubscribeToPlaybarStore_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(Empty)
 	if err := stream.RecvMsg(m); err != nil {
@@ -479,6 +537,11 @@ var PlaybarSvc_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ImportPlaylists",
+			Handler:       _PlaybarSvc_ImportPlaylists_Handler,
+			ServerStreams: true,
+		},
 		{
 			StreamName:    "SubscribeToPlaybarStore",
 			Handler:       _PlaybarSvc_SubscribeToPlaybarStore_Handler,
