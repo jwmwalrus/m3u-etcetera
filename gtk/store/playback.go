@@ -91,8 +91,10 @@ func subscribeToPlayback() {
 		pbdata.mu.Lock()
 		pbdata.res = res
 		pbdata.mu.Unlock()
+
 		glib.IdleAdd(pbdata.updatePlayback)
 		glib.IdleAdd(pbdata.setCover)
+
 		if !wgdone {
 			wg.Done()
 			wgdone = true

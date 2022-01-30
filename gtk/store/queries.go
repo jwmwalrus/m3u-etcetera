@@ -19,8 +19,9 @@ import (
 )
 
 type queryTreeModel struct {
-	model     *gtk.TreeStore
-	filterVal string
+	model       *gtk.TreeStore
+	filterVal   string
+	initialMode bool
 }
 
 var (
@@ -298,11 +299,12 @@ func subscribeToQueryStore() {
 
 		switch res.Event {
 		case m3uetcpb.QueryEvent_QYE_INITIAL:
+			queryTree.initialMode = true
 			QYData.Query = []*m3uetcpb.Query{}
 		case m3uetcpb.QueryEvent_QYE_INITIAL_ITEM:
 			appendItem(res)
 		case m3uetcpb.QueryEvent_QYE_INITIAL_DONE:
-			// pass
+			queryTree.initialMode = false
 		case m3uetcpb.QueryEvent_QYE_ITEM_ADDED:
 			appendItem(res)
 		case m3uetcpb.QueryEvent_QYE_ITEM_CHANGED:
@@ -312,8 +314,7 @@ func subscribeToQueryStore() {
 		}
 		QYData.Mu.Unlock()
 
-		if res.Event != m3uetcpb.QueryEvent_QYE_INITIAL &&
-			res.Event != m3uetcpb.QueryEvent_QYE_INITIAL_ITEM {
+		if !queryTree.initialMode {
 			glib.IdleAdd(queryTree.update)
 		}
 		if !wgdone {

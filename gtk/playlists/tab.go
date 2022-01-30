@@ -15,8 +15,8 @@ import (
 
 type onTab struct {
 	selection        interface{}
-	page             int
 	id               int64
+	headerName       string
 	img              *gtk.Image
 	label            *gtk.Label
 	view             *gtk.TreeView
@@ -47,7 +47,20 @@ outer:
 			log.Error(err)
 			continue
 		}
-		nb.RemovePage(remove[i].page)
+
+		for ipage := 0; ipage < nb.GetNPages(); ipage++ {
+			page, err := nb.GetNthPage(ipage)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			header, _ := nb.GetTabLabel(page)
+			pageName, _ := header.ToWidget().GetName()
+			if remove[i].headerName == pageName {
+				nb.RemovePage(ipage)
+			}
+		}
+
 		store.DestroyPlaylistModel(remove[i].id)
 	}
 
@@ -84,7 +97,7 @@ outer:
 				continue mid
 			}
 
-			tab.page = nb.AppendPage(vbox, hbox)
+			nb.AppendPage(vbox, hbox)
 
 			if err = tab.createContextMenus(); err != nil {
 				log.Error(err)
@@ -506,6 +519,8 @@ func (ot *onTab) setTabHeader() (hbox *gtk.Box, err error) {
 	hbox.PackStart(ot.img, false, false, 0)
 	hbox.PackStart(ebox, true, true, 0)
 	hbox.PackEnd(closeBtn, false, false, 0)
+	ot.headerName = fmt.Sprintf("playlist-%d", ot.id)
+	hbox.SetName(ot.headerName)
 	return
 }
 

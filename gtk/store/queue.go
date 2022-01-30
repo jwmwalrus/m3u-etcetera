@@ -115,7 +115,9 @@ func subscribeToQueueStore() {
 		QData.Mu.Lock()
 		QData.res = res
 		QData.Mu.Unlock()
+
 		glib.IdleAdd(updateQueueModels)
+
 		if !wgdone {
 			wg.Done()
 			wgdone = true

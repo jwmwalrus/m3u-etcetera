@@ -11,7 +11,7 @@ import (
 
 // EditPlaylist edits a playlist properties
 func EditPlaylist(id int64) (err error) {
-	pl := store.GetOpenPlaylist(id)
+	pl := store.GetPlaylist(id)
 	name := ""
 	if !pl.Transient {
 		name = pl.Name

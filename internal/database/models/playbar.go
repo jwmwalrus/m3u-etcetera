@@ -150,7 +150,7 @@ func (b *Playbar) CloseEntry(pl *Playlist) {
 	onerror.Log(pl.Save())
 
 	if pl.IsTransient() {
-		pl.DeleteDelayed()
+		go pl.DeleteDelayed()
 	}
 }
 
@@ -501,7 +501,7 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 // OpenEntry opens the given playbar entry
 func (b *Playbar) OpenEntry(pl *Playlist) {
 	if pl.IsTransient() {
-		pl.DeleteDelayed()
+		go pl.DeleteDelayed()
 		return
 	}
 	pl.Open = true

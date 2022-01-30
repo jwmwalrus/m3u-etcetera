@@ -571,25 +571,27 @@ sLoop:
 					return err
 				}
 
-				opts, ots := pl.GetTracks(0)
+				if pl.Open {
+					opts, ots := pl.GetTracks(0)
 
-				for i := range opts {
-					err := sendOpenPlaylistTrack(
-						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM,
-						opts[i],
-					)
-					if err != nil {
-						return err
+					for i := range opts {
+						err := sendOpenPlaylistTrack(
+							m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM,
+							opts[i],
+						)
+						if err != nil {
+							return err
+						}
 					}
-				}
 
-				for i := range ots {
-					err := sendOpenTrack(
-						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM,
-						ots[i],
-					)
-					if err != nil {
-						return err
+					for i := range ots {
+						err := sendOpenTrack(
+							m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM,
+							ots[i],
+						)
+						if err != nil {
+							return err
+						}
 					}
 				}
 

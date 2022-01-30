@@ -25,9 +25,11 @@ func GetFocused(p m3uetcpb.Perspective) int64 {
 		return 0
 	}
 
-	page := nb.GetCurrentPage()
+	page, _ := nb.GetNthPage(nb.GetCurrentPage())
+	header, _ := nb.GetTabLabel(page)
+	pageName, _ := header.ToWidget().GetName()
 	for _, t := range tabsList {
-		if t.page == page {
+		if t.headerName == pageName {
 			return t.id
 		}
 	}

@@ -198,12 +198,6 @@ func (pl *Playlist) Delete() (err error) {
 	return
 }
 
-// DeleteDelayed deletes a playlist after 5 seconds
-func (pl *Playlist) DeleteDelayed() {
-	time.Sleep(5 * time.Second)
-	onerror.Log(pl.Delete())
-}
-
 // Read implements the DataReader interface
 func (pl *Playlist) Read(id int64) (err error) {
 	return db.Joins("Playbar").
@@ -261,7 +255,19 @@ func (pl *Playlist) AfterCreate(tx *gorm.DB) error {
 
 // AfterUpdate is a GORM hook
 func (pl *Playlist) AfterUpdate(tx *gorm.DB) error {
-	go broadcastOpenPlaylist(pl.ID)
+	go func() {
+		if base.FlagTestingMode {
+			return
+		}
+		subscription.Broadcast(
+			subscription.ToPlaybarStoreEvent,
+			subscription.Event{
+				Idx:  int(PlaybarEventItemChanged),
+				Data: pl,
+			},
+		)
+		broadcastOpenPlaylist(pl.ID)
+	}()
 	return nil
 }
 
@@ -290,6 +296,12 @@ func (pl *Playlist) Count() (count int64) {
 
 	onerror.Warn(err)
 	return
+}
+
+// DeleteDelayed deletes a playlist after 5 seconds
+func (pl *Playlist) DeleteDelayed() {
+	time.Sleep(5 * time.Second)
+	onerror.Log(pl.Delete())
 }
 
 // DeleteDynamicTracks removes a dynamic track from the database

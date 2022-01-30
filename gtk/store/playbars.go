@@ -175,7 +175,7 @@ func FilterPlaylistTreeBy(p m3uetcpb.Perspective, val string) {
 	barTree.update()
 }
 
-// GetOpenPlaylist returns the playlist for the given id.
+// GetOpenPlaylist returns the open playlist for the given id.
 func GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 	log.WithField("id", id).
 		Info("Returning open playlist")
@@ -183,6 +183,21 @@ func GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 	BData.Mu.Lock()
 	defer BData.Mu.Unlock()
 	for _, pl := range BData.OpenPlaylist {
+		if pl.Id == id {
+			return pl
+		}
+	}
+	return nil
+}
+
+// GetPlaylist returns the playlist for the given id.
+func GetPlaylist(id int64) (pl *m3uetcpb.Playlist) {
+	log.WithField("id", id).
+		Info("Returning playlist")
+
+	BData.Mu.Lock()
+	defer BData.Mu.Unlock()
+	for _, pl := range BData.Playlist {
 		if pl.Id == id {
 			return pl
 		}
@@ -285,8 +300,10 @@ func subscribeToPlaybarStore() {
 
 		BData.Mu.Unlock()
 
-		glib.IdleAdd(updatePlaybarModel)
-		glib.IdleAdd(barTree.update)
+		if !barTree.initialMode && !barTree.receivingOpenItems {
+			glib.IdleAdd(updatePlaybarModel)
+			glib.IdleAdd(barTree.update)
+		}
 
 		if !wgdone {
 			wg.Done()
@@ -576,11 +593,11 @@ func updatePlaybarModel() bool {
 	log.Info("Updating playbar model")
 
 	updatePlaybarMaps()
+
 	pbdata.mu.Lock()
 	playbackTrackID := pbdata.trackID
 	pbdata.mu.Unlock()
 
-	// add playlists
 	BData.Mu.Lock()
 	for _, pl := range BData.OpenPlaylist {
 		model := GetPlaylistModel(pl.Id)

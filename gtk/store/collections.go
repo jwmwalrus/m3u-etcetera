@@ -237,8 +237,10 @@ func subscribeToCollectionStore() {
 
 		CData.Mu.Unlock()
 
-		glib.IdleAdd(cTree.update)
-		glib.IdleAdd(updateCollectionsModel)
+		if !cTree.initialMode && !cTree.scanningMode {
+			glib.IdleAdd(cTree.update)
+			glib.IdleAdd(updateCollectionsModel)
+		}
 
 		if !wgdone {
 			wg.Done()
