@@ -9,6 +9,20 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.12.0] 2022-01-29
+
+M3U playlists and MPRIS support
+
+### Added
+
+* Importing M3U playlists
+* Partial MPRIS support
+
+### Modified
+
+* Move application interfaces out of internal
+* Conditionally update playbar model from playback
+
 ## [0.11.0] 2022-01-27
 
 Implement playbars
