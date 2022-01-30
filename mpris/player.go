@@ -128,9 +128,21 @@ func (p *Player) PlaybackStatus() string {
 	return "Stopped"
 }
 
+// LoopStatus -
+func (p *Player) LoopStatus(s string) (string, *dbus.Error) {
+	// TODO: implement
+	return "None", nil
+}
+
 // Rate -
 func (p *Player) Rate(in float64) (float64, *dbus.Error) {
 	return float64(1.), nil
+}
+
+// LoopStatus -
+func (p *Player) Shuffle(b bool) (bool, *dbus.Error) {
+	// TODO: implement
+	return false, nil
 }
 
 // Metadata -

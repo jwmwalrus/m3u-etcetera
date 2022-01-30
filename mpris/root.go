@@ -16,6 +16,8 @@ func (*MediaPlayer2) introspectInterface() introspect.Interface {
 		Name: "org.mpris.MediaPlayer2",
 		Properties: []introspect.Property{
 			{Name: "CanQuit", Type: "b", Access: "read"},
+			{Name: "Fullscreen", Type: "b", Access: "readwrite"},
+			{Name: "CanSetFullscreen", Type: "b", Access: "read"},
 			{Name: "CanRaise", Type: "b", Access: "read"},
 			{Name: "HasTrackList", Type: "b", Access: "read"},
 			{Name: "Identity", Type: "s", Access: "read"},
@@ -44,6 +46,18 @@ func (mp2 *MediaPlayer2) Raise() *dbus.Error {
 // CanQuit -
 func (mp2 *MediaPlayer2) CanQuit() bool {
 	return true
+}
+
+// Fullscreen -
+func (p *Player) Fullscreen(b bool) (bool, *dbus.Error) {
+	// TODO: implement
+	return false, nil
+}
+
+// CanSetFullscreen -
+func (p *Player) CanSetFullscreen(b bool) bool {
+	// TODO: implement
+	return false
 }
 
 // CanRaise -

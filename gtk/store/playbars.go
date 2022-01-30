@@ -264,7 +264,6 @@ func subscribeToPlaybarStore() {
 			appendBDataItem(res)
 		case m3uetcpb.PlaybarEvent_BE_INITIAL_DONE:
 			barTree.initialMode = false
-			// pass
 		case m3uetcpb.PlaybarEvent_BE_ITEM_ADDED:
 			BData.ActiveID = res.ActivePlaylistId
 			appendBDataItem(res)
@@ -375,12 +374,17 @@ func processBDataItemReplacements() {
 		newpts := []*m3uetcpb.PlaylistTrack{}
 		newts := []*m3uetcpb.Track{}
 
-		for i, opt := range BData.OpenPlaylistTrack {
-			if opt.PlaylistId != pl.Id ||
-				slice.Contains(BData.PlaylistTrackReplacementIDs, opt.Id) {
+		for i := range BData.OpenPlaylistTrack {
+			if BData.OpenPlaylistTrack[i].PlaylistId != pl.Id ||
+				slice.Contains(
+					BData.PlaylistTrackReplacementIDs,
+					BData.OpenPlaylistTrack[i].Id,
+				) {
+
 				newpts = append(newpts, BData.OpenPlaylistTrack[i])
 				for j := range BData.OpenTrack {
-					if opt.TrackId == BData.OpenTrack[j].Id {
+					if BData.OpenPlaylistTrack[i].TrackId ==
+						BData.OpenTrack[j].Id {
 						newts = append(newts, BData.OpenTrack[j])
 						break
 					}
@@ -394,14 +398,15 @@ func processBDataItemReplacements() {
 		newpts := []*m3uetcpb.PlaylistTrack{}
 		newts := []*m3uetcpb.Track{}
 
-		for i, opt := range BData.OpenPlaylistTrack {
-			if opt.PlaylistId == pl.Id {
+		for i := range BData.OpenPlaylistTrack {
+			if BData.OpenPlaylistTrack[i].PlaylistId == pl.Id {
 				continue
 			}
 
 			newpts = append(newpts, BData.OpenPlaylistTrack[i])
 			for j := range BData.OpenTrack {
-				if opt.TrackId == BData.OpenTrack[j].Id {
+				if BData.OpenPlaylistTrack[i].TrackId ==
+					BData.OpenTrack[j].Id {
 					newts = append(newts, BData.OpenTrack[j])
 					break
 				}

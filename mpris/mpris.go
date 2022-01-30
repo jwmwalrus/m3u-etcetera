@@ -21,7 +21,7 @@ func New() *Instance {
 	var err error
 
 	ins := &Instance{name: serverName}
-	ins.conn, err = dbus.SessionBus()
+	ins.conn, err = dbus.ConnectSessionBus()
 	onerror.Panic(err)
 
 	ins.Unloader = base.Unloader{
