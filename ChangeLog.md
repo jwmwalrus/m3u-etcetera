@@ -9,6 +9,31 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.13.0] 2022-01-31
+
+Playlists and context menus
+
+### Fixed
+
+* Playlist closing issue, by not relying upon GtkNotebook's page number
+* Trim playlist name when importing M3U file
+
+### Added
+
+* Appending to playlist/queue from query
+* Creating playlist from query
+* Unimplemented MPRIS properties
+* Playback list task
+* New icon
+
+### Modified
+
+* Unify context menus common code
+* Conditionally disable menu items
+* Reduced the number of IdleAdd calls
+* Allow editing closed playlists
+* Do not send tracks for closed open-playlists
+
 ## [0.12.0] 2022-01-29
 
 M3U playlists and MPRIS support
