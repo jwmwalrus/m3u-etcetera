@@ -3,19 +3,22 @@ package musicpane
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
 
 type onMusicQuery struct {
-	selection                         interface{}
+	*onContext
+
 	dlg                               *gtk.Dialog
 	name, id, descr, params, from, to *gtk.Entry
 	rating, limit                     *gtk.SpinButton
@@ -23,8 +26,12 @@ type onMusicQuery struct {
 	resultsLabel                      *gtk.Label
 }
 
-func createMusicQueries() (err error) {
+func createMusicQueries() (omqy *onMusicQuery, err error) {
 	log.Info("Creating music queries view and model")
+
+	omqy = &onMusicQuery{
+		onContext: &onContext{ct: queryContext},
+	}
 
 	view, err := builder.GetTreeView("queries_view")
 	if err != nil {
@@ -65,19 +72,30 @@ func createMusicQueries() (err error) {
 
 func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
 	btn := gdk.EventButtonNewFromEvent(event)
-	if btn.Button() == gdk.BUTTON_SECONDARY {
-		ids := omqy.getSelection(true)
-		if len(ids) != 1 {
-			return
-		}
-
-		menu, err := builder.GetMenu("queries_view_context")
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		menu.PopupAtPointer(event)
+	if btn.Button() != gdk.BUTTON_SECONDARY {
+		return
 	}
+
+	ids := omqy.getSelection(true)
+	if len(ids) != 1 {
+		return
+	}
+
+	menu, err := builder.GetMenu("queries_view_context")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	mi, err := builder.GetMenuItem("queries_view_context_to_playlist")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	id := playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
+	mi.SetSensitive(id > 0)
+
+	menu.PopupAtPointer(event)
 }
 
 func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
@@ -87,11 +105,17 @@ func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
 		return
 	}
 
+	label := mi.GetLabel()
+	var targetID int64
+	if strings.Contains(label, "playlist") {
+		targetID = playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
+	}
+
 	req := &m3uetcpb.ApplyQueryRequest{
 		Id: ids[0],
 	}
 
-	if err := store.ApplyQuery(req); err != nil {
+	if err := store.ApplyQuery(req, targetID); err != nil {
 		log.Error(err)
 		return
 	}
@@ -112,6 +136,55 @@ func (omqy *onMusicQuery) contextDelete(mi *gtk.MenuItem) {
 		log.Error(err)
 		return
 	}
+}
+
+func (omqy *onMusicQuery) contextEdit(mi *gtk.MenuItem) {
+	ids := omqy.getSelection()
+	if len(ids) != 1 {
+		log.Error("Query selection vanished?")
+		return
+	}
+
+	if err := omqy.edit(ids[0]); err != nil {
+		log.Errorf("Error while editing query: %v", err)
+		return
+	}
+}
+
+func (omqy *onMusicQuery) contextNewPlaylist(mi *gtk.MenuItem) {
+	ids := omqy.getSelection()
+	if len(ids) != 1 {
+		log.Error("Query selection vanished?")
+		return
+	}
+
+	reqpl := &m3uetcpb.ExecutePlaylistActionRequest{
+		Action:      m3uetcpb.PlaylistAction_PL_CREATE,
+		Perspective: m3uetcpb.Perspective_MUSIC,
+	}
+	respl, err := store.ExecutePlaylistAction(reqpl)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	reqqy := &m3uetcpb.ApplyQueryRequest{
+		Id: ids[0],
+	}
+
+	if err := store.ApplyQuery(reqqy, respl.Id); err != nil {
+		log.Error(err)
+
+		reqbar := &m3uetcpb.ExecutePlaybarActionRequest{
+			Action: m3uetcpb.PlaybarAction_BAR_CLOSE,
+			Ids:    []int64{reqpl.Id},
+		}
+
+		if err := store.ExecutePlaybarAction(reqbar); err != nil {
+			log.Error(err)
+		}
+	}
+	return
 }
 
 func (omqy *onMusicQuery) createDialog() (err error) {
@@ -266,31 +339,10 @@ func (omqy *onMusicQuery) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *
 		return
 	}
 
-	qy := store.GetQuery(ids[0])
-	if qy == nil {
-		log.Errorf("Query returned from store is nil")
+	if err := omqy.edit(ids[0]); err != nil {
+		log.Errorf("Error while editing query: %v", err)
 		return
 	}
-
-	if err = omqy.setQuery(qy); err != nil {
-		log.Error(err)
-		return
-	}
-
-	res := omqy.dlg.Run()
-	switch res {
-	case gtk.RESPONSE_APPLY:
-		qy, err := omqy.getQuery()
-		if err != nil {
-			log.Error(err)
-		} else {
-			req := &m3uetcpb.UpdateQueryRequest{Query: qy}
-			store.UpdateQuery(req)
-		}
-	case gtk.RESPONSE_CANCEL:
-	default:
-	}
-	omqy.dlg.Hide()
 }
 
 func (omqy *onMusicQuery) defineQuery(btn *gtk.ToolButton) {
@@ -330,6 +382,33 @@ func (omqy *onMusicQuery) doSearch(btn *gtk.Button) {
 
 	omqy.resultsLabel.SetText(fmt.Sprintf("Results: %v", count))
 	omqy.resultsLabel.SetVisible(true)
+}
+
+func (omqy *onMusicQuery) edit(id int64) (err error) {
+	qy := store.GetQuery(id)
+	if qy == nil {
+		log.Errorf("Query returned from store is nil")
+		return
+	}
+
+	if err = omqy.setQuery(qy); err != nil {
+		return
+	}
+
+	res := omqy.dlg.Run()
+	defer omqy.dlg.Hide()
+	switch res {
+	case gtk.RESPONSE_APPLY:
+		qy, err = omqy.getQuery()
+		if err != nil {
+			return
+		}
+		req := &m3uetcpb.UpdateQueryRequest{Query: qy}
+		store.UpdateQuery(req)
+	case gtk.RESPONSE_CANCEL:
+	default:
+	}
+	return
 }
 
 func (omqy *onMusicQuery) filtered(se *gtk.SearchEntry) {
@@ -424,44 +503,11 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 	return
 }
 
-func (omqy *onMusicQuery) getSelection(keep ...bool) (ids []int64) {
-	value, ok := omqy.selection.(string)
-	if !ok {
-		log.Debug("There is no selection available for query context")
-		return
-	}
-
-	ids, err := store.StringToIDList(value)
-	if err != nil {
-		log.Errorf("Failed to parse ids: %v", err)
-	}
-
-	reset := true
-	if len(keep) > 0 {
-		reset = !keep[0]
-	}
-
-	if reset {
-		omqy.selection = nil
-	}
-	return
-}
-
 func (omqy *onMusicQuery) resetDialog() error {
 	omqy.resultsLabel.SetVisible(false)
 
 	qy := &m3uetcpb.Query{}
 	return omqy.setQuery(qy)
-}
-
-func (omqy *onMusicQuery) selChanged(sel *gtk.TreeSelection) {
-	var err error
-	omqy.selection, err = store.GetTreeSelectionValue(sel, store.CColTreeIDList)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	log.Debugf("Selected collection entry: %v", omqy.selection)
 }
 
 func (omqy *onMusicQuery) setQuery(qy *m3uetcpb.Query) (err error) {

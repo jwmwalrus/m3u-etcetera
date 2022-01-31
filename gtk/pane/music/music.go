@@ -7,17 +7,19 @@ import (
 )
 
 var (
-	musicCollectionsSignals = &onMusicCollections{}
-	musicQuerySignals       = &onMusicQuery{}
-	musicQueueSignals       *playlists.OnQueue
-	musicPlaylistSignals    = &onMusicPlaylist{}
+	musicCollectionsSignals *onMusicCollections
+	musicQuerySignals       *onMusicQuery
+	musicPlaylistSignals    *onMusicPlaylist
+
+	musicQueueSignals *playlists.OnQueue
 )
 
 // Setup sets the music pane
 func Setup(signals *map[string]interface{}) (err error) {
 	log.Info("Setting up music")
 
-	if err = createMusicCollections(); err != nil {
+	musicCollectionsSignals, err = createMusicCollections()
+	if err != nil {
 		return
 	}
 	(*signals)["on_collections_sel_changed"] = musicCollectionsSignals.selChanged
@@ -44,12 +46,16 @@ func Setup(signals *map[string]interface{}) (err error) {
 	(*signals)["on_music_queue_view_context_delete_activate"] = musicQueueSignals.ContextDelete
 	(*signals)["on_music_queue_view_context_clear_activate"] = musicQueueSignals.ContextClear
 
-	if err = createMusicQueries(); err != nil {
+	musicQuerySignals, err = createMusicQueries()
+	if err != nil {
 		return
 	}
 	(*signals)["on_queries_sel_changed"] = musicQuerySignals.selChanged
 	(*signals)["on_queries_view_button_press_event"] = musicQuerySignals.context
-	(*signals)["on_queries_view_context_append_activate"] = musicQuerySignals.contextAppend
+	(*signals)["on_queries_view_context_edit_activate"] = musicQuerySignals.contextEdit
+	(*signals)["on_queries_view_context_to_queue_activate"] = musicQuerySignals.contextAppend
+	(*signals)["on_queries_view_context_to_playlist_activate"] = musicQuerySignals.contextAppend
+	(*signals)["on_queries_view_context_new_playlist_activate"] = musicQuerySignals.contextNewPlaylist
 	(*signals)["on_queries_view_context_delete_activate"] = musicQuerySignals.contextDelete
 	(*signals)["on_queries_view_row_activated"] = musicQuerySignals.dblClicked
 	(*signals)["on_queries_filter_search_changed"] = musicQuerySignals.filtered
@@ -60,7 +66,8 @@ func Setup(signals *map[string]interface{}) (err error) {
 	(*signals)["on_queries_add_clicked"] = musicQuerySignals.defineQuery
 	(*signals)["on_query_dialog_search_clicked"] = musicQuerySignals.doSearch
 
-	if err = createMusicPlaylists(); err != nil {
+	musicPlaylistSignals, err = createMusicPlaylists()
+	if err != nil {
 		return
 	}
 	(*signals)["on_music_playlists_filter_search_changed"] = musicPlaylistSignals.filtered

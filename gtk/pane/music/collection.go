@@ -13,11 +13,15 @@ import (
 )
 
 type onMusicCollections struct {
-	selection interface{}
+	*onContext
 }
 
-func createMusicCollections() (err error) {
+func createMusicCollections() (omc *onMusicCollections, err error) {
 	log.Info("Creating music collections view and model")
+
+	omc = &onMusicCollections{
+		onContext: &onContext{ct: collectionContext},
+	}
 
 	view, err := builder.GetTreeView("collections_view")
 	if err != nil {
@@ -174,36 +178,4 @@ func (omc *onMusicCollections) filtered(se *gtk.SearchEntry) {
 	}
 	store.FilterCollectionsBy(text)
 
-}
-
-func (omc *onMusicCollections) getSelection(keep ...bool) (ids []int64) {
-	value, ok := omc.selection.(string)
-	if !ok {
-		log.Debug("There is no selection available for collection context")
-		return
-	}
-
-	ids, err := store.StringToIDList(value)
-	if err != nil {
-		log.Errorf("Error parsing selection value for collection context: %v", err)
-	}
-
-	reset := true
-	if len(keep) > 0 {
-		reset = !keep[0]
-	}
-	if reset {
-		omc.selection = nil
-	}
-	return
-}
-
-func (omc *onMusicCollections) selChanged(sel *gtk.TreeSelection) {
-	var err error
-	omc.selection, err = store.GetTreeSelectionValue(sel, store.CColTreeIDList)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	log.Debugf("Selected collection entry: %v", omc.selection)
 }

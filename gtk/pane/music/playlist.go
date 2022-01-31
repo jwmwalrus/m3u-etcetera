@@ -12,7 +12,8 @@ import (
 )
 
 type onMusicPlaylist struct {
-	selection                         interface{}
+	*onContext
+
 	dlg                               *gtk.Dialog
 	name, id, descr, params, from, to *gtk.Entry
 	rating, limit                     *gtk.SpinButton
@@ -20,8 +21,12 @@ type onMusicPlaylist struct {
 	resultsLabel                      *gtk.Label
 }
 
-func createMusicPlaylists() (err error) {
+func createMusicPlaylists() (ompl *onMusicPlaylist, err error) {
 	log.Info("Creating music playlists view and model")
+
+	ompl = &onMusicPlaylist{
+		onContext: &onContext{ct: playlistContext},
+	}
 
 	view, err := builder.GetTreeView("music_playlists_view")
 	if err != nil {
@@ -73,6 +78,28 @@ func (ompl *onMusicPlaylist) context(tv *gtk.TreeView, event *gdk.Event) {
 			log.Error(err)
 			return
 		}
+
+		pl := store.GetPlaylist(ids[0])
+		if pl == nil {
+			log.WithField("ids", ids).
+				Error("Playlist unavailable during context")
+			return
+		}
+
+		openmi, err := builder.GetMenuItem("music_playlists_view_context_open")
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		deletemi, err := builder.GetMenuItem("music_playlists_view_context_delete")
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		openmi.SetSensitive(!pl.Open)
+		deletemi.SetSensitive(!pl.Open)
+
 		menu.PopupAtPointer(event)
 	}
 }
@@ -159,37 +186,4 @@ func (ompl *onMusicPlaylist) filtered(se *gtk.SearchEntry) {
 		return
 	}
 	store.FilterPlaylistTreeBy(m3uetcpb.Perspective_MUSIC, text)
-}
-
-func (ompl *onMusicPlaylist) getSelection(keep ...bool) (ids []int64) {
-	value, ok := ompl.selection.(string)
-	if !ok {
-		log.Debug("There is no selection available for query context")
-		return
-	}
-
-	ids, err := store.StringToIDList(value)
-	if err != nil {
-		log.Errorf("Failed to parse ids: %v", err)
-	}
-
-	reset := true
-	if len(keep) > 0 {
-		reset = !keep[0]
-	}
-
-	if reset {
-		ompl.selection = nil
-	}
-	return
-}
-
-func (ompl *onMusicPlaylist) selChanged(sel *gtk.TreeSelection) {
-	var err error
-	ompl.selection, err = store.GetTreeSelectionValue(sel, store.PLColTreeIDList)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	log.Debugf("Selected collection entry: %v", ompl.selection)
 }

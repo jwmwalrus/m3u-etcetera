@@ -6,6 +6,7 @@ import (
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/stringing"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
@@ -14,14 +15,13 @@ import (
 )
 
 type onTab struct {
-	selection        interface{}
-	id               int64
-	headerName       string
-	img              *gtk.Image
-	label            *gtk.Label
-	view             *gtk.TreeView
-	ctxMenu, tabMenu *gtk.Menu
-	perspective      m3uetcpb.Perspective
+	*onContext
+
+	headerName string
+	view       *gtk.TreeView
+	pageMenu   *gtk.Menu
+	img        *gtk.Image
+	label      *gtk.Label
 }
 
 func updatePlaybarView() {
@@ -83,7 +83,12 @@ outer:
 				}
 			}
 
-			tab := onTab{id: pl.Id, perspective: persp}
+			tab := onTab{
+				onContext: &onContext{
+					id:          pl.Id,
+					perspective: persp,
+				},
+			}
 
 			vbox, err := tab.setTabContent()
 			if err != nil {
@@ -110,132 +115,10 @@ outer:
 	}
 }
 
-func (ot *onTab) context(tv *gtk.TreeView, event *gdk.Event) {
-	btn := gdk.EventButtonNewFromEvent(event)
-	if btn.Button() == gdk.BUTTON_SECONDARY {
-		ot.ctxMenu.PopupAtPointer(event)
-	}
-}
-
-func (ot *onTab) contextClear(mi *gtk.MenuItem) {
-	req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
-		PlaylistId: ot.id,
-		Action:     m3uetcpb.PlaylistTrackAction_PT_CLEAR,
-	}
-
-	if err := store.ExecutePlaylistTrackAction(req); err != nil {
-		log.Error(err)
-		return
-	}
-}
-
-func (ot *onTab) contextDelete(mi *gtk.MenuItem) {
-	values := ot.getSelection()
-	if len(values) == 0 {
-		return
-	}
-
-	req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
-		PlaylistId: ot.id,
-		Action:     m3uetcpb.PlaylistTrackAction_PT_DELETE,
-		Position:   int32(values[store.TColPosition].(int)),
-	}
-
-	if err := store.ExecutePlaylistTrackAction(req); err != nil {
-		log.Error(err)
-		return
-	}
-}
-
-func (ot *onTab) contextEnqueue(mi *gtk.MenuItem) {
-	values := ot.getSelection()
-	if len(values) == 0 {
-		return
-	}
-
-	id := values[store.TColTrackID].(int64)
-	loc := values[store.TColLocation].(string)
-
-	req := &m3uetcpb.ExecuteQueueActionRequest{
-		Action: m3uetcpb.QueueAction_Q_APPEND,
-	}
-	if id > 0 {
-		req.Ids = []int64{id}
-	} else {
-		req.Locations = []string{loc}
-	}
-
-	if err := store.ExecuteQueueAction(req); err != nil {
-		log.Error(err)
-		return
-	}
-}
-
 func (ot *onTab) contextEvent(_ *gtk.EventBox, event *gdk.Event) {
 	btn := gdk.EventButtonNewFromEvent(event)
 	if btn.Button() == gdk.BUTTON_SECONDARY {
-		ot.tabMenu.PopupAtPointer(event)
-	}
-}
-
-func (ot *onTab) contextMove(mi *gtk.MenuItem) {
-	values := ot.getSelection()
-	if len(values) == 0 {
-		return
-	}
-
-	l := mi.GetLabel()
-	fromPos := values[store.TColPosition].(int)
-	var pos int
-	if strings.Contains(l, "top") {
-		if fromPos == 1 {
-			return
-		}
-		pos = 1
-	} else if strings.Contains(l, "up") {
-		pos = fromPos - 1
-	} else if strings.Contains(l, "down") {
-		pos = fromPos + 1
-	} else if strings.Contains(l, "bottom") {
-		pos = values[store.TColLastPosition].(int)
-		if fromPos == pos {
-			return
-		}
-	} else {
-		log.Error("Invalid/unsupported queue move")
-		return
-	}
-
-	req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
-		PlaylistId:   ot.id,
-		Action:       m3uetcpb.PlaylistTrackAction_PT_MOVE,
-		Position:     int32(pos),
-		FromPosition: int32(fromPos),
-	}
-
-	if err := store.ExecutePlaylistTrackAction(req); err != nil {
-		log.Error(err)
-		return
-	}
-}
-
-func (ot *onTab) contextPlayNow(mi *gtk.MenuItem) {
-	values := ot.getSelection()
-	if len(values) == 0 {
-		return
-	}
-
-	pos := values[store.TColPosition].(int)
-
-	req := &m3uetcpb.ExecutePlaybarActionRequest{
-		Action:   m3uetcpb.PlaybarAction_BAR_ACTIVATE,
-		Position: int32(pos),
-		Ids:      []int64{ot.id},
-	}
-
-	if err := store.ExecutePlaybarAction(req); err != nil {
-		log.Error(err)
-		return
+		ot.pageMenu.PopupAtPointer(event)
 	}
 }
 
@@ -250,12 +133,15 @@ func (ot *onTab) createContextMenus() (err error) {
 	}
 	ctxMenu.SetVisible(true)
 
+	miSuffix := stringing.GetRandomString(6)
+
 	miPlayNow, err := gtk.MenuItemNewWithLabel("Play now")
 	if err != nil {
 		return
 	}
 	miPlayNow.SetVisible(true)
-	miPlayNow.Connect("activate", ot.contextPlayNow)
+	miPlayNow.Connect("activate", ot.ContextPlayNow)
+	miPlayNow.SetName(fmt.Sprintf("menuitem-%s-%s", "playnow", miSuffix))
 	ctxMenu.Add(miPlayNow)
 
 	miEnqueue, err := gtk.MenuItemNewWithLabel("Enqueue")
@@ -263,7 +149,8 @@ func (ot *onTab) createContextMenus() (err error) {
 		return
 	}
 	miEnqueue.SetVisible(true)
-	miEnqueue.Connect("activate", ot.contextEnqueue)
+	miEnqueue.Connect("activate", ot.ContextEnqueue)
+	miEnqueue.SetName(fmt.Sprintf("menuitem-%s-%s", "enqueue", miSuffix))
 	ctxMenu.Add(miEnqueue)
 
 	sep1, err := gtk.SeparatorMenuItemNew()
@@ -278,7 +165,8 @@ func (ot *onTab) createContextMenus() (err error) {
 		return
 	}
 	miTop.SetVisible(true)
-	miTop.Connect("activate", ot.contextMove)
+	miTop.Connect("activate", ot.ContextMove)
+	miTop.SetName(fmt.Sprintf("menuitem-%s-%s", "top", miSuffix))
 	ctxMenu.Add(miTop)
 
 	miUp, err := gtk.MenuItemNewWithLabel("Move up")
@@ -286,7 +174,8 @@ func (ot *onTab) createContextMenus() (err error) {
 		return
 	}
 	miUp.SetVisible(true)
-	miUp.Connect("activate", ot.contextMove)
+	miUp.Connect("activate", ot.ContextMove)
+	miUp.SetName(fmt.Sprintf("menuitem-%s-%s", "up", miSuffix))
 	ctxMenu.Add(miUp)
 
 	miDown, err := gtk.MenuItemNewWithLabel("Move down")
@@ -294,7 +183,8 @@ func (ot *onTab) createContextMenus() (err error) {
 		return
 	}
 	miDown.SetVisible(true)
-	miDown.Connect("activate", ot.contextMove)
+	miDown.Connect("activate", ot.ContextMove)
+	miDown.SetName(fmt.Sprintf("menuitem-%s-%s", "down", miSuffix))
 	ctxMenu.Add(miDown)
 
 	miBottom, err := gtk.MenuItemNewWithLabel("Move to bottom")
@@ -302,7 +192,8 @@ func (ot *onTab) createContextMenus() (err error) {
 		return
 	}
 	miBottom.SetVisible(true)
-	miBottom.Connect("activate", ot.contextMove)
+	miBottom.Connect("activate", ot.ContextMove)
+	miBottom.SetName(fmt.Sprintf("menuitem-%s-%s", "bottom", miSuffix))
 	ctxMenu.Add(miBottom)
 
 	sep2, err := gtk.SeparatorMenuItemNew()
@@ -317,23 +208,24 @@ func (ot *onTab) createContextMenus() (err error) {
 		return
 	}
 	miDelete.SetVisible(true)
-	miDelete.Connect("activate", ot.contextDelete)
+	miDelete.Connect("activate", ot.ContextDelete)
+	miDelete.SetName(fmt.Sprintf("menuitem-%s-%s", "delete", miSuffix))
 	ctxMenu.Add(miDelete)
 
 	ot.ctxMenu = ctxMenu
 
-	tabMenu, err := gtk.MenuNew()
+	pageMenu, err := gtk.MenuNew()
 	if err != nil {
 		return
 	}
-	tabMenu.SetVisible(true)
+	pageMenu.SetVisible(true)
 
 	pl := store.GetOpenPlaylist(ot.id)
 	if pl == nil {
 		err = fmt.Errorf("Playlist no longer available")
 		return
 	}
-	label := "Update"
+	label := "Edit properties"
 	if pl.Transient {
 		label = "Save as..."
 	}
@@ -343,24 +235,24 @@ func (ot *onTab) createContextMenus() (err error) {
 	}
 	miUpdate.SetVisible(true)
 	miUpdate.Connect("activate", ot.contextUpdate)
-	tabMenu.Add(miUpdate)
+	pageMenu.Add(miUpdate)
 
 	sep3, err := gtk.SeparatorMenuItemNew()
 	if err != nil {
 		return
 	}
 	sep3.SetVisible(true)
-	tabMenu.Add(sep3)
+	pageMenu.Add(sep3)
 
 	miClear, err := gtk.MenuItemNewWithLabel("Clear playlist")
 	if err != nil {
 		return
 	}
 	miClear.SetVisible(true)
-	miClear.Connect("activate", ot.contextClear)
-	tabMenu.Add(miClear)
+	miClear.Connect("activate", ot.ContextClear)
+	pageMenu.Add(miClear)
 
-	ot.tabMenu = tabMenu
+	ot.pageMenu = pageMenu
 	return
 }
 
@@ -403,43 +295,6 @@ func (ot *onTab) doClose(btn *gtk.Button) {
 	if err := store.ExecutePlaybarAction(req); err != nil {
 		log.Error(err)
 	}
-}
-
-func (ot *onTab) getSelection(keep ...bool) (values map[store.ModelColumn]interface{}) {
-	values, ok := ot.selection.(map[store.ModelColumn]interface{})
-	if !ok {
-		log.Debug("There is no selection available for queue context")
-		values = map[store.ModelColumn]interface{}{}
-		return
-	}
-
-	reset := true
-	if len(keep) > 0 {
-		reset = !keep[0]
-	}
-
-	if reset {
-		ot.selection = nil
-	}
-	return
-}
-
-func (ot *onTab) selChanged(sel *gtk.TreeSelection) {
-	var err error
-	ot.selection, err = store.GetTreeSelectionValues(
-		sel,
-		[]store.ModelColumn{
-			store.TColPosition,
-			store.TColLastPosition,
-			store.TColTrackID,
-			store.TColLocation,
-		},
-	)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	log.Debugf("Selected collection entres: %v", ot.selection)
 }
 
 func (ot *onTab) setLabel() (err error) {
@@ -570,10 +425,10 @@ func (ot *onTab) setTreeView() (err error) {
 	if err != nil {
 		return
 	}
-	sel.Connect("changed", ot.selChanged)
+	sel.Connect("changed", ot.SelChanged)
 
 	ot.view.Connect("row-activated", ot.dblClicked)
-	ot.view.Connect("button-press-event", ot.context)
+	ot.view.Connect("button-press-event", ot.Context)
 	return
 }
 

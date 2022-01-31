@@ -54,7 +54,7 @@ func AddQuery(req *m3uetcpb.AddQueryRequest) (err error) {
 	return
 }
 
-func ApplyQuery(req *m3uetcpb.ApplyQueryRequest) (err error) {
+func ApplyQuery(req *m3uetcpb.ApplyQueryRequest, targetID int64) (err error) {
 	cc, err := GetClientConn()
 	if err != nil {
 		return
@@ -74,16 +74,31 @@ func ApplyQuery(req *m3uetcpb.ApplyQueryRequest) (err error) {
 		ids = append(ids, res.Tracks[i].Id)
 	}
 
-	req2 := &m3uetcpb.ExecutePlaybackActionRequest{
-		Action: m3uetcpb.PlaybackAction_PB_PLAY,
-		Ids:    ids,
-	}
+	if targetID > 0 {
+		req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
+			PlaylistId: targetID,
+			Action:     m3uetcpb.PlaylistTrackAction_PT_APPEND,
+			TrackIds:   ids,
+		}
 
-	err = ExecutePlaybackAction(req2)
-	if err != nil {
-		s := status.Convert(err)
-		err = fmt.Errorf(s.Message())
-		return
+		err = ExecutePlaylistTrackAction(req)
+		if err != nil {
+			s := status.Convert(err)
+			err = fmt.Errorf(s.Message())
+			return
+		}
+	} else {
+		req := &m3uetcpb.ExecutePlaybackActionRequest{
+			Action: m3uetcpb.PlaybackAction_PB_PLAY,
+			Ids:    ids,
+		}
+
+		err = ExecutePlaybackAction(req)
+		if err != nil {
+			s := status.Convert(err)
+			err = fmt.Errorf(s.Message())
+			return
+		}
 	}
 	return
 }

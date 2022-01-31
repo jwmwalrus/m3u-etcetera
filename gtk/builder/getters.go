@@ -153,6 +153,21 @@ func GetMenu(id string) (m *gtk.Menu, err error) {
 	return
 }
 
+func GetMenuItem(id string) (mi *gtk.MenuItem, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get menu item: %v", err)
+		return
+	}
+	mi, ok := obj.(*gtk.MenuItem)
+	if !ok {
+		err = fmt.Errorf("Unable to create menu item: %v", err)
+		return
+	}
+
+	return
+}
+
 func GetNotebook(id string) (nb *gtk.Notebook, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
