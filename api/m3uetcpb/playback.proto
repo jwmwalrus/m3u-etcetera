@@ -10,6 +10,7 @@ import 'api/m3uetcpb/track.proto';
 
 service PlaybackSvc {
     rpc GetPlayback(Empty) returns (GetPlaybackResponse);
+    rpc GetPlaybackList(Empty) returns (GetPlaybackListResponse);
     rpc ExecutePlaybackAction(ExecutePlaybackActionRequest) returns (Empty);
 
     rpc SubscribeToPlayback(Empty) returns (stream SubscribeToPlaybackResponse);
@@ -24,6 +25,10 @@ message GetPlaybackResponse {
     bool is_ready = 5;
     Playback playback = 6;
     Track track = 7;
+}
+
+message GetPlaybackListResponse {
+    repeated Playback playback_entries = 1;
 }
 
 message ExecutePlaybackActionRequest {

@@ -204,3 +204,21 @@ func AddPlaybackTrack(t *Track) (pb *Playback) {
 	onerror.Log(pb.Create())
 	return
 }
+
+// GetAllPlayback returns all the playback entries
+func GetAllPlayback() (pbs []*Playback) {
+	log.Info("Obtaining all playback")
+
+	pblist := []Playback{}
+	err := db.Where("played = 0").Find(&pblist).Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	pbs = []*Playback{}
+	for i := range pblist {
+		pbs = append(pbs, &pblist[i])
+	}
+	return
+}

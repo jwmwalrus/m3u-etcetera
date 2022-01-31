@@ -42,6 +42,18 @@ func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb
 	return res, nil
 }
 
+// GetPlaybackList implements m3uetcpb.PlaybackSvcServer
+func (*PlaybackSvc) GetPlaybackList(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackListResponse, error) {
+
+	res := &m3uetcpb.GetPlaybackListResponse{}
+	pbs := models.GetAllPlayback()
+	for i := range pbs {
+		res.PlaybackEntries = append(res.PlaybackEntries, pbs[i].ToProtobuf().(*m3uetcpb.Playback))
+	}
+
+	return res, nil
+}
+
 // ExecutePlaybackAction implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
 	if req.Action == m3uetcpb.PlaybackAction_PB_PLAY {

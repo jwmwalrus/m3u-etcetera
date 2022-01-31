@@ -72,6 +72,13 @@ func Playback() *cli.Command {
 				Description: "jumps to a `POSITION` in the current playback",
 				Action:      playbackJumpAction,
 			},
+			{
+				Name:        "list",
+				Aliases:     []string{"l"},
+				Usage:       "playback list",
+				Description: "Shows the contents of the playback",
+				Action:      playbackListAction,
+			},
 		},
 		Before: checkServerStatus,
 		Action: playbackAction,
@@ -189,5 +196,44 @@ func playbackPlayAction(c *cli.Context) (err error) {
 func playbackJumpAction(c *cli.Context) (err error) {
 	// TODO: implement
 	fmt.Printf("TODO\n")
+	return
+}
+
+func playbackListAction(c *cli.Context) (err error) {
+	if err = mustNotParseExtraArgs(c); err != nil {
+		return
+	}
+
+	cc, err := getClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewPlaybackSvcClient(cc)
+	res, err := cl.GetPlaybackList(context.Background(), &m3uetcpb.Empty{})
+	if err != nil {
+		return
+	}
+
+	if c.Bool("json") {
+		var bv []byte
+		bv, err = json.MarshalIndent(res, "", "  ")
+		if err != nil {
+			return
+		}
+		fmt.Printf("\n%v\n", string(bv))
+		return
+	}
+
+	tbl := table.New("ID", "TrackID", "Location")
+	for _, e := range res.PlaybackEntries {
+		un, _ := url.QueryUnescape(e.Location)
+		if un == "" {
+			un = e.Location
+		}
+		tbl.AddRow(e.Id, e.TrackId, un)
+	}
+	tbl.Print()
 	return
 }
