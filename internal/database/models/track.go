@@ -161,34 +161,6 @@ func (t *Track) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
-// DeleteIfTransient removes a track only if it belongs
-// to the transient collection
-func (t *Track) DeleteIfTransient() (err error) {
-	c := Collection{}
-	err = db.Find(&c, t.CollectionID).Error
-	if err != nil {
-		return
-	}
-	if c.Idx == int(TransientCollection) {
-		err = t.Delete()
-		return
-	}
-	return
-}
-
-// DeleteWithRemote removes a track from collection
-func (t *Track) DeleteWithRemote(withRemote bool) {
-	c := Collection{}
-	db.First(&c, t.CollectionID)
-
-	if !withRemote && (c.Remote || t.Remote) {
-		return
-	}
-
-	defer t.Delete()
-	return
-}
-
 func (t *Track) createTransient() (err error) {
 	c, err := TransientCollection.Get()
 	if err != nil {
@@ -382,6 +354,73 @@ func (t *Track) updateTags() (err error) {
 	}
 	t.fillMissingTags(raw)
 
+	return
+}
+
+// DeleteDanglingTrack removes a non-existent track from collection
+func DeleteDanglingTrack(id int64, withRemote bool) {
+	t := Track{}
+	err := t.Read(id)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	c := Collection{}
+	db.First(&c, t.CollectionID)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if !withRemote && (c.Remote || t.Remote) {
+		return
+	}
+
+	pts := []PlaylistTrack{}
+	err = db.Where("track_id = ?", id).Find(&pts).Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for i := range pts {
+		pl := Playlist{}
+		err := db.Joins("Playbar").First(&pl, pts[i].PlaylistID).Error
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		pl.Playbar.DeleteFromPlaylist(&pl, pts[i].Position)
+	}
+	onerror.Log(t.Delete())
+	return
+}
+
+// DeleteTrackIfTransient removes a track only if it belongs
+// to the transient collection
+func DeleteTrackIfTransient(id int64) {
+	t := Track{}
+	err := t.Read(id)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	trc, err := TransientCollection.Get()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if t.CollectionID == trc.ID {
+		pts := []PlaylistTrack{}
+		db.Where("track_id = ?", t.ID).Find(&pts)
+		if len(pts) == 0 {
+			t.Delete()
+		}
+		return
+	}
 	return
 }
 

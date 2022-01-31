@@ -74,6 +74,20 @@ func SetConnection(conn *gorm.DB) {
 	db = conn
 }
 
+func DoInitialCleanup() {
+	// Clean playback
+	db.Where("played = 1").Delete(&Playback{})
+
+	// Clean queue
+	db.Where("played = 1").Delete(&Queue{})
+
+	// Clean playlists
+	if trpg, err := TransientPlaylistGroup.Get(); err == nil {
+		db.Where("open = 0 and playlist_group_id = ?", trpg.ID).Delete(&Playlist{})
+
+	}
+}
+
 func getSuffler(n int) []int {
 	s := make([]int, n)
 	for i := range s {

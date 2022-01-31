@@ -500,8 +500,8 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 
 // OpenEntry opens the given playbar entry
 func (b *Playbar) OpenEntry(pl *Playlist) {
-	if pl.IsTransient() {
-		go pl.DeleteDelayed()
+	if pl.IsTransient() && !pl.Open {
+		log.Warn("Ignoring attempt to reopen transient playlist marked for deletiion")
 		return
 	}
 	pl.Open = true

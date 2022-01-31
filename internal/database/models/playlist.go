@@ -316,12 +316,7 @@ func (pl *Playlist) DeleteDynamicTracks() {
 	}
 
 	for i := range pts {
-		t := Track{}
-		if err := t.Read(pts[i].TrackID); err != nil {
-			continue
-		}
 		pts[i].Delete()
-		t.DeleteIfTransient()
 	}
 }
 
@@ -473,8 +468,11 @@ func (pt *PlaylistTrack) Create() error {
 }
 
 // Delete implements the DataDeleter interface
-func (pt *PlaylistTrack) Delete() error {
-	return db.Delete(pt).Error
+func (pt *PlaylistTrack) Delete() (err error) {
+	defer DeleteTrackIfTransient(pt.TrackID)
+
+	err = db.Delete(pt).Error
+	return
 }
 
 // Read implements the DataReader interface

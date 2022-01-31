@@ -80,10 +80,7 @@ func Open() *gorm.DB {
 	m.InitSchema(migrations.InitSchema)
 	onerror.Panic(m.Migrate())
 
-	go func() {
-		conn.Where("played = 1").Delete(&models.Playback{})
-		conn.Where("played = 1").Delete(&models.Queue{})
-	}()
+	go models.DoInitialCleanup()
 
 	log.WithField("dsn", DSN()).
 		Info("Database loaded")

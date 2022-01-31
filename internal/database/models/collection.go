@@ -421,7 +421,7 @@ func (c *Collection) Verify() {
 			continue
 		}
 
-		t.DeleteWithRemote(true)
+		DeleteDanglingTrack(t.ID, true)
 	}
 }
 
