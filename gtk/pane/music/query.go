@@ -374,7 +374,7 @@ func (omqy *onMusicQuery) doSearch(btn *gtk.Button) {
 	}
 	qy.Name = ""
 	req := &m3uetcpb.QueryByRequest{Query: qy}
-	err, count := store.QueryBy(req)
+	count, err := store.QueryBy(req)
 	if err != nil {
 		log.Error(err)
 		return

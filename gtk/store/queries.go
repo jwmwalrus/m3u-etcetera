@@ -37,6 +37,7 @@ var (
 	}
 )
 
+// AddQuery adds the query defined by the request
 func AddQuery(req *m3uetcpb.AddQueryRequest) (err error) {
 	cc, err := GetClientConn()
 	if err != nil {
@@ -54,6 +55,8 @@ func AddQuery(req *m3uetcpb.AddQueryRequest) (err error) {
 	return
 }
 
+// ApplyQuery apply the query defined by the request and add the results
+// to the given target
 func ApplyQuery(req *m3uetcpb.ApplyQueryRequest, targetID int64) (err error) {
 	cc, err := GetClientConn()
 	if err != nil {
@@ -75,34 +78,34 @@ func ApplyQuery(req *m3uetcpb.ApplyQueryRequest, targetID int64) (err error) {
 	}
 
 	if targetID > 0 {
-		req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
+		reqpl := &m3uetcpb.ExecutePlaylistTrackActionRequest{
 			PlaylistId: targetID,
 			Action:     m3uetcpb.PlaylistTrackAction_PT_APPEND,
 			TrackIds:   ids,
 		}
 
-		err = ExecutePlaylistTrackAction(req)
+		err = ExecutePlaylistTrackAction(reqpl)
 		if err != nil {
 			s := status.Convert(err)
 			err = fmt.Errorf(s.Message())
-			return
 		}
-	} else {
-		req := &m3uetcpb.ExecutePlaybackActionRequest{
-			Action: m3uetcpb.PlaybackAction_PB_PLAY,
-			Ids:    ids,
-		}
+		return
+	}
 
-		err = ExecutePlaybackAction(req)
-		if err != nil {
-			s := status.Convert(err)
-			err = fmt.Errorf(s.Message())
-			return
-		}
+	reqpb := &m3uetcpb.ExecutePlaybackActionRequest{
+		Action: m3uetcpb.PlaybackAction_PB_PLAY,
+		Ids:    ids,
+	}
+
+	err = ExecutePlaybackAction(reqpb)
+	if err != nil {
+		s := status.Convert(err)
+		err = fmt.Errorf(s.Message())
 	}
 	return
 }
 
+// ClearQueryResults -
 func ClearQueryResults() {
 	model := queryResultsModel
 
@@ -144,6 +147,7 @@ func FilterQueriesBy(val string) {
 	queryTree.update()
 }
 
+// GetQuery returns the query for the gven id
 func GetQuery(id int64) *m3uetcpb.Query {
 	QYData.Mu.Lock()
 	defer QYData.Mu.Unlock()
@@ -161,6 +165,7 @@ func GetQueryTreeModel() *gtk.TreeStore {
 	return queryTree.model
 }
 
+// GetQueryResultsSelections returns the list of selected query results
 func GetQueryResultsSelections() (ids []int64, err error) {
 	model := queryResultsModel
 	if model == nil {
@@ -187,7 +192,9 @@ func GetQueryResultsSelections() (ids []int64, err error) {
 	return
 }
 
-func QueryBy(req *m3uetcpb.QueryByRequest) (err error, count int) {
+// QueryBy performs the query defined by the request and displays
+// the results
+func QueryBy(req *m3uetcpb.QueryByRequest) (count int, err error) {
 	cc, err := GetClientConn()
 	if err != nil {
 		return
@@ -211,6 +218,7 @@ func QueryBy(req *m3uetcpb.QueryByRequest) (err error, count int) {
 	return
 }
 
+// RemoveQuery removes the query defined by the request
 func RemoveQuery(req *m3uetcpb.RemoveQueryRequest) (err error) {
 	cc, err := GetClientConn()
 	if err != nil {
@@ -228,6 +236,7 @@ func RemoveQuery(req *m3uetcpb.RemoveQueryRequest) (err error) {
 	return
 }
 
+// UpdateQuery updates the query defined by the request
 func UpdateQuery(req *m3uetcpb.UpdateQueryRequest) (err error) {
 	cc, err := GetClientConn()
 	if err != nil {
@@ -375,43 +384,17 @@ func (qyt *queryTreeModel) update() bool {
 		return false
 	}
 
-	type queryType struct {
-		id   int64
-		name string
-		kw   string
-	}
-
-	type kind int
-
-	const (
-		kindCollection kind = iota
-	)
-
-	type boundaryType struct {
+	type queryInfo struct {
+		id         int64
 		name       string
-		boundaryID int64
-		ids        []int64
-		query      []queryType
-	}
-
-	type boundaryKind struct {
-		ids      []int64
-		bMap     map[int64]int
-		boundary []boundaryType
-	}
-
-	type byType struct {
-		ids       []int64
-		kind      []boundaryKind
-		unbounded []queryType
+		kw         string
+		hasCBounds bool
 	}
 
 	_, ok := model.GetIterFirst()
 	if ok {
 		model.Clear()
 	}
-
-	all := byType{kind: []boundaryKind{{}}}
 
 	getKeywords := func(qy *m3uetcpb.Query) string {
 		list := strings.Split(qy.Name, " ")
@@ -427,6 +410,8 @@ func (qyt *queryTreeModel) update() bool {
 		}
 		return strings.Join(list, ",")
 	}
+
+	all := []queryInfo{}
 
 	QYData.Mu.Lock()
 	for _, qy := range QYData.Query {
@@ -444,24 +429,27 @@ func (qyt *queryTreeModel) update() bool {
 			}
 		}
 
+		qi := queryInfo{id: qy.Id, name: qy.Name, kw: getKeywords(qy)}
 		if len(qy.CollectionIds) > 0 {
-			// TODO: bound by collections
-			continue
+			qi.hasCBounds = true
 		}
-		all.unbounded = append(all.unbounded, queryType{qy.Id, qy.Name, getKeywords(qy)})
-		all.ids = append(all.ids, qy.Id)
+		all = append(all, qi)
 	}
 	QYData.Mu.Unlock()
 
-	sort.SliceStable(all.unbounded, func(i, j int) bool {
-		return all.unbounded[i].name < all.unbounded[j].name
+	sort.SliceStable(all, func(i, j int) bool {
+		return all[i].name < all[j].name
 	})
 
-	for _, ub := range all.unbounded {
+	for _, qi := range all {
 		iter := model.Append(nil)
-		model.SetValue(iter, int(QYColTree), ub.name)
-		model.SetValue(iter, int(QYColTreeIDList), strconv.FormatInt(ub.id, 10))
-		model.SetValue(iter, int(QYColTreeKeywords), ub.kw)
+		name := qi.name
+		if qi.hasCBounds {
+			name += " (C)"
+		}
+		model.SetValue(iter, int(QYColTree), qi.name)
+		model.SetValue(iter, int(QYColTreeIDList), strconv.FormatInt(qi.id, 10))
+		model.SetValue(iter, int(QYColTreeKeywords), qi.kw)
 	}
 	return false
 }
