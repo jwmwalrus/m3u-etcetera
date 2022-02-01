@@ -6,8 +6,11 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/notedit/gst"
+
+	// "github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
+	"github.com/tinyzimmer/go-glib/glib"
+	"github.com/tinyzimmer/go-gst/gst"
 )
 
 type engineEvent int
@@ -113,7 +116,7 @@ func GetPlayback() (pb *models.Playback, t *models.Track) {
 }
 
 // GetState returns the current state of the playback
-func GetState() gst.StateOptions {
+func GetState() gst.State {
 	return eng.state
 }
 
@@ -263,10 +266,12 @@ func SeekInStream(pos int64) {
 		return
 	}
 
-	if eng.seekEnabled && time.Duration(eng.lastPosition) > 10*time.Second {
-		eng.playbin.SeekSimple(gst.FormatTime,
-			gst.SeekFlagFlush|gst.SeekFlagKeyUnit, time.Duration(pos))
-	}
+	/*
+		if eng.seekEnabled && time.Duration(eng.lastPosition) > 10*time.Second {
+			eng.playbin.SeekSimple(gst.FormatTime,
+				gst.SeekFlagFlush|gst.SeekFlagKeyUnit, time.Duration(pos))
+		}
+	*/
 
 	return
 }
@@ -284,6 +289,9 @@ func StartEngine() {
 		mockEngineLoop()
 		return
 	}
+
+	gst.Init(nil)
+	eng.mainLoop = glib.NewMainLoop(glib.MainContextDefault(), false)
 
 	eng.resumeActivePlaylist()
 	go eng.engineLoop()
@@ -317,7 +325,7 @@ func StopStream() {
 		eng.playbin.SetState(eng.state)
 	}
 
-	eos := gst.NewEosEvent()
+	eos := gst.NewEOSEvent()
 	eng.playbin.SendEvent(eos)
 
 	return

@@ -8,12 +8,15 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/notedit/gst"
+
+	// "github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
+	"github.com/tinyzimmer/go-glib/glib"
+	"github.com/tinyzimmer/go-gst/gst"
 )
 
 const (
-	positionThreshold = 5e8
+	positionThreshold = 1e9
 )
 
 var (
@@ -41,12 +44,14 @@ type engine struct {
 	mode           EngineMode
 	lastEvent      engineEvent
 	hint           playbackHint
-	prevState      gst.StateOptions
-	state          gst.StateOptions
-	playbin        *gst.Element
 	pt             *models.PlaylistTrack
 	pb             *models.Playback
 	t              *models.Track
+
+	mainLoop  *glib.MainLoop
+	prevState gst.State
+	state     gst.State
+	playbin   *gst.Element
 }
 
 func (e *engine) addPlaybackFromQueue(qt *models.QueueTrack) (pb *models.Playback) {
@@ -217,6 +222,65 @@ func (e *engine) getPrevInHistory() (pb *models.Playback, err error) {
 	return
 }
 
+func (e *engine) handleBusMessage(msg *gst.Message, pb *models.Playback) bool {
+	log.Debug(msg.String())
+
+	switch msg.Type() {
+	case gst.MessageEOS:
+		log.Debugf("End of stream: %v", pb.Location)
+		if e.getPlaybackHint(true) != hintPrevInHistory {
+			go pb.AddToHistory(e.lastPosition, e.duration, e.freezePlayback)
+		}
+		e.terminate = true
+		e.mainLoop.Quit()
+		break
+
+	case gst.MessageError:
+		log.Error(msg.String())
+		e.terminate = true
+	case gst.MessageWarning:
+		log.Warning(msg.String())
+	case gst.MessageInfo:
+		log.Debug(msg.String())
+	case gst.MessageStateChanged:
+		e.prevState, e.state = msg.ParseStateChanged()
+		log.WithFields(log.Fields{
+			"previousState": e.prevState,
+			"newState":      e.state,
+		}).
+			Debug("Pipeline state changed")
+
+		if e.state == gst.StatePlaying {
+			// We just moved to PLAYING. Check if seeking is possible
+			var start, end int64
+			q := gst.NewSeekingQuery(gst.FormatTime)
+			if e.playbin.Query(q) {
+				var format gst.Format
+				format, e.seekEnabled, start, end = q.ParseSeeking()
+				if e.seekEnabled {
+					log.WithFields(log.Fields{
+						"format": format,
+						"start":  start,
+						"end":    end,
+					}).
+						Debug("Seeking is ENABLED")
+				} else {
+					log.Debug("Seeking is DISABLED for this stream")
+				}
+			} else {
+				log.Debug("Seeking query failed")
+			}
+		}
+
+	case gst.MessageDurationChanged:
+		e.duration = 0
+
+	default:
+	}
+
+	return true
+}
+
 func (e *engine) playStream(pb *models.Playback) {
 	log.WithField("pb", *pb).
 		Info("Starting playStream")
@@ -236,7 +300,7 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	var err error
 
-	e.playbin, err = gst.ElementFactoryMake("playbin", "m3uetc-playbin")
+	e.playbin, err = gst.NewElementWithName("playbin", "m3uetc-playbin")
 	if err != nil {
 		log.Error(err)
 		return
@@ -255,28 +319,40 @@ func (e *engine) playStream(pb *models.Playback) {
 	if e.mode == TestMode {
 		// Location is relative
 		loc, _ := urlstr.PathToURL(pb.Location)
-		e.playbin.SetObject("uri", loc)
+		e.playbin.Set("uri", loc)
 	} else {
-		e.playbin.SetObject("uri", pb.Location)
+		e.playbin.Set("uri", pb.Location)
 	}
 
+	bus := e.playbin.GetBus()
+
 	e.state = gst.StatePlaying
-	if state := e.playbin.SetState(e.state); state == gst.StateChangeFailure {
-		log.Warn("Unable to start playback")
+	if err := e.playbin.SetState(e.state); err != nil {
+		log.Warnf("Unable to start playback: %v", err)
 		return
 	}
 	log.Debugf("StateChangeReturn: %d\n", gst.StatePlaying)
 
-	bus := e.playbin.GetBus()
+	go e.queryPosition()
 
-	for !e.terminate {
-		msg := bus.TimedPopFiltered(100*time.Millisecond, gst.MessageEos|
-			gst.MessageError|gst.MessageWarning|gst.MessageInfo|
-			gst.MessageStateChanged|gst.MessageDurationChanged)
+	bus.AddWatch(func(msg *gst.Message) bool {
+		return e.handleBusMessage(msg, pb)
+	})
 
-		if msg != nil {
-			e.handleMessage(msg, pb)
-			continue
+	e.mainLoop.Run()
+
+	bus.RemoveWatch()
+
+	log.Debug("End of playback")
+	e.state = gst.StateNull
+	e.playbin.SetState(e.state)
+	return
+}
+
+func (e *engine) queryPosition() {
+	for range time.NewTicker(time.Duration(positionThreshold) * time.Nanosecond).C {
+		if e.terminate {
+			break
 		}
 
 		if e.state != gst.StatePlaying {
@@ -284,26 +360,24 @@ func (e *engine) playStream(pb *models.Playback) {
 		}
 
 		/* Query the current position of the stream */
-		var position time.Duration
-		if position, err = e.playbin.QueryPosition(); err != nil {
+		var position int64
+		var ok bool
+		if ok, position = e.playbin.QueryPosition(gst.FormatTime); !ok {
 			log.Warn("Could not query current position")
 		}
 
-		if int64(position)-e.lastPosition > positionThreshold {
-			go func() {
-				time.Sleep(1 * time.Second)
-				subscription.Broadcast(subscription.ToPlaybackEvent)
-			}()
+		if position > 0 {
+			subscription.Broadcast(subscription.ToPlaybackEvent)
+			e.lastPosition = position
 		}
-		e.lastPosition = int64(position)
 
 		/* If we didn't know it yet, query the stream duration */
 		if e.duration == 0 {
-			var duration time.Duration
-			if duration, err = e.playbin.QueryDuration(); err != nil {
+			var duration int64
+			if ok, duration = e.playbin.QueryDuration(gst.FormatTime); !ok {
 				log.Warn("Could not query current duration")
 			}
-			e.duration = int64(duration)
+			e.duration = duration
 			subscription.Broadcast(subscription.ToPlaybackEvent)
 		}
 
@@ -317,68 +391,6 @@ func (e *engine) playStream(pb *models.Playback) {
 		// }
 		//
 	}
-
-	log.Debug("End of playback")
-	e.state = gst.StateNull
-	e.playbin.SetState(e.state)
-	return
-}
-
-func (e *engine) handleMessage(msg *gst.Message, pb *models.Playback) {
-	log.Debug(msg.GetName())
-
-	switch msg.GetType() {
-	case gst.MessageEos:
-		log.Debugf("End of stream: %v", pb.Location)
-		if e.getPlaybackHint(true) != hintPrevInHistory {
-			go pb.AddToHistory(e.lastPosition, e.duration, e.freezePlayback)
-		}
-		e.terminate = true
-		break
-
-	case gst.MessageError:
-		log.Error(msg.GetName())
-		e.terminate = true
-	case gst.MessageWarning:
-		log.Warning(msg.GetName())
-	case gst.MessageInfo:
-		log.Debug(msg.GetName())
-	case gst.MessageStateChanged:
-		e.prevState, e.state, _ = msg.ParseStateChanged()
-		// if (GST_MESSAGE_SRC (msg) == GST_OBJECT (data->playbin)) {
-		log.WithFields(log.Fields{
-			"previousState": e.prevState,
-			"newState":      e.state,
-		}).
-			Debug("Pipeline state changed")
-
-		if e.state == gst.StatePlaying {
-			// We just moved to PLAYING. Check if seeking is possible
-			var start, end time.Duration
-			q, _ := gst.QueryNewSeeking(gst.FormatTime)
-			if e.playbin.Query(q) {
-				e.seekEnabled, start, end = q.ParseSeeking(nil)
-				if e.seekEnabled {
-					log.WithFields(log.Fields{
-						"start": start,
-						"end":   end,
-					}).
-						Debug("Seeking is ENABLED")
-				} else {
-					log.Debug("Seeking is DISABLED for this stream")
-				}
-			} else {
-				log.Debug("Seeking query failed")
-			}
-		}
-
-	case gst.MessageDurationChanged:
-		e.duration = 0
-
-	default:
-	}
-
-	msg = nil
 }
 
 func (e *engine) resumeActivePlaylist() {
@@ -390,12 +402,6 @@ func (e *engine) resumeActivePlaylist() {
 
 func (e *engine) setPlaybackHint(h playbackHint) {
 	e.hint = h
-}
-
-func (e *engine) softReset() {
-	log.Info("Doing a soft reset on playback data")
-	e.state = gst.StateNull
-	e.playbin = nil
 }
 
 func init() {

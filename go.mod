@@ -13,11 +13,12 @@ require (
 	github.com/jwmwalrus/onerror v0.1.0
 	github.com/jwmwalrus/seater v0.1.1
 	github.com/nightlyone/lockfile v1.0.0
-	github.com/notedit/gst v0.1.0
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/rodaine/table v1.0.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
+	github.com/tinyzimmer/go-glib v0.0.24
+	github.com/tinyzimmer/go-gst v0.2.32
 	github.com/urfave/cli/v2 v2.3.0
 	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.27.1
@@ -32,6 +33,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.4 // indirect
+	github.com/mattn/go-pointer v0.0.1 // indirect
 	github.com/mattn/go-sqlite3 v1.14.10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -42,7 +44,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
-
-// replace github.com/notedit/gst => github.com/jwmwalrus/gst v0.0.8-0.20220113011551-ec329359072c
 
 // replace github.com/jwmwalrus/bnp => ../bnp

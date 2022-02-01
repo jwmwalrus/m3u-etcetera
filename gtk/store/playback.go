@@ -263,12 +263,14 @@ func (pbd *playbackData) updatePlayback() bool {
 	pbd.mu.Unlock()
 
 	if duration > 0 {
+		pos := time.Duration(position) * time.Nanosecond
+		dur := time.Duration(duration) * time.Nanosecond
 		pbd.prog.SetFraction(float64(position) / float64(duration))
 		pbd.prog.SetText(
 			fmt.Sprintf(
 				"%v / %v",
-				time.Duration(position)*time.Nanosecond,
-				time.Duration(duration)*time.Nanosecond,
+				pos.Truncate(time.Second),
+				dur.Truncate(time.Second),
 			),
 		)
 	} else {
