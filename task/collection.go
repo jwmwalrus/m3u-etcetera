@@ -48,8 +48,18 @@ func Collection() *cli.Command {
 						Aliases: []string{"r"},
 						Usage:   "collection is remote",
 					},
+					&cli.StringFlag{
+						Name:    "descr",
+						Aliases: []string{"descr"},
+						Usage:   "collection's `DESCRIPTION`",
+					},
+					&cli.StringFlag{
+						Name:  "persp",
+						Usage: "Applies to `PERSPECTIVE` (music|audiobooks)",
+						Value: "music",
+					},
 				},
-				Usage:       "collection [--disabled] [--remote] name location",
+				Usage:       "collection [<flags>] name location",
 				Description: "Adds a collection with the given name. If collection is not remote and not disabled, it will start scanning the location immediately.",
 				Action:      collectionAddAction,
 			},
@@ -87,9 +97,8 @@ func Collection() *cli.Command {
 						Usage: "Rename collection with the given `NAME` (shall be unique)",
 					},
 					&cli.StringFlag{
-						Name:    "description",
-						Aliases: []string{"descr"},
-						Usage:   "Change collection's description with the given `DESCRIPTIOn`",
+						Name:  "descr",
+						Usage: "Change collection's `DESCRIPTION` for the given one",
 					},
 				},
 				Usage:       "collection update [<flags> ...] ID",
@@ -221,11 +230,19 @@ func collectionAddAction(c *cli.Context) (err error) {
 		return
 	}
 
+	persp := getPerspective(c)
+	if (persp != m3uetcpb.Perspective_MUSIC) ||
+		(persp != m3uetcpb.Perspective_AUDIOBOOKS) {
+		err = fmt.Errorf("Invalid perspective provided")
+		return
+	}
+
 	req := &m3uetcpb.AddCollectionRequest{
-		Name:     rest[0],
-		Location: rest[1],
-		Disabled: c.Bool("disabled"),
-		Remote:   c.Bool("remote"),
+		Name:        rest[0],
+		Location:    rest[1],
+		Disabled:    c.Bool("disabled"),
+		Remote:      c.Bool("remote"),
+		Description: c.String("descr"),
 	}
 
 	req.Location, err = urlstr.PathToURL(rest[1])
@@ -290,8 +307,8 @@ func collectionUpdateAction(c *cli.Context) (err error) {
 	if c.String("name") != "" {
 		req.NewName = c.String("name")
 	}
-	if c.String("description") != "" {
-		req.NewDescription = c.String("description")
+	if c.String("descr") != "" {
+		req.NewDescription = c.String("descr")
 	}
 	if c.Bool("enable") {
 		req.Enable = true

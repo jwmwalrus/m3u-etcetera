@@ -60,10 +60,9 @@ func Playbar() *cli.Command {
 				Usage:   "Output JSON",
 			},
 			&cli.StringFlag{
-				Name:    "perspective",
-				Aliases: []string{"persp"},
-				Usage:   "Applies to perspective",
-				Value:   "music",
+				Name:  "persp",
+				Usage: "Applies to `PERSPECTIVE`",
+				Value: "music",
 			},
 		},
 	}

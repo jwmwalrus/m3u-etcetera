@@ -20,7 +20,7 @@ func getClientConn() (*grpc.ClientConn, error) {
 }
 
 func getPerspective(c *cli.Context) (p m3uetcpb.Perspective) {
-	persp := strings.ToLower(c.String("perspective"))
+	persp := strings.ToLower(c.String("persp"))
 	if strings.HasPrefix(persp, "radio") {
 		p = m3uetcpb.Perspective_RADIO
 	} else if strings.HasPrefix(persp, "podcasts") {

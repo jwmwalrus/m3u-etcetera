@@ -184,7 +184,7 @@ func playgroupExecuteAction(c *cli.Context) (err error) {
 		Action:      m3uetcpb.PlaylistGroupAction(action),
 		Id:          id,
 		Name:        c.String("name"),
-		Description: c.String("description"),
+		Description: c.String("descr"),
 	}
 
 	cc, err := getClientConn()

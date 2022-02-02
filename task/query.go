@@ -31,7 +31,7 @@ func Query() *cli.Command {
 						Usage: "Query `NAME`",
 					},
 					&cli.StringFlag{
-						Name:  "description",
+						Name:  "descr",
 						Usage: "Query `DESCRIPTION`",
 					},
 					&cli.BoolFlag{
@@ -96,7 +96,7 @@ func Query() *cli.Command {
 						Usage: "Query `NAME`",
 					},
 					&cli.StringFlag{
-						Name:  "description",
+						Name:  "descr",
 						Usage: "Query `DESCRIPTION`",
 					},
 					&cli.BoolFlag{
@@ -163,7 +163,7 @@ func Query() *cli.Command {
 						Usage: "Query `NAME`",
 					},
 					&cli.StringFlag{
-						Name:  "description",
+						Name:  "descr",
 						Usage: "Query `DESCRIPTION`",
 					},
 					&cli.BoolFlag{
@@ -322,7 +322,7 @@ func queryAddAction(c *cli.Context) (err error) {
 
 	q := &m3uetcpb.Query{
 		Name:          c.String("name"),
-		Description:   c.String("description"),
+		Description:   c.String("descr"),
 		Random:        c.Bool("random"),
 		Rating:        int32(c.Int("rating")),
 		Limit:         int32(c.Int("limit")),
@@ -407,8 +407,8 @@ func queryUpdateAction(c *cli.Context) (err error) {
 		q.Name = c.String("name")
 	}
 
-	if c.String("description") != "" {
-		q.Name = c.String("description")
+	if c.String("descr") != "" {
+		q.Name = c.String("descr")
 	}
 
 	if c.Bool("random") {
@@ -513,7 +513,7 @@ func queryByAction(c *cli.Context) (err error) {
 
 	q := &m3uetcpb.Query{
 		Name:        c.String("persist-as"),
-		Description: c.String("description"),
+		Description: c.String("descr"),
 		Random:      c.Bool("random"),
 		Rating:      int32(c.Int("rating")),
 		Limit:       int32(c.Int("limit")),

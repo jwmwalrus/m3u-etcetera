@@ -95,10 +95,9 @@ func Queue() *cli.Command {
 				Aliases: []string{"mv"},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:    "perspective",
-						Aliases: []string{"persp"},
-						Usage:   "Applies to perspective",
-						Value:   "music",
+						Name:  "persp",
+						Usage: "Applies to `PERSPECTIVE`",
+						Value: "music",
 					},
 					&cli.Int64Flag{
 						Name:     "from-pos",
@@ -127,10 +126,9 @@ func Queue() *cli.Command {
 				Usage:   "Output JSON",
 			},
 			&cli.StringFlag{
-				Name:    "perspective",
-				Aliases: []string{"persp"},
-				Usage:   "Applies to perspective",
-				Value:   "music",
+				Name:  "persp",
+				Usage: "Applies to `PERSPECTIVE`",
+				Value: "music",
 			},
 			&cli.IntFlag{
 				Name:  "limit",

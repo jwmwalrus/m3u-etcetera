@@ -96,10 +96,9 @@ func Playlist() *cli.Command {
 				Aliases: []string{"imp"},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:    "perspective",
-						Aliases: []string{"persp"},
-						Usage:   "Applies to perspective",
-						Value:   "music",
+						Name:  "persp",
+						Usage: "Applies to `PERSPECTIVE`",
+						Value: "music",
 					},
 				},
 				Usage:       "playlist import [<flags> ...] locations ...",
@@ -116,10 +115,9 @@ func Playlist() *cli.Command {
 				Usage:   "Output JSON",
 			},
 			&cli.StringFlag{
-				Name:    "perspective",
-				Aliases: []string{"persp"},
-				Usage:   "Applies to perspective",
-				Value:   "music",
+				Name:  "persp",
+				Usage: "Applies to `PERSPECTIVE`",
+				Value: "music",
 			},
 			&cli.IntFlag{
 				Name:  "limit",
@@ -202,7 +200,7 @@ func playlistExecuteAction(c *cli.Context) (err error) {
 		Action:      m3uetcpb.PlaylistAction(action),
 		Id:          id,
 		Name:        c.String("name"),
-		Description: c.String("description"),
+		Description: c.String("descr"),
 	}
 
 	cc, err := getClientConn()
