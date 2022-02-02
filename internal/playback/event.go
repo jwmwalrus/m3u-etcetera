@@ -9,7 +9,6 @@ import (
 
 	// "github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
-	"github.com/tinyzimmer/go-glib/glib"
 	"github.com/tinyzimmer/go-gst/gst"
 )
 
@@ -291,7 +290,6 @@ func StartEngine() {
 	}
 
 	gst.Init(nil)
-	eng.mainLoop = glib.NewMainLoop(glib.MainContextDefault(), false)
 
 	eng.resumeActivePlaylist()
 	go eng.engineLoop()

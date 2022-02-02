@@ -1,6 +1,7 @@
 package playback
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/onerror"
 
 	// "github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
@@ -41,6 +43,7 @@ type engine struct {
 	seekDone       bool
 	lastPosition   int64
 	duration       int64
+	buffering      int
 	mode           EngineMode
 	lastEvent      engineEvent
 	hint           playbackHint
@@ -169,7 +172,7 @@ func (e *engine) getNextInPlaylist(goingBack bool) (pb *models.Playback) {
 		return
 	}
 
-	log.WithField("pt", *eng.pt).
+	log.WithField("pt", *e.pt).
 		Info("Obtaining next track in playlist")
 
 	pt, err := e.pt.Playlist.GetTrackAfter(*e.pt, goingBack)
@@ -275,6 +278,15 @@ func (e *engine) handleBusMessage(msg *gst.Message, pb *models.Playback) bool {
 	case gst.MessageDurationChanged:
 		e.duration = 0
 
+	case gst.MessageBuffering:
+		e.buffering = msg.ParseBuffering()
+		if e.buffering < 100 {
+			e.state = gst.StatePaused
+		} else {
+			e.state = gst.StatePlaying
+		}
+		onerror.Log(e.playbin.SetState(e.state))
+
 	default:
 	}
 
@@ -300,12 +312,13 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	var err error
 
+	e.mainLoop = glib.NewMainLoop(glib.MainContextDefault(), false)
+
 	e.playbin, err = gst.NewElementWithName("playbin", "m3uetc-playbin")
 	if err != nil {
 		log.Error(err)
 		return
 	}
-
 	defer func() { e.playbin = nil }()
 	log.Debug("Playbin created")
 
@@ -328,12 +341,13 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	e.state = gst.StatePlaying
 	if err := e.playbin.SetState(e.state); err != nil {
-		log.Warnf("Unable to start playback: %v", err)
+		log.Errorf("Unable to start playback: %v", err)
 		return
 	}
-	log.Debugf("StateChangeReturn: %d\n", gst.StatePlaying)
+	log.Debugf("State changed: %d\n", gst.StatePlaying)
 
-	go e.queryPosition()
+	qposctx, cancelqpos := context.WithCancel(context.Background())
+	go e.queryPosition(qposctx)
 
 	bus.AddWatch(func(msg *gst.Message) bool {
 		return e.handleBusMessage(msg, pb)
@@ -343,53 +357,61 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	bus.RemoveWatch()
 
+	cancelqpos()
+
 	log.Debug("End of playback")
 	e.state = gst.StateNull
 	e.playbin.SetState(e.state)
 	return
 }
 
-func (e *engine) queryPosition() {
-	for range time.NewTicker(time.Duration(positionThreshold) * time.Nanosecond).C {
-		if e.terminate {
-			break
-		}
-
-		if e.state != gst.StatePlaying {
-			continue
-		}
-
-		/* Query the current position of the stream */
-		var position int64
-		var ok bool
-		if ok, position = e.playbin.QueryPosition(gst.FormatTime); !ok {
-			log.Warn("Could not query current position")
-		}
-
-		if position > 0 {
-			subscription.Broadcast(subscription.ToPlaybackEvent)
-			e.lastPosition = position
-		}
-
-		/* If we didn't know it yet, query the stream duration */
-		if e.duration == 0 {
-			var duration int64
-			if ok, duration = e.playbin.QueryDuration(gst.FormatTime); !ok {
-				log.Warn("Could not query current duration")
+func (e *engine) queryPosition(ctx context.Context) {
+	tick := time.NewTicker(time.Duration(positionThreshold) * time.Nanosecond).C
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick:
+			if e.terminate {
+				break
 			}
-			e.duration = duration
-			subscription.Broadcast(subscription.ToPlaybackEvent)
-		}
 
-		// NOTE: If seeking is enabled, we have not done it yet, and the time is right, seek
-		//
-		// if e.seekEnabled && !e.seekDone && e.lastPosition > 10 * time.Second {
-		//   g_print ("\nReached 10s, performing seek...\n");
-		//   gst_element_seek_simple (data.playbin, GST_FORMAT_TIME,
-		//       GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT, 30 * GST_SECOND);
-		//   data.seek_done = TRUE;
-		// }
-		//
+			if e.state != gst.StatePlaying {
+				continue
+			}
+
+			// Query the current position of the stream
+			var position int64
+			var ok bool
+			if ok, position = e.playbin.QueryPosition(gst.FormatTime); !ok {
+				log.Warn("Could not query current position")
+			}
+
+			if position > 0 {
+				subscription.Broadcast(subscription.ToPlaybackEvent)
+				e.lastPosition = position
+			}
+
+			// If we didn't know it yet, query the stream duration
+			if e.duration == 0 {
+				var duration int64
+				if ok, duration = e.playbin.QueryDuration(gst.FormatTime); !ok {
+					log.Warn("Could not query current duration")
+				}
+				e.duration = duration
+				subscription.Broadcast(subscription.ToPlaybackEvent)
+			}
+
+			// NOTE: If seeking is enabled, we have not done it yet, and the time is right, seek
+			//
+			// if e.seekEnabled && !e.seekDone && e.lastPosition > 10 * time.Second {
+			//   g_print ("\nReached 10s, performing seek...\n");
+			//   gst_element_seek_simple (data.playbin, GST_FORMAT_TIME,
+			//       GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT, 30 * GST_SECOND);
+			//   data.seek_done = TRUE;
+			// }
+			//
+		}
 	}
 }
 
