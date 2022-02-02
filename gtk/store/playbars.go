@@ -730,6 +730,7 @@ func updatePlaybarModel() bool {
 					weight = 700
 				}
 
+				dur := time.Duration(t.Duration) * time.Nanosecond
 				err := model.Set(
 					iter,
 					[]int{
@@ -786,7 +787,7 @@ func updatePlaybarModel() bool {
 						int(t.Playcount),
 
 						int(t.Rating),
-						fmt.Sprint(time.Duration(t.Duration) * time.Nanosecond),
+						fmt.Sprint(dur.Truncate(time.Second)),
 						t.Remote,
 						t.Lastplayed,
 						int(pt.Position),

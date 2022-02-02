@@ -475,6 +475,7 @@ func updateQueryResults() bool {
 	var iter *gtk.TreeIter
 	for i, t := range QYData.tracks {
 		iter = model.Append()
+		dur := time.Duration(t.Duration) * time.Nanosecond
 		err := model.Set(
 			iter,
 			[]int{
@@ -527,7 +528,7 @@ func updateQueryResults() bool {
 				int(t.Playcount),
 
 				int(t.Rating),
-				fmt.Sprint(time.Duration(t.Duration) * time.Nanosecond),
+				fmt.Sprint(dur.Truncate(time.Second)),
 				t.Remote,
 				t.Lastplayed,
 				i + 1,

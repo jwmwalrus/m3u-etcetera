@@ -221,6 +221,7 @@ func updateQueueModels() bool {
 				}
 				for _, t := range QData.res.Tracks {
 					if qt.TrackId == t.Id {
+						dur := time.Duration(t.Duration) * time.Nanosecond
 						err = model.Set(
 							iter,
 							[]int{
@@ -266,11 +267,12 @@ func updateQueueModels() bool {
 								int(t.Playcount),
 
 								int(t.Rating),
-								fmt.Sprint(time.Duration(t.Duration) * time.Nanosecond),
+								fmt.Sprint(dur.Truncate(time.Second)),
 								t.Remote,
 								t.Lastplayed,
 							},
 						)
+						break
 					}
 				}
 			}
