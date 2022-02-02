@@ -103,10 +103,11 @@ message ExecutePlaylistActionResponse {
 
 message ExecutePlaylistGroupActionRequest {
     PlaylistGroupAction action = 1;
-    int64 id = 2;
-    string name = 3;
-    string description = 4;
-    bool reset_description = 5;
+    Perspective perspective = 2;
+    int64 id = 3;
+    string name = 4;
+    string description = 5;
+    bool reset_description = 6;
 }
 
 message ExecutePlaylistGroupActionResponse {

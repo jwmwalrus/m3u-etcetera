@@ -284,12 +284,13 @@ func (b *Playbar) GetAllGroups(limit int) (pgs []*PlaylistGroup) {
 
 	s := []PlaylistGroup{}
 	tx := db.Joins("Perspective").
-		Where("perspective_id = ?", b.PerspectiveID)
+		Where("hidden = 0 and perspective_id = ?", b.PerspectiveID)
 	if limit > 0 {
 		tx.Limit(limit)
 	}
-	err := tx.Find(&s).Error
+	err := tx.Debug().Find(&s).Error
 	if err != nil {
+		log.Error(err)
 		return
 	}
 
@@ -518,15 +519,6 @@ func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64, r
 	newName := pl.Name
 	if name != "" {
 		newName = name
-		if groupID == 0 {
-			tpg, err := TransientPlaylistGroup.Get()
-			if err == nil && pl.PlaylistGroupID == tpg.ID {
-				dpg, err := DefaultPlaylistGroup.Get()
-				if err == nil {
-					pl.PlaylistGroupID = dpg.ID
-				}
-			}
-		}
 	}
 
 	newDescr := pl.Description
@@ -536,26 +528,33 @@ func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64, r
 		newDescr = ""
 	}
 
-	newGroup := pl.PlaylistGroupID
+	newGroupID := pl.PlaylistGroupID
 	if groupID > 0 {
-		pg := PlaylistGroup{}
-		if err = pg.Read(groupID); err != nil {
+		upg := PlaylistGroup{}
+		err = upg.Read(groupID)
+		if err != nil {
 			return
 		}
-		if pg.PerspectiveID != b.PerspectiveID {
-			err = fmt.Errorf(
-				"The given Playlist Group ID does not belong to the %v perspetive: %v",
-				PerspectiveIndex(b.Perspective.Idx),
-				groupID,
-			)
+		if upg.PerspectiveID != b.PerspectiveID {
+			err = fmt.Errorf("The provided group ID does not match perspective")
 			return
 		}
-		newGroup = groupID
+		newGroupID = groupID
+	} else {
+		var dpg *PlaylistGroup
+		dpg, err = DefaultPlaylistGroup.Get()
+		if err == nil {
+			if dpg.PerspectiveID != b.PerspectiveID {
+				err = fmt.Errorf("The provided group ID does not match perspective")
+				return
+			}
+			newGroupID = dpg.ID
+		}
 	}
 
 	pl.Name = newName
 	pl.Description = newDescr
-	pl.PlaylistGroupID = newGroup
+	pl.PlaylistGroupID = newGroupID
 	err = pl.Save()
 	return
 }

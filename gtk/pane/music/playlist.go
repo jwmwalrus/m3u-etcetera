@@ -13,12 +13,6 @@ import (
 
 type onMusicPlaylist struct {
 	*onContext
-
-	dlg                               *gtk.Dialog
-	name, id, descr, params, from, to *gtk.Entry
-	rating, limit                     *gtk.SpinButton
-	random                            *gtk.CheckButton
-	resultsLabel                      *gtk.Label
 }
 
 func createMusicPlaylists() (ompl *onMusicPlaylist, err error) {
@@ -67,47 +61,55 @@ func createMusicPlaylists() (ompl *onMusicPlaylist, err error) {
 
 func (ompl *onMusicPlaylist) context(tv *gtk.TreeView, event *gdk.Event) {
 	btn := gdk.EventButtonNewFromEvent(event)
-	if btn.Button() == gdk.BUTTON_SECONDARY {
-		ids := ompl.getSelection(true)
-		if len(ids) != 1 {
-			return
-		}
-
-		menu, err := builder.GetMenu("music_playlists_view_context")
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		pl := store.GetPlaylist(ids[0])
-		if pl == nil {
-			log.WithField("ids", ids).
-				Error("Playlist unavailable during context")
-			return
-		}
-
-		openmi, err := builder.GetMenuItem("music_playlists_view_context_open")
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		deletemi, err := builder.GetMenuItem("music_playlists_view_context_delete")
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		openmi.SetSensitive(!pl.Open)
-		deletemi.SetSensitive(!pl.Open)
-
-		menu.PopupAtPointer(event)
+	if btn.Button() != gdk.BUTTON_SECONDARY {
+		return
 	}
+
+	ids, isGroup := ompl.getPlaylistSelections(true)
+	if len(ids) != 1 {
+		return
+	}
+
+	if isGroup {
+		return
+	}
+
+	if len(ids) != 1 {
+		return
+	}
+
+	menu, err := builder.GetMenu("music_playlists_view_context")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	openmi, err := builder.GetMenuItem("music_playlists_view_context_open")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	deletemi, err := builder.GetMenuItem("music_playlists_view_context_delete")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	pl := store.GetPlaylist(ids[0])
+	if pl == nil {
+		log.WithField("ids", ids).
+			Error("Playlist unavailable during context")
+		return
+	}
+	openmi.SetSensitive(!pl.Open)
+	deletemi.SetSensitive(!pl.Open)
+
+	menu.PopupAtPointer(event)
 }
 
 func (ompl *onMusicPlaylist) contextDelete(mi *gtk.MenuItem) {
-	ids := ompl.getSelection()
+	ids, _ := ompl.getPlaylistSelections()
 	if len(ids) != 1 {
-		log.Error("Query selection vanished?")
 		return
 	}
 
@@ -116,23 +118,23 @@ func (ompl *onMusicPlaylist) contextDelete(mi *gtk.MenuItem) {
 		Id:     ids[0],
 	}
 
-	if _, err := store.ExecutePlaylistAction(req); err != nil {
-		log.Error(err)
-		return
-	}
+	_, err := store.ExecutePlaylistAction(req)
+	onerror.Log(err)
+	return
 }
 
 func (ompl *onMusicPlaylist) contextEdit(mi *gtk.MenuItem) {
-	ids := ompl.getSelection()
+	ids, _ := ompl.getPlaylistSelections()
 	if len(ids) != 1 {
-		log.Error("Query selection vanished?")
+		log.Error("Playlist selection vanished?")
 		return
 	}
+
 	onerror.Log(playlists.EditPlaylist(ids[0]))
 }
 
 func (ompl *onMusicPlaylist) contextOpen(mi *gtk.MenuItem) {
-	ids := ompl.getSelection()
+	ids, _ := ompl.getPlaylistSelections()
 	if len(ids) != 1 {
 		log.Error("Query selection vanished?")
 		return
@@ -150,14 +152,18 @@ func (ompl *onMusicPlaylist) contextOpen(mi *gtk.MenuItem) {
 }
 
 func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
-	values, err := store.GetTreeStoreValues(tv, path, []store.ModelColumn{store.QYColTree, store.QYColTreeIDList})
+	values, err := store.GetTreeStoreValues(tv, path, []store.ModelColumn{store.PLColTree, store.PLColTreeIDList, store.PLColTreeIsGroup})
 	if err != nil {
 		log.Error(err)
 		return
 	}
 	log.Debugf("Doouble-clicked column value: %v", values[store.CColTree])
 
-	ids, err := store.StringToIDList(values[store.QYColTreeIDList].(string))
+	if values[store.PLColTreeIsGroup].(bool) {
+		return
+	}
+
+	ids, err := store.StringToIDList(values[store.PLColTreeIDList].(string))
 	if err != nil {
 		log.Error(err)
 		return
@@ -186,4 +192,25 @@ func (ompl *onMusicPlaylist) filtered(se *gtk.SearchEntry) {
 		return
 	}
 	store.FilterPlaylistTreeBy(m3uetcpb.Perspective_MUSIC, text)
+}
+
+func (ompl *onMusicPlaylist) getPlaylistSelections(keep ...bool) (ids []int64, isGroup bool) {
+	values := ompl.getSelectionValues(keep...)
+	if len(values) == 0 {
+		return
+	}
+
+	idstr, ok := values[store.PLColTreeIDList].(string)
+	if !ok {
+		log.Error("This should not happen!!!")
+	}
+
+	isGroup, ok = values[store.PLColTreeIsGroup].(bool)
+	if !ok {
+		log.Error("This should not happen!!!")
+	}
+
+	ids, err := store.StringToIDList(idstr)
+	onerror.Log(err)
+	return
 }

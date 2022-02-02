@@ -178,20 +178,6 @@
                   <object class="GtkToolbar">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <child>
-                      <object class="GtkToolButton" id="music_playlists_add_group">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="tooltip-text" translatable="yes">Add group</property>
-                        <property name="label" translatable="yes">Add group</property>
-                        <property name="use-underline">True</property>
-                        <property name="icon-name">list-add</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="homogeneous">True</property>
-                      </packing>
-                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>

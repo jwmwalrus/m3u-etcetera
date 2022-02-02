@@ -44,10 +44,65 @@ var (
 	playlists               = []*playlistModel{}
 	updatePlaybarView       func()
 	barTree                 playbarsTree
+	playlistGroupsModel     *gtk.ListStore
 
 	// PerspectiveToPlaylists -
 	PerspectiveToPlaylists map[m3uetcpb.Perspective][]*m3uetcpb.Playlist
 )
+
+// ApplyPlaylistGroupChanges applies collection changes
+func ApplyPlaylistGroupChanges() {
+	log.Info("Applying playlist-group changes")
+
+	cc, err := getClientConn()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	defer cc.Close()
+	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+
+	model := playlistGroupsModel
+
+	iter, ok := model.GetIterFirst()
+	for ok {
+		row, err := GetListStoreModelValues(model, iter, []ModelColumn{PGColPlaylistGroupID, PGColName, PGColDescription})
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		id := row[PGColPlaylistGroupID].(int64)
+		for _, pg := range BData.PlaylistGroup {
+			if id != pg.Id {
+				continue
+			}
+
+			req := &m3uetcpb.ExecutePlaylistGroupActionRequest{
+				Action: m3uetcpb.PlaylistGroupAction_PG_UPDATE,
+				Id:     pg.Id,
+			}
+
+			newName := row[PGColName].(string)
+			if newName != pg.Name && newName != "" {
+				req.Name = newName
+			}
+
+			newDescription := row[PGColDescription].(string)
+			if newDescription != pg.Description {
+				if newDescription != "" {
+					req.Description = newDescription
+				} else {
+					req.ResetDescription = true
+				}
+			}
+
+			_, err := cl.ExecutePlaylistGroupAction(context.Background(), req)
+			onerror.Log(err)
+			break
+		}
+		ok = model.IterNext(iter)
+	}
+}
 
 // CreatePlaylistModel creates a playlist model
 func CreatePlaylistModel(id int64) (model *gtk.ListStore, err error) {
@@ -67,11 +122,24 @@ func CreatePlaylistModel(id int64) (model *gtk.ListStore, err error) {
 	return
 }
 
+// CreatePlaylistGroupsModel creates a playlist model
+func CreatePlaylistGroupsModel() (model *gtk.ListStore, err error) {
+	log.Info("Creating a playlist model")
+
+	playlistGroupsModel, err = gtk.ListStoreNew(PGColumns.getTypes()...)
+	if err != nil {
+		return
+	}
+
+	model = playlistGroupsModel
+	return
+}
+
 // CreatePlaylistsTreeModel creates a playlist model
 func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (model *gtk.TreeStore, err error) {
 	log.Info("Creating playlists model")
 
-	model, err = gtk.TreeStoreNew(QYTreeColumn.getTypes()...)
+	model, err = gtk.TreeStoreNew(PLTreeColumn.getTypes()...)
 	if err != nil {
 		return
 	}
@@ -191,7 +259,7 @@ func GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 }
 
 // GetPlaylist returns the playlist for the given id.
-func GetPlaylist(id int64) (pl *m3uetcpb.Playlist) {
+func GetPlaylist(id int64) *m3uetcpb.Playlist {
 	log.WithField("id", id).
 		Info("Returning playlist")
 
@@ -200,6 +268,21 @@ func GetPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 	for _, pl := range BData.Playlist {
 		if pl.Id == id {
 			return pl
+		}
+	}
+	return nil
+}
+
+// GetPlaylistGroup returns the playlist group for the given id.
+func GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
+	log.WithField("id", id).
+		Info("Returning playlist group")
+
+	BData.Mu.Lock()
+	defer BData.Mu.Unlock()
+	for _, pg := range BData.PlaylistGroup {
+		if pg.Id == id {
+			return pg
 		}
 	}
 	return nil
@@ -226,91 +309,6 @@ func GetPlaylistsTreeModel(p m3uetcpb.Perspective) *gtk.TreeStore {
 // SetUpdatePlaybarViewFn sets the update-playbar-view function
 func SetUpdatePlaybarViewFn(fn func()) {
 	updatePlaybarView = fn
-}
-
-func subscribeToPlaybarStore() {
-	log.Info("Subscribing to playbar store")
-
-	defer wgplaybar.Done()
-
-	var wgdone bool
-
-	cc, err := getClientConn()
-	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
-		return
-	}
-	defer cc.Close()
-
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
-	stream, err := cl.SubscribeToPlaybarStore(context.Background(), &m3uetcpb.Empty{})
-	if err != nil {
-		log.Errorf("Error subscribing to playbar store: %v", err)
-		return
-	}
-
-	for {
-		res, err := stream.Recv()
-		if err != nil {
-			log.Infof("Subscription closed by server: %v", err)
-			break
-		}
-
-		BData.Mu.Lock()
-
-		if BData.subscriptionID == "" {
-			BData.subscriptionID = res.SubscriptionId
-		}
-
-		switch res.Event {
-		case m3uetcpb.PlaybarEvent_BE_INITIAL:
-			barTree.initialMode = true
-			BData.ActiveID = 0
-			BData.OpenPlaylist = []*m3uetcpb.Playlist{}
-			BData.OpenPlaylistTrack = []*m3uetcpb.PlaylistTrack{}
-			BData.OpenTrack = []*m3uetcpb.Track{}
-			BData.PlaylistGroup = []*m3uetcpb.PlaylistGroup{}
-			BData.Playlist = []*m3uetcpb.Playlist{}
-
-			BData.PlaylistReplacementID = 0
-			BData.PlaylistTrackReplacementIDs = []int64{}
-		case m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM:
-			BData.ActiveID = res.ActivePlaylistId
-			appendBDataItem(res)
-		case m3uetcpb.PlaybarEvent_BE_INITIAL_DONE:
-			barTree.initialMode = false
-		case m3uetcpb.PlaybarEvent_BE_ITEM_ADDED:
-			BData.ActiveID = res.ActivePlaylistId
-			appendBDataItem(res)
-		case m3uetcpb.PlaybarEvent_BE_ITEM_CHANGED:
-			BData.ActiveID = res.ActivePlaylistId
-			appendBDataItem(res)
-		case m3uetcpb.PlaybarEvent_BE_ITEM_REMOVED:
-			BData.ActiveID = res.ActivePlaylistId
-			removeBDataItem(res)
-		case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS:
-			barTree.receivingOpenItems = true
-		case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM:
-			appendBDataItem(res)
-			trackBDataItemReplacements(res)
-		case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_DONE:
-			processBDataItemReplacements()
-			barTree.receivingOpenItems = false
-		}
-
-		BData.Mu.Unlock()
-
-		if !barTree.initialMode && !barTree.receivingOpenItems {
-			glib.IdleAdd(updatePlaybarModel)
-			glib.IdleAdd(barTree.update)
-		}
-
-		if !wgdone {
-			wg.Done()
-			wgdone = true
-		}
-	}
-
 }
 
 func appendBDataItem(res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
@@ -496,6 +494,92 @@ func removeBDataItem(res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
 			}
 		}
 	}
+}
+
+func subscribeToPlaybarStore() {
+	log.Info("Subscribing to playbar store")
+
+	defer wgplaybar.Done()
+
+	var wgdone bool
+
+	cc, err := getClientConn()
+	if err != nil {
+		log.Errorf("Error obtaining client connection: %v", err)
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	stream, err := cl.SubscribeToPlaybarStore(context.Background(), &m3uetcpb.Empty{})
+	if err != nil {
+		log.Errorf("Error subscribing to playbar store: %v", err)
+		return
+	}
+
+	for {
+		res, err := stream.Recv()
+		if err != nil {
+			log.Infof("Subscription closed by server: %v", err)
+			break
+		}
+
+		BData.Mu.Lock()
+
+		if BData.subscriptionID == "" {
+			BData.subscriptionID = res.SubscriptionId
+		}
+
+		switch res.Event {
+		case m3uetcpb.PlaybarEvent_BE_INITIAL:
+			barTree.initialMode = true
+			BData.ActiveID = 0
+			BData.OpenPlaylist = []*m3uetcpb.Playlist{}
+			BData.OpenPlaylistTrack = []*m3uetcpb.PlaylistTrack{}
+			BData.OpenTrack = []*m3uetcpb.Track{}
+			BData.PlaylistGroup = []*m3uetcpb.PlaylistGroup{}
+			BData.Playlist = []*m3uetcpb.Playlist{}
+
+			BData.PlaylistReplacementID = 0
+			BData.PlaylistTrackReplacementIDs = []int64{}
+		case m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM:
+			BData.ActiveID = res.ActivePlaylistId
+			appendBDataItem(res)
+		case m3uetcpb.PlaybarEvent_BE_INITIAL_DONE:
+			barTree.initialMode = false
+		case m3uetcpb.PlaybarEvent_BE_ITEM_ADDED:
+			BData.ActiveID = res.ActivePlaylistId
+			appendBDataItem(res)
+		case m3uetcpb.PlaybarEvent_BE_ITEM_CHANGED:
+			BData.ActiveID = res.ActivePlaylistId
+			appendBDataItem(res)
+		case m3uetcpb.PlaybarEvent_BE_ITEM_REMOVED:
+			BData.ActiveID = res.ActivePlaylistId
+			removeBDataItem(res)
+		case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS:
+			barTree.receivingOpenItems = true
+		case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM:
+			appendBDataItem(res)
+			trackBDataItemReplacements(res)
+		case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_DONE:
+			processBDataItemReplacements()
+			barTree.receivingOpenItems = false
+		}
+
+		BData.Mu.Unlock()
+
+		if !barTree.initialMode && !barTree.receivingOpenItems {
+			glib.IdleAdd(updatePlaybarModel)
+			glib.IdleAdd(barTree.update)
+			glib.IdleAdd(updatePlaylistGroupModel)
+		}
+
+		if !wgdone {
+			wg.Done()
+			wgdone = true
+		}
+	}
+
 }
 
 func trackBDataItemReplacements(res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
@@ -718,6 +802,53 @@ func updatePlaybarModel() bool {
 	BData.Mu.Unlock()
 
 	updatePlaybarView()
+
+	return false
+}
+
+func updatePlaylistGroupModel() bool {
+	if barTree.initialMode || barTree.receivingOpenItems {
+		return false
+	}
+
+	log.Info("Updating playlit-group model")
+
+	model := playlistGroupsModel
+	if model == nil {
+		return false
+	}
+
+	if model.GetNColumns() == 0 {
+		return false
+	}
+
+	_, ok := model.GetIterFirst()
+	if ok {
+		model.Clear()
+	}
+
+	BData.Mu.Lock()
+	var iter *gtk.TreeIter
+	for _, pg := range BData.PlaylistGroup {
+		iter = model.Append()
+		err := model.Set(
+			iter,
+			[]int{
+				int(PGColPlaylistGroupID),
+				int(PGColName),
+				int(PGColDescription),
+				int(PGColPerspective),
+			},
+			[]interface{}{
+				pg.Id,
+				pg.Name,
+				pg.Description,
+				pg.Perspective.String(),
+			},
+		)
+		onerror.Log(err)
+	}
+	BData.Mu.Unlock()
 
 	return false
 }

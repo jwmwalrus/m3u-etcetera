@@ -22,13 +22,30 @@ type onContext struct {
 func (oc *onContext) getSelection(keep ...bool) (ids []int64) {
 	value, ok := oc.selection.(string)
 	if !ok {
-		log.Debug("There is no selection available for collection context")
+		log.Debug("There is no selection available for context")
 		return
 	}
 
 	ids, err := store.StringToIDList(value)
 	if err != nil {
-		log.Errorf("Error parsing selection value for collection context: %v", err)
+		log.Errorf("Error parsing selection IDs for context: %v", err)
+	}
+
+	reset := true
+	if len(keep) > 0 {
+		reset = !keep[0]
+	}
+	if reset {
+		oc.selection = nil
+	}
+	return
+}
+
+func (oc *onContext) getSelectionValues(keep ...bool) (values map[store.ModelColumn]interface{}) {
+	values, ok := oc.selection.(map[store.ModelColumn]interface{})
+	if !ok {
+		values = map[store.ModelColumn]interface{}{}
+		return
 	}
 
 	reset := true
@@ -47,7 +64,7 @@ func (oc *onContext) selChanged(sel *gtk.TreeSelection) {
 	case collectionContext:
 		oc.selection, err = store.GetTreeSelectionValue(sel, store.CColTreeIDList)
 	case playlistContext:
-		oc.selection, err = store.GetTreeSelectionValue(sel, store.PLColTreeIDList)
+		oc.selection, err = store.GetTreeSelectionValues(sel, []store.ModelColumn{store.PLColTreeIDList, store.PLColTreeIsGroup})
 	case queryContext:
 		oc.selection, err = store.GetTreeSelectionValue(sel, store.QYColTreeIDList)
 	}

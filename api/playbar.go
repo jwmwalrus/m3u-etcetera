@@ -292,9 +292,9 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context, req *m3uetcpb.E
 
 	switch req.Action {
 	case m3uetcpb.PlaylistGroupAction_PG_CREATE:
-		bar, err := models.DefaultPerspective.GetPlaybar()
+		bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 		if err != nil {
-			return nil, grpc.Errorf(codes.Internal, "Error obtaining default perspective:", err)
+			return nil, grpc.Errorf(codes.Internal, "Error obtaining perspective:", err)
 		}
 		pg, err = bar.CreateGroup(req.Name, req.Description)
 		if err != nil {

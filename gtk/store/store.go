@@ -39,7 +39,6 @@ const (
 	CColDescription
 	CColLocation
 	CColRemoteLocation
-	CColHidden
 	CColDisabled
 	CColRemote
 	CColScanned
@@ -160,6 +159,17 @@ const (
 	PLColTree ModelColumn = iota
 	PLColTreeIDList
 	PLColTreeKeywords
+	PLColTreeIsGroup
+)
+
+// PGCol* column definition
+const (
+	PGColPlaylistGroupID ModelColumn = iota
+	PGColName
+	PGColDescription
+	PGColPerspective
+
+	PGColsN
 )
 
 var (
@@ -184,6 +194,9 @@ var (
 
 	// QYColumns query columns
 	QYColumns storeColumns
+
+	// PGColumns query columns
+	PGColumns storeColumns
 
 	// CTreeColumn collections tree column
 	CTreeColumn storeColumns
@@ -346,7 +359,6 @@ func init() {
 	CColumns[CColDescription] = columnDef{"Description", glib.TYPE_STRING}
 	CColumns[CColLocation] = columnDef{"Location", glib.TYPE_STRING}
 	CColumns[CColRemoteLocation] = columnDef{"Remote Location", glib.TYPE_STRING}
-	CColumns[CColHidden] = columnDef{"Hidden", glib.TYPE_BOOLEAN}
 	CColumns[CColDisabled] = columnDef{"Disabled", glib.TYPE_BOOLEAN}
 	CColumns[CColRemote] = columnDef{"Remote", glib.TYPE_BOOLEAN}
 	CColumns[CColScanned] = columnDef{"Scanned", glib.TYPE_INT}
@@ -443,6 +455,13 @@ func init() {
 		columnDef{"Tree", glib.TYPE_STRING},
 		columnDef{"ID List", glib.TYPE_STRING},
 		columnDef{"Keywords", glib.TYPE_STRING},
+		columnDef{"Is Group", glib.TYPE_BOOLEAN},
 	}
+
+	PGColumns = make(storeColumns, PGColsN)
+	PGColumns[PGColPlaylistGroupID] = columnDef{"ID", glib.TYPE_INT64}
+	PGColumns[PGColName] = columnDef{"Name", glib.TYPE_STRING}
+	PGColumns[PGColDescription] = columnDef{"Description", glib.TYPE_STRING}
+	PGColumns[PGColPerspective] = columnDef{"Perspective", glib.TYPE_STRING}
 
 }

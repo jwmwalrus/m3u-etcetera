@@ -58,6 +58,7 @@ func (te *playlistTreeEntry) appendNode(model *gtk.TreeStore, iter *gtk.TreeIter
 		te.label+suffix,
 	)
 	model.SetValue(pliter, int(PLColTreeIDList), IDListToString(te.ids))
+	model.SetValue(pliter, int(PLColTreeIsGroup), te.et == playlistGroupEntry)
 
 	for i := range te.child {
 		te.child[i].appendNode(model, pliter)

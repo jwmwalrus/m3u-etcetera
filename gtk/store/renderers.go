@@ -44,6 +44,28 @@ func GetCollectionRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 	return nil, fmt.Errorf("The provided column is not editable: %v", col)
 }
 
+// GetPlaylistGroupRenderer returns a renderer for any editable collection column
+func GetPlaylistGroupRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
+
+	switch col {
+	case PGColName, PGColDescription:
+		renderer, err := gtk.CellRendererTextNew()
+		if err != nil {
+			return nil, err
+		}
+		err = renderer.Set("editable", true)
+		if err != nil {
+			return nil, err
+		}
+		renderer.Connect("edited", func(cell *gtk.CellRendererText, pathString, newText string) {
+			onTextColumnEdited(playlistGroupsModel, col, cell, pathString, newText)
+		})
+		return renderer, nil
+	}
+
+	return nil, fmt.Errorf("The provided column is not editable: %v", col)
+}
+
 // GetQueryResultsRenderer returns a renderer for any editable query column
 func GetQueryResultsRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 

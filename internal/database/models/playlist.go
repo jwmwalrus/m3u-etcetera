@@ -31,7 +31,7 @@ const (
 )
 
 func (idx PlaylistGroupIndex) String() string {
-	return [...]string{"", ".", ".."}[idx]
+	return [...]string{"", "\t", "\t\t"}[idx]
 }
 
 // Get returns the playlist group for the given index
@@ -45,7 +45,7 @@ func (idx PlaylistGroupIndex) Get() (plg *PlaylistGroup, err error) {
 type PlaylistGroup struct {
 	ID            int64       `json:"id" gorm:"primaryKey"`
 	Idx           int         `json:"idx" gorm:"not null"`
-	Name          string      `json:"name" gorm:"not null"`
+	Name          string      `json:"name" gorm:"uniqueIndex:unique_idx_playlist_group_name,not null"`
 	Description   string      `json:"description"`
 	Hidden        bool        `json:"hidden"`
 	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime"`
@@ -79,17 +79,11 @@ func (pg *PlaylistGroup) Save() error {
 
 // ToProtobuf implments ProtoOut interface
 func (pg *PlaylistGroup) ToProtobuf() proto.Message {
-	bv, err := json.Marshal(pg)
-	if err != nil {
-		log.Error(err)
-		return &m3uetcpb.PlaylistGroup{}
-	}
-
 	out := &m3uetcpb.PlaylistGroup{}
-	err = json.Unmarshal(bv, out)
-	onerror.Log(err)
 
-	// Unmatched
+	out.Id = pg.ID
+	out.Name = pg.Name
+	out.Description = pg.Description
 	out.Perspective = m3uetcpb.Perspective(pg.Perspective.Idx)
 	out.CreatedAt = pg.CreatedAt
 	out.UpdatedAt = pg.UpdatedAt
@@ -147,7 +141,7 @@ func (pg *PlaylistGroup) AfterDelete(tx *gorm.DB) error {
 // Playlist defines a playlist
 type Playlist struct {
 	ID              int64         `json:"id" gorm:"primaryKey"`
-	Name            string        `json:"name" gorm:"not null"`
+	Name            string        `json:"name" gorm:"uniqueIndex:unique_idx_playlist_name,not null"`
 	Description     string        `json:"description"`
 	Open            bool          `json:"open"`
 	Active          bool          `json:"active"`
