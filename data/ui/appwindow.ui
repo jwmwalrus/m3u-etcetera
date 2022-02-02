@@ -15,16 +15,16 @@
             <property name="can-focus">False</property>
             <property name="layout-style">start</property>
             <child>
-              <object class="GtkButton" id="settings_open_file">
+              <object class="GtkButton" id="settings_open_files">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <signal name="clicked" handler="on_settings_open_file_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_settings_open_files_clicked" swapped="no"/>
                 <child>
                   <object class="GtkImage">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="tooltip-text" translatable="yes">Open file...</property>
+                    <property name="tooltip-text" translatable="yes">Open files...</property>
                     <property name="icon-name">folder-open</property>
                   </object>
                 </child>

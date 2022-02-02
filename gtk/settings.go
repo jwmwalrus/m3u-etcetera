@@ -2,6 +2,7 @@ package gtkui
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/gotk3/gotk3/gtk"
@@ -17,16 +18,17 @@ import (
 type onSettingsMenu struct {
 	window *gtk.ApplicationWindow
 	coll   struct {
-		dlg           *gtk.Dialog
-		discoverBtn   *gtk.ToggleToolButton
-		updateTagsBtn *gtk.ToggleToolButton
+		addDlg, editDlg  *gtk.Dialog
+		name, descr      *gtk.Entry
+		persp            *gtk.ComboBoxText
+		disabled, remote *gtk.CheckButton
+		discoverBtn      *gtk.ToggleToolButton
+		updateTagsBtn    *gtk.ToggleToolButton
 	}
 	pg struct {
-		addDlg      *gtk.Dialog
-		name, descr *gtk.Entry
-		persp       *gtk.ComboBoxText
-
-		editDlg *gtk.Dialog
+		addDlg, editDlg *gtk.Dialog
+		name, descr     *gtk.Entry
+		persp           *gtk.ComboBoxText
 	}
 	pm *gtk.PopoverMenu
 }
@@ -35,10 +37,10 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 	osm.hide()
 
 	dlg, err := gtk.FileChooserDialogNewWith2Buttons(
-		"Add collection",
+		"Select a location",
 		osm.window,
-		gtk.FILE_CHOOSER_ACTION_SAVE,
-		"Add",
+		gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+		"Select",
 		gtk.RESPONSE_APPLY,
 		"Cancel",
 		gtk.RESPONSE_CANCEL,
@@ -48,26 +50,56 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 		return
 	}
 
-	filter, err := gtk.FileFilterNew()
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	var loc string
 
-	// TODO: directories only
-	for _, v := range base.SupportedPlaylistExtensions {
-		filter.AddPattern("*" + v)
-	}
-	dlg.AddFilter(filter)
 	dlg.ShowAll()
 	res := dlg.Run()
 	switch res {
 	case gtk.RESPONSE_APPLY:
-		// TODO: implement
+		loc = dlg.GetURI()
 	case gtk.RESPONSE_CANCEL:
 	default:
 	}
 	dlg.Destroy()
+
+	if loc == "" {
+		return
+	}
+
+	osm.coll.name.SetText("local:" + filepath.Base(loc))
+	osm.coll.descr.SetText("")
+	osm.coll.persp.SetActive(0)
+	osm.coll.disabled.SetActive(false)
+	osm.coll.remote.SetActive(false)
+
+	res = osm.coll.addDlg.Run()
+	defer osm.coll.addDlg.Hide()
+
+	switch res {
+	case gtk.RESPONSE_APPLY:
+		name, _ := osm.coll.name.GetText()
+		descr, _ := osm.coll.descr.GetText()
+		perspid := osm.coll.persp.GetActive()
+		persp := m3uetcpb.Perspective_MUSIC
+		if perspid != 0 {
+			persp = m3uetcpb.Perspective_AUDIOBOOKS
+		}
+		req := &m3uetcpb.AddCollectionRequest{
+			Name:        name,
+			Description: descr,
+			Location:    loc,
+			Perspective: persp,
+			Disabled:    osm.coll.disabled.GetActive(),
+			Remote:      osm.coll.remote.GetActive(),
+		}
+		_, err := store.AddCollection(req)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	case gtk.RESPONSE_CANCEL:
+	default:
+	}
 }
 
 func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
@@ -114,10 +146,50 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 	return
 }
 
-func (osm *onSettingsMenu) createCollectionsDialog() (err error) {
+func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 	log.Info("Setting up collections dialog")
 
-	osm.coll.dlg, err = builder.GetDialog("collections_dialog")
+	osm.coll.addDlg, err = builder.GetDialog("collections_add_dialog")
+	if err != nil {
+		return
+	}
+
+	osm.coll.name, err = builder.GetEntry("collections_add_dialog_name")
+	if err != nil {
+		return
+	}
+
+	osm.coll.descr, err = builder.GetEntry("collections_add_dialog_descr")
+	if err != nil {
+		return
+	}
+
+	osm.coll.persp, err = builder.GetComboBoxText("collections_add_dialog_perspective")
+	if err != nil {
+		return
+	}
+
+	osm.coll.disabled, err = builder.GetCheckButton("collections_add_dialog_disabled")
+	if err != nil {
+		return
+	}
+
+	osm.coll.remote, err = builder.GetCheckButton("collections_add_dialog_remote")
+	if err != nil {
+		return
+	}
+
+	osm.coll.editDlg, err = builder.GetDialog("collections_dialog")
+	if err != nil {
+		return
+	}
+
+	osm.coll.discoverBtn, err = builder.GetToggleToolButton("collections_dialog_toggle_discover")
+	if err != nil {
+		return
+	}
+
+	osm.coll.updateTagsBtn, err = builder.GetToggleToolButton("collections_dialog_toggle_update_tags")
 	if err != nil {
 		return
 	}
@@ -169,7 +241,7 @@ func (osm *onSettingsMenu) createCollectionsDialog() (err error) {
 		{store.CColName, namerw},
 		{store.CColDescription, descriptionrw},
 		{store.CColLocation, textro},
-		{store.CColScanned, textro},
+		{store.CColPerspective, textro},
 		{store.CColTracksView, textro},
 		{store.CColDisabled, disabledrw},
 		{store.CColRemote, remoterw},
@@ -311,8 +383,8 @@ func (osm *onSettingsMenu) editCollections(btn *gtk.Button) {
 
 	osm.resetCollectionsToggles()
 
-	res := osm.coll.dlg.Run()
-	defer osm.coll.dlg.Hide()
+	res := osm.coll.editDlg.Run()
+	defer osm.coll.editDlg.Hide()
 
 	switch res {
 	case gtk.RESPONSE_APPLY:
@@ -393,13 +465,13 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 	dlg.Destroy()
 }
 
-func (osm *onSettingsMenu) openFile(btn *gtk.Button) {
+func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 	osm.hide()
 
 	dlg, err := gtk.FileChooserDialogNewWith2Buttons(
-		"Open file",
+		"Open files",
 		osm.window,
-		gtk.FILE_CHOOSER_ACTION_SAVE,
+		gtk.FILE_CHOOSER_ACTION_OPEN,
 		"Open",
 		gtk.RESPONSE_APPLY,
 		"Cancel",
@@ -416,16 +488,22 @@ func (osm *onSettingsMenu) openFile(btn *gtk.Button) {
 		log.Error(err)
 		return
 	}
+	filter.SetName("Music files")
 
 	for _, v := range base.SupportedFileExtensions {
 		filter.AddPattern("*" + v)
 	}
+	dlg.SetSelectMultiple(true)
 	dlg.AddFilter(filter)
 	dlg.ShowAll()
 	res := dlg.Run()
 	switch res {
 	case gtk.RESPONSE_APPLY:
-		loc := dlg.GetURI()
+		locs, err := dlg.GetURIs()
+		if err != nil {
+			log.Error(err)
+			return
+		}
 
 		plID := playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
 
@@ -434,7 +512,7 @@ func (osm *onSettingsMenu) openFile(btn *gtk.Button) {
 			req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
 				PlaylistId: plID,
 				Action:     action,
-				Locations:  []string{loc},
+				Locations:  locs,
 			}
 
 			err := store.ExecutePlaylistTrackAction(req)
@@ -443,7 +521,7 @@ func (osm *onSettingsMenu) openFile(btn *gtk.Button) {
 			action := m3uetcpb.QueueAction_Q_APPEND
 			req := &m3uetcpb.ExecuteQueueActionRequest{
 				Action:    action,
-				Locations: []string{loc},
+				Locations: locs,
 			}
 
 			err := store.ExecuteQueueAction(req)

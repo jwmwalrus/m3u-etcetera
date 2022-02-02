@@ -11,7 +11,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -23,6 +22,11 @@ var (
 // Setup sets the whole GTK UI
 func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error) {
 	settingsMenuSignals.window = w
+
+	if err = builder.AddFromFile("data/ui/collections-add-dialog.ui"); err != nil {
+		err = fmt.Errorf("Unable to add collections-add-dialog file to builder: %v", err)
+		return
+	}
 
 	if err = builder.AddFromFile("data/ui/collections-dialog.ui"); err != nil {
 		err = fmt.Errorf("Unable to add collections-dialog file to builder: %v", err)
@@ -39,24 +43,12 @@ func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error
 		return
 	}
 
-	if err = settingsMenuSignals.createCollectionsDialog(); err != nil {
+	if err = settingsMenuSignals.createCollectionDialogs(); err != nil {
 		err = fmt.Errorf("Unable to setup collections-dialog: %v", err)
 		return
 	}
 	(*signals)["on_settings_collections_add_clicked"] = settingsMenuSignals.addCollection
 	(*signals)["on_settings_collections_edit_clicked"] = settingsMenuSignals.editCollections
-
-	settingsMenuSignals.coll.discoverBtn, err = builder.GetToggleToolButton("collections_dialog_toggle_discover")
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	settingsMenuSignals.coll.updateTagsBtn, err = builder.GetToggleToolButton("collections_dialog_toggle_update_tags")
-	if err != nil {
-		log.Error(err)
-		return
-	}
 
 	if err = settingsMenuSignals.createPlaylistGroupDialogs(); err != nil {
 		err = fmt.Errorf("Unable to setup playlist group dialogs: %v", err)
@@ -66,7 +58,7 @@ func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error
 	(*signals)["on_settings_playlist_groups_edit_clicked"] = settingsMenuSignals.editPlaylistGroups
 
 	(*signals)["on_settings_quit_all_clicked"] = settingsMenuSignals.quitAll
-	(*signals)["on_settings_open_file_clicked"] = settingsMenuSignals.openFile
+	(*signals)["on_settings_open_files_clicked"] = settingsMenuSignals.openFiles
 	(*signals)["on_settings_open_url_clicked"] = settingsMenuSignals.openURL
 	(*signals)["on_settings_import_playlist_clicked"] = settingsMenuSignals.importPlaylist
 

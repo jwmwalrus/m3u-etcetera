@@ -178,11 +178,11 @@ func (c *Collection) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (c *Collection) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
+		if !base.FlagTestingMode {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
-					Idx:  int(CollectionEventInitial),
+					Idx:  int(CollectionEventItemAdded),
 					Data: c,
 				},
 			)
@@ -194,11 +194,11 @@ func (c *Collection) AfterCreate(tx *gorm.DB) error {
 // AfterUpdate is a GORM hook
 func (c *Collection) AfterUpdate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
+		if !base.FlagTestingMode {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
-					Idx:  int(CollectionEventInitial),
+					Idx:  int(CollectionEventItemChanged),
 					Data: c,
 				},
 			)
@@ -210,11 +210,11 @@ func (c *Collection) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (c *Collection) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent == CollectionEventNone {
+		if !base.FlagTestingMode {
 			subscription.Broadcast(
 				subscription.ToCollectionStoreEvent,
 				subscription.Event{
-					Idx:  int(CollectionEventInitial),
+					Idx:  int(CollectionEventItemRemoved),
 					Data: c,
 				},
 			)

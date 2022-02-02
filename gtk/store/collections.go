@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
@@ -19,6 +21,7 @@ var (
 	cTree = &collectionTree{}
 
 	collectionsModel *gtk.ListStore
+	cProgress        *gtk.ProgressBar
 
 	// CData collection store
 	CData struct {
@@ -37,6 +40,22 @@ type CollectionsOptions struct {
 
 // SetDefaults -
 func (co *CollectionsOptions) SetDefaults() {}
+
+// AddCollection adds a collection
+func AddCollection(req *m3uetcpb.AddCollectionRequest) (res *m3uetcpb.AddCollectionResponse, err error) {
+	log.Info("Adding collection")
+
+	cc, err := getClientConn()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewCollectionSvcClient(cc)
+	res, err = cl.AddCollection(context.Background(), req)
+	return
+}
 
 // ApplyCollectionChanges applies collection changes
 func ApplyCollectionChanges(o ...CollectionsOptions) {
@@ -160,6 +179,13 @@ func CreateCollectionTreeModel(h collectionTreeHierarchy) (model *gtk.TreeStore,
 
 	cTree.hierarchy = h
 	model = cTree.model
+
+	var errp error
+	cProgress, errp = builder.GetProgressBar("collections_scanning_progress")
+	if errp != nil {
+		cProgress = nil
+		log.Error(errp)
+	}
 	return
 }
 
@@ -237,9 +263,11 @@ func subscribeToCollectionStore() {
 
 		CData.Mu.Unlock()
 
+		glib.IdleAdd(updateCollectionsModel)
 		if !cTree.initialMode && !cTree.scanningMode {
 			glib.IdleAdd(cTree.update)
-			glib.IdleAdd(updateCollectionsModel)
+		} else {
+			glib.IdleAdd(updateScanningProgress)
 		}
 
 		if !wgdone {
@@ -348,7 +376,7 @@ func unsubscribeFromCollectionStore() {
 }
 
 func updateCollectionsModel() bool {
-	if cTree.initialMode || cTree.scanningMode {
+	if cTree.initialMode {
 		return false
 	}
 
@@ -377,6 +405,7 @@ func updateCollectionsModel() bool {
 			if c.Scanned != 100 {
 				tracks = strconv.Itoa(int(c.Scanned)) + "%"
 			}
+			persp := m3uetcpb.Perspective_name[int32(c.Perspective)]
 			err := model.Set(
 				iter,
 				[]int{
@@ -384,9 +413,9 @@ func updateCollectionsModel() bool {
 					int(CColName),
 					int(CColDescription),
 					int(CColLocation),
+					int(CColPerspective),
 					int(CColDisabled),
 					int(CColRemote),
-					int(CColScanned),
 					int(CColTracks),
 					int(CColTracksView),
 					int(CColRescan),
@@ -396,9 +425,9 @@ func updateCollectionsModel() bool {
 					c.Name,
 					c.Description,
 					c.Location,
+					persp,
 					c.Disabled,
 					c.Remote,
-					c.Scanned,
 					c.Tracks,
 					tracks,
 					false,
@@ -408,5 +437,30 @@ func updateCollectionsModel() bool {
 		}
 	}
 	CData.Mu.Unlock()
+	return false
+}
+
+func updateScanningProgress() bool {
+	if cProgress == nil {
+		log.Error("Collections progress bar is unavailable")
+		return false
+	}
+
+	CData.Mu.Lock()
+	defer CData.Mu.Unlock()
+
+	scanned := 0
+	for _, c := range CData.Collection {
+		if c.Scanned != 100 && int(c.Scanned) > scanned {
+			scanned = int(c.Scanned)
+		}
+	}
+	if scanned > 0 {
+		cProgress.SetVisible(true)
+		cProgress.SetFraction(float64(scanned) / float64(100))
+		cProgress.SetText(fmt.Sprintf("Scanning: %v%%", scanned))
+		return false
+	}
+	cProgress.SetVisible(false)
 	return false
 }

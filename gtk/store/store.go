@@ -39,6 +39,7 @@ const (
 	CColDescription
 	CColLocation
 	CColRemoteLocation
+	CColPerspective
 	CColDisabled
 	CColRemote
 	CColScanned
@@ -359,10 +360,12 @@ func init() {
 	CColumns[CColDescription] = columnDef{"Description", glib.TYPE_STRING}
 	CColumns[CColLocation] = columnDef{"Location", glib.TYPE_STRING}
 	CColumns[CColRemoteLocation] = columnDef{"Remote Location", glib.TYPE_STRING}
+	CColumns[CColPerspective] = columnDef{"Perspective", glib.TYPE_STRING}
 	CColumns[CColDisabled] = columnDef{"Disabled", glib.TYPE_BOOLEAN}
 	CColumns[CColRemote] = columnDef{"Remote", glib.TYPE_BOOLEAN}
 	CColumns[CColScanned] = columnDef{"Scanned", glib.TYPE_INT}
 	CColumns[CColTracks] = columnDef{"# Tracks", glib.TYPE_INT64}
+
 	CColumns[CColTracksView] = columnDef{"# Tracks", glib.TYPE_STRING}
 	CColumns[CColRescan] = columnDef{"Re-scan", glib.TYPE_BOOLEAN}
 

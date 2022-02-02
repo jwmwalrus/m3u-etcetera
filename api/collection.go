@@ -230,7 +230,19 @@ sLoop:
 				break sLoop
 			}
 
-			if models.CollectionEvent(e.Idx) == models.CollectionEventInitial {
+			if models.CollectionEvent(e.Idx) == models.CollectionEventInitial ||
+				models.CollectionEvent(e.Idx) == models.CollectionEventScanningDone {
+				if models.CollectionEvent(e.Idx) == models.CollectionEventScanningDone {
+					res := &m3uetcpb.SubscribeToCollectionStoreResponse{
+						SubscriptionId: id,
+						Event:          m3uetcpb.CollectionEvent_CE_SCANNING_DONE,
+					}
+					err := stream.Send(res)
+					if err != nil {
+						break sLoop
+					}
+				}
+
 				res := &m3uetcpb.SubscribeToCollectionStoreResponse{
 					SubscriptionId: id,
 					Event:          m3uetcpb.CollectionEvent_CE_INITIAL,
@@ -269,15 +281,10 @@ sLoop:
 				continue sLoop
 			}
 
-			if models.CollectionEvent(e.Idx) == models.CollectionEventScanning ||
-				models.CollectionEvent(e.Idx) == models.CollectionEventScanningDone {
-				eout := m3uetcpb.CollectionEvent_CE_SCANNING
-				if models.CollectionEvent(e.Idx) == models.CollectionEventScanningDone {
-					eout = m3uetcpb.CollectionEvent_CE_SCANNING_DONE
-				}
+			if models.CollectionEvent(e.Idx) == models.CollectionEventScanning {
 				res := &m3uetcpb.SubscribeToCollectionStoreResponse{
 					SubscriptionId: id,
-					Event:          eout,
+					Event:          m3uetcpb.CollectionEvent_CE_SCANNING,
 				}
 				err := stream.Send(res)
 				if err != nil {
