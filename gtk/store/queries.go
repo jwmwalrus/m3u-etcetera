@@ -181,6 +181,7 @@ func GetQueryResultsSelections() (ids []int64, err error) {
 		var values map[ModelColumn]interface{}
 		values, err = GetListStoreModelValues(model, iter, []ModelColumn{TColTrackID, TColToggleSelect})
 		if err != nil {
+			log.Error(err)
 			return
 		}
 		selected := values[TColToggleSelect].(bool)

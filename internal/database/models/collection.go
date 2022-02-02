@@ -29,7 +29,7 @@ const (
 )
 
 func (idx CollectionIndex) String() string {
-	return [...]string{"", ".", ".."}[idx]
+	return [...]string{"", "\t", "\t\t"}[idx]
 }
 
 // Get returns the collection associated to the index

@@ -90,12 +90,11 @@ message Collection {
     string description = 4;
     string location = 5;
     string remote_location = 6;
-    bool hidden = 7;
-    bool disabled = 8;
-    bool remote = 9;
-    int32 scanned = 10;
-    int64 tracks = 11;
-    Perspective perspective = 12;
+    bool disabled = 7;
+    bool remote = 8;
+    int32 scanned = 9;
+    int64 tracks = 10;
+    Perspective perspective = 11;
     int64 created_at = 101;
     int64 updated_at = 102;
 }

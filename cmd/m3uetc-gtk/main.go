@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gotk3/gotk3/gtk"
 	gtkui "github.com/jwmwalrus/m3u-etcetera/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -34,6 +36,7 @@ func main() {
 
 	window.Connect("destroy", func() {
 		store.Unsubscribe()
+		fmt.Printf("\nBye %v from %v\n", base.OS, base.AppInstance)
 		gtk.MainQuit()
 	})
 
