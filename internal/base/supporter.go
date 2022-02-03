@@ -65,6 +65,16 @@ var (
 	}
 )
 
+// CheckUnsupportedFiles Returns the unsupported files from a given list
+func CheckUnsupportedFiles(files []string) (unsupp []string) {
+	for _, f := range files {
+		if !IsSupportedFile(f) {
+			unsupp = append(unsupp, f)
+		}
+	}
+	return
+}
+
 // IsSupportedURL returns true if the path is supported
 func IsSupportedURL(s string) bool {
 	path, err := urlstr.URLToPath(s)

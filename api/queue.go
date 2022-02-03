@@ -6,6 +6,7 @@ import (
 
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"google.golang.org/grpc"
@@ -53,7 +54,7 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 		req.Action,
 	) {
 		if len(req.Locations) > 0 || len(req.Ids) > 0 {
-			unsup := models.CheckUnsupportedFiles(req.Locations)
+			unsup := base.CheckUnsupportedFiles(req.Locations)
 			if len(unsup) > 0 {
 				return nil, grpc.Errorf(codes.InvalidArgument, "Unsupported locations were provided: %+q", unsup)
 			}

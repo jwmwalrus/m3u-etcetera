@@ -6,6 +6,7 @@ import (
 
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
@@ -58,7 +59,7 @@ func (*PlaybackSvc) GetPlaybackList(_ context.Context, _ *m3uetcpb.Empty) (*m3ue
 func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
 	if req.Action == m3uetcpb.PlaybackAction_PB_PLAY {
 		if len(req.Locations) > 0 {
-			unsup := models.CheckUnsupportedFiles(req.Locations)
+			unsup := base.CheckUnsupportedFiles(req.Locations)
 			if len(unsup) > 0 {
 				return nil, grpc.Errorf(codes.InvalidArgument, "Unsupported locations were provided: %+q", unsup)
 			}
