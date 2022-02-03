@@ -18,12 +18,16 @@ import (
 type onSettingsMenu struct {
 	window *gtk.ApplicationWindow
 	coll   struct {
-		addDlg, editDlg  *gtk.Dialog
+		addDlg           *gtk.Dialog
+		loc              *gtk.FileChooserButton
 		name, descr      *gtk.Entry
 		persp            *gtk.ComboBoxText
 		disabled, remote *gtk.CheckButton
-		discoverBtn      *gtk.ToggleToolButton
-		updateTagsBtn    *gtk.ToggleToolButton
+		addBtn           *gtk.Button
+
+		editDlg       *gtk.Dialog
+		discoverBtn   *gtk.ToggleToolButton
+		updateTagsBtn *gtk.ToggleToolButton
 	}
 	pg struct {
 		addDlg, editDlg *gtk.Dialog
@@ -36,47 +40,42 @@ type onSettingsMenu struct {
 func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 	osm.hide()
 
-	dlg, err := gtk.FileChooserDialogNewWith2Buttons(
-		"Select a location",
-		osm.window,
-		gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
-		"Select",
-		gtk.RESPONSE_APPLY,
-		"Cancel",
-		gtk.RESPONSE_CANCEL,
-	)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	var loc string
-
-	dlg.ShowAll()
-	res := dlg.Run()
-	switch res {
-	case gtk.RESPONSE_APPLY:
-		loc = dlg.GetURI()
-	case gtk.RESPONSE_CANCEL:
-	default:
-	}
-	dlg.Destroy()
-
-	if loc == "" {
-		return
-	}
-
-	osm.coll.name.SetText("local:" + filepath.Base(loc))
+	osm.coll.loc.SetFilename("")
+	osm.coll.name.SetText("")
 	osm.coll.descr.SetText("")
 	osm.coll.persp.SetActive(0)
 	osm.coll.disabled.SetActive(false)
 	osm.coll.remote.SetActive(false)
+	osm.coll.addBtn.SetSensitive(false)
 
-	res = osm.coll.addDlg.Run()
+	osm.coll.loc.Connect("file-set", func(fcb *gtk.FileChooserButton) {
+		u := fcb.GetURI()
+		if u == "" {
+			osm.coll.addBtn.SetSensitive(false)
+			return
+		}
+		osm.coll.name.SetText("local:" + filepath.Base(u))
+	})
+
+	osm.coll.name.Connect("changed", func(e *gtk.Entry) {
+		loc := osm.coll.loc.GetURI()
+		name, _ := e.GetText()
+		if loc == "" || name == "" {
+			osm.coll.addBtn.SetSensitive(false)
+			return
+		}
+
+		osm.coll.addBtn.SetSensitive(
+			!store.CollectionAlreadyExists(loc, name),
+		)
+	})
+
+	res := osm.coll.addDlg.Run()
 	defer osm.coll.addDlg.Hide()
 
 	switch res {
 	case gtk.RESPONSE_APPLY:
+		loc := osm.coll.loc.GetURI()
 		name, _ := osm.coll.name.GetText()
 		descr, _ := osm.coll.descr.GetText()
 		perspid := osm.coll.persp.GetActive()
@@ -92,6 +91,7 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 			Disabled:    osm.coll.disabled.GetActive(),
 			Remote:      osm.coll.remote.GetActive(),
 		}
+
 		_, err := store.AddCollection(req)
 		if err != nil {
 			log.Error(err)
@@ -154,6 +154,11 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		return
 	}
 
+	osm.coll.loc, err = builder.GetFileChooserButton("collections_add_dialog_location")
+	if err != nil {
+		return
+	}
+
 	osm.coll.name, err = builder.GetEntry("collections_add_dialog_name")
 	if err != nil {
 		return
@@ -175,6 +180,11 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 	}
 
 	osm.coll.remote, err = builder.GetCheckButton("collections_add_dialog_remote")
+	if err != nil {
+		return
+	}
+
+	osm.coll.addBtn, err = builder.GetButton("collections_add_dialog_btn_apply")
 	if err != nil {
 		return
 	}

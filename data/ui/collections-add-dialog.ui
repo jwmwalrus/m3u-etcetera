@@ -56,7 +56,7 @@
           </packing>
         </child>
         <child>
-          <!-- n-columns=4 n-rows=8 -->
+          <!-- n-columns=4 n-rows=10 -->
           <object class="GtkGrid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
@@ -65,21 +65,27 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Name:</property>
+                <property name="label" translatable="yes">Perspective:</property>
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">0</property>
+                <property name="top-attach">9</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="collections_add_dialog_name">
+              <object class="GtkComboBoxText" id="collections_add_dialog_perspective">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
+                <property name="can-focus">False</property>
+                <property name="active">0</property>
+                <property name="active-id">collections_add_dialog_perspective_music</property>
+                <items>
+                  <item id="collections_add_dialog_perspective_music" translatable="yes">Music</item>
+                  <item id="collections_add_dialog_perspective_audiobooks" translatable="yes">Audiobooks</item>
+                </items>
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">0</property>
+                <property name="top-attach">9</property>
                 <property name="width">3</property>
               </packing>
             </child>
@@ -93,31 +99,8 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">1</property>
+                <property name="top-attach">8</property>
                 <property name="width">4</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Description:</property>
-              </object>
-              <packing>
-                <property name="left-attach">0</property>
-                <property name="top-attach">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="collections_add_dialog_descr">
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-              </object>
-              <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">2</property>
-                <property name="width">3</property>
-                <property name="height">2</property>
               </packing>
             </child>
             <child>
@@ -130,36 +113,8 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">5</property>
+                <property name="top-attach">7</property>
                 <property name="width">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkCheckButton" id="collections_add_dialog_remote">
-                <property name="label" translatable="yes">Remote</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">False</property>
-                <property name="draw-indicator">True</property>
-              </object>
-              <packing>
-                <property name="left-attach">2</property>
-                <property name="top-attach">5</property>
-                <property name="width">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSeparator">
-                <property name="height-request">6</property>
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="margin-top">6</property>
-                <property name="margin-bottom">6</property>
-              </object>
-              <packing>
-                <property name="left-attach">0</property>
-                <property name="top-attach">4</property>
-                <property name="width">4</property>
               </packing>
             </child>
             <child>
@@ -177,31 +132,115 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel">
+              <object class="GtkSeparator">
+                <property name="height-request">6</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Perspective:</property>
+                <property name="margin-top">6</property>
+                <property name="margin-bottom">6</property>
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">7</property>
+                <property name="top-attach">3</property>
+                <property name="width">4</property>
               </packing>
             </child>
             <child>
-              <object class="GtkComboBoxText" id="collections_add_dialog_perspective">
+              <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="active">0</property>
-                <property name="active-id">collections_add_dialog_perspective_music</property>
-                <items>
-                  <item id="collections_add_dialog_perspective_music" translatable="yes">Music</item>
-                  <item id="collections_add_dialog_perspective_audiobooks" translatable="yes">Audiobooks</item>
-                </items>
+                <property name="label" translatable="yes">Name:</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="collections_add_dialog_name">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">7</property>
+                <property name="top-attach">2</property>
                 <property name="width">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFileChooserButton" id="collections_add_dialog_location">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="action">select-folder</property>
+                <property name="create-folders">False</property>
+                <property name="title" translatable="yes">Select location</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">0</property>
+                <property name="width">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">Location:</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="height-request">6</property>
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-top">6</property>
+                <property name="margin-bottom">6</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">1</property>
+                <property name="width">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="collections_add_dialog_descr">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">4</property>
+                <property name="width">3</property>
+                <property name="height">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">Description:</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="collections_add_dialog_remote">
+                <property name="label" translatable="yes">Remote</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">False</property>
+                <property name="draw-indicator">True</property>
+              </object>
+              <packing>
+                <property name="left-attach">2</property>
+                <property name="top-attach">7</property>
+                <property name="width">2</property>
               </packing>
             </child>
             <child>

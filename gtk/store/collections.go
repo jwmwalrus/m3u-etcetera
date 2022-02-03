@@ -154,6 +154,21 @@ func ApplyCollectionChanges(o ...CollectionsOptions) {
 	}
 }
 
+// CollectionAlreadyExists returns true if the location and the name are not
+// already in use by another collection
+func CollectionAlreadyExists(location, name string) bool {
+	CData.Mu.Lock()
+	defer CData.Mu.Unlock()
+
+	for _, c := range CData.Collection {
+		if c.Location == location ||
+			c.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 // CreateCollectionsModel creates a collection model
 func CreateCollectionsModel() (model *gtk.ListStore, err error) {
 	log.Info("Creating collections model")

@@ -77,6 +77,21 @@ func GetEntry(id string) (e *gtk.Entry, err error) {
 	return
 }
 
+func GetFileChooserButton(id string) (fcb *gtk.FileChooserButton, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get file-chooser-button object: %v", err)
+		return
+	}
+
+	fcb, ok := obj.(*gtk.FileChooserButton)
+	if !ok {
+		err = fmt.Errorf("Unable to create file-chooser-button: %v", err)
+		return
+	}
+	return
+}
+
 func GetHeaderBar(id string) (hb *gtk.HeaderBar, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
