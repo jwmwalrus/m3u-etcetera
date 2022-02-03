@@ -39,3 +39,9 @@ message PlaylistTrack {
 	int64 created_at = 101;
 	int64 updated_at = 102;
 }
+
+enum PlaylistExportFormat {
+	PLEF_NONE = 0;
+	PLEF_M3U = 1;
+	PLEF_PLS = 2;
+}

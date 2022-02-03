@@ -146,8 +146,8 @@ github.com/jinzhu/now v1.1.4/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/jwmwalrus/bnp v1.8.0/go.mod h1:HujL86+h/GMqPY4NnSczQO8QQJ+FP3Fnha7OmCBYPQo=
-github.com/jwmwalrus/bnp v1.8.2 h1:dGeN23aWWz4BW41ykPAsx+4Vey5S4hXnLvY1Zn3lMQU=
-github.com/jwmwalrus/bnp v1.8.2/go.mod h1:HujL86+h/GMqPY4NnSczQO8QQJ+FP3Fnha7OmCBYPQo=
+github.com/jwmwalrus/bnp v1.9.0 h1:xt5dbAcT5F1mIKTja+uwmP7ptbTrtZ/5tIRFeoxUP0E=
+github.com/jwmwalrus/bnp v1.9.0/go.mod h1:HujL86+h/GMqPY4NnSczQO8QQJ+FP3Fnha7OmCBYPQo=
 github.com/jwmwalrus/onerror v0.1.0 h1:K+ZL8Kj2nMycpoFhUeAsQ3TfLHO5nosiLTGNZ2H62aw=
 github.com/jwmwalrus/onerror v0.1.0/go.mod h1:Z4CaL9kZCriXMrr79lpwOFVes6B/Xqe6joBtn/4VAJ0=
 github.com/jwmwalrus/seater v0.1.1 h1:VpeZ5XBBr3IrDsGrT4tZWfUz94WQr8NLzjI771MBSlg=

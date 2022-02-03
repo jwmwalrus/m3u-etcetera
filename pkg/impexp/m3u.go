@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jwmwalrus/bnp/urlstr"
 )
@@ -14,8 +15,55 @@ type M3U struct {
 	*playlist
 }
 
-func (mi *M3U) Format() (io.Writer, error) {
-	return nil, nil
+func (mi *M3U) Format(w io.StringWriter) (n int, err error) {
+	out := strings.Builder{}
+	_, err = out.WriteString("#EXTM3U\n")
+	if err != nil {
+		return
+	}
+
+	if mi.name != "" {
+		_, err = out.WriteString(
+			fmt.Sprintf(
+				"#PLAYLIST: %v\n",
+				mi.name,
+			),
+		)
+		if err != nil {
+			return
+		}
+	}
+
+	for _, t := range mi.tracks {
+		un := t.Location
+		if strings.HasPrefix(t.Location, "file://") {
+			un, err = urlstr.URLToPath(t.Location)
+			if err != nil {
+				return
+			}
+		}
+
+		dur := time.Duration(t.Duration) * time.Nanosecond
+		dur = dur.Truncate(time.Second)
+		_, err = out.WriteString(
+			fmt.Sprintf(
+				"#EXTINF:%v,%v\n",
+				dur.Seconds(),
+				t.ArtistTitle,
+			),
+		)
+		if err != nil {
+			return
+		}
+
+		_, err = out.WriteString(un + "\n")
+		if err != nil {
+			return
+		}
+	}
+
+	n, err = w.WriteString(out.String())
+	return
 }
 
 func (mi *M3U) Parse(f io.Reader) (err error) {

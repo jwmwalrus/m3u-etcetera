@@ -9,6 +9,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -389,6 +390,41 @@ func (*PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest, stream 
 	}
 
 	return nil
+}
+
+// ExportPlaylist implements m3uetcpb.PlaybarSvcServer
+func (*PlaybarSvc) ExportPlaylist(_ context.Context, req *m3uetcpb.ExportPlaylistRequest) (*m3uetcpb.Empty, error) {
+	if req.Id < 1 {
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"A valid playlist ID is required")
+	}
+
+	pl := models.Playlist{}
+	if err := pl.Read(req.Id); err != nil {
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Playlist does not exist: %v", err)
+	}
+
+	if req.Location == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"The target location for the playlist is required")
+	}
+
+	var format impexp.PlaylistType
+	switch req.Format {
+	case m3uetcpb.PlaylistExportFormat_PLEF_M3U:
+		format = impexp.M3UPlaylist
+	case m3uetcpb.PlaylistExportFormat_PLEF_PLS:
+		format = impexp.PLSPlaylist
+	default:
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Unsupported export format: %v", req.Format)
+	}
+
+	if err := pl.Export(format, req.Location); err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Error exporting playlist: %v", err)
+	}
+	return &m3uetcpb.Empty{}, nil
 }
 
 // SubscribeToPlaybarStore implements m3uetcpb.PlaybarSvcServer

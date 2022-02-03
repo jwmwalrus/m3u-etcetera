@@ -20,6 +20,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type PlaylistExportFormat int32
+
+const (
+	PlaylistExportFormat_PLEF_NONE PlaylistExportFormat = 0
+	PlaylistExportFormat_PLEF_M3U  PlaylistExportFormat = 1
+	PlaylistExportFormat_PLEF_PLS  PlaylistExportFormat = 2
+)
+
+// Enum value maps for PlaylistExportFormat.
+var (
+	PlaylistExportFormat_name = map[int32]string{
+		0: "PLEF_NONE",
+		1: "PLEF_M3U",
+		2: "PLEF_PLS",
+	}
+	PlaylistExportFormat_value = map[string]int32{
+		"PLEF_NONE": 0,
+		"PLEF_M3U":  1,
+		"PLEF_PLS":  2,
+	}
+)
+
+func (x PlaylistExportFormat) Enum() *PlaylistExportFormat {
+	p := new(PlaylistExportFormat)
+	*p = x
+	return p
+}
+
+func (x PlaylistExportFormat) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PlaylistExportFormat) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_m3uetcpb_playlist_proto_enumTypes[0].Descriptor()
+}
+
+func (PlaylistExportFormat) Type() protoreflect.EnumType {
+	return &file_api_m3uetcpb_playlist_proto_enumTypes[0]
+}
+
+func (x PlaylistExportFormat) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PlaylistExportFormat.Descriptor instead.
+func (PlaylistExportFormat) EnumDescriptor() ([]byte, []int) {
+	return file_api_m3uetcpb_playlist_proto_rawDescGZIP(), []int{0}
+}
+
 type PlaylistGroup struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -383,8 +432,13 @@ var file_api_m3uetcpb_playlist_proto_rawDesc = []byte{
 	0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18, 0x65, 0x20, 0x01, 0x28, 0x03,
 	0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x75,
 	0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18, 0x66, 0x20, 0x01, 0x28, 0x03, 0x52,
-	0x09, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x42, 0x0c, 0x5a, 0x0a, 0x2e, 0x2f,
-	0x6d, 0x33, 0x75, 0x65, 0x74, 0x63, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x09, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x2a, 0x41, 0x0a, 0x14, 0x50, 0x6c,
+	0x61, 0x79, 0x6c, 0x69, 0x73, 0x74, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x46, 0x6f, 0x72, 0x6d,
+	0x61, 0x74, 0x12, 0x0d, 0x0a, 0x09, 0x50, 0x4c, 0x45, 0x46, 0x5f, 0x4e, 0x4f, 0x4e, 0x45, 0x10,
+	0x00, 0x12, 0x0c, 0x0a, 0x08, 0x50, 0x4c, 0x45, 0x46, 0x5f, 0x4d, 0x33, 0x55, 0x10, 0x01, 0x12,
+	0x0c, 0x0a, 0x08, 0x50, 0x4c, 0x45, 0x46, 0x5f, 0x50, 0x4c, 0x53, 0x10, 0x02, 0x42, 0x0c, 0x5a,
+	0x0a, 0x2e, 0x2f, 0x6d, 0x33, 0x75, 0x65, 0x74, 0x63, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -399,16 +453,18 @@ func file_api_m3uetcpb_playlist_proto_rawDescGZIP() []byte {
 	return file_api_m3uetcpb_playlist_proto_rawDescData
 }
 
+var file_api_m3uetcpb_playlist_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_m3uetcpb_playlist_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_api_m3uetcpb_playlist_proto_goTypes = []interface{}{
-	(*PlaylistGroup)(nil), // 0: m3uetcpb.PlaylistGroup
-	(*Playlist)(nil),      // 1: m3uetcpb.Playlist
-	(*PlaylistTrack)(nil), // 2: m3uetcpb.PlaylistTrack
-	(Perspective)(0),      // 3: m3uetcpb.Perspective
+	(PlaylistExportFormat)(0), // 0: m3uetcpb.PlaylistExportFormat
+	(*PlaylistGroup)(nil),     // 1: m3uetcpb.PlaylistGroup
+	(*Playlist)(nil),          // 2: m3uetcpb.Playlist
+	(*PlaylistTrack)(nil),     // 3: m3uetcpb.PlaylistTrack
+	(Perspective)(0),          // 4: m3uetcpb.Perspective
 }
 var file_api_m3uetcpb_playlist_proto_depIdxs = []int32{
-	3, // 0: m3uetcpb.PlaylistGroup.perspective:type_name -> m3uetcpb.Perspective
-	3, // 1: m3uetcpb.Playlist.perspective:type_name -> m3uetcpb.Perspective
+	4, // 0: m3uetcpb.PlaylistGroup.perspective:type_name -> m3uetcpb.Perspective
+	4, // 1: m3uetcpb.Playlist.perspective:type_name -> m3uetcpb.Perspective
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -465,13 +521,14 @@ func file_api_m3uetcpb_playlist_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_m3uetcpb_playlist_proto_rawDesc,
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_api_m3uetcpb_playlist_proto_goTypes,
 		DependencyIndexes: file_api_m3uetcpb_playlist_proto_depIdxs,
+		EnumInfos:         file_api_m3uetcpb_playlist_proto_enumTypes,
 		MessageInfos:      file_api_m3uetcpb_playlist_proto_msgTypes,
 	}.Build()
 	File_api_m3uetcpb_playlist_proto = out.File

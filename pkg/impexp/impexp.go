@@ -31,7 +31,7 @@ type PlaylistDef interface {
 	PlaylistData
 	Type() string
 	Parse(io.Reader) error
-	Format() (io.Writer, error)
+	Format(io.StringWriter) (int, error)
 }
 
 var (

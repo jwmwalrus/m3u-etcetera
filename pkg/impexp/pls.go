@@ -6,8 +6,8 @@ type PLS struct {
 	*playlist
 }
 
-func (pi *PLS) Format() (io.Writer, error) {
-	return nil, nil
+func (pi *PLS) Format(io.StringWriter) (n int, err error) {
+	return
 }
 
 func (pi *PLS) Parse(f io.Reader) error {

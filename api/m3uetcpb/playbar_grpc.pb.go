@@ -28,6 +28,7 @@ type PlaybarSvcClient interface {
 	ExecutePlaylistGroupAction(ctx context.Context, in *ExecutePlaylistGroupActionRequest, opts ...grpc.CallOption) (*ExecutePlaylistGroupActionResponse, error)
 	ExecutePlaylistTrackAction(ctx context.Context, in *ExecutePlaylistTrackActionRequest, opts ...grpc.CallOption) (*Empty, error)
 	ImportPlaylists(ctx context.Context, in *ImportPlaylistsRequest, opts ...grpc.CallOption) (PlaybarSvc_ImportPlaylistsClient, error)
+	ExportPlaylist(ctx context.Context, in *ExportPlaylistRequest, opts ...grpc.CallOption) (*Empty, error)
 	SubscribeToPlaybarStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybarSvc_SubscribeToPlaybarStoreClient, error)
 	UnsubscribeFromPlaybarStore(ctx context.Context, in *UnsubscribeFromPlaybarStoreRequest, opts ...grpc.CallOption) (*Empty, error)
 }
@@ -153,6 +154,15 @@ func (x *playbarSvcImportPlaylistsClient) Recv() (*ImportPlaylistsResponse, erro
 	return m, nil
 }
 
+func (c *playbarSvcClient) ExportPlaylist(ctx context.Context, in *ExportPlaylistRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybarSvc/ExportPlaylist", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *playbarSvcClient) SubscribeToPlaybarStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybarSvc_SubscribeToPlaybarStoreClient, error) {
 	stream, err := c.cc.NewStream(ctx, &PlaybarSvc_ServiceDesc.Streams[1], "/m3uetcpb.PlaybarSvc/SubscribeToPlaybarStore", opts...)
 	if err != nil {
@@ -208,6 +218,7 @@ type PlaybarSvcServer interface {
 	ExecutePlaylistGroupAction(context.Context, *ExecutePlaylistGroupActionRequest) (*ExecutePlaylistGroupActionResponse, error)
 	ExecutePlaylistTrackAction(context.Context, *ExecutePlaylistTrackActionRequest) (*Empty, error)
 	ImportPlaylists(*ImportPlaylistsRequest, PlaybarSvc_ImportPlaylistsServer) error
+	ExportPlaylist(context.Context, *ExportPlaylistRequest) (*Empty, error)
 	SubscribeToPlaybarStore(*Empty, PlaybarSvc_SubscribeToPlaybarStoreServer) error
 	UnsubscribeFromPlaybarStore(context.Context, *UnsubscribeFromPlaybarStoreRequest) (*Empty, error)
 	mustEmbedUnimplementedPlaybarSvcServer()
@@ -246,6 +257,9 @@ func (UnimplementedPlaybarSvcServer) ExecutePlaylistTrackAction(context.Context,
 }
 func (UnimplementedPlaybarSvcServer) ImportPlaylists(*ImportPlaylistsRequest, PlaybarSvc_ImportPlaylistsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ImportPlaylists not implemented")
+}
+func (UnimplementedPlaybarSvcServer) ExportPlaylist(context.Context, *ExportPlaylistRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExportPlaylist not implemented")
 }
 func (UnimplementedPlaybarSvcServer) SubscribeToPlaybarStore(*Empty, PlaybarSvc_SubscribeToPlaybarStoreServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToPlaybarStore not implemented")
@@ -449,6 +463,24 @@ func (x *playbarSvcImportPlaylistsServer) Send(m *ImportPlaylistsResponse) error
 	return x.ServerStream.SendMsg(m)
 }
 
+func _PlaybarSvc_ExportPlaylist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportPlaylistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PlaybarSvcServer).ExportPlaylist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/m3uetcpb.PlaybarSvc/ExportPlaylist",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PlaybarSvcServer).ExportPlaylist(ctx, req.(*ExportPlaylistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _PlaybarSvc_SubscribeToPlaybarStore_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(Empty)
 	if err := stream.RecvMsg(m); err != nil {
@@ -530,6 +562,10 @@ var PlaybarSvc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExecutePlaylistTrackAction",
 			Handler:    _PlaybarSvc_ExecutePlaylistTrackAction_Handler,
+		},
+		{
+			MethodName: "ExportPlaylist",
+			Handler:    _PlaybarSvc_ExportPlaylist_Handler,
 		},
 		{
 			MethodName: "UnsubscribeFromPlaybarStore",

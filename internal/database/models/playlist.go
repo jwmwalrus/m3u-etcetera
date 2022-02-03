@@ -3,13 +3,16 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/jwmwalrus/bnp/slice"
+	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
@@ -195,6 +198,54 @@ func (pl *Playlist) DeleteDynamicTracks() {
 	for i := range pts {
 		pts[i].Delete()
 	}
+}
+
+// Export exports a playlist with the given format to the given location
+func (pl *Playlist) Export(format impexp.PlaylistType, location string) (err error) {
+	path, err := urlstr.URLToPath(location)
+	if err != nil {
+		return
+	}
+
+	var f *os.File
+	if f, err = os.Create(path); err != nil {
+		return
+	}
+	defer f.Close()
+
+	prop := impexp.PlaylistProp{Key: impexp.NamePropKey, Val: pl.Name}
+	m3u, err := impexp.New(format, prop)
+	if err != nil {
+		return
+	}
+
+	pts, _ := pl.GetTracks(0)
+
+	tis := []impexp.TrackInfo{}
+	for _, pt := range pts {
+		var un string
+		if un, err = urlstr.URLToPath(pt.Track.Location); err != nil {
+			return
+		}
+		t := impexp.TrackInfo{
+			Location:    un,
+			ArtistTitle: pt.Track.Artist + " - " + pt.Track.Title,
+			Album:       pt.Track.Album,
+			Artist:      pt.Track.Artist,
+			Albumartist: pt.Track.Albumartist,
+			Genre:       pt.Track.Genre,
+			Duration:    pt.Track.Duration,
+			Year:        pt.Track.Year,
+		}
+		tis = append(tis, t)
+	}
+
+	m3u.Add(tis)
+
+	if _, err = m3u.Format(f); err != nil {
+		return
+	}
+	return
 }
 
 // GetQueries returns all queries bound by the given playlist

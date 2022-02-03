@@ -29,6 +29,8 @@ service PlaybarSvc {
 
     rpc ImportPlaylists(ImportPlaylistsRequest)
         returns (stream ImportPlaylistsResponse);
+    rpc ExportPlaylist(ExportPlaylistRequest)
+        returns (Empty);
 
     rpc SubscribeToPlaybarStore(Empty)
         returns (stream SubscribeToPlaybarStoreResponse);
@@ -131,6 +133,12 @@ message ImportPlaylistsRequest {
 message ImportPlaylistsResponse {
     int64 id = 1;
     repeated string import_errors = 2;
+}
+
+message ExportPlaylistRequest {
+    int64 id = 1;
+    string location = 2;
+    PlaylistExportFormat format = 3;
 }
 
 message SubscribeToPlaybarStoreResponse {

@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
@@ -104,6 +105,21 @@ func Playlist() *cli.Command {
 				Usage:       "playlist import [<flags> ...] locations ...",
 				Description: "Imports a playlist from a supported file format (e.g., M3U)",
 				Action:      playlistImportAction,
+			},
+			{
+				Name:    "export",
+				Aliases: []string{"exp"},
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "format",
+						Aliases: []string{"f"},
+						Usage:   "Playlist `FORMAT` (M3U|PLS)",
+						Value:   "M3U",
+					},
+				},
+				Usage:       "playlist export [--format FORMAT] ID location",
+				Description: "Exports a playlist to a supported file format (e.g., M3U)",
+				Action:      playlistExportAction,
 			},
 		},
 		Before: checkServerStatus,
@@ -327,5 +343,53 @@ func playlistImportAction(c *cli.Context) (err error) {
 
 	}
 
+	return
+}
+
+func playlistExportAction(c *cli.Context) (err error) {
+
+	rest := c.Args().Slice()
+	if len(rest) != 2 {
+		err = fmt.Errorf("I need an ID and a location")
+		return
+	}
+
+	format, ok := m3uetcpb.PlaylistExportFormat_value["PLEF_"+c.String("format")]
+	if !ok {
+		err = fmt.Errorf("Unknown format: %v", c.String("format"))
+		return
+	}
+
+	ids, err := parseIDs([]string{rest[0]})
+	if err != nil {
+		return
+	}
+
+	path, err := urlstr.PathToURLUnchecked(rest[1])
+	if err != nil {
+		return
+	}
+
+	req := &m3uetcpb.ExportPlaylistRequest{
+		Id:       ids[0],
+		Location: path,
+		Format:   m3uetcpb.PlaylistExportFormat(format),
+	}
+
+	cc, err := getClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	_, err = cl.ExportPlaylist(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		err = fmt.Errorf(s.Message())
+		return
+	}
+
+	fmt.Printf("OK\n")
 	return
 }
