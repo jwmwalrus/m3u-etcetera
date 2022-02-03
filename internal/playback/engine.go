@@ -153,21 +153,32 @@ loop:
 }
 
 func (e *engine) getFirstInPlaylist() (pb *models.Playback) {
-	if e.pt == nil || e.pt.Playlist.ID == 0 || e.pt.Track.ID == 0 {
-		log.Error("There is no list to play from")
+	if e.pt == nil {
+		log.Error("There is no playlist-track available")
+		return
+	}
+	pl := e.pt.Playlist
+	t := e.pt.Track
+	if pl.ID == 0 || t.ID == 0 {
+		log.Error("There is no list or track to play from")
 		return
 	}
 
 	log.WithField("pt", *e.pt).
 		Info("Obtaining first track in playlist")
 
-	pb = models.AddPlaybackTrack(&e.pt.Track)
+	pb = models.AddPlaybackTrack(&t)
 	return
 }
 
 func (e *engine) getNextInPlaylist(goingBack bool) (pb *models.Playback) {
-	if e.pt == nil || e.pt.Playlist.ID == 0 {
-
+	if e.pt == nil {
+		log.Error("There is no playlist-track available")
+		return
+	}
+	pt := *e.pt
+	pl := e.pt.Playlist
+	if pl.ID == 0 {
 		log.Error("There is no list to play from")
 		return
 	}
@@ -175,14 +186,20 @@ func (e *engine) getNextInPlaylist(goingBack bool) (pb *models.Playback) {
 	log.WithField("pt", *e.pt).
 		Info("Obtaining next track in playlist")
 
-	pt, err := e.pt.Playlist.GetTrackAfter(*e.pt, goingBack)
+	newpt, err := pl.GetTrackAfter(pt, goingBack)
 	if err != nil {
+		bar := models.Playbar{}
+		if errb := bar.Read(pl.PlaybarID); errb == nil {
+			bar.DeactivateEntry(&pl)
+		}
+		e.pt = nil
 		log.Info(err)
 		return
 	}
 
-	e.pt = pt
-	pb = models.AddPlaybackTrack(&pt.Track)
+	e.pt = newpt
+	newt := newpt.Track
+	pb = models.AddPlaybackTrack(&newt)
 
 	return
 }

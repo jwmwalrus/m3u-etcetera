@@ -239,7 +239,9 @@ sLoop:
 					}
 					err := stream.Send(res)
 					if err != nil {
-						break sLoop
+						return grpc.Errorf(codes.Internal,
+							"Error sending event (%v): %v",
+							m3uetcpb.CollectionEvent_CE_SCANNING_DONE, err)
 					}
 				}
 
@@ -249,7 +251,9 @@ sLoop:
 				}
 				err := stream.Send(res)
 				if err != nil {
-					break sLoop
+					return grpc.Errorf(codes.Internal,
+						"Error sending event (%v): %v",
+						m3uetcpb.CollectionEvent_CE_INITIAL, err)
 				}
 
 				cs, ts := models.GetCollectionStore()
@@ -259,7 +263,9 @@ sLoop:
 						cs[i],
 					)
 					if err != nil {
-						break sLoop
+						return grpc.Errorf(codes.Internal,
+							"Error sending event (%v): %v",
+							m3uetcpb.CollectionEvent_CE_INITIAL_ITEM, err)
 					}
 				}
 
@@ -269,7 +275,9 @@ sLoop:
 						ts[i],
 					)
 					if err != nil {
-						break sLoop
+						return grpc.Errorf(codes.Internal,
+							"Error sending event (%v): %v",
+							m3uetcpb.CollectionEvent_CE_INITIAL_ITEM, err)
 					}
 				}
 
@@ -288,7 +296,9 @@ sLoop:
 				}
 				err := stream.Send(res)
 				if err != nil {
-					break sLoop
+					return grpc.Errorf(codes.Internal,
+						"Error sending event (%v): %v",
+						m3uetcpb.CollectionEvent_CE_SCANNING, err)
 				}
 				continue sLoop
 			}
@@ -320,7 +330,9 @@ sLoop:
 			}
 
 			if err := fn(eout, e.Data.(models.ProtoOut)); err != nil {
-				break sLoop
+				return grpc.Errorf(codes.Internal,
+					"Error sending event (%v): %v",
+					eout, err)
 			}
 		}
 	}

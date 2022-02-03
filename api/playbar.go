@@ -438,49 +438,49 @@ func (*PlaybarSvc) SubscribeToPlaybarStore(_ *m3uetcpb.Empty, stream m3uetcpb.Pl
 		s.Event <- subscription.Event{Idx: int(models.PlaybarEventInitial)}
 	}()
 
-	sendPlaylistGroup := func(e m3uetcpb.PlaybarEvent, c models.ProtoOut) error {
+	sendPlaylistGroup := func(e m3uetcpb.PlaybarEvent, pg models.ProtoOut) error {
 		res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
 			SubscriptionId:   id,
 			Event:            e,
 			ActivePlaylistId: models.GetActiveEntry().ID,
 			Item: &m3uetcpb.SubscribeToPlaybarStoreResponse_PlaylistGroup{
-				PlaylistGroup: c.ToProtobuf().(*m3uetcpb.PlaylistGroup),
+				PlaylistGroup: pg.ToProtobuf().(*m3uetcpb.PlaylistGroup),
 			},
 		}
 		return stream.Send(res)
 	}
 
-	sendPlaylist := func(e m3uetcpb.PlaybarEvent, c models.ProtoOut) error {
+	sendPlaylist := func(e m3uetcpb.PlaybarEvent, pl models.ProtoOut) error {
 		res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
 			SubscriptionId:   id,
 			Event:            e,
 			ActivePlaylistId: models.GetActiveEntry().ID,
 			Item: &m3uetcpb.SubscribeToPlaybarStoreResponse_Playlist{
-				Playlist: c.ToProtobuf().(*m3uetcpb.Playlist),
+				Playlist: pl.ToProtobuf().(*m3uetcpb.Playlist),
 			},
 		}
 		return stream.Send(res)
 	}
 
-	sendOpenPlaylist := func(e m3uetcpb.PlaybarEvent, c models.ProtoOut) error {
+	sendOpenPlaylist := func(e m3uetcpb.PlaybarEvent, pl models.ProtoOut) error {
 		res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
 			SubscriptionId:   id,
 			Event:            e,
 			ActivePlaylistId: models.GetActiveEntry().ID,
 			Item: &m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylist{
-				OpenPlaylist: c.ToProtobuf().(*m3uetcpb.Playlist),
+				OpenPlaylist: pl.ToProtobuf().(*m3uetcpb.Playlist),
 			},
 		}
 		return stream.Send(res)
 	}
 
-	sendOpenPlaylistTrack := func(e m3uetcpb.PlaybarEvent, t models.ProtoOut) error {
+	sendOpenPlaylistTrack := func(e m3uetcpb.PlaybarEvent, pt models.ProtoOut) error {
 		res := &m3uetcpb.SubscribeToPlaybarStoreResponse{
 			SubscriptionId:   id,
 			Event:            e,
 			ActivePlaylistId: models.GetActiveEntry().ID,
 			Item: &m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylistTrack{
-				OpenPlaylistTrack: t.ToProtobuf().(*m3uetcpb.PlaylistTrack),
+				OpenPlaylistTrack: pt.ToProtobuf().(*m3uetcpb.PlaylistTrack),
 			},
 		}
 		return stream.Send(res)
@@ -515,7 +515,9 @@ sLoop:
 					},
 				)
 				if err != nil {
-					return err
+					return grpc.Errorf(codes.Internal,
+						"Error sending initial event (%v): %v",
+						m3uetcpb.PlaybarEvent_BE_INITIAL, err)
 				}
 
 				pgs, pls, opls, opts, ots := models.GetPlaybarStore()
@@ -526,7 +528,9 @@ sLoop:
 						pgs[i],
 					)
 					if err != nil {
-						return err
+						return grpc.Errorf(codes.Internal,
+							"Error sending initial event (%v): %v",
+							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
 				}
 
@@ -536,7 +540,9 @@ sLoop:
 						pls[i],
 					)
 					if err != nil {
-						return err
+						return grpc.Errorf(codes.Internal,
+							"Error sending initial event (%v): %v",
+							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
 				}
 
@@ -546,7 +552,9 @@ sLoop:
 						opls[i],
 					)
 					if err != nil {
-						return err
+						return grpc.Errorf(codes.Internal,
+							"Error sending initial event (%v): %v",
+							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
 				}
 
@@ -556,7 +564,9 @@ sLoop:
 						opts[i],
 					)
 					if err != nil {
-						return err
+						return grpc.Errorf(codes.Internal,
+							"Error sending initial event (%v): %v",
+							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
 				}
 
@@ -566,7 +576,9 @@ sLoop:
 						ots[i],
 					)
 					if err != nil {
-						return err
+						return grpc.Errorf(codes.Internal,
+							"Error sending initial event (%v): %v",
+							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
 				}
 
@@ -577,7 +589,9 @@ sLoop:
 					},
 				)
 				if err != nil {
-					return err
+					return grpc.Errorf(codes.Internal,
+						"Error sending initial event (%v): %v",
+						m3uetcpb.PlaybarEvent_BE_INITIAL_DONE, err)
 				}
 				continue sLoop
 			}
@@ -586,7 +600,9 @@ sLoop:
 				pl := &models.Playlist{}
 				err := pl.Read(e.Data.(int64))
 				if err != nil {
-					return err
+					return grpc.Errorf(codes.Internal,
+						"Error reading playlist for open items events: %v",
+						models.PlaybarEventOpenItems, err)
 				}
 
 				err = stream.Send(
@@ -596,7 +612,9 @@ sLoop:
 					},
 				)
 				if err != nil {
-					return err
+					return grpc.Errorf(codes.Internal,
+						"Error sending open items event (%v): %v",
+						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS, err)
 				}
 
 				err = sendOpenPlaylist(
@@ -604,7 +622,9 @@ sLoop:
 					pl,
 				)
 				if err != nil {
-					return err
+					return grpc.Errorf(codes.Internal,
+						"Error sending open items event (%v): %v",
+						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM, err)
 				}
 
 				if pl.Open {
@@ -616,7 +636,9 @@ sLoop:
 							opts[i],
 						)
 						if err != nil {
-							return err
+							return grpc.Errorf(codes.Internal,
+								"Error sending open items event (%v): %v",
+								m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM, err)
 						}
 					}
 
@@ -626,7 +648,9 @@ sLoop:
 							ots[i],
 						)
 						if err != nil {
-							return err
+							return grpc.Errorf(codes.Internal,
+								"Error sending open items event (%v): %v",
+								m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM, err)
 						}
 					}
 				}
@@ -638,7 +662,9 @@ sLoop:
 					},
 				)
 				if err != nil {
-					return err
+					return grpc.Errorf(codes.Internal,
+						"Error sending open items event (%v): %v",
+						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_DONE, err)
 				}
 				continue sLoop
 			}
@@ -670,7 +696,9 @@ sLoop:
 			}
 
 			if err := fn(eout, e.Data.(models.ProtoOut)); err != nil {
-				return err
+				return grpc.Errorf(codes.Internal,
+					"Error sending playbar event (%v): %v",
+					eout, err)
 			}
 		}
 	}

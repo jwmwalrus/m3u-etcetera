@@ -197,7 +197,9 @@ sLoop:
 				}
 				err := stream.Send(res)
 				if err != nil {
-					break sLoop
+					return grpc.Errorf(codes.Internal,
+						"Error sending query event (%v): %v",
+						m3uetcpb.QueryEvent_QYE_INITIAL, err)
 				}
 
 				qys := models.GetAllQueries(0)
@@ -207,7 +209,9 @@ sLoop:
 						qys[i],
 					)
 					if err != nil {
-						break sLoop
+						return grpc.Errorf(codes.Internal,
+							"Error sending query event (%v): %v",
+							m3uetcpb.QueryEvent_QYE_INITIAL_ITEM, err)
 					}
 				}
 
@@ -235,7 +239,9 @@ sLoop:
 			}
 
 			if err := sendQuery(eout, e.Data.(models.ProtoOut)); err != nil {
-				break sLoop
+				return grpc.Errorf(codes.Internal,
+					"Error sending query event (%v): %v",
+					eout, err)
 			}
 		}
 	}

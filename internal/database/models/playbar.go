@@ -591,8 +591,24 @@ func (b *Playbar) getPerspectiveIndex() (idx PerspectiveIndex) {
 
 // DeactivatePlaybars deactivates all playbars
 func DeactivatePlaybars() {
-	err := db.Model(&Playlist{}).Where("active = 1").Update("active", 0).Error
-	onerror.Log(err)
+	pls := []Playlist{}
+	err := db.Where("active = 1").
+		Find(&pls).
+		Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if len(pls) == 0 {
+		return
+	}
+
+	for i := range pls {
+		pls[i].Active = false
+	}
+
+	onerror.Log(db.Save(&pls).Error)
 }
 
 // GetActiveEntry returns the active playlist

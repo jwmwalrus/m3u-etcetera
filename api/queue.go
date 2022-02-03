@@ -127,7 +127,9 @@ sLoop:
 
 			res.Tracks = tList
 			if err := stream.Send(res); err != nil {
-				break sLoop
+				return grpc.Errorf(codes.Internal,
+					"Error sending queue event: %v",
+					err)
 			}
 		}
 	}

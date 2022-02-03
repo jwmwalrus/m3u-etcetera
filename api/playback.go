@@ -151,14 +151,15 @@ sLoop:
 				err := stream.Send(res)
 				if err != nil {
 					log.Warn(err)
-					break sLoop
+					return grpc.Errorf(codes.Internal,
+						"Error sending playback: %v", err)
 				}
 				continue sLoop
 			}
 			err := stream.Send(res)
 			if err != nil {
-				log.Warn(err)
-				break sLoop
+				return grpc.Errorf(codes.Internal,
+					"Error sending playback: %v", err)
 			}
 		}
 	}

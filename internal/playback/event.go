@@ -251,7 +251,8 @@ func QuitPlayingFromBar(pl *models.Playlist) {
 		return
 	}
 
-	pl.Playbar.DeactivateEntry(pl)
+	bar := pl.Playbar
+	bar.DeactivateEntry(pl)
 	quitPlayingFromList()
 	return
 }
