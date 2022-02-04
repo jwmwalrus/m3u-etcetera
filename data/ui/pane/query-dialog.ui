@@ -2,6 +2,16 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
+  <object class="GtkAdjustment" id="query_dialog_limit_adjustment">
+    <property name="upper">10000</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="query_dialog_rating_adjustment">
+    <property name="upper">100</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
   <object class="GtkDialog" id="query_dialog">
     <property name="height-request">600</property>
     <property name="can-focus">False</property>
@@ -189,7 +199,7 @@ at least:</property>
                     <property name="can-focus">True</property>
                     <property name="tooltip-text" translatable="yes">Only look for tracks whose rating is the given one or higher</property>
                     <property name="margin-end">12</property>
-                    <property name="input-purpose">digits</property>
+                    <property name="adjustment">query_dialog_rating_adjustment</property>
                   </object>
                   <packing>
                     <property name="left-attach">1</property>
@@ -334,19 +344,6 @@ title=when*cry or title=pressure and artist=prince,queen and genre=[Rr]ock not g
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkSpinButton" id="query_dialog_limit">
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="tooltip-text" translatable="yes">Limit query results
-(0 to disable)</property>
-                    <property name="input-purpose">digits</property>
-                  </object>
-                  <packing>
-                    <property name="left-attach">6</property>
-                    <property name="top-attach">12</property>
-                  </packing>
-                </child>
-                <child>
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -355,6 +352,17 @@ results:</property>
                   </object>
                   <packing>
                     <property name="left-attach">5</property>
+                    <property name="top-attach">12</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSpinButton" id="query_dialog_limit">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="adjustment">query_dialog_limit_adjustment</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">6</property>
                     <property name="top-attach">12</property>
                   </packing>
                 </child>
