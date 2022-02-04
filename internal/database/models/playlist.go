@@ -229,6 +229,7 @@ func (pl *Playlist) Export(format impexp.PlaylistType, location string) (err err
 		}
 		t := impexp.TrackInfo{
 			Location:    un,
+			Title:       pt.Track.Title,
 			ArtistTitle: pt.Track.Artist + " - " + pt.Track.Title,
 			Album:       pt.Track.Album,
 			Artist:      pt.Track.Artist,

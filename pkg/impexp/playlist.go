@@ -55,6 +55,7 @@ type PlaylistProp struct {
 
 type TrackInfo struct {
 	Location    string
+	Title       string
 	ArtistTitle string
 	Album       string
 	Artist      string
@@ -66,6 +67,10 @@ type TrackInfo struct {
 
 func (ti *TrackInfo) ToRaw() (raw map[string]interface{}) {
 	raw = map[string]interface{}{}
+
+	if ti.Title != "" {
+		raw["TIT1"] = ti.Title
+	}
 
 	if ti.ArtistTitle != "" {
 		raw["TIT3"] = ti.ArtistTitle
