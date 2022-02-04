@@ -294,7 +294,7 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		view.InsertColumn(col, -1)
 	}
 
-	model, err := store.CreateCollectionsModel()
+	model, err := store.CreateCollectionModel()
 	if err != nil {
 		return
 	}
@@ -434,7 +434,7 @@ func (osm *onSettingsMenu) editPlaylistGroups(btn *gtk.Button) {
 	return
 }
 
-func (osm *onSettingsMenu) getCollectionsToggles() (opts store.CollectionsOptions) {
+func (osm *onSettingsMenu) getCollectionsToggles() (opts store.CollectionOptions) {
 	opts.Discover = osm.coll.discoverBtn.GetActive()
 	opts.UpdateTags = osm.coll.updateTagsBtn.GetActive()
 	return
@@ -568,7 +568,7 @@ func (osm *onSettingsMenu) quitAll(btn *gtk.Button) {
 }
 
 func (osm *onSettingsMenu) resetCollectionsToggles() {
-	opts := store.CollectionsOptions{}
+	opts := store.CollectionOptions{}
 	opts.SetDefaults()
 
 	osm.coll.discoverBtn.SetActive(opts.Discover)

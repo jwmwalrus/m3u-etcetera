@@ -2,45 +2,12 @@ package store
 
 import (
 	"context"
-	"fmt"
-	"strconv"
-	"strings"
-	"sync"
 
 	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
-	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 )
-
-var (
-	cTree = &collectionTree{}
-
-	collectionsModel *gtk.ListStore
-	cProgress        *gtk.ProgressBar
-
-	// CData collection store
-	CData struct {
-		subscriptionID string
-		Mu             sync.Mutex
-		Collection     []*m3uetcpb.Collection
-		Track          []*m3uetcpb.Track
-	}
-)
-
-// CollectionsOptions for the collections dialog
-type CollectionsOptions struct {
-	Discover   bool
-	UpdateTags bool
-}
-
-// SetDefaults -
-func (co *CollectionsOptions) SetDefaults() {}
 
 // AddCollection adds a collection
 func AddCollection(req *m3uetcpb.AddCollectionRequest) (res *m3uetcpb.AddCollectionResponse, err error) {
@@ -59,7 +26,7 @@ func AddCollection(req *m3uetcpb.AddCollectionRequest) (res *m3uetcpb.AddCollect
 }
 
 // ApplyCollectionChanges applies collection changes
-func ApplyCollectionChanges(o ...CollectionsOptions) {
+func ApplyCollectionChanges(o ...CollectionOptions) {
 	log.WithField("collectionOptions", o).
 		Info("Applying collection changes")
 
@@ -71,10 +38,10 @@ func ApplyCollectionChanges(o ...CollectionsOptions) {
 	defer cc.Close()
 	cl := m3uetcpb.NewCollectionSvcClient(cc)
 
-	model := collectionsModel
+	model := collectionModel
 
 	var toScan []int64
-	var opts CollectionsOptions
+	var opts CollectionOptions
 	if len(o) > 0 {
 		opts = o[0]
 	}
@@ -155,76 +122,10 @@ func ApplyCollectionChanges(o ...CollectionsOptions) {
 	}
 }
 
-// CollectionAlreadyExists returns true if the location and the name are not
-// already in use by another collection
-func CollectionAlreadyExists(location, name string) bool {
-	CData.Mu.Lock()
-	defer CData.Mu.Unlock()
-
-	for _, c := range CData.Collection {
-		if c.Location == location ||
-			strings.ToLower(c.Name) == strings.ToLower(name) {
-			return true
-		}
-	}
-	return false
-}
-
-// CreateCollectionsModel creates a collection model
-func CreateCollectionsModel() (model *gtk.ListStore, err error) {
-	log.Info("Creating collections model")
-
-	collectionsModel, err = gtk.ListStoreNew(CColumns.getTypes()...)
-	if err != nil {
-		return
-	}
-
-	model = collectionsModel
-	return
-}
-
-// CreateCollectionTreeModel creates a collection model
-func CreateCollectionTreeModel(h collectionTreeHierarchy) (model *gtk.TreeStore, err error) {
-	log.WithField("hierarchy", h).
-		Info("Creating collections model")
-
-	cTree.model, err = gtk.TreeStoreNew(CTreeColumn.getTypes()...)
-	if err != nil {
-		return
-	}
-
-	cTree.hierarchy = h
-	model = cTree.model
-
-	var errp error
-	cProgress, errp = builder.GetProgressBar("collections_scanning_progress")
-	if errp != nil {
-		cProgress = nil
-		log.Error(errp)
-	}
-	return
-}
-
-// FilterCollectionsBy filters the collections by the given value
-func FilterCollectionsBy(val string) {
-	cTree.filterVal = val
-	cTree.rebuild()
-}
-
-// GetCollectionsModel returns the current collections model
-func GetCollectionsModel() *gtk.ListStore {
-	return collectionsModel
-}
-
-// GetCollectionTreeModel returns the current collections model
-func GetCollectionTreeModel() *gtk.TreeStore {
-	return cTree.model
-}
-
 func subscribeToCollectionStore() {
 	log.Info("Subscribing to collection store")
 
-	defer wgcollections.Done()
+	defer wgcollection.Done()
 
 	var wgdone bool
 
@@ -279,7 +180,7 @@ func subscribeToCollectionStore() {
 
 		CData.Mu.Unlock()
 
-		glib.IdleAdd(updateCollectionsModel)
+		glib.IdleAdd(updateCollectionModel)
 		if !cTree.initialMode && !cTree.scanningMode {
 			glib.IdleAdd(cTree.update)
 		} else {
@@ -371,12 +272,9 @@ func unsubscribeFromCollectionStore() {
 	id := CData.subscriptionID
 	CData.Mu.Unlock()
 
-	var cc *grpc.ClientConn
-	var err error
-	opts := middleware.GetClientOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
-		log.Error(err)
+	cc, err := getClientConn()
+	if err != nil {
+		log.Errorf("Error obtaining client connection: %v", err)
 		return
 	}
 	defer cc.Close()
@@ -389,94 +287,4 @@ func unsubscribeFromCollectionStore() {
 		},
 	)
 	onerror.Log(err)
-}
-
-func updateCollectionsModel() bool {
-	if cTree.initialMode {
-		return false
-	}
-
-	log.Info("Updating collection model")
-
-	model := collectionsModel
-	if model == nil {
-		return false
-	}
-
-	if model.GetNColumns() == 0 {
-		return false
-	}
-
-	_, ok := model.GetIterFirst()
-	if ok {
-		model.Clear()
-	}
-
-	CData.Mu.Lock()
-	if len(CData.Collection) > 0 {
-		var iter *gtk.TreeIter
-		for _, c := range CData.Collection {
-			iter = model.Append()
-			tracks := strconv.FormatInt(c.Tracks, 10)
-			if c.Scanned != 100 {
-				tracks = strconv.Itoa(int(c.Scanned)) + "%"
-			}
-			persp := m3uetcpb.Perspective_name[int32(c.Perspective)]
-			err := model.Set(
-				iter,
-				[]int{
-					int(CColCollectionID),
-					int(CColName),
-					int(CColDescription),
-					int(CColLocation),
-					int(CColPerspective),
-					int(CColDisabled),
-					int(CColRemote),
-					int(CColTracks),
-					int(CColTracksView),
-					int(CColRescan),
-				},
-				[]interface{}{
-					c.Id,
-					c.Name,
-					c.Description,
-					c.Location,
-					persp,
-					c.Disabled,
-					c.Remote,
-					c.Tracks,
-					tracks,
-					false,
-				},
-			)
-			onerror.Log(err)
-		}
-	}
-	CData.Mu.Unlock()
-	return false
-}
-
-func updateScanningProgress() bool {
-	if cProgress == nil {
-		log.Error("Collections progress bar is unavailable")
-		return false
-	}
-
-	CData.Mu.Lock()
-	defer CData.Mu.Unlock()
-
-	scanned := 0
-	for _, c := range CData.Collection {
-		if c.Scanned != 100 && int(c.Scanned) > scanned {
-			scanned = int(c.Scanned)
-		}
-	}
-	if scanned > 0 {
-		cProgress.SetVisible(true)
-		cProgress.SetFraction(float64(scanned) / float64(100))
-		cProgress.SetText(fmt.Sprintf("Scanning: %v%%", scanned))
-		return false
-	}
-	cProgress.SetVisible(false)
-	return false
 }

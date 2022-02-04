@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// collectionTree defines the collections-tree type
+// collectionTree defines the collection-tree hierarchy
 type collectionTreeHierarchy int
 
 const (

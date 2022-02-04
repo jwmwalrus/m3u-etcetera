@@ -176,6 +176,6 @@ func (omc *onMusicCollections) filtered(se *gtk.SearchEntry) {
 		log.Error(err)
 		return
 	}
-	store.FilterCollectionsBy(text)
+	store.FilterCollectionTreeBy(text)
 
 }

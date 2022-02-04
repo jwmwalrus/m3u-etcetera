@@ -177,14 +177,14 @@ var (
 	wg                    sync.WaitGroup
 	wgplayback            sync.WaitGroup
 	wgqueue               sync.WaitGroup
-	wgcollections         sync.WaitGroup
+	wgcollection          sync.WaitGroup
 	wgplaybar             sync.WaitGroup
-	wgqueries             sync.WaitGroup
+	wgquery               sync.WaitGroup
 	forceExit             bool
 	perspectivesList      []m3uetcpb.Perspective
 	perspectiveQueuesList []m3uetcpb.Perspective
 
-	// CColumns collections columns
+	// CColumns collection columns
 	CColumns storeColumns
 
 	// TColumns tracks columns
@@ -199,7 +199,7 @@ var (
 	// PGColumns query columns
 	PGColumns storeColumns
 
-	// CTreeColumn collections tree column
+	// CTreeColumn collection tree column
 	CTreeColumn storeColumns
 
 	// QYTreeColumn query tree column
@@ -267,13 +267,13 @@ func Subscribe() {
 	wgqueue.Add(1)
 	go subscribeToQueueStore()
 
-	wgcollections.Add(1)
+	wgcollection.Add(1)
 	go subscribeToCollectionStore()
 
 	wgplaybar.Add(1)
 	go subscribeToPlaybarStore()
 
-	wgqueries.Add(1)
+	wgquery.Add(1)
 	go subscribeToQueryStore()
 
 	wg.Wait()
@@ -293,9 +293,9 @@ func Unsubscribe() {
 	unsubscribeFromQueryStore()
 	wgplayback.Wait()
 	wgqueue.Wait()
-	wgcollections.Wait()
+	wgcollection.Wait()
 	wgplaybar.Wait()
-	wgqueries.Wait()
+	wgquery.Wait()
 
 	alive.Serve(
 		alive.ServeOptions{

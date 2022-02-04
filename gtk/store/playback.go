@@ -1,7 +1,6 @@
 package store
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,17 +9,13 @@ import (
 	"time"
 
 	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/bnp/stringing"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 )
 
 type playbackData struct {
@@ -46,88 +41,6 @@ const (
 var (
 	pbdata = &playbackData{}
 )
-
-// ExecutePlaybackAction -
-func ExecutePlaybackAction(req *m3uetcpb.ExecutePlaybackActionRequest) (err error) {
-	cc, err := GetClientConn()
-	if err != nil {
-		return
-	}
-	defer cc.Close()
-
-	cl := m3uetcpb.NewPlaybackSvcClient(cc)
-	_, err = cl.ExecutePlaybackAction(context.Background(), req)
-	return
-}
-
-func subscribeToPlayback() {
-	log.Info("Subscribing to playback")
-
-	defer wgplayback.Done()
-
-	var wgdone bool
-
-	cc, err := getClientConn()
-	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
-		return
-	}
-	defer cc.Close()
-
-	cl := m3uetcpb.NewPlaybackSvcClient(cc)
-	stream, err := cl.SubscribeToPlayback(context.Background(), &m3uetcpb.Empty{})
-	if err != nil {
-		log.Errorf("Error subscribing to playback: %v", err)
-		return
-	}
-
-	for {
-		res, err := stream.Recv()
-		if err != nil {
-			log.Infof("Subscription closed by server: %v", err)
-			break
-		}
-
-		pbdata.mu.Lock()
-		pbdata.res = res
-		pbdata.mu.Unlock()
-
-		glib.IdleAdd(pbdata.updatePlayback)
-		glib.IdleAdd(pbdata.setCover)
-
-		if !wgdone {
-			wg.Done()
-			wgdone = true
-		}
-	}
-}
-
-func unsubscribeFromPlayback() {
-	log.Info("Unsubscribing from playback")
-
-	pbdata.mu.Lock()
-	id := pbdata.res.SubscriptionId
-	pbdata.mu.Unlock()
-
-	var cc *grpc.ClientConn
-	var err error
-	opts := middleware.GetClientOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
-		log.Error(err)
-		return
-	}
-	defer cc.Close()
-
-	cl := m3uetcpb.NewPlaybackSvcClient(cc)
-	_, err = cl.UnsubscribeFromPlayback(
-		context.Background(),
-		&m3uetcpb.UnsubscribeFromPlaybackRequest{
-			SubscriptionId: id,
-		},
-	)
-	onerror.Log(err)
-}
 
 func (pbd *playbackData) setCover() bool {
 	pbd.mu.Lock()

@@ -417,7 +417,7 @@ func (omqy *onMusicQuery) filtered(se *gtk.SearchEntry) {
 		log.Error(err)
 		return
 	}
-	store.FilterQueriesBy(text)
+	store.FilterQueryTreeBy(text)
 
 }
 

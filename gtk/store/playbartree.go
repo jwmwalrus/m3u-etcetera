@@ -123,13 +123,13 @@ type playlistTree struct {
 	filterVal string
 }
 
-type playbarsTree struct {
+type playbarTree struct {
 	pplt               map[m3uetcpb.Perspective]playlistTree
 	initialMode        bool
 	receivingOpenItems bool
 }
 
-func (bt *playbarsTree) update() bool {
+func (bt *playbarTree) update() bool {
 	if bt.initialMode || bt.receivingOpenItems {
 		return false
 	}

@@ -21,7 +21,7 @@ func GetCollectionRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 			return nil, err
 		}
 		renderer.Connect("edited", func(cell *gtk.CellRendererText, pathString, newText string) {
-			onTextColumnEdited(collectionsModel, col, cell, pathString, newText)
+			onTextColumnEdited(collectionModel, col, cell, pathString, newText)
 		})
 		return renderer, nil
 
@@ -35,7 +35,7 @@ func GetCollectionRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 			return nil, err
 		}
 		renderer.Connect("toggled", func(cell *gtk.CellRendererToggle, pathString string) {
-			onBoolColumnToggled(collectionsModel, col, cell, pathString)
+			onBoolColumnToggled(collectionModel, col, cell, pathString)
 		})
 
 		return renderer, nil
