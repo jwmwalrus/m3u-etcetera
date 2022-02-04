@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gotk3/gotk3/glib"
@@ -162,7 +163,7 @@ func CollectionAlreadyExists(location, name string) bool {
 
 	for _, c := range CData.Collection {
 		if c.Location == location ||
-			c.Name == name {
+			strings.ToLower(c.Name) == strings.ToLower(name) {
 			return true
 		}
 	}

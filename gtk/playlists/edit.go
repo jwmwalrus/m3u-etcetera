@@ -13,11 +13,11 @@ import (
 // EditPlaylist edits a playlist properties
 func EditPlaylist(id int64) (err error) {
 	pl := store.GetPlaylist(id)
-	name := ""
+	nameIn := ""
 	if !pl.Transient {
-		name = pl.Name
+		nameIn = pl.Name
 	}
-	descr := pl.Description
+	descrIn := pl.Description
 	pgID := pl.PlaylistGroupId
 
 	nameent, err := builder.GetEntry("playlist_dialog_name")
@@ -33,14 +33,19 @@ func EditPlaylist(id int64) (err error) {
 		return
 	}
 
-	nameent.SetText(name)
-	descrent.SetText(descr)
+	updBtn, err := builder.GetButton("playlist_dialog_btn_apply")
+	if err != nil {
+		return
+	}
+
+	nameent.SetText(nameIn)
+	descrent.SetText(descrIn)
 
 	groups.RemoveAll()
 	groups.Append("0", "--")
-	store.BData.Mu.Lock()
 	activeIdx := 0
 	count := 0
+	store.BData.Mu.Lock()
 	for _, pg := range store.BData.PlaylistGroup {
 		groups.Append(strconv.FormatInt(pg.Id, 10), pg.Name)
 		count++
@@ -53,11 +58,26 @@ func EditPlaylist(id int64) (err error) {
 	groups.SetActiveID(strconv.FormatInt(pgID, 10))
 	groups.SetActive(activeIdx)
 
+	updBtn.SetSensitive(nameIn != "")
+	nameent.Connect("changed", func(e *gtk.Entry) {
+		name, _ := e.GetText()
+		if name == "" {
+			updBtn.SetSensitive(false)
+			return
+		}
+		if name == nameIn {
+			updBtn.SetSensitive(true)
+			return
+		}
+		updBtn.SetSensitive(!store.PlaylistAlreadyExists(name))
+	})
+
 	res := playlistDlg.Run()
 	defer playlistDlg.Hide()
 
 	switch res {
 	case gtk.RESPONSE_APPLY:
+		var name, descr string
 		name, err = nameent.GetText()
 		if err != nil {
 			return

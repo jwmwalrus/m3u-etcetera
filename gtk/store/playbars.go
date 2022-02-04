@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -304,6 +305,34 @@ func GetPlaylistModel(id int64) *gtk.ListStore {
 func GetPlaylistsTreeModel(p m3uetcpb.Perspective) *gtk.TreeStore {
 	v := barTree.pplt[p]
 	return v.model
+}
+
+// PlaylistAlreadyExists returns true if a playlist with the given
+// name already exists
+func PlaylistAlreadyExists(name string) bool {
+	BData.Mu.Lock()
+	defer BData.Mu.Unlock()
+
+	for _, pl := range BData.Playlist {
+		if strings.ToLower(pl.Name) == strings.ToLower(name) {
+			return true
+		}
+	}
+	return false
+}
+
+// PlaylistGroupAlreadyExists returns true if a playlist group with the
+//given name already exists
+func PlaylistGroupAlreadyExists(name string) bool {
+	BData.Mu.Lock()
+	defer BData.Mu.Unlock()
+
+	for _, pg := range BData.PlaylistGroup {
+		if strings.ToLower(pg.Name) == strings.ToLower(name) {
+			return true
+		}
+	}
+	return false
 }
 
 // SetUpdatePlaybarViewFn sets the update-playbar-view function

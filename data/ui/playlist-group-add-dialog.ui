@@ -19,7 +19,7 @@
             <property name="can-focus">False</property>
             <property name="layout-style">end</property>
             <child>
-              <object class="GtkButton" id="playlist_group_add_dialog_btn_close">
+              <object class="GtkButton" id="button1">
                 <property name="label" translatable="yes">Close</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
@@ -176,7 +176,7 @@
       </object>
     </child>
     <action-widgets>
-      <action-widget response="-7">playlist_group_add_dialog_btn_close</action-widget>
+      <action-widget response="-7">button1</action-widget>
       <action-widget response="-10">playlist_group_add_dialog_btn_apply</action-widget>
     </action-widgets>
   </object>

@@ -33,6 +33,7 @@ type onSettingsMenu struct {
 		addDlg, editDlg *gtk.Dialog
 		name, descr     *gtk.Entry
 		persp           *gtk.ComboBoxText
+		addBtn          *gtk.Button
 	}
 	pm *gtk.PopoverMenu
 }
@@ -105,11 +106,19 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 	osm.hide()
 
-	var name, descr string
-
-	osm.pg.name.SetText(name)
-	osm.pg.descr.SetText(descr)
+	osm.pg.name.SetText("")
+	osm.pg.descr.SetText("")
 	osm.pg.persp.SetActive(0)
+	osm.pg.addBtn.SetSensitive(false)
+
+	osm.pg.name.Connect("changed", func(e *gtk.Entry) {
+		name, _ := e.GetText()
+		if name == "" {
+			osm.pg.addBtn.SetSensitive(false)
+			return
+		}
+		osm.pg.addBtn.SetSensitive(!store.PlaylistGroupAlreadyExists(name))
+	})
 
 	res := osm.pg.addDlg.Run()
 	defer osm.pg.addDlg.Hide()
@@ -121,7 +130,7 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 			log.Error(err)
 			return
 		}
-		descr, err = osm.pg.descr.GetText()
+		descr, err := osm.pg.descr.GetText()
 		if err != nil {
 			log.Error(err)
 			return
@@ -316,6 +325,12 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 	osm.pg.persp, err = builder.GetComboBoxText("playlist_group_add_dialog_persp")
 	if err != nil {
 		err = fmt.Errorf("Unable to get playlist_group_add_dialog_persp: %v", err)
+		return
+	}
+
+	osm.pg.addBtn, err = builder.GetButton("playlist_group_add_dialog_btn_apply")
+	if err != nil {
+		err = fmt.Errorf("Unable to get playlist_group_add_dialog_btn_apply: %v", err)
 		return
 	}
 
