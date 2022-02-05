@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/jwmwalrus/bnp/slice"
@@ -134,6 +135,40 @@ func ExecutePlaylistTrackAction(req *m3uetcpb.ExecutePlaylistTrackActionRequest)
 		s := status.Convert(err)
 		log.Error(s.Message())
 		return
+	}
+	return
+}
+
+// ImportPlaylists -
+func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (msgList []string, err error) {
+	cc, err := GetClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	stream, err := cl.ImportPlaylists(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		log.Error(s.Message())
+		return
+	}
+
+	for {
+		var res *m3uetcpb.ImportPlaylistsResponse
+		res, err = stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+				break
+			}
+			return
+		}
+
+		for _, msg := range res.ImportErrors {
+			msgList = append(msgList, msg)
+		}
 	}
 	return
 }

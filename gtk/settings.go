@@ -458,7 +458,7 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 	dlg, err := gtk.FileChooserDialogNewWith2Buttons(
 		"Import playlist",
 		osm.window,
-		gtk.FILE_CHOOSER_ACTION_SAVE,
+		gtk.FILE_CHOOSER_ACTION_OPEN,
 		"Import",
 		gtk.RESPONSE_APPLY,
 		"Cancel",
@@ -478,16 +478,37 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 	for _, v := range base.SupportedPlaylistExtensions {
 		filter.AddPattern("*" + v)
 	}
+	dlg.SetSelectMultiple(true)
 	dlg.AddFilter(filter)
 	dlg.ShowAll()
 	res := dlg.Run()
+	defer dlg.Destroy()
+
 	switch res {
 	case gtk.RESPONSE_APPLY:
-		// TODO: implement
+
+		locs, err := dlg.GetURIs()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		req := &m3uetcpb.ImportPlaylistsRequest{
+			Locations: locs,
+		}
+
+		msgList, err := store.ImportPlaylists(req)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		for _, msg := range msgList {
+			log.Error(msg)
+		}
 	case gtk.RESPONSE_CANCEL:
 	default:
 	}
-	dlg.Destroy()
 }
 
 func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {

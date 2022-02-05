@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
@@ -49,9 +50,8 @@ func Collection() *cli.Command {
 						Usage:   "collection is remote",
 					},
 					&cli.StringFlag{
-						Name:    "descr",
-						Aliases: []string{"descr"},
-						Usage:   "collection's `DESCRIPTION`",
+						Name:  "descr",
+						Usage: "collection's `DESCRIPTION`",
 					},
 					&cli.StringFlag{
 						Name:  "persp",
@@ -231,8 +231,8 @@ func collectionAddAction(c *cli.Context) (err error) {
 	}
 
 	persp := getPerspective(c)
-	if (persp != m3uetcpb.Perspective_MUSIC) ||
-		(persp != m3uetcpb.Perspective_AUDIOBOOKS) {
+	if !slice.Contains([]m3uetcpb.Perspective{
+		m3uetcpb.Perspective_MUSIC, m3uetcpb.Perspective_AUDIOBOOKS}, persp) {
 		err = fmt.Errorf("Invalid perspective provided")
 		return
 	}
