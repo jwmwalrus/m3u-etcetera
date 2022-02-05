@@ -525,6 +525,7 @@
                     <child>
                       <object class="GtkToolButton" id="control_toggle_shuffle">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can-focus">False</property>
                         <property name="tooltip-text" translatable="yes">Shuffle</property>
                         <property name="label" translatable="yes">Shuffle</property>
@@ -539,6 +540,7 @@
                     <child>
                       <object class="GtkToolButton" id="control_toggle_repeat">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can-focus">False</property>
                         <property name="tooltip-text" translatable="yes">Repeat</property>
                         <property name="label" translatable="yes">Repeat</property>
@@ -553,6 +555,7 @@
                     <child>
                       <object class="GtkToolButton" id="control_toggle_dynamic">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can-focus">False</property>
                         <property name="tooltip-text" translatable="yes">Dynamic mode</property>
                         <property name="label" translatable="yes">Dynamic</property>

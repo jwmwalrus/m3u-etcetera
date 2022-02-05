@@ -490,6 +490,7 @@ results:</property>
                   <object class="GtkCheckButton" id="query_dialog_toggle_select_all">
                     <property name="label" translatable="yes">Toggle Select All</property>
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">False</property>
                     <property name="tooltip-text" translatable="yes">Toggle track selection</property>

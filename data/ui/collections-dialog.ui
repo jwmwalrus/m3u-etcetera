@@ -67,6 +67,7 @@
                 <child>
                   <object class="GtkToggleToolButton" id="collections_dialog_toggle_discover">
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="can-focus">False</property>
                     <property name="tooltip-text" translatable="yes">Discover new or deleted tracks in all collections (overrides re-scan)</property>
                     <property name="label" translatable="yes">Discover</property>
@@ -80,6 +81,7 @@
                 <child>
                   <object class="GtkToggleToolButton" id="collections_dialog_toggle_update_tags">
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="can-focus">False</property>
                     <property name="tooltip-text" translatable="yes">When re-scanning any of the collections checked, also re-read the tags</property>
                     <property name="label" translatable="yes">Update Tags</property>
