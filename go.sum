@@ -148,6 +148,8 @@ github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqx
 github.com/jwmwalrus/bnp v1.8.0/go.mod h1:HujL86+h/GMqPY4NnSczQO8QQJ+FP3Fnha7OmCBYPQo=
 github.com/jwmwalrus/bnp v1.9.0 h1:xt5dbAcT5F1mIKTja+uwmP7ptbTrtZ/5tIRFeoxUP0E=
 github.com/jwmwalrus/bnp v1.9.0/go.mod h1:HujL86+h/GMqPY4NnSczQO8QQJ+FP3Fnha7OmCBYPQo=
+github.com/jwmwalrus/go-gst v0.2.33-0.20220205191536-6a7b117cbaee h1:RFeHsOMmOfQf6ihu7WLYaaJyPBApFyqJllMRQZBPjv8=
+github.com/jwmwalrus/go-gst v0.2.33-0.20220205191536-6a7b117cbaee/go.mod h1:V4h+HPS3mVGSwUJ7IBi3WAkJWITZasebERyqk3TEXUM=
 github.com/jwmwalrus/onerror v0.1.0 h1:K+ZL8Kj2nMycpoFhUeAsQ3TfLHO5nosiLTGNZ2H62aw=
 github.com/jwmwalrus/onerror v0.1.0/go.mod h1:Z4CaL9kZCriXMrr79lpwOFVes6B/Xqe6joBtn/4VAJ0=
 github.com/jwmwalrus/seater v0.1.1 h1:VpeZ5XBBr3IrDsGrT4tZWfUz94WQr8NLzjI771MBSlg=
@@ -224,8 +226,6 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/tinyzimmer/go-glib v0.0.24 h1:ktZZC22/9t88kGRgNEFV/SESgIWhGHE+q7Z7Qj++luw=
 github.com/tinyzimmer/go-glib v0.0.24/go.mod h1:ltV0gO6xNFzZhsIRbFXv8RTq9NGoNT2dmAER4YmZfaM=
-github.com/tinyzimmer/go-gst v0.2.32 h1:bwJ1VfLyoeQPxuE7LgCTwwvMXFufnFoSws7QhaCfsY8=
-github.com/tinyzimmer/go-gst v0.2.32/go.mod h1:V4h+HPS3mVGSwUJ7IBi3WAkJWITZasebERyqk3TEXUM=
 github.com/urfave/cli/v2 v2.3.0 h1:qph92Y649prgesehzOrQjdWyxFOp/QVM+6imKHad91M=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=

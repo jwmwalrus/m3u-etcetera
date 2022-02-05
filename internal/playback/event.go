@@ -266,7 +266,16 @@ func SeekInStream(pos int64) {
 		return
 	}
 
+	// TODO: implement
+
 	/*
+			if e.seekEnabled && !e.seekDone && e.lastPosition > 10 * time.Second {
+			  g_print ("\nReached 10s, performing seek...\n");
+			  gst_element_seek_simple (data.playbin, GST_FORMAT_TIME,
+			      GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT, 30 * GST_SECOND);
+			  data.seek_done = TRUE;
+			}
+
 		if eng.seekEnabled && time.Duration(eng.lastPosition) > 10*time.Second {
 			eng.playbin.SeekSimple(gst.FormatTime,
 				gst.SeekFlagFlush|gst.SeekFlagKeyUnit, time.Duration(pos))

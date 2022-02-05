@@ -46,3 +46,4 @@ require (
 )
 
 // replace github.com/jwmwalrus/bnp => ../bnp
+replace github.com/tinyzimmer/go-gst => github.com/jwmwalrus/go-gst v0.2.33-0.20220205191536-6a7b117cbaee

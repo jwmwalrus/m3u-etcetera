@@ -39,8 +39,8 @@ const (
 type engine struct {
 	freezePlayback bool
 	terminate      bool
-	seekEnabled    bool
-	seekDone       bool
+	seekable       bool
+	seekableDone   bool
 	lastPosition   int64
 	duration       int64
 	buffering      int
@@ -270,28 +270,6 @@ func (e *engine) handleBusMessage(msg *gst.Message, pb *models.Playback) bool {
 		}).
 			Debug("Pipeline state changed")
 
-		if e.state == gst.StatePlaying {
-			// We just moved to PLAYING. Check if seeking is possible
-			var start, end int64
-			q := gst.NewSeekingQuery(gst.FormatTime)
-			if e.playbin.Query(q) {
-				var format gst.Format
-				format, e.seekEnabled, start, end = q.ParseSeeking()
-				if e.seekEnabled {
-					log.WithFields(log.Fields{
-						"format": format,
-						"start":  start,
-						"end":    end,
-					}).
-						Debug("Seeking is ENABLED")
-				} else {
-					log.Debug("Seeking is DISABLED for this stream")
-				}
-			} else {
-				log.Debug("Seeking query failed")
-			}
-		}
-
 	case gst.MessageDurationChanged:
 		e.duration = 0
 
@@ -316,7 +294,7 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	e.pb = pb
 	e.terminate = false
-	defer func() { e.pb = nil; e.t = nil }()
+	defer e.reset()
 
 	base.GetBusy(base.IdleStatusEngineLoop)
 	defer func() { base.GetFree(base.IdleStatusEngineLoop) }()
@@ -336,7 +314,6 @@ func (e *engine) playStream(pb *models.Playback) {
 		log.Error(err)
 		return
 	}
-	defer func() { e.playbin = nil }()
 	log.Debug("Playbin created")
 
 	if e.playbin == nil {
@@ -363,8 +340,8 @@ func (e *engine) playStream(pb *models.Playback) {
 	}
 	log.Debugf("State changed: %d\n", gst.StatePlaying)
 
-	qposctx, cancelqpos := context.WithCancel(context.Background())
-	go e.queryPosition(qposctx)
+	pqctx, cancelpq := context.WithCancel(context.Background())
+	go e.performQueries(pqctx)
 
 	bus.AddWatch(func(msg *gst.Message) bool {
 		return e.handleBusMessage(msg, pb)
@@ -374,7 +351,7 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	bus.RemoveWatch()
 
-	cancelqpos()
+	cancelpq()
 
 	log.Debug("End of playback")
 	e.state = gst.StateNull
@@ -382,7 +359,7 @@ func (e *engine) playStream(pb *models.Playback) {
 	return
 }
 
-func (e *engine) queryPosition(ctx context.Context) {
+func (e *engine) performQueries(ctx context.Context) {
 	tick := time.NewTicker(time.Duration(positionThreshold) * time.Nanosecond).C
 	for {
 		select {
@@ -419,15 +396,27 @@ func (e *engine) queryPosition(ctx context.Context) {
 				subscription.Broadcast(subscription.ToPlaybackEvent)
 			}
 
-			// NOTE: If seeking is enabled, we have not done it yet, and the time is right, seek
-			//
-			// if e.seekEnabled && !e.seekDone && e.lastPosition > 10 * time.Second {
-			//   g_print ("\nReached 10s, performing seek...\n");
-			//   gst_element_seek_simple (data.playbin, GST_FORMAT_TIME,
-			//       GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT, 30 * GST_SECOND);
-			//   data.seek_done = TRUE;
-			// }
-			//
+			if !e.seekableDone {
+				q := gst.NewSeekingQuery(gst.FormatTime)
+				if e.playbin.Query(q) {
+					var start, end int64
+					var format gst.Format
+					format, e.seekable, start, end = q.ParseSeeking()
+					if e.seekable {
+						log.WithFields(log.Fields{
+							"format": format,
+							"start":  start,
+							"end":    end,
+						}).
+							Debug("Seeking is ENABLED")
+					} else {
+						log.Debug("Seeking is DISABLED for this stream")
+					}
+				} else {
+					log.Debug("Seeking query failed")
+				}
+				e.seekableDone = true
+			}
 		}
 	}
 }
@@ -441,6 +430,13 @@ func (e *engine) resumeActivePlaylist() {
 
 func (e *engine) setPlaybackHint(h playbackHint) {
 	e.hint = h
+}
+
+func (e *engine) reset() {
+	e.pb = nil
+	e.t = nil
+	e.seekableDone = false
+	e.playbin = nil
 }
 
 func init() {
