@@ -91,6 +91,9 @@ func EditPlaylist(id int64) (err error) {
 		if err != nil {
 			return
 		}
+		if pgID == 0 {
+			pgID = -1
+		}
 		req := &m3uetcpb.ExecutePlaylistActionRequest{
 			Action:          m3uetcpb.PlaylistAction_PL_UPDATE,
 			Id:              id,

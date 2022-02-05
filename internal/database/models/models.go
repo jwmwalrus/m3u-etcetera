@@ -82,10 +82,7 @@ func DoInitialCleanup() {
 	db.Where("played = 1").Delete(&Queue{})
 
 	// Clean playlists
-	if trpg, err := TransientPlaylistGroup.Get(); err == nil {
-		db.Where("open = 0 and playlist_group_id = ?", trpg.ID).Delete(&Playlist{})
-
-	}
+	db.Where("open = 0 and transient = 1").Delete(&Playlist{})
 }
 
 func getSuffler(n int) []int {

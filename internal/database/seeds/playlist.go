@@ -11,12 +11,12 @@ func seedPlaylist(db *gorm.DB) (err error) {
 		return
 	}
 
-	create := func(idx models.PlaylistGroupIndex) error {
+	create := func(idx models.PlaylistGroupIndex, p models.PerspectiveIndex) error {
 		plg := models.PlaylistGroup{
 			Idx:           int(idx),
 			Name:          idx.String(),
 			Hidden:        true,
-			PerspectiveID: p.ID,
+			PerspectiveID: p.Get().ID,
 		}
 		if err := db.Create(&plg).Error; err != nil {
 			return err
@@ -24,10 +24,23 @@ func seedPlaylist(db *gorm.DB) (err error) {
 		return nil
 	}
 
-	if err = create(models.DefaultPlaylistGroup); err != nil {
+	err = create(models.MusicPlaylistGroup, models.MusicPerspective)
+	if err != nil {
 		return
 	}
-	if err = create(models.TransientPlaylistGroup); err != nil {
+
+	err = create(models.RadioPlaylistGroup, models.RadioPerspective)
+	if err != nil {
+		return
+	}
+
+	err = create(models.PodcastsPlaylistGroup, models.PodcastsPerspective)
+	if err != nil {
+		return
+	}
+
+	err = create(models.AudiobooksPlaylistGroup, models.AudiobooksPerspective)
+	if err != nil {
 		return
 	}
 

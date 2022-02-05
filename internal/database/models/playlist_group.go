@@ -13,12 +13,14 @@ type PlaylistGroupIndex int
 
 // Defines the default playlist groups
 const (
-	DefaultPlaylistGroup PlaylistGroupIndex = iota + 1
-	TransientPlaylistGroup
+	MusicPlaylistGroup PlaylistGroupIndex = iota + 1
+	RadioPlaylistGroup
+	PodcastsPlaylistGroup
+	AudiobooksPlaylistGroup
 )
 
 func (idx PlaylistGroupIndex) String() string {
-	return [...]string{"", "\t", "\t\t"}[idx]
+	return [...]string{"", "\t", "\t\t", "\t\t\t", "\t\t\t\t"}[idx]
 }
 
 // Get returns the playlist group for the given index
@@ -123,4 +125,13 @@ func (pg *PlaylistGroup) AfterDelete(tx *gorm.DB) error {
 		}
 	}()
 	return nil
+}
+
+// ReadDefaultForPerspective returns the default playlist group for
+// the given perspective
+func (pg *PlaylistGroup) ReadDefaultForPerspective(id int64) error {
+	return db.Joins("Perspective").
+		Where("perspective_id = ? and playlist_group.idx > 0", id).
+		First(pg, id).
+		Error
 }

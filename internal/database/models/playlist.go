@@ -31,6 +31,7 @@ type Playlist struct {
 	Description     string        `json:"description"`
 	Open            bool          `json:"open"`
 	Active          bool          `json:"active"`
+	Transient       bool          `json:"transient"`
 	CreatedAt       int64         `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt       int64         `json:"updatedAt" gorm:"autoUpdateTime"`
 	PlaylistGroupID int64         `json:"playlistGroupId" gorm:"index:idx_playlist_playlist_group_id,not null"`
@@ -111,7 +112,7 @@ func (pl *Playlist) ToProtobuf() proto.Message {
 		fmt.Println(fmt.Sprintf("SHAMEFUL PLAYLIST: %+v", pl))
 	}
 	out.Perspective = m3uetcpb.Perspective(bar.getPerspectiveIndex())
-	out.Transient = pl.IsTransient()
+	out.Transient = pl.Transient
 	out.CreatedAt = pl.CreatedAt
 	out.UpdatedAt = pl.UpdatedAt
 	return out
@@ -345,13 +346,6 @@ func (pl *Playlist) GetTracks(limit int) (pts []*PlaylistTrack, ts []*Track) {
 		ts = append(ts, &s[i].Track)
 	}
 	return
-}
-
-// IsTransient checks if playlist is transient
-func (pl *Playlist) IsTransient() bool {
-	plg := PlaylistGroup{}
-	db.First(&plg, pl.PlaylistGroupID)
-	return plg.Idx == int(TransientPlaylistGroup)
 }
 
 func (pl *Playlist) createTracks(trackIds []int64, locations []string) (pts []PlaylistTrack, err error) {

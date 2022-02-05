@@ -149,7 +149,7 @@ func (b *Playbar) CloseEntry(pl *Playlist) {
 	pl.Active = false
 	onerror.Log(pl.Save())
 
-	if pl.IsTransient() {
+	if pl.Transient {
 		go pl.DeleteDelayed()
 	}
 }
@@ -157,40 +157,35 @@ func (b *Playbar) CloseEntry(pl *Playlist) {
 // CreateEntry creates a playlist
 func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error) {
 	var plname string
-	var groupID int64
 	pl = &Playlist{}
 
-	shouldBeOpen := false
+	pg := &PlaylistGroup{}
+	err = pg.ReadDefaultForPerspective(b.PerspectiveID)
+	if err != nil {
+		return
+	}
+
+	isTransient := false
 	if name != "" {
 		plname = name
-
-		var pg *PlaylistGroup
-		pg, err = DefaultPlaylistGroup.Get()
-		if err != nil {
-			return
-		}
-		groupID = pg.ID
 	} else {
+		isTransient = true
 		plname = GetTransientNameForPlaylist()
-
-		var pg *PlaylistGroup
-		pg, err = TransientPlaylistGroup.Get()
-		if err != nil {
-			return
-		}
-		groupID = pg.ID
-		shouldBeOpen = true
 	}
 
 	pl = &Playlist{
 		Name:            plname,
 		Description:     description,
 		PlaybarID:       b.ID,
-		PlaylistGroupID: groupID,
+		PlaylistGroupID: pg.ID,
+		Transient:       isTransient,
 	}
 	err = pl.Create()
+	if err != nil {
+		return
+	}
 
-	if shouldBeOpen {
+	if isTransient {
 		pl.Open = true
 		err = pl.Save()
 	}
@@ -355,17 +350,18 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 		}, "-")
 	}
 
-	pg, err := DefaultPlaylistGroup.Get()
+	pg := PlaylistGroup{}
+	err = pg.ReadDefaultForPerspective(b.PerspectiveID)
 	if err != nil {
 		return
 	}
 
 	pl = &Playlist{
-		PlaylistGroupID: pg.ID,
-		PlaybarID:       b.ID,
-		Name:            name,
+		Name: name,
 		Description: "Imported from " + filepath.Base(path) +
 			" on " + time.Now().Format(time.RFC3339),
+		PlaylistGroupID: pg.ID,
+		PlaybarID:       b.ID,
 	}
 
 	err = pl.Save()
@@ -501,7 +497,7 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 
 // OpenEntry opens the given playbar entry
 func (b *Playbar) OpenEntry(pl *Playlist) {
-	if pl.IsTransient() && !pl.Open {
+	if pl.Transient && !pl.Open {
 		log.Warn("Ignoring attempt to reopen transient playlist marked for deletiion")
 		return
 	}
@@ -516,9 +512,12 @@ func (b *Playbar) PrependToPlaylist(pl *Playlist, trackIds []int64, locations []
 
 // UpdateEntry updates a playlist
 func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64, resetDescr bool) (err error) {
+	isTransient := pl.Transient
+
 	newName := pl.Name
 	if name != "" {
 		newName = name
+		isTransient = false
 	}
 
 	newDescr := pl.Description
@@ -540,9 +539,9 @@ func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64, r
 			return
 		}
 		newGroupID = groupID
-	} else {
+	} else if groupID < 0 {
 		var dpg *PlaylistGroup
-		dpg, err = DefaultPlaylistGroup.Get()
+		err = dpg.ReadDefaultForPerspective(b.PerspectiveID)
 		if err == nil {
 			if dpg.PerspectiveID != b.PerspectiveID {
 				err = fmt.Errorf("The provided group ID does not match perspective")
@@ -550,10 +549,13 @@ func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64, r
 			}
 			newGroupID = dpg.ID
 		}
+	} else {
+		newGroupID = pl.PlaylistGroupID
 	}
 
 	pl.Name = newName
 	pl.Description = newDescr
+	pl.Transient = isTransient
 	pl.PlaylistGroupID = newGroupID
 	err = pl.Save()
 	return
