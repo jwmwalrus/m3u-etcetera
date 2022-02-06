@@ -121,15 +121,16 @@ func (pl *Playlist) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (pl *Playlist) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
-			subscription.Broadcast(
-				subscription.ToPlaybarStoreEvent,
-				subscription.Event{
-					Idx:  int(PlaybarEventItemAdded),
-					Data: pl,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToPlaybarStoreEvent,
+			subscription.Event{
+				Idx:  int(PlaybarEventItemAdded),
+				Data: pl,
+			},
+		)
 	}()
 	return nil
 }
@@ -155,15 +156,16 @@ func (pl *Playlist) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (pl *Playlist) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
-			subscription.Broadcast(
-				subscription.ToPlaybarStoreEvent,
-				subscription.Event{
-					Idx:  int(PlaybarEventItemRemoved),
-					Data: pl,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToPlaybarStoreEvent,
+			subscription.Event{
+				Idx:  int(PlaybarEventItemRemoved),
+				Data: pl,
+			},
+		)
 	}()
 	return nil
 }

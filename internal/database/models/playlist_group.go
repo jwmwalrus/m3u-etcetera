@@ -82,15 +82,16 @@ func (pg *PlaylistGroup) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (pg *PlaylistGroup) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
-			subscription.Broadcast(
-				subscription.ToPlaybarStoreEvent,
-				subscription.Event{
-					Idx:  int(PlaybarEventItemAdded),
-					Data: pg,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToPlaybarStoreEvent,
+			subscription.Event{
+				Idx:  int(PlaybarEventItemAdded),
+				Data: pg,
+			},
+		)
 	}()
 	return nil
 }
@@ -98,15 +99,16 @@ func (pg *PlaylistGroup) AfterCreate(tx *gorm.DB) error {
 // AfterUpdate is a GORM hook
 func (pg *PlaylistGroup) AfterUpdate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
-			subscription.Broadcast(
-				subscription.ToPlaybarStoreEvent,
-				subscription.Event{
-					Idx:  int(PlaybarEventItemChanged),
-					Data: pg,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToPlaybarStoreEvent,
+			subscription.Event{
+				Idx:  int(PlaybarEventItemChanged),
+				Data: pg,
+			},
+		)
 	}()
 	return nil
 }
@@ -114,15 +116,16 @@ func (pg *PlaylistGroup) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (pg *PlaylistGroup) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
-			subscription.Broadcast(
-				subscription.ToPlaybarStoreEvent,
-				subscription.Event{
-					Idx:  int(PlaybarEventItemRemoved),
-					Data: pg,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToPlaybarStoreEvent,
+			subscription.Event{
+				Idx:  int(PlaybarEventItemRemoved),
+				Data: pg,
+			},
+		)
 	}()
 	return nil
 }

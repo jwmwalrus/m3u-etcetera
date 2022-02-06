@@ -12,8 +12,7 @@ var (
 	db *gorm.DB
 
 	// make sure we only do heavy collection tasks one at a time
-	storageGuard          chan struct{}
-	globalCollectionEvent = CollectionEventNone
+	storageGuard chan struct{}
 
 	// PlaybackChanged is the AfterCreate-hook channel for QueueTrack and Playback
 	PlaybackChanged chan struct{}

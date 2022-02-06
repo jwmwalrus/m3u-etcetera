@@ -134,15 +134,16 @@ func (qy *Query) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (qy *Query) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
-			subscription.Broadcast(
-				subscription.ToQueryStoreEvent,
-				subscription.Event{
-					Idx:  int(QueryEventItemAdded),
-					Data: qy,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToQueryStoreEvent,
+			subscription.Event{
+				Idx:  int(QueryEventItemAdded),
+				Data: qy,
+			},
+		)
 	}()
 	return nil
 }
@@ -150,15 +151,16 @@ func (qy *Query) AfterCreate(tx *gorm.DB) error {
 // AfterUpdate is a GORM hook
 func (qy *Query) AfterUpdate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
-			subscription.Broadcast(
-				subscription.ToQueryStoreEvent,
-				subscription.Event{
-					Idx:  int(QueryEventItemChanged),
-					Data: qy,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToQueryStoreEvent,
+			subscription.Event{
+				Idx:  int(QueryEventItemChanged),
+				Data: qy,
+			},
+		)
 	}()
 	return nil
 }
@@ -166,15 +168,16 @@ func (qy *Query) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (qy *Query) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && globalCollectionEvent != CollectionEventInitial {
-			subscription.Broadcast(
-				subscription.ToQueryStoreEvent,
-				subscription.Event{
-					Idx:  int(QueryEventItemRemoved),
-					Data: qy,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToQueryStoreEvent,
+			subscription.Event{
+				Idx:  int(QueryEventItemRemoved),
+				Data: qy,
+			},
+		)
 	}()
 	return nil
 }

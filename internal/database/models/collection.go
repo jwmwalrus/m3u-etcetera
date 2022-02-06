@@ -178,15 +178,16 @@ func (c *Collection) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (c *Collection) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
-			subscription.Broadcast(
-				subscription.ToCollectionStoreEvent,
-				subscription.Event{
-					Idx:  int(CollectionEventItemAdded),
-					Data: c,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToCollectionStoreEvent,
+			subscription.Event{
+				Idx:  int(CollectionEventItemAdded),
+				Data: c,
+			},
+		)
 	}()
 	return nil
 }
@@ -194,15 +195,16 @@ func (c *Collection) AfterCreate(tx *gorm.DB) error {
 // AfterUpdate is a GORM hook
 func (c *Collection) AfterUpdate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
-			subscription.Broadcast(
-				subscription.ToCollectionStoreEvent,
-				subscription.Event{
-					Idx:  int(CollectionEventItemChanged),
-					Data: c,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToCollectionStoreEvent,
+			subscription.Event{
+				Idx:  int(CollectionEventItemChanged),
+				Data: c,
+			},
+		)
 	}()
 	return nil
 }
@@ -210,15 +212,16 @@ func (c *Collection) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (c *Collection) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode {
-			subscription.Broadcast(
-				subscription.ToCollectionStoreEvent,
-				subscription.Event{
-					Idx:  int(CollectionEventItemRemoved),
-					Data: c,
-				},
-			)
+		if base.FlagTestingMode {
+			return
 		}
+		subscription.Broadcast(
+			subscription.ToCollectionStoreEvent,
+			subscription.Event{
+				Idx:  int(CollectionEventItemRemoved),
+				Data: c,
+			},
+		)
 	}()
 	return nil
 }
@@ -296,8 +299,6 @@ func (c *Collection) Scan(withTags bool) {
 	}
 
 	log.Info("Scanning collection")
-	globalCollectionEvent = CollectionEventScanning
-	defer func() { globalCollectionEvent = CollectionEventNone }()
 
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
