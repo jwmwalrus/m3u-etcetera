@@ -601,8 +601,7 @@ sLoop:
 				err := pl.Read(e.Data.(int64))
 				if err != nil {
 					return grpc.Errorf(codes.Internal,
-						"Error reading playlist for open items events: %v",
-						models.PlaybarEventOpenItems, err)
+						"Error reading playlist for open items events: %v", err)
 				}
 
 				err = stream.Send(

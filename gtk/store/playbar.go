@@ -13,9 +13,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type playlistModelRow struct {
+	trackID int64
+	path    string
+}
+
 type playlistModel struct {
 	id    int64
 	model *gtk.ListStore
+	rows  map[int]playlistModelRow
 }
 
 var (
@@ -48,17 +54,7 @@ var (
 func CreatePlaylistModel(id int64) (model *gtk.ListStore, err error) {
 	log.Info("Creating a playlist model")
 
-	model = GetPlaylistModel(id)
-	if model != nil {
-		return
-	}
-
-	model, err = gtk.ListStoreNew(TColumns.getTypes()...)
-	if err != nil {
-		return
-	}
-
-	playlists = append(playlists, &playlistModel{id, model})
+	model, _, err = createPlaylistModel(id)
 	return
 }
 
@@ -163,12 +159,8 @@ func GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
 func GetPlaylistModel(id int64) *gtk.ListStore {
 	log.Info("Returning playlist model")
 
-	for _, pl := range playlists {
-		if pl.id == id {
-			return pl.model
-		}
-	}
-	return nil
+	model, _ := getPlaylistModel(id)
+	return model
 }
 
 // GetPlaylistsTreeModel returns the current playlist tree model
@@ -208,6 +200,45 @@ func PlaylistGroupAlreadyExists(name string) bool {
 // SetUpdatePlaybarViewFn sets the update-playbar-view function
 func SetUpdatePlaybarViewFn(fn func()) {
 	updatePlaybarView = fn
+}
+
+func createPlaylistModel(id int64) (model *gtk.ListStore, rows map[int]playlistModelRow, err error) {
+	log.Info("Creating a playlist model")
+
+	model, rows = getPlaylistModel(id)
+	if model != nil {
+		return
+	}
+
+	model, err = gtk.ListStoreNew(TColumns.getTypes()...)
+	if err != nil {
+		return
+	}
+
+	rows = map[int]playlistModelRow{}
+
+	playlists = append(playlists, &playlistModel{id, model, rows})
+	return
+}
+
+func getPlaylistModel(id int64) (*gtk.ListStore, map[int]playlistModelRow) {
+	log.Info("Returning playlist model")
+
+	for _, pl := range playlists {
+		if pl.id == id {
+			return pl.model, pl.rows
+		}
+	}
+	return nil, nil
+}
+
+func setPlaylistModelRows(id int64, rows map[int]playlistModelRow) {
+	for _, pl := range playlists {
+		if pl.id == id {
+			pl.rows = rows
+		}
+	}
+
 }
 
 func updatePlaybarMaps() {
@@ -272,10 +303,10 @@ func updatePlaybarModel() bool {
 
 	BData.Mu.Lock()
 	for _, pl := range BData.OpenPlaylist {
-		model := GetPlaylistModel(pl.Id)
+		model, rows := getPlaylistModel(pl.Id)
 		if model == nil {
 			var err error
-			model, err = CreatePlaylistModel(pl.Id)
+			model, rows, err = createPlaylistModel(pl.Id)
 			if err != nil {
 				log.Error(err)
 				return false
@@ -286,107 +317,196 @@ func updatePlaybarModel() bool {
 			return false
 		}
 
-		_, ok := model.GetIterFirst()
-		if ok {
-			model.Clear()
+		nTracks := 0
+		for _, pt := range BData.OpenPlaylistTrack {
+			if pt.PlaylistId != pl.Id {
+				continue
+			}
+			nTracks++
+		}
+		if nTracks == 0 {
+			_, ok := model.GetIterFirst()
+			if ok {
+				model.Clear()
+			}
+			continue
 		}
 
-		if len(BData.OpenPlaylistTrack) > 0 {
+	ptLoop:
+		for _, pt := range BData.OpenPlaylistTrack {
+			if pt.PlaylistId != pl.Id {
+				continue
+			}
+
+			weight := 400
+			if pt.PlaylistId == BData.ActiveID &&
+				playbackTrackID > 0 &&
+				playbackTrackID == pt.TrackId {
+				weight = 700
+			}
+
+			r, ok := rows[int(pt.Position)]
+			if ok {
+				if r.trackID == pt.TrackId {
+					// change weight
+					iter, err := model.GetIterFromString(r.path)
+					if err != nil {
+						log.Errorf("Error changing weight: %v", err)
+						continue
+					}
+					err = model.Set(
+						iter,
+						[]int{int(TColFontWeight)},
+						[]interface{}{weight},
+					)
+					if err != nil {
+						log.Errorf("Error changing weight: %v", err)
+					}
+					continue
+				}
+
+				// remove
+				iter, err := model.GetIterFromString(r.path)
+				if err != nil {
+					log.Errorf("Error removing row: %v", err)
+					continue
+				}
+				if !model.Remove(iter) {
+					log.WithField("path", r.path).
+						Error("Error removing playlist row")
+				}
+				delete(rows, int(pt.Position))
+			}
+
+			// add
+
+			t, ok := playlistTrackToTrack[pt.Id]
+			if !ok {
+				continue
+			}
+
 			var iter *gtk.TreeIter
-			nTracks := 0
-			for _, pt := range BData.OpenPlaylistTrack {
-				if pt.PlaylistId != pl.Id {
-					continue
+			pos := int(pt.Position)
+			if pos == 1 {
+				iter = model.Prepend()
+			} else {
+				var prev *gtk.TreeIter
+				for j := pos - 1; j >= 1; j-- {
+					r, ok := rows[j]
+					if ok {
+						var err error
+						prev, err = model.GetIterFromString(r.path)
+						if err != nil {
+							log.Errorf("Error inserting after: %v", err)
+							continue ptLoop
+						}
+						break
+					}
 				}
-				nTracks++
+
+				if prev != nil {
+					iter = model.InsertAfter(prev)
+				} else {
+					iter = model.Prepend()
+				}
 			}
-			for _, pt := range BData.OpenPlaylistTrack {
-				if pt.PlaylistId != pl.Id {
-					continue
-				}
 
-				t, ok := playlistTrackToTrack[pt.Id]
-				if !ok {
-					continue
-				}
-				iter = model.Append()
+			dur := time.Duration(t.Duration) * time.Nanosecond
+			err := model.Set(
+				iter,
+				[]int{
+					int(TColTrackID),
+					int(TColCollectionID),
+					int(TColLocation),
+					int(TColFormat),
+					int(TColType),
+					int(TColTitle),
+					int(TColAlbum),
+					int(TColArtist),
+					int(TColAlbumartist),
+					int(TColComposer),
+					int(TColGenre),
 
-				weight := 400
-				if pt.PlaylistId == BData.ActiveID &&
-					playbackTrackID > 0 &&
-					playbackTrackID == pt.TrackId {
-					weight = 700
-				}
+					int(TColYear),
+					int(TColTracknumber),
+					int(TColTracktotal),
+					int(TColDiscnumber),
+					int(TColDisctotal),
+					int(TColLyrics),
+					int(TColComment),
+					int(TColPlaycount),
 
-				dur := time.Duration(t.Duration) * time.Nanosecond
-				err := model.Set(
-					iter,
-					[]int{
-						int(TColTrackID),
-						int(TColCollectionID),
-						int(TColLocation),
-						int(TColFormat),
-						int(TColType),
-						int(TColTitle),
-						int(TColAlbum),
-						int(TColArtist),
-						int(TColAlbumartist),
-						int(TColComposer),
-						int(TColGenre),
+					int(TColRating),
+					int(TColDuration),
+					int(TColRemote),
+					int(TColLastplayed),
+					int(TColPosition),
+					int(TColLastPosition),
+					int(TColDynamic),
+					int(TColFontWeight),
+				},
+				[]interface{}{
+					t.Id,
+					t.CollectionId,
+					t.Location,
+					t.Format,
+					t.Type,
+					t.Title,
+					t.Album,
+					t.Artist,
+					t.Albumartist,
+					t.Composer,
+					t.Genre,
 
-						int(TColYear),
-						int(TColTracknumber),
-						int(TColTracktotal),
-						int(TColDiscnumber),
-						int(TColDisctotal),
-						int(TColLyrics),
-						int(TColComment),
-						int(TColPlaycount),
+					int(t.Year),
+					int(t.Tracknumber),
+					int(t.Tracktotal),
+					int(t.Discnumber),
+					int(t.Disctotal),
+					t.Lyrics,
+					t.Comment,
+					int(t.Playcount),
 
-						int(TColRating),
-						int(TColDuration),
-						int(TColRemote),
-						int(TColLastplayed),
-						int(TColPosition),
-						int(TColLastPosition),
-						int(TColDynamic),
-						int(TColFontWeight),
-					},
-					[]interface{}{
-						t.Id,
-						t.CollectionId,
-						t.Location,
-						t.Format,
-						t.Type,
-						t.Title,
-						t.Album,
-						t.Artist,
-						t.Albumartist,
-						t.Composer,
-						t.Genre,
-
-						int(t.Year),
-						int(t.Tracknumber),
-						int(t.Tracktotal),
-						int(t.Discnumber),
-						int(t.Disctotal),
-						t.Lyrics,
-						t.Comment,
-						int(t.Playcount),
-
-						int(t.Rating),
-						fmt.Sprint(dur.Truncate(time.Second)),
-						t.Remote,
-						t.Lastplayed,
-						int(pt.Position),
-						nTracks,
-						pt.Dynamic,
-						weight,
-					},
-				)
-				onerror.Log(err)
+					int(t.Rating),
+					fmt.Sprint(dur.Truncate(time.Second)),
+					t.Remote,
+					t.Lastplayed,
+					int(pt.Position),
+					nTracks,
+					pt.Dynamic,
+					weight,
+				},
+			)
+			if err != nil {
+				log.Errorf("Error setting row values: %v", err)
 			}
+
+			var ps string
+			path, err := model.GetPath(iter)
+			if err != nil {
+				log.Errorf("Error getting iter-path: %v", err)
+			} else {
+				ps = path.String()
+			}
+			rows[pos] = playlistModelRow{pt.TrackId, ps}
 		}
+
+		newRows := map[int]playlistModelRow{}
+		for p, r := range rows {
+			if p > nTracks {
+				iter, err := model.GetIterFromString(r.path)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				if !model.Remove(iter) {
+					log.Error("Error removing residual row")
+				}
+				continue
+			}
+			newRows[p] = r
+		}
+		setPlaylistModelRows(pl.Id, newRows)
 	}
 	BData.Mu.Unlock()
 

@@ -8,11 +8,8 @@ import (
 	"github.com/gotk3/gotk3/glib"
 	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
@@ -20,7 +17,7 @@ import (
 func ApplyPlaylistGroupChanges() {
 	log.Info("Applying playlist-group changes")
 
-	cc, err := getClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		log.Error(err)
 		return
@@ -72,7 +69,7 @@ func ApplyPlaylistGroupChanges() {
 
 // ExecutePlaybarAction -
 func ExecutePlaybarAction(req *m3uetcpb.ExecutePlaybarActionRequest) (err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}
@@ -89,7 +86,7 @@ func ExecutePlaybarAction(req *m3uetcpb.ExecutePlaybarActionRequest) (err error)
 
 // ExecutePlaylistAction -
 func ExecutePlaylistAction(req *m3uetcpb.ExecutePlaylistActionRequest) (*m3uetcpb.ExecutePlaylistActionResponse, error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +103,7 @@ func ExecutePlaylistAction(req *m3uetcpb.ExecutePlaylistActionRequest) (*m3uetcp
 
 // ExecutePlaylistGroupAction -
 func ExecutePlaylistGroupAction(req *m3uetcpb.ExecutePlaylistGroupActionRequest) (*m3uetcpb.ExecutePlaylistGroupActionResponse, error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +121,7 @@ func ExecutePlaylistGroupAction(req *m3uetcpb.ExecutePlaylistGroupActionRequest)
 
 // ExecutePlaylistTrackAction -
 func ExecutePlaylistTrackAction(req *m3uetcpb.ExecutePlaylistTrackActionRequest) (err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}
@@ -141,7 +138,7 @@ func ExecutePlaylistTrackAction(req *m3uetcpb.ExecutePlaylistTrackActionRequest)
 
 // ImportPlaylists -
 func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (msgList []string, err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}
@@ -464,12 +461,9 @@ func unsubscribeFromPlaybarStore() {
 	id := BData.subscriptionID
 	BData.Mu.Unlock()
 
-	var cc *grpc.ClientConn
-	var err error
-	opts := middleware.GetClientOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
-		log.Error(err)
+	cc, err := getClientConn()
+	if err != nil {
+		log.Errorf("Error obtaining client connection: %v", err)
 		return
 	}
 	defer cc.Close()

@@ -30,9 +30,14 @@ func (pt *PlaylistTrack) Create() error {
 
 // Delete implements the DataDeleter interface
 func (pt *PlaylistTrack) Delete() (err error) {
+	return pt.DeleteTx(db)
+}
+
+// DeleteTx implements the DataDeleterTx interface
+func (pt *PlaylistTrack) DeleteTx(tx *gorm.DB) (err error) {
 	defer DeleteTrackIfTransient(pt.TrackID)
 
-	err = db.Delete(pt).Error
+	err = tx.Delete(pt).Error
 	return
 }
 

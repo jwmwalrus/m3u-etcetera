@@ -13,7 +13,7 @@ import (
 
 // AddQuery adds the query defined by the request
 func AddQuery(req *m3uetcpb.AddQueryRequest) (err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}
@@ -32,7 +32,7 @@ func AddQuery(req *m3uetcpb.AddQueryRequest) (err error) {
 // ApplyQuery apply the query defined by the request and add the results
 // to the given target
 func ApplyQuery(req *m3uetcpb.ApplyQueryRequest, targetID int64) (err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}
@@ -82,7 +82,7 @@ func ApplyQuery(req *m3uetcpb.ApplyQueryRequest, targetID int64) (err error) {
 // QueryBy performs the query defined by the request and displays
 // the results
 func QueryBy(req *m3uetcpb.QueryByRequest) (count int, err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}
@@ -107,7 +107,7 @@ func QueryBy(req *m3uetcpb.QueryByRequest) (count int, err error) {
 
 // RemoveQuery removes the query defined by the request
 func RemoveQuery(req *m3uetcpb.RemoveQueryRequest) (err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}
@@ -125,7 +125,7 @@ func RemoveQuery(req *m3uetcpb.RemoveQueryRequest) (err error) {
 
 // UpdateQuery updates the query defined by the request
 func UpdateQuery(req *m3uetcpb.UpdateQueryRequest) (err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}

@@ -209,14 +209,6 @@ var (
 	PLTreeColumn storeColumns
 )
 
-// GetClientConn returns a valid client connection to the server
-func GetClientConn() (*grpc.ClientConn, error) {
-	if err := sanityCheck(); err != nil {
-		return nil, err
-	}
-	return getClientConn()
-}
-
 // IDListToString converts an ID list to a comma-separaterd string
 func IDListToString(ids []int64) (s string) {
 	if len(ids) < 1 {
@@ -312,6 +304,13 @@ func getClientConn() (*grpc.ClientConn, error) {
 	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	return grpc.Dial(auth, opts...)
+}
+
+func getClientConn1() (*grpc.ClientConn, error) {
+	if err := sanityCheck(); err != nil {
+		return nil, err
+	}
+	return getClientConn()
 }
 
 func sanityCheck() (err error) {

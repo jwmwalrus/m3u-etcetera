@@ -48,48 +48,68 @@ func (pl *Playlist) Create() (err error) {
 
 // Delete implements the DataDeleter interface
 func (pl *Playlist) Delete() (err error) {
+	return pl.DeleteTx(db)
+}
+
+// DeleteTx implements the DataDeleterTx interface
+func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
 	log.WithField("pl", pl).
 		Info("Deleting playlist")
 
-	pl.DeleteDynamicTracks()
+	pl.DeleteDynamicTracks(tx)
 
 	pqys := []PlaylistQuery{}
-	if err = db.Where("playlist_id = ?", pl.ID).Find(&pqys).Error; err != nil {
+	if err = tx.Where("playlist_id = ?", pl.ID).Find(&pqys).Error; err != nil {
 		log.Error(err)
 		return
 	}
 
 	pts := []PlaylistTrack{}
-	if err = db.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
+	if err = tx.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
 		log.Error(err)
 		return
 	}
 
 	for i := range pqys {
-		if err := pqys[i].Delete(); err != nil {
+		if err := pqys[i].DeleteTx(tx); err != nil {
 			log.Warn(err)
 		}
 	}
 
 	for i := range pts {
-		onerror.Log(pts[i].Delete())
+		onerror.Log(pts[i].DeleteTx(tx))
 	}
 
-	err = db.Delete(pl).Error
+	if !pl.Transient {
+		pl.Transient = true
+		err = tx.Save(pl).Error
+		return
+	}
+
+	err = tx.Delete(pl).Error
 	return
 }
 
 // Read implements the DataReader interface
 func (pl *Playlist) Read(id int64) (err error) {
-	return db.Joins("Playbar").
+	err = db.Joins("Playbar").
 		First(pl, id).
 		Error
+
+	if pl.Transient && !pl.Open {
+		go func() {
+			time.Sleep(2 * time.Second)
+			tx := db.Session(&gorm.Session{SkipHooks: true})
+			pl.DeleteTx(tx)
+		}()
+	}
+
+	return
 }
 
 // Save implements the DataUpdater interface
-func (pl *Playlist) Save() (err error) {
-	err = db.Save(pl).Error
-	return
+func (pl *Playlist) Save() error {
+	return db.Save(pl).Error
 }
 
 // ToProtobuf implments ProtoOut interface
@@ -108,9 +128,6 @@ func (pl *Playlist) ToProtobuf() proto.Message {
 	out.PlaylistGroupId = pl.PlaylistGroupID
 	bar := Playbar{}
 	bar.Read(pl.PlaybarID)
-	if bar.ID == 0 || bar.PerspectiveID == 0 {
-		fmt.Println(fmt.Sprintf("SHAMEFUL PLAYLIST: %+v", pl))
-	}
 	out.Perspective = m3uetcpb.Perspective(bar.getPerspectiveIndex())
 	out.Transient = pl.Transient
 	out.CreatedAt = pl.CreatedAt
@@ -181,16 +198,10 @@ func (pl *Playlist) Count() (count int64) {
 	return
 }
 
-// DeleteDelayed deletes a playlist after 5 seconds
-func (pl *Playlist) DeleteDelayed() {
-	time.Sleep(5 * time.Second)
-	onerror.Log(pl.Delete())
-}
-
 // DeleteDynamicTracks removes a dynamic track from the database
-func (pl *Playlist) DeleteDynamicTracks() {
+func (pl *Playlist) DeleteDynamicTracks(tx *gorm.DB) {
 	pts := []PlaylistTrack{}
-	err := db.Where("dynamic = 1 AND playlist_id = ?", pl.ID).
+	err := tx.Where("dynamic = 1 AND playlist_id = ?", pl.ID).
 		Find(&pts).
 		Error
 	if err != nil {
@@ -199,7 +210,7 @@ func (pl *Playlist) DeleteDynamicTracks() {
 	}
 
 	for i := range pts {
-		pts[i].Delete()
+		pts[i].DeleteTx(tx)
 	}
 }
 
@@ -360,12 +371,13 @@ func (pl *Playlist) createTracks(trackIds []int64, locations []string) (pts []Pl
 		pts = append(pts, PlaylistTrack{PlaylistID: pl.ID, TrackID: id})
 	}
 
+	tx := db.Session(&gorm.Session{SkipHooks: true})
 	for _, loc := range locations {
 		t := Track{}
 		err = db.Where("location = ?", loc).First(&t).Error
 		if err != nil {
 			t.Location = loc
-			if err = t.createTransient(); err != nil {
+			if err = t.createTransient(tx); err != nil {
 				return
 			}
 		}

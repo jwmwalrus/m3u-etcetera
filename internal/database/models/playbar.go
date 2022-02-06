@@ -13,6 +13,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // GetPlaybar returns the playbar associated to the given perspective
@@ -69,32 +70,6 @@ func (b *Playbar) Read(id int64) error {
 	return db.First(b, id).Error
 }
 
-// AppendToPlaylist -
-func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64, locations []string) {
-	log.WithFields(log.Fields{
-		"pl":        *pl,
-		"trackIds":  trackIds,
-		"locations": locations,
-	}).
-		Info("Appending tracks/locations to playlist")
-
-	pts := []PlaylistTrack{}
-	if err := db.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
-		log.Error(err)
-		return
-	}
-
-	s, err := pl.createTracks(trackIds, locations)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	pts = append(pts, s...)
-	pts = reasignPlaylistTrackPositions(pts)
-	onerror.Log(db.Save(&pts).Error)
-}
-
 // ActivateEntry activates the given entry in a playbar
 func (b *Playbar) ActivateEntry(pl *Playlist) {
 	log.WithField("pl", pl).
@@ -123,6 +98,38 @@ func (b *Playbar) ActivateEntry(pl *Playlist) {
 	onerror.Log(db.Save(&pls).Error)
 }
 
+// AppendToPlaylist -
+func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64, locations []string) {
+	log.WithFields(log.Fields{
+		"pl":        *pl,
+		"trackIds":  trackIds,
+		"locations": locations,
+	}).
+		Info("Appending tracks/locations to playlist")
+
+	pts := []PlaylistTrack{}
+	if err := db.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
+		log.Error(err)
+		return
+	}
+
+	s, err := pl.createTracks(trackIds, locations)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	pts = append(pts, s...)
+	pts = reasignPlaylistTrackPositions(pts)
+
+	err = db.Session(&gorm.Session{SkipHooks: true}).
+		Save(&pts).
+		Error
+	onerror.Log(err)
+
+	broadcastOpenPlaylist(pl.ID)
+}
+
 // ClearPlaylist -
 func (b *Playbar) ClearPlaylist(pl *Playlist) {
 	log.WithFields(log.Fields{
@@ -137,33 +144,37 @@ func (b *Playbar) ClearPlaylist(pl *Playlist) {
 	}
 
 	if len(pts) > 0 {
-		onerror.Log(db.Where("id > 0").Delete(&pts).Error)
+		err := db.Session(&gorm.Session{SkipHooks: true}).
+			Where("id > 0").
+			Delete(&pts).
+			Error
+		onerror.Log(err)
+
+		broadcastOpenPlaylist(pl.ID)
 	}
 }
 
 // CloseEntry closes the given playbar entry
 func (b *Playbar) CloseEntry(pl *Playlist) {
-	pl.DeleteDynamicTracks()
+	if !pl.Transient {
+		pl.DeleteDynamicTracks(db)
+	}
 
 	pl.Open = false
 	pl.Active = false
 	onerror.Log(pl.Save())
-
-	if pl.Transient {
-		go pl.DeleteDelayed()
-	}
 }
 
 // CreateEntry creates a playlist
 func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error) {
-	var plname string
-	pl = &Playlist{}
-
 	pg := &PlaylistGroup{}
 	err = pg.ReadDefaultForPerspective(b.PerspectiveID)
 	if err != nil {
 		return
 	}
+
+	var plname string
+	pl = &Playlist{}
 
 	isTransient := false
 	if name != "" {
@@ -244,6 +255,14 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 
 // DestroyEntry deletes a playlist
 func (b *Playbar) DestroyEntry(pl *Playlist) error {
+	if pl.Transient {
+		tx := db.Session(&gorm.Session{SkipHooks: true})
+		pld := Playlist{}
+		if errd := tx.First(&pld).Error; errd == nil {
+			pld.DeleteTx(tx)
+		}
+		return nil
+	}
 	return pl.Delete()
 }
 
@@ -364,18 +383,19 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 		PlaybarID:       b.ID,
 	}
 
-	err = pl.Save()
+	err = pl.Create()
 	if err != nil {
 		return
 	}
 
+	tx := db.Session(&gorm.Session{SkipHooks: true})
 	pts := []PlaylistTrack{}
 	for _, dt := range def.Tracks() {
 		t := Track{}
 		err2 := db.Where("location = ?", dt.Location).First(&t).Error
 		if err2 != nil {
 			t = Track{Location: dt.Location}
-			err2 := t.createTransientWithRaw(dt.ToRaw())
+			err2 := t.createTransientWithRaw(tx, dt.ToRaw())
 			if err2 != nil {
 				msgs = append(
 					msgs,
@@ -389,7 +409,7 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 
 	pts = reasignPlaylistTrackPositions(pts)
 	for i := range pts {
-		err2 := db.Save(&pts[i]).Error
+		err2 := tx.Save(&pts[i]).Error
 		if err2 != nil {
 			t := Track{}
 			t.Read(pts[i].TrackID)
@@ -446,7 +466,13 @@ func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int, trackIds []int6
 	}
 
 	pts = reasignPlaylistTrackPositions(pts)
-	onerror.Log(db.Save(&pts).Error)
+
+	err := db.Session(&gorm.Session{SkipHooks: true}).
+		Save(&pts).
+		Error
+	onerror.Log(err)
+
+	broadcastOpenPlaylist(pl.ID)
 }
 
 // MovePlaylistTrack -

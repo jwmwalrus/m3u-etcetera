@@ -543,6 +543,7 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 	dlg.AddFilter(filter)
 	dlg.ShowAll()
 	res := dlg.Run()
+
 	switch res {
 	case gtk.RESPONSE_APPLY:
 		locs, err := dlg.GetURIs()

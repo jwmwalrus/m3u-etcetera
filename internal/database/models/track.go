@@ -169,7 +169,7 @@ func (t *Track) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
-func (t *Track) createTransient() (err error) {
+func (t *Track) createTransient(tx *gorm.DB) (err error) {
 	c, err := TransientCollection.Get()
 	if err != nil {
 		return
@@ -178,11 +178,11 @@ func (t *Track) createTransient() (err error) {
 	if err = t.updateTags(); err != nil {
 		return
 	}
-	err = t.Save()
+	err = t.SaveTx(tx)
 	return
 }
 
-func (t *Track) createTransientWithRaw(raw map[string]interface{}) (err error) {
+func (t *Track) createTransientWithRaw(tx *gorm.DB, raw map[string]interface{}) (err error) {
 	c, err := TransientCollection.Get()
 	if err != nil {
 		return
@@ -193,7 +193,7 @@ func (t *Track) createTransientWithRaw(raw map[string]interface{}) (err error) {
 	}
 
 	t.fillMissingTags(raw)
-	err = t.Save()
+	err = t.SaveTx(tx)
 	return
 }
 

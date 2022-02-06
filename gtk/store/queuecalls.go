@@ -5,21 +5,19 @@ import (
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
 // ExecuteQueueAction sends an ExecuteQueueAction request
 func ExecuteQueueAction(req *m3uetcpb.ExecuteQueueActionRequest) (err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}
 	defer cc.Close()
+
 	cl := m3uetcpb.NewQueueSvcClient(cc)
 	_, err = cl.ExecuteQueueAction(context.Background(), req)
 	if err != nil {
@@ -78,12 +76,9 @@ func unsubscribeFromQueueStore() {
 	id := QData.res.SubscriptionId
 	QData.Mu.Unlock()
 
-	var cc *grpc.ClientConn
-	var err error
-	opts := middleware.GetClientOpts()
-	auth := base.Conf.Server.GetAuthority()
-	if cc, err = grpc.Dial(auth, opts...); err != nil {
-		log.Error(err)
+	cc, err := getClientConn()
+	if err != nil {
+		log.Errorf("Error obtaining client connection: %v", err)
 		return
 	}
 	defer cc.Close()

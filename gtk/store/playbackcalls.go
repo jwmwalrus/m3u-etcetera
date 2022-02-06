@@ -11,7 +11,7 @@ import (
 
 // ExecutePlaybackAction -
 func ExecutePlaybackAction(req *m3uetcpb.ExecutePlaybackActionRequest) (err error) {
-	cc, err := GetClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		return
 	}

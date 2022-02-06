@@ -1,5 +1,7 @@
 package models
 
+import "gorm.io/gorm"
+
 // PlaylistQuery Defines a playlist query
 type PlaylistQuery struct {
 	ID         int64    `json:"id" gorm:"primaryKey"`
@@ -13,5 +15,10 @@ type PlaylistQuery struct {
 
 // Delete implements the DataDeleter interface
 func (pqy *PlaylistQuery) Delete() error {
-	return db.Delete(pqy).Error
+	return pqy.DeleteTx(db)
+}
+
+// DeleteTx implements the DataDeleterTx interface
+func (pqy *PlaylistQuery) DeleteTx(tx *gorm.DB) error {
+	return tx.Delete(pqy).Error
 }

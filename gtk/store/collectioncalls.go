@@ -13,7 +13,7 @@ import (
 func AddCollection(req *m3uetcpb.AddCollectionRequest) (res *m3uetcpb.AddCollectionResponse, err error) {
 	log.Info("Adding collection")
 
-	cc, err := getClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		log.Error(err)
 		return
@@ -30,7 +30,7 @@ func ApplyCollectionChanges(o ...CollectionOptions) {
 	log.WithField("collectionOptions", o).
 		Info("Applying collection changes")
 
-	cc, err := getClientConn()
+	cc, err := getClientConn1()
 	if err != nil {
 		log.Error(err)
 		return
