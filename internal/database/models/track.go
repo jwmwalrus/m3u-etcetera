@@ -80,6 +80,11 @@ func (t *Track) Save() error {
 	return db.Save(t).Error
 }
 
+// SaveTx implements the DataUpdaterTx interface
+func (t *Track) SaveTx(tx *gorm.DB) error {
+	return tx.Save(t).Error
+}
+
 // ToProtobuf implements the ProtoOut interface
 func (t *Track) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(t)
