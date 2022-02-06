@@ -9,6 +9,37 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.14.0] 2022-02-05
+
+Features, fixes and improvements
+
+### Fixed
+
+* Segfault when finishing playback
+* Crash related to query_parse_seeking
+* Query dialog limit and rating
+
+### Added
+
+* Implement PLS import/export
+* GUI validations on unique names
+* Playlist export task
+* Adding a ollection from the GUI
+* Creating playlist groups
+
+### Modified
+
+* Adjustments to icon
+* Switch GStreamer bindings
+* Disable items not yet implemented
+* Add default playlist groups
+    * There should be one default playlist group per perspective
+    * `Transient` should be a property of the playlist
+* Truncate duration for display purposes
+* Improve database cleanup
+* Split large source files
+    * Add some consistency to naming
+
 ## [0.13.0] 2022-01-31
 
 Playlists and context menus
