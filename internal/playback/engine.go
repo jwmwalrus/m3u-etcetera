@@ -3,6 +3,7 @@ package playback
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jwmwalrus/bnp/urlstr"
@@ -319,6 +320,26 @@ func (e *engine) playStream(pb *models.Playback) {
 	if e.playbin == nil {
 		log.Error("Not all elements could be created")
 		return
+	}
+
+	flags, err := e.playbin.GetProperty("flags")
+	if err != nil {
+		log.Errorf("Unable to get flags:", err)
+	} else {
+		eflags := flags.(uint)
+		eflags = eflags &^ (1 << 0) // no video
+		eflags = eflags | (1 << 1)  // yes audio
+		eflags = eflags &^ (1 << 2) // no text
+		e.playbin.SetArg("flags", strconv.FormatInt(int64(eflags), 10))
+		fflags, _ := e.playbin.GetProperty("flags")
+		if fflags.(uint) != eflags {
+			log.WithFields(log.Fields{
+				"initialFlags":  flags.(uint),
+				"expectedFlags": eflags,
+				"finalFlags":    fflags,
+			}).
+				Warn("Flags could not be set")
+		}
 	}
 
 	subscription.Broadcast(subscription.ToPlaybackEvent)
