@@ -243,22 +243,21 @@ func (e *engine) getPrevInHistory() (pb *models.Playback, err error) {
 	return
 }
 
-func (e *engine) handleBusMessage(msg *gst.Message, pb *models.Playback) bool {
+func (e *engine) handleBusMessage(msg *gst.Message) bool {
 	log.Debug(msg.String())
 
 	switch msg.Type() {
 	case gst.MessageEOS:
-		log.Debugf("End of stream: %v", pb.Location)
-		if e.getPlaybackHint(true) != hintPrevInHistory {
-			go pb.AddToHistory(e.lastPosition, e.duration, e.freezePlayback)
-		}
-		e.terminate = true
+		log.Debugf("End of stream: %v", e.pb.Location)
+		e.wrapUp()
 		e.mainLoop.Quit()
 		break
 
 	case gst.MessageError:
 		log.Error(msg.String())
-		e.terminate = true
+		e.wrapUp()
+		e.mainLoop.Quit()
+		break
 	case gst.MessageWarning:
 		log.Warning(msg.String())
 	case gst.MessageInfo:
@@ -282,7 +281,6 @@ func (e *engine) handleBusMessage(msg *gst.Message, pb *models.Playback) bool {
 			e.state = gst.StatePlaying
 		}
 		onerror.Log(e.playbin.SetState(e.state))
-
 	default:
 	}
 
@@ -365,7 +363,7 @@ func (e *engine) playStream(pb *models.Playback) {
 	go e.performQueries(pqctx)
 
 	bus.AddWatch(func(msg *gst.Message) bool {
-		return e.handleBusMessage(msg, pb)
+		return e.handleBusMessage(msg)
 	})
 
 	e.mainLoop.Run()
@@ -456,8 +454,25 @@ func (e *engine) setPlaybackHint(h playbackHint) {
 func (e *engine) reset() {
 	e.pb = nil
 	e.t = nil
+	e.seekable = false
 	e.seekableDone = false
 	e.playbin = nil
+
+	e.lastPosition = 0
+	e.duration = 0
+	e.buffering = 0
+}
+
+func (e *engine) wrapUp() {
+	if e.getPlaybackHint(true) != hintPrevInHistory {
+		go models.AddPlaybackToHistory(
+			e.pb.ID,
+			e.lastPosition,
+			e.duration,
+			e.freezePlayback,
+		)
+	}
+	e.terminate = true
 }
 
 func init() {

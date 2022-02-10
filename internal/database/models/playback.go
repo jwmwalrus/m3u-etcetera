@@ -3,7 +3,6 @@ package models
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -59,48 +58,6 @@ func (pb *Playback) ToProtobuf() proto.Message {
 	out.CreatedAt = pb.CreatedAt
 	out.UpdatedAt = pb.UpdatedAt
 	return out
-}
-
-// AddToHistory adds unplayed playback to history and marks it as played
-func (pb *Playback) AddToHistory(position, duration int64, freeze bool) {
-	log.WithFields(log.Fields{
-		"pb":       *pb,
-		"position": position,
-		"duration": duration,
-	}).
-		Info("Adding playback to history")
-
-	if !freeze {
-		pb.Played = true
-	}
-	pb.Skip = position
-	pb.Save()
-	go func() {
-		h := PlaybackHistory{
-			Location: pb.Location,
-			TrackID:  pb.TrackID,
-			Duration: position,
-		}
-		onerror.Log(h.Create())
-		if pb.TrackID > 0 {
-			t := &Track{}
-			t, err := pb.GetTrack()
-			if err != nil {
-				log.Error(err)
-				return
-			}
-
-			if time.Duration(position) >= time.Duration(base.Conf.Server.Playback.PlayedThreshold)*time.Second {
-				t.Lastplayed = h.CreatedAt
-				t.Playcount++
-			}
-			if t.Duration == 0 {
-				t.Duration = duration
-			}
-			onerror.Warn(t.Save())
-		}
-	}()
-	return
 }
 
 // AfterCreate is a GORM hook

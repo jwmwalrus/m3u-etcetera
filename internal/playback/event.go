@@ -221,6 +221,12 @@ func PlayStreams(force bool, locations []string, ids []int64) {
 
 // PreviousStream plays the previous stream in history
 func PreviousStream() {
+	if time.Duration(eng.lastPosition)*time.Nanosecond >=
+		time.Duration(base.Conf.Server.Playback.PlayedThreshold)*time.Second {
+		SeekInStream(0)
+		return
+	}
+
 	eng.lastEvent = previousEvent
 	log.Infof("Firing the %v event", eng.lastEvent)
 
@@ -266,21 +272,20 @@ func SeekInStream(pos int64) {
 		return
 	}
 
-	// TODO: implement
-
-	/*
-			if e.seekEnabled && !e.seekDone && e.lastPosition > 10 * time.Second {
-			  g_print ("\nReached 10s, performing seek...\n");
-			  gst_element_seek_simple (data.playbin, GST_FORMAT_TIME,
-			      GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT, 30 * GST_SECOND);
-			  data.seek_done = TRUE;
-			}
-
-		if eng.seekEnabled && time.Duration(eng.lastPosition) > 10*time.Second {
-			eng.playbin.SeekSimple(gst.FormatTime,
-				gst.SeekFlagFlush|gst.SeekFlagKeyUnit, time.Duration(pos))
+	if eng.seekable {
+		seek := gst.NewSeekEvent(
+			1.0,
+			gst.FormatTime,
+			gst.SeekFlagFlush|gst.SeekFlagKeyUnit,
+			gst.SeekTypeSet,
+			pos,
+			gst.SeekTypeNone,
+			-1,
+		)
+		if !eng.playbin.SendEvent(seek) {
+			log.Error("Error sending playback event: %v", gst.EventTypeSeek)
 		}
-	*/
+	}
 
 	return
 }
@@ -327,14 +332,15 @@ func StopStream() {
 		return
 	}
 
-	// FIXME: this is a hack to avoid hanging/freezing
-	if IsPaused() {
-		eng.state = gst.StatePlaying
+	// NOTE: sending the EOS event has between 1.5 and 3 seconds of
+	// latency, and conflicts with the paused state, so we are
+	// just ending things here
+	if !IsPaused() {
+		eng.state = gst.StatePaused
 		eng.playbin.SetState(eng.state)
 	}
-
-	eos := gst.NewEOSEvent()
-	eng.playbin.SendEvent(eos)
+	eng.wrapUp()
+	eng.mainLoop.Quit()
 
 	return
 }
