@@ -116,7 +116,8 @@ func GetFree(is IdleStatus) {
 	}
 }
 
-// Idle exits the server if it has been idle for a while and no long-term processes are pending
+// Idle exits the server if it has been idle for a while and no long-term
+// processes are pending
 func Idle(ctx context.Context) {
 	log.WithFields(log.Fields{
 		"forceExit":            forceExit,

@@ -20,10 +20,12 @@ type QuerySvc struct {
 }
 
 // GetQuery implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) GetQuery(_ context.Context, req *m3uetcpb.GetQueryRequest) (*m3uetcpb.GetQueryResponse, error) {
+func (*QuerySvc) GetQuery(_ context.Context,
+	req *m3uetcpb.GetQueryRequest) (*m3uetcpb.GetQueryResponse, error) {
 
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Query id must be greater than zero")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Query id must be greater than zero")
 	}
 
 	qy := models.Query{}
@@ -36,7 +38,8 @@ func (*QuerySvc) GetQuery(_ context.Context, req *m3uetcpb.GetQueryRequest) (*m3
 }
 
 // GetQueries implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) GetQueries(_ context.Context, req *m3uetcpb.GetQueriesRequest) (*m3uetcpb.GetQueriesResponse, error) {
+func (*QuerySvc) GetQueries(_ context.Context,
+	req *m3uetcpb.GetQueriesRequest) (*m3uetcpb.GetQueriesResponse, error) {
 
 	qybs := models.FilterCollectionQueryBoundaries(req.CollectionIds)
 	qys := models.GetAllQueries(int(req.Limit), qybs...)
@@ -51,11 +54,14 @@ func (*QuerySvc) GetQueries(_ context.Context, req *m3uetcpb.GetQueriesRequest) 
 }
 
 // AddQuery implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) AddQuery(_ context.Context, req *m3uetcpb.AddQueryRequest) (*m3uetcpb.AddQueryResponse, error) {
+func (*QuerySvc) AddQuery(_ context.Context,
+	req *m3uetcpb.AddQueryRequest) (*m3uetcpb.AddQueryResponse, error) {
+
 	if req.Query.Params != "" {
 
 		if _, err := qparams.ParseParams(req.Query.Params); err != nil {
-			return nil, grpc.Errorf(codes.InvalidArgument, "Error parsing query params: %v", err)
+			return nil, grpc.Errorf(codes.InvalidArgument,
+				"Error parsing query params: %v", err)
 		}
 	}
 
@@ -65,14 +71,17 @@ func (*QuerySvc) AddQuery(_ context.Context, req *m3uetcpb.AddQueryRequest) (*m3
 		models.CreateCollectionQueries(req.Query.CollectionIds),
 	)
 	if err := qy.SaveBound(qybs); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Error saving query: %v", err)
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Error saving query: %v", err)
 	}
 
 	return &m3uetcpb.AddQueryResponse{Id: qy.ID}, nil
 }
 
 // UpdateQuery implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) UpdateQuery(_ context.Context, req *m3uetcpb.UpdateQueryRequest) (*m3uetcpb.Empty, error) {
+func (*QuerySvc) UpdateQuery(_ context.Context,
+	req *m3uetcpb.UpdateQueryRequest) (*m3uetcpb.Empty, error) {
+
 	qy := models.Query{}
 	if err := qy.Read(req.Query.Id); err != nil {
 		return nil, grpc.Errorf(codes.NotFound, "%v", err)
@@ -80,21 +89,24 @@ func (*QuerySvc) UpdateQuery(_ context.Context, req *m3uetcpb.UpdateQueryRequest
 	qy.FromProtobuf(req.Query)
 
 	if err := models.DeleteCollectionQueries(qy.ID); err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Error replacing collection boundaries: %v", err)
+		return nil, grpc.Errorf(codes.Internal,
+			"Error replacing collection boundaries: %v", err)
 	}
 
 	qybs := models.CollectionsToBoundaries(
 		models.CreateCollectionQueries(req.Query.CollectionIds),
 	)
 	if err := qy.SaveBound(qybs); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Error saving query: %v", err)
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Error saving query: %v", err)
 	}
 
 	return &m3uetcpb.Empty{}, nil
 }
 
 // RemoveQuery implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) RemoveQuery(_ context.Context, req *m3uetcpb.RemoveQueryRequest) (*m3uetcpb.Empty, error) {
+func (*QuerySvc) RemoveQuery(_ context.Context,
+	req *m3uetcpb.RemoveQueryRequest) (*m3uetcpb.Empty, error) {
 	qy := models.Query{}
 	if err := qy.Read(req.Id); err != nil {
 		return nil, grpc.Errorf(codes.NotFound, "%v", err)
@@ -108,10 +120,12 @@ func (*QuerySvc) RemoveQuery(_ context.Context, req *m3uetcpb.RemoveQueryRequest
 }
 
 // ApplyQuery implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) ApplyQuery(_ context.Context, req *m3uetcpb.ApplyQueryRequest) (*m3uetcpb.ApplyQueryResponse, error) {
+func (*QuerySvc) ApplyQuery(_ context.Context,
+	req *m3uetcpb.ApplyQueryRequest) (*m3uetcpb.ApplyQueryResponse, error) {
 
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Query id must be greater than zero")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Query id must be greater than zero")
 	}
 
 	qy := models.Query{}
@@ -134,7 +148,8 @@ func (*QuerySvc) ApplyQuery(_ context.Context, req *m3uetcpb.ApplyQueryRequest) 
 }
 
 // QueryBy implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) QueryBy(_ context.Context, req *m3uetcpb.QueryByRequest) (*m3uetcpb.QueryByResponse, error) {
+func (*QuerySvc) QueryBy(_ context.Context,
+	req *m3uetcpb.QueryByRequest) (*m3uetcpb.QueryByResponse, error) {
 	qy := models.FromProtobuf(req.Query)
 
 	qybs := models.CollectionsToBoundaries(
@@ -162,7 +177,8 @@ func (*QuerySvc) QueryBy(_ context.Context, req *m3uetcpb.QueryByRequest) (*m3ue
 }
 
 // SubscribeToQueryStore implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) SubscribeToQueryStore(_ *m3uetcpb.Empty, stream m3uetcpb.QuerySvc_SubscribeToQueryStoreServer) error {
+func (*QuerySvc) SubscribeToQueryStore(_ *m3uetcpb.Empty,
+	stream m3uetcpb.QuerySvc_SubscribeToQueryStoreServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToQueryStoreEvent)
 	defer func() { s.Unsubscribe() }()
@@ -250,9 +266,11 @@ sLoop:
 }
 
 // UnsubscribeFromQueryStore implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) UnsubscribeFromQueryStore(_ context.Context, req *m3uetcpb.UnsubscribeFromQueryStoreRequest) (*m3uetcpb.Empty, error) {
+func (*QuerySvc) UnsubscribeFromQueryStore(_ context.Context,
+	req *m3uetcpb.UnsubscribeFromQueryStoreRequest) (*m3uetcpb.Empty, error) {
 	if req.SubscriptionId == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "A non-empty subscription ID is required")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"A non-empty subscription ID is required")
 	}
 	subscription.Broadcast(
 		subscription.ToNone,

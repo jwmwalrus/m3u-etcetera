@@ -21,7 +21,8 @@ type PlaybackSvc struct {
 }
 
 // GetPlayback implements m3uetcpb.PlaybackSvcServer
-func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
+func (*PlaybackSvc) GetPlayback(_ context.Context,
+	_ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
 
 	res := &m3uetcpb.GetPlaybackResponse{
 		IsStreaming: playback.IsStreaming(),
@@ -44,37 +45,52 @@ func (*PlaybackSvc) GetPlayback(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb
 }
 
 // GetPlaybackList implements m3uetcpb.PlaybackSvcServer
-func (*PlaybackSvc) GetPlaybackList(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackListResponse, error) {
+func (*PlaybackSvc) GetPlaybackList(_ context.Context,
+	_ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackListResponse, error) {
 
 	res := &m3uetcpb.GetPlaybackListResponse{}
 	pbs := models.GetAllPlayback()
 	for i := range pbs {
-		res.PlaybackEntries = append(res.PlaybackEntries, pbs[i].ToProtobuf().(*m3uetcpb.Playback))
+		res.PlaybackEntries = append(
+			res.PlaybackEntries,
+			pbs[i].ToProtobuf().(*m3uetcpb.Playback),
+		)
 	}
 
 	return res, nil
 }
 
 // ExecutePlaybackAction implements m3uetcpb.PlaybackSvcServer
-func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
+func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
+	req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
+
 	if req.Action == m3uetcpb.PlaybackAction_PB_PLAY {
 		if len(req.Locations) > 0 {
 			unsup := base.CheckUnsupportedFiles(req.Locations)
 			if len(unsup) > 0 {
-				return nil, grpc.Errorf(codes.InvalidArgument, "Unsupported locations were provided: %+q", unsup)
+				return nil, grpc.Errorf(codes.InvalidArgument,
+					"Unsupported locations were provided: %+q", unsup)
 			}
 		}
 		if len(req.Ids) > 0 {
 			_, notFound := models.FindTracksIn(req.Ids)
 			if len(notFound) > 0 {
-				return nil, grpc.Errorf(codes.InvalidArgument, "Non-existing track IDs were provided: %+v", notFound)
+				return nil, grpc.Errorf(codes.InvalidArgument,
+					"Non-existing track IDs were provided: %+v", notFound)
 			}
 		}
 	}
 
 	go func() {
-		if !slice.Contains([]m3uetcpb.PlaybackAction{m3uetcpb.PlaybackAction_PB_PLAY, m3uetcpb.PlaybackAction_PB_SEEK}, req.Action) &&
+		if !slice.Contains(
+			[]m3uetcpb.PlaybackAction{
+				m3uetcpb.PlaybackAction_PB_PLAY,
+				m3uetcpb.PlaybackAction_PB_SEEK,
+			},
+			req.Action,
+		) &&
 			(len(req.Locations) > 0 || len(req.Ids) > 0) {
+
 			for _, v := range req.Locations {
 				log.Warnf("Ignoring given location: %v", v)
 			}
@@ -95,7 +111,10 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.Execu
 				if req.Force {
 					playback.PlayStreams(req.Force, req.Locations, req.Ids)
 				} else {
-					q, _ := models.PerspectiveIndex(req.Perspective).GetPerspectiveQueue()
+					q, _ := models.
+						PerspectiveIndex(req.Perspective).
+						GetPerspectiveQueue()
+
 					q.Add(req.Locations, req.Ids)
 				}
 			} else {
@@ -114,7 +133,8 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context, req *m3uetcpb.Execu
 }
 
 // SubscribeToPlayback implements m3uetcpb.PlaybackSvcServer
-func (*PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty, stream m3uetcpb.PlaybackSvc_SubscribeToPlaybackServer) error {
+func (*PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty,
+	stream m3uetcpb.PlaybackSvc_SubscribeToPlaybackServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToPlaybackEvent)
 	defer func() { s.Unsubscribe() }()
@@ -167,9 +187,12 @@ sLoop:
 }
 
 // UnsubscribeFromPlayback implements m3uetcpb.PlaybackSvcServer
-func (*PlaybackSvc) UnsubscribeFromPlayback(_ context.Context, req *m3uetcpb.UnsubscribeFromPlaybackRequest) (*m3uetcpb.Empty, error) {
+func (*PlaybackSvc) UnsubscribeFromPlayback(_ context.Context,
+	req *m3uetcpb.UnsubscribeFromPlaybackRequest) (*m3uetcpb.Empty, error) {
+
 	if req.SubscriptionId == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "A non-empty subscription ID is required")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"A non-empty subscription ID is required")
 	}
 	subscription.Broadcast(
 		subscription.ToNone,

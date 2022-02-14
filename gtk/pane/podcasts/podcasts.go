@@ -11,7 +11,11 @@ var (
 
 func Setup(signals *map[string]interface{}) (err error) {
 
-	podcastsQueueSignals, err = playlists.CreateQueue(m3uetcpb.Perspective_PODCASTS, "podcasts_queue_view", "podcasts_queue_view_context")
+	podcastsQueueSignals, err = playlists.CreateQueue(
+		m3uetcpb.Perspective_PODCASTS,
+		"podcasts_queue_view",
+		"podcasts_queue_view_context",
+	)
 	if err != nil {
 		return
 	}

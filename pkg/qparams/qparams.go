@@ -220,7 +220,10 @@ func splitCSV(in *QParam) (out []*QParam) {
 	s := strings.Split(work.Val, ",")
 	if s[0] != "" {
 		nosp := strings.TrimSpace(s[0])
-		list = append(list, QParam{Or: work.Or, Not: work.Not, Key: work.Key, Val: nosp})
+		list = append(
+			list,
+			QParam{Or: work.Or, Not: work.Not, Key: work.Key, Val: nosp},
+		)
 	}
 	for i := 1; i < len(s); i++ {
 		if s[i] != "" {

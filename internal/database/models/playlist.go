@@ -284,7 +284,9 @@ func (pl *Playlist) GetQueries() (pqs []*PlaylistQuery) {
 
 // GetTrackAfter returns the next playing track, if any, after the given position.
 // Alternatively, return the previous one instead
-func (pl *Playlist) GetTrackAfter(curr PlaylistTrack, previous bool) (pt *PlaylistTrack, err error) {
+func (pl *Playlist) GetTrackAfter(curr PlaylistTrack,
+	previous bool) (pt *PlaylistTrack, err error) {
+
 	// Position might have changed, so, reread
 	if err = curr.Read(curr.ID); err != nil {
 		return
@@ -361,7 +363,9 @@ func (pl *Playlist) GetTracks(limit int) (pts []*PlaylistTrack, ts []*Track) {
 	return
 }
 
-func (pl *Playlist) createTracks(trackIds []int64, locations []string) (pts []PlaylistTrack, err error) {
+func (pl *Playlist) createTracks(trackIds []int64,
+	locations []string) (pts []PlaylistTrack, err error) {
+
 	for _, id := range trackIds {
 		t := Track{}
 		if err = t.Read(id); err != nil {

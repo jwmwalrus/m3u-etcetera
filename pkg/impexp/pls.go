@@ -43,13 +43,17 @@ func (pi *PLS) Format(w io.StringWriter) (n int, err error) {
 		dur := time.Duration(v.Duration) * time.Nanosecond
 		dur = dur.Truncate(time.Second)
 
-		_, err = out.WriteString(fmt.Sprintf("Length%d=%v\n\n", k+1, dur.Seconds()))
+		_, err = out.WriteString(
+			fmt.Sprintf("Length%d=%v\n\n", k+1, dur.Seconds()),
+		)
 		if err != nil {
 			return
 		}
 	}
 
-	_, err = out.WriteString(fmt.Sprintf("NumberOfEntries=%v\n", len(pi.tracks)))
+	_, err = out.WriteString(
+		fmt.Sprintf("NumberOfEntries=%v\n", len(pi.tracks)),
+	)
 	if err != nil {
 		return
 	}
@@ -88,7 +92,9 @@ func (pi *PLS) Parse(f io.Reader) (err error) {
 		lines[i] = strings.TrimSpace(lines[i])
 		if match := headerre.FindStringSubmatch(lines[i]); len(match) > 1 {
 			if i != 0 {
-				err = fmt.Errorf("the header directive is not the first line of the file")
+				err = fmt.Errorf(
+					"the header directive is not the first line of the file",
+				)
 				return
 			}
 			hasHeader = true

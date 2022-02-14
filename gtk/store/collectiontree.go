@@ -35,15 +35,36 @@ const (
 func (h collectionTreeHierarchy) getGuide(groupByColl bool) map[int]collectionEntryType {
 	switch h {
 	case ArtistYearAlbumTree:
-		return map[int]collectionEntryType{1: artistEntry, 2: yearAlbumEntry, 3: titleEntry}
+		return map[int]collectionEntryType{
+			1: artistEntry,
+			2: yearAlbumEntry,
+			3: titleEntry,
+		}
 	case ArtistAlbumTree:
-		return map[int]collectionEntryType{1: artistEntry, 2: albumEntry, 3: titleEntry}
+		return map[int]collectionEntryType{
+			1: artistEntry,
+			2: albumEntry,
+			3: titleEntry,
+		}
 	case AlbumTree:
-		return map[int]collectionEntryType{1: albumEntry, 2: titleEntry}
+		return map[int]collectionEntryType{
+			1: albumEntry,
+			2: titleEntry,
+		}
 	case GenreArtistAlbumTree:
-		return map[int]collectionEntryType{1: genreEntry, 2: artistEntry, 3: albumEntry, 4: titleEntry}
+		return map[int]collectionEntryType{
+			1: genreEntry,
+			2: artistEntry,
+			3: albumEntry,
+			4: titleEntry,
+		}
 	case YearArtistAlbumTree:
-		return map[int]collectionEntryType{1: yearEntry, 2: artistEntry, 3: albumEntry, 4: titleEntry}
+		return map[int]collectionEntryType{
+			1: yearEntry,
+			2: artistEntry,
+			3: albumEntry,
+			4: titleEntry,
+		}
 	}
 	return nil
 }
@@ -100,7 +121,9 @@ type collectionTreeEntry struct {
 	child                 []collectionTreeEntry
 }
 
-func (te *collectionTreeEntry) appendNode(model *gtk.TreeStore, iter *gtk.TreeIter) {
+func (te *collectionTreeEntry) appendNode(model *gtk.TreeStore,
+	iter *gtk.TreeIter) {
+
 	te.ids = te.getIDs()
 
 	suffix := ""
@@ -124,7 +147,9 @@ func (te *collectionTreeEntry) appendNode(model *gtk.TreeStore, iter *gtk.TreeIt
 	}
 }
 
-func (te *collectionTreeEntry) completeTree(level int, guide map[int]collectionEntryType, t *m3uetcpb.Track) {
+func (te *collectionTreeEntry) completeTree(level int,
+	guide map[int]collectionEntryType, t *m3uetcpb.Track) {
+
 	label := guide[level].getLabel(t)
 	idx, ok := te.index[label]
 	if !ok {
@@ -139,7 +164,8 @@ func (te *collectionTreeEntry) completeTree(level int, guide map[int]collectionE
 	}
 }
 
-func (te *collectionTreeEntry) fillValues(et collectionEntryType, label, kw string, t *m3uetcpb.Track) {
+func (te *collectionTreeEntry) fillValues(et collectionEntryType,
+	label, kw string, t *m3uetcpb.Track) {
 	sort1, sort2 := et.getSorts(t)
 	*te = collectionTreeEntry{
 		et:       et,

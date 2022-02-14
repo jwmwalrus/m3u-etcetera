@@ -23,23 +23,38 @@ var (
 func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error) {
 	settingsMenuSignals.window = w
 
-	if err = builder.AddFromFile("data/ui/collections-add-dialog.ui"); err != nil {
-		err = fmt.Errorf("Unable to add collections-add-dialog file to builder: %v", err)
+	err = builder.AddFromFile("data/ui/collections-add-dialog.ui")
+	if err != nil {
+		err = fmt.Errorf(
+			"Unable to add collections-add-dialog file to builder: %v",
+			err,
+		)
 		return
 	}
 
 	if err = builder.AddFromFile("data/ui/collections-dialog.ui"); err != nil {
-		err = fmt.Errorf("Unable to add collections-dialog file to builder: %v", err)
+		err = fmt.Errorf(
+			"Unable to add collections-dialog file to builder: %v",
+			err,
+		)
 		return
 	}
 
-	if err = builder.AddFromFile("data/ui/playlist-group-add-dialog.ui"); err != nil {
-		err = fmt.Errorf("Unable to add playlist-group-add-dialog file to builder: %v", err)
+	err = builder.AddFromFile("data/ui/playlist-group-add-dialog.ui")
+	if err != nil {
+		err = fmt.Errorf(
+			"Unable to add playlist-group-add-dialog file to builder: %v",
+			err,
+		)
 		return
 	}
 
-	if err = builder.AddFromFile("data/ui/playlist-groups-dialog.ui"); err != nil {
-		err = fmt.Errorf("Unable to add playlist-groups-dialog file to builder: %v", err)
+	err = builder.AddFromFile("data/ui/playlist-groups-dialog.ui")
+	if err != nil {
+		err = fmt.Errorf(
+			"Unable to add playlist-groups-dialog file to builder: %v",
+			err,
+		)
 		return
 	}
 

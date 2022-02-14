@@ -32,8 +32,10 @@ func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) (ts []*Track) {
 
 	list := []Track{}
 	err := tx.
-		Joins("JOIN collection ON track.collection_id = collection.id AND track.collection_id = ?", cq.CollectionID).
-		Debug().
+		Joins(
+			"JOIN collection ON track.collection_id = collection.id AND track.collection_id = ?",
+			cq.CollectionID,
+		).
 		Find(&list).
 		Error
 	if err != nil {
@@ -78,7 +80,8 @@ func CreateCollectionQueries(ids []int64) (cqs []*CollectionQuery) {
 	return
 }
 
-// DeleteCollectionQueries deletes all the collection queries associated to the given query
+// DeleteCollectionQueries deletes all the collection queries associated
+// to the given query
 func DeleteCollectionQueries(queryID int64) (err error) {
 	cqs := []CollectionQuery{}
 	if err = db.Where("query_id = ?", queryID).Find(&cqs).Error; err != nil {
@@ -105,7 +108,8 @@ func FilterCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryID) {
 	return
 }
 
-// GetApplicableCollectionQueries returns all the collections that can be applied to the given query
+// GetApplicableCollectionQueries returns all the collections that can be
+// applied to the given query
 func GetApplicableCollectionQueries(qy *Query, ids ...int64) (cqs []*CollectionQuery) {
 	cqs = []*CollectionQuery{}
 
@@ -123,7 +127,8 @@ func GetApplicableCollectionQueries(qy *Query, ids ...int64) (cqs []*CollectionQ
 				Error
 		} else {
 			cs := []Collection{}
-			if err = db.Where("hidden = 0 and disabled = 0").Find(&cs).Error; err != nil {
+			err = db.Where("hidden = 0 and disabled = 0").Find(&cs).Error
+			if err != nil {
 				return
 			}
 			for _, x := range cs {
@@ -134,7 +139,10 @@ func GetApplicableCollectionQueries(qy *Query, ids ...int64) (cqs []*CollectionQ
 	} else {
 		cs := []Collection{}
 		if len(ids) > 0 {
-			if err = db.Where("hidden = 0 and disabled = 0 and id in ?", ids).Find(&cs).Error; err != nil {
+			err = db.Where("hidden = 0 and disabled = 0 and id in ?", ids).
+				Find(&cs).
+				Error
+			if err != nil {
 				return
 			}
 			for _, x := range cs {
@@ -143,7 +151,10 @@ func GetApplicableCollectionQueries(qy *Query, ids ...int64) (cqs []*CollectionQ
 				list = append(list, c)
 			}
 		} else {
-			if err = db.Where("hidden = 0 and disabled = 0").Find(&cs).Error; err != nil {
+			err = db.Where("hidden = 0 and disabled = 0").
+				Find(&cs).
+				Error
+			if err != nil {
 				return
 			}
 			for _, x := range cs {

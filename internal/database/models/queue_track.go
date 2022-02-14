@@ -62,14 +62,16 @@ func (qt *QueueTrack) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
+		if !base.FlagTestingMode &&
+			!base.IsAppBusyBy(base.IdleStatusEngineLoop) {
 			PlaybackChanged <- struct{}{}
 		}
 	}()
 	return nil
 }
 
-// GetAllQueueTracks returns all queue tracks for the given perspective, constrained by a limit
+// GetAllQueueTracks returns all queue tracks for the given perspective,
+// constrained by a limit
 func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts []*Track) {
 	log.WithFields(log.Fields{
 		"idx":   idx,

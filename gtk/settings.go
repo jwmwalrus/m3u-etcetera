@@ -203,12 +203,16 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		return
 	}
 
-	osm.coll.discoverBtn, err = builder.GetToggleToolButton("collections_dialog_toggle_discover")
+	osm.coll.discoverBtn, err = builder.GetToggleToolButton(
+		"collections_dialog_toggle_discover",
+	)
 	if err != nil {
 		return
 	}
 
-	osm.coll.updateTagsBtn, err = builder.GetToggleToolButton("collections_dialog_toggle_update_tags")
+	osm.coll.updateTagsBtn, err = builder.GetToggleToolButton(
+		"collections_dialog_toggle_update_tags",
+	)
 	if err != nil {
 		return
 	}
@@ -434,7 +438,9 @@ func (osm *onSettingsMenu) editPlaylistGroups(btn *gtk.Button) {
 	return
 }
 
-func (osm *onSettingsMenu) getCollectionsToggles() (opts store.CollectionOptions) {
+func (osm *onSettingsMenu) getCollectionsToggles() (
+	opts store.CollectionOptions) {
+
 	opts.Discover = osm.coll.discoverBtn.GetActive()
 	opts.UpdateTags = osm.coll.updateTagsBtn.GetActive()
 	return

@@ -30,10 +30,12 @@ const (
 	// DatabaseFilename defines the name of the music database
 	DatabaseFilename = "music.db"
 
-	// ServerWaitTimeout Maximum amount of seconds the server will wait for an event to sync up
+	// ServerWaitTimeout Maximum amount of seconds the server will wait
+	// for an event to sync up
 	ServerWaitTimeout = 30
 
-	// ClientWaitTimeout Maximum amount of seconds a client should wait for an event to sync up
+	// ClientWaitTimeout Maximum amount of seconds a client should wait
+	// for an event to sync up
 	ClientWaitTimeout = 30
 )
 

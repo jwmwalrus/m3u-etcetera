@@ -18,7 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/tinyzimmer/go-glib v0.0.24
-	github.com/tinyzimmer/go-gst v0.2.32
+	github.com/tinyzimmer/go-gst v0.2.33-0.20220206094809-640725988f1e
 	github.com/urfave/cli/v2 v2.3.0
 	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.27.1
@@ -46,4 +46,4 @@ require (
 )
 
 // replace github.com/jwmwalrus/bnp => ../bnp
-replace github.com/tinyzimmer/go-gst => github.com/jwmwalrus/go-gst v0.2.33-0.20220205191536-6a7b117cbaee
+// replace github.com/tinyzimmer/go-gst => github.com/jwmwalrus/go-gst v0.2.33-0.20220205191536-6a7b117cbaee

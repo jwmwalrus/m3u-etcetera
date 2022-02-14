@@ -55,7 +55,10 @@ func New() *Instance {
 	)
 	onerror.Panic(err)
 
-	reply, err := ins.conn.RequestName(serverName, dbus.NameFlagDoNotQueue|dbus.NameFlagReplaceExisting)
+	reply, err := ins.conn.RequestName(
+		serverName,
+		dbus.NameFlagDoNotQueue|dbus.NameFlagReplaceExisting,
+	)
 	onerror.Panic(err)
 
 	if reply != dbus.RequestNameReplyPrimaryOwner {

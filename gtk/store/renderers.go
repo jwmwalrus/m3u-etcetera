@@ -20,9 +20,12 @@ func GetCollectionRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 		if err != nil {
 			return nil, err
 		}
-		renderer.Connect("edited", func(cell *gtk.CellRendererText, pathString, newText string) {
-			onTextColumnEdited(collectionModel, col, cell, pathString, newText)
-		})
+		renderer.Connect(
+			"edited",
+			func(cell *gtk.CellRendererText, pathString, newText string) {
+				onTextColumnEdited(collectionModel, col, cell, pathString, newText)
+			},
+		)
 		return renderer, nil
 
 	case CColDisabled, CColRemote, CColScanned, CColRescan:
@@ -34,9 +37,12 @@ func GetCollectionRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 		if err != nil {
 			return nil, err
 		}
-		renderer.Connect("toggled", func(cell *gtk.CellRendererToggle, pathString string) {
-			onBoolColumnToggled(collectionModel, col, cell, pathString)
-		})
+		renderer.Connect(
+			"toggled",
+			func(cell *gtk.CellRendererToggle, pathString string) {
+				onBoolColumnToggled(collectionModel, col, cell, pathString)
+			},
+		)
 
 		return renderer, nil
 	}
@@ -57,9 +63,12 @@ func GetPlaylistGroupRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 		if err != nil {
 			return nil, err
 		}
-		renderer.Connect("edited", func(cell *gtk.CellRendererText, pathString, newText string) {
-			onTextColumnEdited(playlistGroupsModel, col, cell, pathString, newText)
-		})
+		renderer.Connect(
+			"edited",
+			func(cell *gtk.CellRendererText, pathString, newText string) {
+				onTextColumnEdited(playlistGroupsModel, col, cell, pathString, newText)
+			},
+		)
 		return renderer, nil
 	}
 
@@ -79,9 +88,12 @@ func GetQueryResultsRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 		if err != nil {
 			return nil, err
 		}
-		renderer.Connect("toggled", func(cell *gtk.CellRendererToggle, pathString string) {
-			onBoolColumnToggled(queryResultsModel, col, cell, pathString)
-		})
+		renderer.Connect(
+			"toggled",
+			func(cell *gtk.CellRendererToggle, pathString string) {
+				onBoolColumnToggled(queryResultsModel, col, cell, pathString)
+			},
+		)
 
 		return renderer, nil
 	}
@@ -89,7 +101,9 @@ func GetQueryResultsRenderer(col ModelColumn) (gtk.ICellRenderer, error) {
 	return nil, fmt.Errorf("The provided column is not editable: %v", col)
 }
 
-func onBoolColumnToggled(model *gtk.ListStore, col ModelColumn, cell *gtk.CellRendererToggle, pathString string) {
+func onBoolColumnToggled(model *gtk.ListStore, col ModelColumn,
+	cell *gtk.CellRendererToggle, pathString string) {
+
 	iter, err := model.GetIterFromString(pathString)
 	if err != nil {
 		log.Error(err)
@@ -111,7 +125,9 @@ func onBoolColumnToggled(model *gtk.ListStore, col ModelColumn, cell *gtk.CellRe
 	model.SetValue(iter, int(col), !value.(bool))
 }
 
-func onTextColumnEdited(model *gtk.ListStore, col ModelColumn, cell *gtk.CellRendererText, pathString, newText string) {
+func onTextColumnEdited(model *gtk.ListStore, col ModelColumn,
+	cell *gtk.CellRendererText, pathString, newText string) {
+
 	iter, err := model.GetIterFromString(pathString)
 	if err != nil {
 		log.Error(err)

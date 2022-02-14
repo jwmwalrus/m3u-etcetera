@@ -124,7 +124,8 @@ func isServerAlive() bool {
 
 func readServerAlive() {
 	// Last alive check for server
-	if info, err := os.Stat(filepath.Join(base.DataDir, serverAliveFilename)); !os.IsNotExist(err) {
+	info, err := os.Stat(filepath.Join(base.DataDir, serverAliveFilename))
+	if !os.IsNotExist(err) {
 		LastCheck = info.ModTime().Unix()
 	}
 }
@@ -229,7 +230,11 @@ func stopServer(force, noWait bool) (err error) {
 
 // writeServerAliveFile Updates the server alive flag file
 func writeServerAliveFile() {
-	f, err := os.OpenFile(filepath.Join(base.DataDir, serverAliveFilename), os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
+	f, err := os.OpenFile(
+		filepath.Join(base.DataDir, serverAliveFilename),
+		os.O_TRUNC|os.O_CREATE|os.O_WRONLY,
+		0666,
+	)
 	if err != nil {
 		log.Error(err)
 		return

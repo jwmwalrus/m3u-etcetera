@@ -15,7 +15,8 @@ type Unloader struct {
 	Callback    UnloaderCallback
 }
 
-// UnloaderCallback defines the signature of the method to be called when unloading the application
+// UnloaderCallback defines the signature of the method to be called when
+// unloading the application
 type UnloaderCallback func() error
 
 var unloadRegistry []Unloader

@@ -63,7 +63,8 @@ func (pb *Playback) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (pb *Playback) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode && !base.IsAppBusyBy(base.IdleStatusEngineLoop) {
+		if !base.FlagTestingMode &&
+			!base.IsAppBusyBy(base.IdleStatusEngineLoop) {
 			PlaybackChanged <- struct{}{}
 		}
 	}()
@@ -72,7 +73,10 @@ func (pb *Playback) AfterCreate(tx *gorm.DB) error {
 
 // ClearPending removes all pending playback entries
 func (pb *Playback) ClearPending() {
-	err := db.Model(&Playback{}).Where("played = 0 AND id <> ?", pb.ID).Update("played", 1).Error
+	err := db.Model(&Playback{}).
+		Where("played = 0 AND id <> ?", pb.ID).
+		Update("played", 1).
+		Error
 	onerror.Warn(err)
 }
 
@@ -86,7 +90,8 @@ func (pb *Playback) FindTrack() {
 		Info("Finding track for current playback")
 
 	t := Track{}
-	if err := db.Where("location = ?", pb.Location).First(&t).Error; err != nil {
+	err := db.Where("location = ?", pb.Location).First(&t).Error
+	if err != nil {
 		return
 	}
 	pb.TrackID = t.ID

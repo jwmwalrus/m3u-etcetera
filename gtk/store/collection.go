@@ -66,7 +66,9 @@ func CreateCollectionModel() (model *gtk.ListStore, err error) {
 }
 
 // CreateCollectionTreeModel creates a collection model
-func CreateCollectionTreeModel(h collectionTreeHierarchy) (model *gtk.TreeStore, err error) {
+func CreateCollectionTreeModel(h collectionTreeHierarchy) (
+	model *gtk.TreeStore, err error) {
+
 	log.WithField("hierarchy", h).
 		Info("Creating collection tree model")
 

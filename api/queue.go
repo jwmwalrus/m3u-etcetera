@@ -19,7 +19,8 @@ type QueueSvc struct {
 }
 
 // GetQueue implements m3uetcpb.QueueSvcServer
-func (*QueueSvc) GetQueue(_ context.Context, req *m3uetcpb.GetQueueRequest) (*m3uetcpb.GetQueueResponse, error) {
+func (*QueueSvc) GetQueue(_ context.Context,
+	req *m3uetcpb.GetQueueRequest) (*m3uetcpb.GetQueueResponse, error) {
 
 	res := &m3uetcpb.GetQueueResponse{}
 	qs, ts := models.GetAllQueueTracks(
@@ -45,7 +46,9 @@ func (*QueueSvc) GetQueue(_ context.Context, req *m3uetcpb.GetQueueRequest) (*m3
 }
 
 // ExecuteQueueAction implements m3uetcpb.QueueSvcServer
-func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueueActionRequest) (*m3uetcpb.Empty, error) {
+func (*QueueSvc) ExecuteQueueAction(_ context.Context,
+	req *m3uetcpb.ExecuteQueueActionRequest) (*m3uetcpb.Empty, error) {
+
 	if slice.Contains(
 		[]m3uetcpb.QueueAction{
 			m3uetcpb.QueueAction_Q_APPEND,
@@ -56,13 +59,15 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 		if len(req.Locations) > 0 || len(req.Ids) > 0 {
 			unsup := base.CheckUnsupportedFiles(req.Locations)
 			if len(unsup) > 0 {
-				return nil, grpc.Errorf(codes.InvalidArgument, "Unsupported locations were provided: %+q", unsup)
+				return nil, grpc.Errorf(codes.InvalidArgument,
+					"Unsupported locations were provided: %+q", unsup)
 			}
 		}
 		if len(req.Ids) > 0 {
 			_, notFound := models.FindTracksIn(req.Ids)
 			if len(notFound) > 0 {
-				return nil, grpc.Errorf(codes.InvalidArgument, "Non-existing track IDs were provided: %+v", notFound)
+				return nil, grpc.Errorf(codes.InvalidArgument,
+					"Non-existing track IDs were provided: %+v", notFound)
 			}
 		}
 	}
@@ -91,7 +96,8 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context, req *m3uetcpb.ExecuteQueu
 }
 
 // SubscribeToQueueStore implements m3uetcpb.QueueSvcServer
-func (*QueueSvc) SubscribeToQueueStore(_ *m3uetcpb.Empty, stream m3uetcpb.QueueSvc_SubscribeToQueueStoreServer) error {
+func (*QueueSvc) SubscribeToQueueStore(_ *m3uetcpb.Empty,
+	stream m3uetcpb.QueueSvc_SubscribeToQueueStoreServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToQueueStoreEvent)
 	defer func() { s.Unsubscribe() }()
@@ -138,9 +144,12 @@ sLoop:
 }
 
 // UnsubscribeFromQueueStore implements m3uetcpb.QueueSvcServer
-func (*QueueSvc) UnsubscribeFromQueueStore(_ context.Context, req *m3uetcpb.UnsubscribeFromQueueStoreRequest) (*m3uetcpb.Empty, error) {
+func (*QueueSvc) UnsubscribeFromQueueStore(_ context.Context,
+	req *m3uetcpb.UnsubscribeFromQueueStoreRequest) (*m3uetcpb.Empty, error) {
+
 	if req.SubscriptionId == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "A non-empty subscription ID is required")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"A non-empty subscription ID is required")
 	}
 	subscription.Broadcast(
 		subscription.ToNone,

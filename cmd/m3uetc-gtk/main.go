@@ -26,8 +26,8 @@ func main() {
 	var err error
 
 	base.Load()
-
-	if app, err = gtk.ApplicationNew(appID, glib.APPLICATION_FLAGS_NONE); err != nil {
+	app, err = gtk.ApplicationNew(appID, glib.APPLICATION_FLAGS_NONE)
+	if err != nil {
 		log.Fatalf("Unable to create application: %v", err)
 	}
 

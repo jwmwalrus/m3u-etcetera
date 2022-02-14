@@ -182,7 +182,9 @@ func (t *Track) createTransient(tx *gorm.DB) (err error) {
 	return
 }
 
-func (t *Track) createTransientWithRaw(tx *gorm.DB, raw map[string]interface{}) (err error) {
+func (t *Track) createTransientWithRaw(tx *gorm.DB,
+	raw map[string]interface{}) (err error) {
+
 	c, err := TransientCollection.Get()
 	if err != nil {
 		return

@@ -19,7 +19,13 @@ import (
 // GetPlaybar returns the playbar associated to the given perspective
 func (idx PerspectiveIndex) GetPlaybar() (bar *Playbar, err error) {
 	bar = &Playbar{}
-	err = db.Joins("JOIN perspective ON playbar.perspective_id = perspective.id AND perspective.idx = ?", int(idx)).First(bar).Error
+	err = db.
+		Joins(
+			"JOIN perspective ON playbar.perspective_id = perspective.id AND perspective.idx = ?",
+			int(idx),
+		).
+		First(bar).
+		Error
 	return
 
 }
@@ -99,7 +105,9 @@ func (b *Playbar) ActivateEntry(pl *Playlist) {
 }
 
 // AppendToPlaylist -
-func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64, locations []string) {
+func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
+	locations []string) {
+
 	log.WithFields(log.Fields{
 		"pl":        *pl,
 		"trackIds":  trackIds,
@@ -302,7 +310,7 @@ func (b *Playbar) GetAllGroups(limit int) (pgs []*PlaylistGroup) {
 	if limit > 0 {
 		tx.Limit(limit)
 	}
-	err := tx.Debug().Find(&s).Error
+	err := tx.Find(&s).Error
 	if err != nil {
 		log.Error(err)
 		return
@@ -399,7 +407,12 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 			if err2 != nil {
 				msgs = append(
 					msgs,
-					fmt.Sprintf("Error creating track at `%v`: %v", dt.Location, err2))
+					fmt.Sprintf(
+						"Error creating track at `%v`: %v",
+						dt.Location,
+						err2,
+					),
+				)
 				continue
 			}
 		}
@@ -415,7 +428,11 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 			t.Read(pts[i].TrackID)
 			msgs = append(
 				msgs,
-				fmt.Sprintf("Error saving playlist track at `%v`: %v", t.Location, err2),
+				fmt.Sprintf(
+					"Error saving playlist track at `%v`: %v",
+					t.Location,
+					err2,
+				),
 			)
 		}
 	}
@@ -424,7 +441,9 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 }
 
 // InsertIntoPlaylist -
-func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int, trackIds []int64, locations []string) {
+func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
+	trackIds []int64, locations []string) {
+
 	log.WithFields(log.Fields{
 		"pl":        *pl,
 		"position":  position,
@@ -532,12 +551,15 @@ func (b *Playbar) OpenEntry(pl *Playlist) {
 }
 
 // PrependToPlaylist -
-func (b *Playbar) PrependToPlaylist(pl *Playlist, trackIds []int64, locations []string) {
+func (b *Playbar) PrependToPlaylist(pl *Playlist, trackIds []int64,
+	locations []string) {
 	b.InsertIntoPlaylist(pl, 0, trackIds, locations)
 }
 
 // UpdateEntry updates a playlist
-func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64, resetDescr bool) (err error) {
+func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64,
+	resetDescr bool) (err error) {
+
 	isTransient := pl.Transient
 
 	newName := pl.Name
@@ -588,7 +610,9 @@ func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64, r
 }
 
 // UpdateGroup updates a playlist
-func (b *Playbar) UpdateGroup(pg *PlaylistGroup, name, descr string, resetDescr bool) (err error) {
+func (b *Playbar) UpdateGroup(pg *PlaylistGroup, name, descr string,
+	resetDescr bool) (err error) {
+
 	newName := pg.Name
 	if name != "" {
 		newName = name

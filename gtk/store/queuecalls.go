@@ -43,7 +43,10 @@ func subscribeToQueueStore() {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewQueueSvcClient(cc)
-	stream, err := cl.SubscribeToQueueStore(context.Background(), &m3uetcpb.Empty{})
+	stream, err := cl.SubscribeToQueueStore(
+		context.Background(),
+		&m3uetcpb.Empty{},
+	)
 	if err != nil {
 		log.Errorf("Error subscribing to queue store: %v", err)
 		return

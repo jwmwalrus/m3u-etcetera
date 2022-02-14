@@ -7,7 +7,10 @@ import (
 
 func seedPlaylist(db *gorm.DB) (err error) {
 	p := models.Perspective{}
-	if err = db.Where("idx = ?", int(models.DefaultPerspective)).First(&p).Error; err != nil {
+	err = db.Where("idx = ?", int(models.DefaultPerspective)).
+		First(&p).
+		Error
+	if err != nil {
 		return
 	}
 

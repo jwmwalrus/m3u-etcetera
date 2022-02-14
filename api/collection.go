@@ -19,9 +19,12 @@ type CollectionSvc struct {
 }
 
 // GetCollection implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) GetCollection(_ context.Context, req *m3uetcpb.GetCollectionRequest) (*m3uetcpb.GetCollectionResponse, error) {
+func (*CollectionSvc) GetCollection(_ context.Context,
+	req *m3uetcpb.GetCollectionRequest) (*m3uetcpb.GetCollectionResponse, error) {
+
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Collection ID must be greater than zero")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Collection ID must be greater than zero")
 	}
 
 	coll := models.Collection{}
@@ -39,7 +42,9 @@ func (*CollectionSvc) GetCollection(_ context.Context, req *m3uetcpb.GetCollecti
 }
 
 // GetAllCollections implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) GetAllCollections(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.GetAllCollectionsResponse, error) {
+func (*CollectionSvc) GetAllCollections(_ context.Context,
+	_ *m3uetcpb.Empty) (*m3uetcpb.GetAllCollectionsResponse, error) {
+
 	s := models.GetAllCollections()
 
 	all := []*m3uetcpb.Collection{}
@@ -52,9 +57,12 @@ func (*CollectionSvc) GetAllCollections(_ context.Context, _ *m3uetcpb.Empty) (*
 }
 
 // AddCollection implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) AddCollection(_ context.Context, req *m3uetcpb.AddCollectionRequest) (*m3uetcpb.AddCollectionResponse, error) {
+func (*CollectionSvc) AddCollection(_ context.Context,
+	req *m3uetcpb.AddCollectionRequest) (*m3uetcpb.AddCollectionResponse, error) {
+
 	if req.Location == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Collection location must not be empty")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Collection location must not be empty")
 	}
 
 	name := "A collection"
@@ -72,7 +80,8 @@ func (*CollectionSvc) AddCollection(_ context.Context, req *m3uetcpb.AddCollecti
 	}
 
 	if err := coll.Create(); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Error creating collection: %v", err)
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Error creating collection: %v", err)
 	}
 
 	go func() {
@@ -85,9 +94,11 @@ func (*CollectionSvc) AddCollection(_ context.Context, req *m3uetcpb.AddCollecti
 }
 
 // RemoveCollection implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) RemoveCollection(_ context.Context, req *m3uetcpb.RemoveCollectionRequest) (*m3uetcpb.Empty, error) {
+func (*CollectionSvc) RemoveCollection(_ context.Context,
+	req *m3uetcpb.RemoveCollectionRequest) (*m3uetcpb.Empty, error) {
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Collection ID must be greater than zero")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Collection ID must be greater than zero")
 	}
 
 	coll := models.Collection{}
@@ -103,9 +114,12 @@ func (*CollectionSvc) RemoveCollection(_ context.Context, req *m3uetcpb.RemoveCo
 }
 
 // UpdateCollection implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) UpdateCollection(_ context.Context, req *m3uetcpb.UpdateCollectionRequest) (*m3uetcpb.Empty, error) {
+func (*CollectionSvc) UpdateCollection(_ context.Context,
+	req *m3uetcpb.UpdateCollectionRequest) (*m3uetcpb.Empty, error) {
+
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Collection ID must be greater than zero")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Collection ID must be greater than zero")
 	}
 
 	coll := models.Collection{}
@@ -150,21 +164,26 @@ func (*CollectionSvc) UpdateCollection(_ context.Context, req *m3uetcpb.UpdateCo
 	}
 
 	if err := coll.Save(); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Error updating collection: %v", err)
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Error updating collection: %v", err)
 	}
 
 	return &m3uetcpb.Empty{}, nil
 }
 
 // ScanCollection implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) ScanCollection(_ context.Context, req *m3uetcpb.ScanCollectionRequest) (*m3uetcpb.Empty, error) {
+func (*CollectionSvc) ScanCollection(_ context.Context,
+	req *m3uetcpb.ScanCollectionRequest) (*m3uetcpb.Empty, error) {
+
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Collection ID must be greater than zero")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"Collection ID must be greater than zero")
 	}
 
 	coll := models.Collection{}
 	if err := coll.Read(req.Id); err != nil {
-		return nil, grpc.Errorf(codes.NotFound, "Collection not found: %v", err)
+		return nil, grpc.Errorf(codes.NotFound,
+			"Collection not found: %v", err)
 	}
 
 	go func() {
@@ -176,7 +195,9 @@ func (*CollectionSvc) ScanCollection(_ context.Context, req *m3uetcpb.ScanCollec
 }
 
 // DiscoverCollections implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) DiscoverCollections(_ context.Context, _ *m3uetcpb.Empty) (*m3uetcpb.Empty, error) {
+func (*CollectionSvc) DiscoverCollections(_ context.Context,
+	_ *m3uetcpb.Empty) (*m3uetcpb.Empty, error) {
+
 	s := models.GetAllCollections()
 
 	go func() {
@@ -189,7 +210,8 @@ func (*CollectionSvc) DiscoverCollections(_ context.Context, _ *m3uetcpb.Empty) 
 }
 
 // SubscribeToCollectionStore implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) SubscribeToCollectionStore(_ *m3uetcpb.Empty, stream m3uetcpb.CollectionSvc_SubscribeToCollectionStoreServer) error {
+func (*CollectionSvc) SubscribeToCollectionStore(_ *m3uetcpb.Empty,
+	stream m3uetcpb.CollectionSvc_SubscribeToCollectionStoreServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToCollectionStoreEvent)
 	defer func() { s.Unsubscribe() }()
@@ -341,9 +363,11 @@ sLoop:
 }
 
 // UnsubscribeFromCollectionStore implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) UnsubscribeFromCollectionStore(_ context.Context, req *m3uetcpb.UnsubscribeFromCollectionStoreRequest) (*m3uetcpb.Empty, error) {
+func (*CollectionSvc) UnsubscribeFromCollectionStore(_ context.Context,
+	req *m3uetcpb.UnsubscribeFromCollectionStoreRequest) (*m3uetcpb.Empty, error) {
 	if req.SubscriptionId == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument, "A non-empty subscription ID is required")
+		return nil, grpc.Errorf(codes.InvalidArgument,
+			"A non-empty subscription ID is required")
 	}
 	subscription.Broadcast(
 		subscription.ToNone,

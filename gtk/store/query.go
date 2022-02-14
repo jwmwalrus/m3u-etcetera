@@ -107,7 +107,11 @@ func GetQueryResultsSelections() (ids []int64, err error) {
 	iter, ok := model.GetIterFirst()
 	for ok {
 		var values map[ModelColumn]interface{}
-		values, err = GetListStoreModelValues(model, iter, []ModelColumn{TColTrackID, TColToggleSelect})
+		values, err = GetListStoreModelValues(
+			model,
+			iter,
+			[]ModelColumn{TColTrackID, TColToggleSelect},
+		)
 		if err != nil {
 			log.Error(err)
 			return
@@ -148,12 +152,18 @@ func (qyt *queryTreeModel) update() bool {
 	getKeywords := func(qy *m3uetcpb.Query) string {
 		list := strings.Split(qy.Name, " ")
 		if qy.Description != "" {
-			list = append(list, strings.Split(strings.ToLower(qy.Description), " ")...)
+			list = append(
+				list,
+				strings.Split(strings.ToLower(qy.Description), " ")...,
+			)
 		}
 		if qy.Params != "" {
 			if qp, err := qparams.ParseParams(qy.Params); err == nil {
 				for _, x := range qp {
-					list = append(list, strings.Split(strings.ToLower(x.Val), " ")...)
+					list = append(
+						list,
+						strings.Split(strings.ToLower(x.Val), " ")...,
+					)
 				}
 			}
 		}

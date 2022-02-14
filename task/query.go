@@ -567,7 +567,9 @@ func queryByAction(c *cli.Context) (err error) {
 	return
 }
 
-func playTracks(cc *grpc.ClientConn, ts []*m3uetcpb.Track, force bool) (err error) {
+func playTracks(cc *grpc.ClientConn, ts []*m3uetcpb.Track,
+	force bool) (err error) {
+
 	ids := []int64{}
 	for _, v := range ts {
 		ids = append(ids, v.Id)

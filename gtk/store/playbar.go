@@ -72,7 +72,9 @@ func CreatePlaylistGroupsModel() (model *gtk.ListStore, err error) {
 }
 
 // CreatePlaylistsTreeModel creates a playlist model
-func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (model *gtk.TreeStore, err error) {
+func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (
+	model *gtk.TreeStore, err error) {
+
 	log.Info("Creating playlists model")
 
 	model, err = gtk.TreeStoreNew(PLTreeColumn.getTypes()...)
@@ -202,7 +204,9 @@ func SetUpdatePlaybarViewFn(fn func()) {
 	updatePlaybarView = fn
 }
 
-func createPlaylistModel(id int64) (model *gtk.ListStore, rows map[int]playlistModelRow, err error) {
+func createPlaylistModel(id int64) (model *gtk.ListStore,
+	rows map[int]playlistModelRow, err error) {
+
 	log.Info("Creating a playlist model")
 
 	model, rows = getPlaylistModel(id)
@@ -246,7 +250,8 @@ func updatePlaybarMaps() {
 	defer BData.Mu.Unlock()
 
 	sort.SliceStable(BData.OpenPlaylistTrack, func(i, j int) bool {
-		if BData.OpenPlaylistTrack[i].PlaylistId != BData.OpenPlaylistTrack[j].PlaylistId {
+		if BData.OpenPlaylistTrack[i].PlaylistId !=
+			BData.OpenPlaylistTrack[j].PlaylistId {
 			return BData.OpenPlaylistTrack[i].PlaylistId < BData.OpenPlaylistTrack[j].PlaylistId
 		}
 		return BData.OpenPlaylistTrack[i].Position < BData.OpenPlaylistTrack[j].Position

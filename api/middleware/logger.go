@@ -31,7 +31,9 @@ func (lt loggerType) String() string {
 	}[lt]
 }
 
-func logBefore(lt loggerType, ctx context.Context, fullMethod string, start time.Time) context.Context {
+func logBefore(lt loggerType, ctx context.Context, fullMethod string,
+	start time.Time) context.Context {
+
 	fields := log.Fields{
 		"loggerType":   lt,
 		"start":        start,
@@ -62,7 +64,11 @@ func logAfter(ctx context.Context, err error, finish time.Time, debug bool) {
 		fields[log.ErrorKey] = err
 	}
 	entry := log.WithContext(ctx).WithFields(fields)
-	msg := fmt.Sprintf("Finished %v call with code %v", lf["loggerType"].(loggerType), code.String())
+	msg := fmt.Sprintf(
+		"Finished %v call with code %v",
+		lf["loggerType"].(loggerType),
+		code.String(),
+	)
 
 	switch code {
 	case codes.OK,

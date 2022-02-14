@@ -99,7 +99,10 @@ func backupDatabase() {
 				return
 			}
 
-			if out, err := exec.Command("sqlite3", path, ".backup "+path+".bak").CombinedOutput(); err != nil {
+			out, err := exec.
+				Command("sqlite3", path, ".backup "+path+".bak").
+				CombinedOutput()
+			if err != nil {
 				log.WithField("output", out).Error(err)
 				return
 			}

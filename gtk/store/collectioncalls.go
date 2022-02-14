@@ -10,7 +10,9 @@ import (
 )
 
 // AddCollection adds a collection
-func AddCollection(req *m3uetcpb.AddCollectionRequest) (res *m3uetcpb.AddCollectionResponse, err error) {
+func AddCollection(req *m3uetcpb.AddCollectionRequest) (
+	res *m3uetcpb.AddCollectionResponse, err error) {
+
 	log.Info("Adding collection")
 
 	cc, err := getClientConn1()
@@ -48,7 +50,19 @@ func ApplyCollectionChanges(o ...CollectionOptions) {
 
 	iter, ok := model.GetIterFirst()
 	for ok {
-		row, err := GetListStoreModelValues(model, iter, []ModelColumn{CColCollectionID, CColName, CColDescription, CColRemoteLocation, CColDisabled, CColRemote, CColRescan})
+		row, err := GetListStoreModelValues(
+			model,
+			iter,
+			[]ModelColumn{
+				CColCollectionID,
+				CColName,
+				CColDescription,
+				CColRemoteLocation,
+				CColDisabled,
+				CColRemote,
+				CColRescan,
+			},
+		)
 		if err != nil {
 			log.Error(err)
 			return
@@ -111,11 +125,17 @@ func ApplyCollectionChanges(o ...CollectionOptions) {
 	}
 
 	if opts.Discover {
-		_, err := cl.DiscoverCollections(context.Background(), &m3uetcpb.Empty{})
+		_, err := cl.DiscoverCollections(
+			context.Background(),
+			&m3uetcpb.Empty{},
+		)
 		onerror.Log(err)
 	} else {
 		for _, id := range toScan {
-			req := &m3uetcpb.ScanCollectionRequest{Id: id, UpdateTags: opts.UpdateTags}
+			req := &m3uetcpb.ScanCollectionRequest{
+				Id:         id,
+				UpdateTags: opts.UpdateTags,
+			}
 			_, err := cl.ScanCollection(context.Background(), req)
 			onerror.Log(err)
 		}
@@ -137,7 +157,10 @@ func subscribeToCollectionStore() {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewCollectionSvcClient(cc)
-	stream, err := cl.SubscribeToCollectionStore(context.Background(), &m3uetcpb.Empty{})
+	stream, err := cl.SubscribeToCollectionStore(
+		context.Background(),
+		&m3uetcpb.Empty{},
+	)
 	if err != nil {
 		log.Errorf("Error subscribing to collection store: %v", err)
 		return

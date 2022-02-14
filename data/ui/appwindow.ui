@@ -687,6 +687,7 @@
         <child>
           <object class="GtkVolumeButton" id="volume_btn">
             <property name="visible">True</property>
+            <property name="sensitive">False</property>
             <property name="can-focus">True</property>
             <property name="focus-on-click">False</property>
             <property name="receives-default">True</property>

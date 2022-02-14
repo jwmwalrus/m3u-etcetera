@@ -14,6 +14,7 @@ tasks:
 
   build:
     cmds:
+      - task: clean
       - task: build:server
       - task: build:task
       - task: build:gtk
@@ -28,21 +29,22 @@ tasks:
       - task: build:gtk
   build:server:
     cmds:
-      - go build -v -o ./m3uetc-server{{exeExt}} ./cmd/m3uetc-server
+      - go build -v -ldflags=-w -o ./m3uetc-server{{exeExt}} ./cmd/m3uetc-server
+    silent: true
   build:task:
     cmds:
-      - go build -v -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
+      - go build -v -ldflags=-w -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
+    silent: true
   build:gtk:
     cmds:
-      - go build -v -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
-
-  clean:
-    cmds:
-      - rm m3uetc-server > /dev/null 2>&1
-      - rm m3uetc-task > /dev/null 2>&1
-      - rm m3uetc-gtk > /dev/null 2>&1
+      - go build -v -ldflags=-w -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
     silent: true
 
+  dev:
+    cmds:
+      - task: dev:server
+      - task: dev:task
+      - task: dev:gtk
   dev:s:
     cmds:
       - task: dev:server
@@ -54,15 +56,43 @@ tasks:
       - task: dev:gtk
   dev:server:
     cmds:
-      - go run ./cmd/m3uetc-server
-    silent: true
+      - go build -v -o ./m3uetc-server{{exeExt}} ./cmd/m3uetc-server
   dev:task:
     cmds:
-      - go run ./cmd/m3uetc-task
-    silent: true
+      - go build -v -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
   dev:gtk:
     cmds:
-      - go run ./cmd/m3uetc-gtk
+      - go build -v -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
+
+  race:
+    cmds:
+      - task: race:server
+      - task: race:task
+      - task: race:gtk
+  race:s:
+    cmds:
+      - task: race:server
+  race:t:
+    cmds:
+      - task: race:task
+  race:g:
+    cmds:
+      - task: race:gtk
+  race:server:
+    cmds:
+      - go build -v -race -o ./m3uetc-server{{exeExt}} ./cmd/m3uetc-server
+  race:task:
+    cmds:
+      - go build -v -race -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
+  race:gtk:
+    cmds:
+      - go build -v -race -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
+
+  clean:
+    cmds:
+      - rm m3uetc-server > /dev/null 2>&1
+      - rm m3uetc-task > /dev/null 2>&1
+      - rm m3uetc-gtk > /dev/null 2>&1
     silent: true
 
   test:

@@ -14,13 +14,20 @@ type wrappedServerStream struct {
 }
 
 func streamServerInterceptor() grpc.StreamServerInterceptor {
-	return func(req interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(req interface{}, stream grpc.ServerStream,
+		info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+
 		base.GetBusy(base.IdleStatusRequest)
 		defer func() { base.GetFree(base.IdleStatusRequest) }()
 
 		startTime := time.Now()
 
-		newCtx := logBefore(streamLogger, stream.Context(), info.FullMethod, startTime)
+		newCtx := logBefore(
+			streamLogger,
+			stream.Context(),
+			info.FullMethod,
+			startTime,
+		)
 		wrapped := wrapServerStream(stream)
 		wrapped.wrappedContext = newCtx
 		err := handler(req, wrapped)
@@ -44,5 +51,8 @@ func wrapServerStream(stream grpc.ServerStream) *wrappedServerStream {
 	if existing, ok := stream.(*wrappedServerStream); ok {
 		return existing
 	}
-	return &wrappedServerStream{ServerStream: stream, wrappedContext: stream.Context()}
+	return &wrappedServerStream{
+		ServerStream:   stream,
+		wrappedContext: stream.Context(),
+	}
 }

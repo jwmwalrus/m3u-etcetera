@@ -27,7 +27,9 @@ var (
 )
 
 // Add adds pane to notebook
-func Add(idx m3uetcpb.Perspective, nb *gtk.Notebook, signals *map[string]interface{}) (err error) {
+func Add(idx m3uetcpb.Perspective, nb *gtk.Notebook,
+	signals *map[string]interface{}) (err error) {
+
 	log.WithField("idx", idx.String()).
 		Info("Adding perspective to notebook")
 

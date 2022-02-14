@@ -47,7 +47,8 @@ func (idx PerspectiveIndex) Activate() (err error) {
 		Info("Activating perspective")
 
 	s := []Perspective{}
-	if err = db.Where("active = 1 OR idx = ?", int(idx)).Find(&s).Error; err != nil {
+	err = db.Where("active = 1 OR idx = ?", int(idx)).Find(&s).Error
+	if err != nil {
 		return
 	}
 

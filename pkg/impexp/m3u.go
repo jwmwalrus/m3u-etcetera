@@ -103,13 +103,19 @@ func (mi *M3U) Parse(f io.Reader) (err error) {
 			switch match[1] {
 			case "#EXTM3U":
 				if i != 0 {
-					err = fmt.Errorf("The %v directive is not at the first line", match[1])
+					err = fmt.Errorf(
+						"The %v directive is not at the first line",
+						match[1],
+					)
 					return
 				}
 				validM3U = true
 			case "#EXTENC":
 				if i != 1 {
-					err = fmt.Errorf("The %v directive is not at the second line", match[1])
+					err = fmt.Errorf(
+						"The %v directive is not at the second line",
+						match[1],
+					)
 					return
 				}
 				encoding = lines[i]

@@ -24,7 +24,8 @@ func (h *PlaybackHistory) Create() (err error) {
 	return
 }
 
-// FindLastBy returns the newest entry in the playback history, according to the given query
+// FindLastBy returns the newest entry in the playback history,
+// according to the given query
 func (h *PlaybackHistory) FindLastBy(query interface{}) (err error) {
 	err = db.Where(query).Last(h).Error
 	return
@@ -74,6 +75,7 @@ func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
 
 		if time.Duration(position)*time.Nanosecond >=
 			time.Duration(base.Conf.Server.Playback.PlayedThreshold)*time.Second {
+
 			t.Lastplayed = h.CreatedAt
 			t.Playcount++
 		}

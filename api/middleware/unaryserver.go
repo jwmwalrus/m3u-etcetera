@@ -10,7 +10,9 @@ import (
 )
 
 func unaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req interface{},
+		info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+
 		if path.Base(info.FullMethod) != "Off" {
 			base.GetBusy(base.IdleStatusRequest)
 			defer func() { base.GetFree(base.IdleStatusRequest) }()

@@ -156,7 +156,10 @@ func subscribeToQueryStore() {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewQuerySvcClient(cc)
-	stream, err := cl.SubscribeToQueryStore(context.Background(), &m3uetcpb.Empty{})
+	stream, err := cl.SubscribeToQueryStore(
+		context.Background(),
+		&m3uetcpb.Empty{},
+	)
 	if err != nil {
 		log.Errorf("Error subscribing to collection store: %v", err)
 		return

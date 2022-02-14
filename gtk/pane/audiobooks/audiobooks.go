@@ -10,7 +10,11 @@ var (
 )
 
 func Setup(signals *map[string]interface{}) (err error) {
-	audiobooksQueueSignals, err = playlists.CreateQueue(m3uetcpb.Perspective_AUDIOBOOKS, "audiobooks_queue_view", "audiobooks_queue_view_context")
+	audiobooksQueueSignals, err = playlists.CreateQueue(
+		m3uetcpb.Perspective_AUDIOBOOKS,
+		"audiobooks_queue_view",
+		"audiobooks_queue_view_context",
+	)
 	if err != nil {
 		return
 	}

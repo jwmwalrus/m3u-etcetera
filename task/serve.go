@@ -56,6 +56,8 @@ func serveOffAction(c *cli.Context) (err error) {
 		return
 	}
 
-	err = alive.Serve(alive.ServeOptions{TurnOff: true, Force: c.Bool("force")})
+	err = alive.Serve(
+		alive.ServeOptions{TurnOff: true, Force: c.Bool("force")},
+	)
 	return
 }

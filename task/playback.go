@@ -140,7 +140,13 @@ func playbackAction(c *cli.Context) (err error) {
 	if artist == "" {
 		artist = res.Track.Albumartist
 	}
-	tbl.AddRow(res.Track.Id, res.Track.Title, artist, res.Track.Album, res.Track.Duration)
+	tbl.AddRow(
+		res.Track.Id,
+		res.Track.Title,
+		artist,
+		res.Track.Album,
+		res.Track.Duration,
+	)
 	tbl.Print()
 
 	return

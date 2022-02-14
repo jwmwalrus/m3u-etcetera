@@ -10,7 +10,12 @@ import (
 func (idx PerspectiveIndex) GetPerspectiveQueue() (q *Queue, err error) {
 	q = &Queue{}
 	err = db.Preload("Perspective").
-		Joins("JOIN perspective ON queue.perspective_id = perspective.id AND perspective.idx = ?", int(idx)).First(q).Error
+		Joins(
+			"JOIN perspective ON queue.perspective_id = perspective.id AND perspective.idx = ?",
+			int(idx),
+		).
+		First(q).
+		Error
 	return
 
 }

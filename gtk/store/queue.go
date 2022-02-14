@@ -23,7 +23,9 @@ var (
 )
 
 // CreateQueueModel -
-func CreateQueueModel(idx m3uetcpb.Perspective) (model *gtk.ListStore, err error) {
+func CreateQueueModel(idx m3uetcpb.Perspective) (
+	model *gtk.ListStore, err error) {
+
 	log.WithField("idx", idx).
 		Info("Creating queue model")
 

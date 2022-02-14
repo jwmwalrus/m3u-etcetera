@@ -132,7 +132,11 @@ func (c *Collection) Delete() (err error) {
 		log.WithFields(log.Fields{
 			"collectionId":           c.ID,
 			"tracksStillInColletion": doNotDelete,
-		}).Warnf("Collection with ID=%v could not be deleted; %v tracks were left behind", c.ID, doNotDelete)
+		}).Warnf(
+			"Collection with ID=%v could not be deleted; %v tracks were left behind",
+			c.ID,
+			doNotDelete,
+		)
 		return
 	}
 
@@ -234,7 +238,11 @@ func (c *Collection) CountTracks() {
 	}
 
 	var tracks int64
-	if err := db.Model(&Track{}).Where("collection_id = ?", c.ID).Count(&tracks).Error; err != nil {
+	err := db.Model(&Track{}).
+		Where("collection_id = ?", c.ID).
+		Count(&tracks).
+		Error
+	if err != nil {
 		return
 	}
 	c.Tracks = tracks
@@ -371,10 +379,13 @@ func (c *Collection) Verify() {
 	}
 }
 
-func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string, withTags bool) (t *Track, err error) {
+func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string,
+	withTags bool) (t *Track, err error) {
+
 	doTag := false
 	newt := &Track{}
-	if err2 := tx.Where("location = ?", location).First(newt).Error; err2 != nil {
+	err2 := tx.Where("location = ?", location).First(newt).Error
+	if err2 != nil {
 		newt = &Track{
 			Location:     location,
 			CollectionID: c.ID,
@@ -408,7 +419,9 @@ func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string, withTags
 	return
 }
 
-func (c *Collection) addTrackFromPath(tx *gorm.DB, path string, withTags bool) (t *Track, err error) {
+func (c *Collection) addTrackFromPath(tx *gorm.DB, path string,
+	withTags bool) (t *Track, err error) {
+
 	var u string
 	if u, err = urlstr.PathToURL(path); err != nil {
 		return
@@ -442,7 +455,9 @@ func GetCollectionStore() (cs []*Collection, ts []*Track) {
 	cList := []Collection{}
 	tList := []Track{}
 
-	db.Joins("JOIN collection ON track.collection_id = collection.id AND collection.hidden = 0 AND collection.disabled = 0").
+	db.Joins(
+		"JOIN collection ON track.collection_id = collection.id AND collection.hidden = 0 AND collection.disabled = 0",
+	).
 		Find(&tList)
 
 	db.Joins("Perspective").

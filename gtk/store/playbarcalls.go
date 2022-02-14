@@ -29,7 +29,11 @@ func ApplyPlaylistGroupChanges() {
 
 	iter, ok := model.GetIterFirst()
 	for ok {
-		row, err := GetListStoreModelValues(model, iter, []ModelColumn{PGColPlaylistGroupID, PGColName, PGColDescription})
+		row, err := GetListStoreModelValues(
+			model,
+			iter,
+			[]ModelColumn{PGColPlaylistGroupID, PGColName, PGColDescription},
+		)
 		if err != nil {
 			log.Error(err)
 			return
@@ -85,7 +89,9 @@ func ExecutePlaybarAction(req *m3uetcpb.ExecutePlaybarActionRequest) (err error)
 }
 
 // ExecutePlaylistAction -
-func ExecutePlaylistAction(req *m3uetcpb.ExecutePlaylistActionRequest) (*m3uetcpb.ExecutePlaylistActionResponse, error) {
+func ExecutePlaylistAction(req *m3uetcpb.ExecutePlaylistActionRequest) (
+	*m3uetcpb.ExecutePlaylistActionResponse, error) {
+
 	cc, err := getClientConn1()
 	if err != nil {
 		return nil, err
@@ -102,7 +108,9 @@ func ExecutePlaylistAction(req *m3uetcpb.ExecutePlaylistActionRequest) (*m3uetcp
 }
 
 // ExecutePlaylistGroupAction -
-func ExecutePlaylistGroupAction(req *m3uetcpb.ExecutePlaylistGroupActionRequest) (*m3uetcpb.ExecutePlaylistGroupActionResponse, error) {
+func ExecutePlaylistGroupAction(req *m3uetcpb.ExecutePlaylistGroupActionRequest) (
+	*m3uetcpb.ExecutePlaylistGroupActionResponse, error) {
+
 	cc, err := getClientConn1()
 	if err != nil {
 		return nil, err
@@ -137,7 +145,9 @@ func ExecutePlaylistTrackAction(req *m3uetcpb.ExecutePlaylistTrackActionRequest)
 }
 
 // ImportPlaylists -
-func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (msgList []string, err error) {
+func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (
+	msgList []string, err error) {
+
 	cc, err := getClientConn1()
 	if err != nil {
 		return

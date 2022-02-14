@@ -65,7 +65,9 @@ func (te *playlistTreeEntry) appendNode(model *gtk.TreeStore, iter *gtk.TreeIter
 	}
 }
 
-func (te *playlistTreeEntry) completeTree(level int, guide map[int]playlistEntryType, pl *m3uetcpb.Playlist) {
+func (te *playlistTreeEntry) completeTree(level int,
+	guide map[int]playlistEntryType, pl *m3uetcpb.Playlist) {
+
 	label := guide[level].getLabel(pl)
 	idx, ok := te.index[label]
 	if !ok {
@@ -80,7 +82,8 @@ func (te *playlistTreeEntry) completeTree(level int, guide map[int]playlistEntry
 	}
 }
 
-func (te *playlistTreeEntry) fillValues(et playlistEntryType, label, kw string, pl *m3uetcpb.Playlist) {
+func (te *playlistTreeEntry) fillValues(et playlistEntryType,
+	label, kw string, pl *m3uetcpb.Playlist) {
 	*te = playlistTreeEntry{
 		et:       et,
 		label:    label,
@@ -159,7 +162,10 @@ func (bt *playbarTree) update() bool {
 
 		getKeywords := func(pl *m3uetcpb.Playlist) string {
 			list := strings.Split(strings.ToLower(pl.Name), " ")
-			list = append(list, strings.Split(strings.ToLower(pl.Description), " ")...)
+			list = append(
+				list,
+				strings.Split(strings.ToLower(pl.Description), " ")...,
+			)
 			return strings.Join(list, ",")
 		}
 
