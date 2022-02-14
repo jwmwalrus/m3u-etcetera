@@ -33,7 +33,7 @@ func createMusicQueries() (omqy *onMusicQuery, err error) {
 		onContext: &onContext{ct: queryContext},
 	}
 
-	view, err := builder.GetTreeView("queries_view")
+	omqy.view, err = builder.GetTreeView("queries_view")
 	if err != nil {
 		return
 	}
@@ -58,7 +58,7 @@ func createMusicQueries() (omqy *onMusicQuery, err error) {
 		if err != nil {
 			return
 		}
-		view.InsertColumn(col, -1)
+		omqy.view.InsertColumn(col, -1)
 	}
 
 	model, err := store.CreateQueryTreeModel()
@@ -66,7 +66,7 @@ func createMusicQueries() (omqy *onMusicQuery, err error) {
 		return
 	}
 
-	view.SetModel(model)
+	omqy.view.SetModel(model)
 	return
 }
 
@@ -77,6 +77,7 @@ func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
 	}
 
 	ids := omqy.getSelection(true)
+	fmt.Println(ids)
 	if len(ids) != 1 {
 		return
 	}
@@ -183,14 +184,18 @@ func (omqy *onMusicQuery) contextNewPlaylist(mi *gtk.MenuItem) {
 		if err := store.ExecutePlaybarAction(reqbar); err != nil {
 			log.Error(err)
 		}
+		return
 	}
+
+	playlists.RequestFocus(m3uetcpb.Perspective_MUSIC, respl.Id)
 	return
 }
 
 func (omqy *onMusicQuery) createDialog() (err error) {
 	log.Info("Creating query dialog")
 
-	if err = builder.AddFromFile("data/ui/pane/query-dialog.ui"); err != nil {
+	err = builder.AddFromFile("data/ui/pane/query-dialog.ui")
+	if err != nil {
 		err = fmt.Errorf("Unable to add query-dialog file to builder: %v", err)
 		return
 	}
@@ -320,8 +325,14 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 	return
 }
 
-func (omqy *onMusicQuery) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
-	values, err := store.GetTreeStoreValues(tv, path, []store.ModelColumn{store.QYColTree, store.QYColTreeIDList})
+func (omqy *onMusicQuery) dblClicked(tv *gtk.TreeView,
+	path *gtk.TreePath, col *gtk.TreeViewColumn) {
+
+	values, err := store.GetTreeStoreValues(
+		tv,
+		path,
+		[]store.ModelColumn{store.QYColTree, store.QYColTreeIDList},
+	)
 	if err != nil {
 		log.Error(err)
 		return

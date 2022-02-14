@@ -16,10 +16,20 @@ const (
 
 type onContext struct {
 	ct        contextType
+	view      *gtk.TreeView
 	selection interface{}
 }
 
 func (oc *onContext) getSelection(keep ...bool) (ids []int64) {
+	if oc.selection == nil {
+		sel, err := oc.view.GetSelection()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		oc.selChanged(sel)
+	}
+
 	value, ok := oc.selection.(string)
 	if !ok {
 		log.Debug("There is no selection available for context")
@@ -41,7 +51,18 @@ func (oc *onContext) getSelection(keep ...bool) (ids []int64) {
 	return
 }
 
-func (oc *onContext) getSelectionValues(keep ...bool) (values map[store.ModelColumn]interface{}) {
+func (oc *onContext) getSelectionValues(keep ...bool) (
+	values map[store.ModelColumn]interface{}) {
+
+	if oc.selection == nil {
+		sel, err := oc.view.GetSelection()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		oc.selChanged(sel)
+	}
+
 	values, ok := oc.selection.(map[store.ModelColumn]interface{})
 	if !ok {
 		values = map[store.ModelColumn]interface{}{}
@@ -64,7 +85,10 @@ func (oc *onContext) selChanged(sel *gtk.TreeSelection) {
 	case collectionContext:
 		oc.selection, err = store.GetTreeSelectionValue(sel, store.CColTreeIDList)
 	case playlistContext:
-		oc.selection, err = store.GetTreeSelectionValues(sel, []store.ModelColumn{store.PLColTreeIDList, store.PLColTreeIsGroup})
+		oc.selection, err = store.GetTreeSelectionValues(
+			sel,
+			[]store.ModelColumn{store.PLColTreeIDList, store.PLColTreeIsGroup},
+		)
 	case queryContext:
 		oc.selection, err = store.GetTreeSelectionValue(sel, store.QYColTreeIDList)
 	}

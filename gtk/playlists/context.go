@@ -22,6 +22,7 @@ type onContext struct {
 	id          int64
 	perspective m3uetcpb.Perspective
 	ctxMenu     *gtk.Menu
+	view        *gtk.TreeView
 
 	selection interface{}
 }
@@ -251,25 +252,6 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 	return
 }
 
-func (oc *onContext) getSelection(keep ...bool) (values map[store.ModelColumn]interface{}) {
-	values, ok := oc.selection.(map[store.ModelColumn]interface{})
-	if !ok {
-		log.Debug("There is no selection available for context")
-		values = map[store.ModelColumn]interface{}{}
-		return
-	}
-
-	reset := true
-	if len(keep) > 0 {
-		reset = !keep[0]
-	}
-
-	if reset {
-		oc.selection = nil
-	}
-	return
-}
-
 func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {
 	var err error
 	if oc.id > 0 {
@@ -298,4 +280,34 @@ func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {
 		return
 	}
 	log.Debugf("Selected context entres: %v", oc.selection)
+}
+
+func (oc *onContext) getSelection(keep ...bool) (
+	values map[store.ModelColumn]interface{}) {
+
+	if oc.selection == nil {
+		sel, err := oc.view.GetSelection()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		oc.SelChanged(sel)
+	}
+
+	values, ok := oc.selection.(map[store.ModelColumn]interface{})
+	if !ok {
+		log.Debug("There is no selection available for context")
+		values = map[store.ModelColumn]interface{}{}
+		return
+	}
+
+	reset := true
+	if len(keep) > 0 {
+		reset = !keep[0]
+	}
+
+	if reset {
+		oc.selection = nil
+	}
+	return
 }

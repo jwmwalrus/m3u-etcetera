@@ -23,7 +23,7 @@ func createMusicCollections() (omc *onMusicCollections, err error) {
 		onContext: &onContext{ct: collectionContext},
 	}
 
-	view, err := builder.GetTreeView("collections_view")
+	omc.view, err = builder.GetTreeView("collections_view")
 	if err != nil {
 		return
 	}
@@ -48,7 +48,7 @@ func createMusicCollections() (omc *onMusicCollections, err error) {
 		if err != nil {
 			return
 		}
-		view.InsertColumn(col, -1)
+		omc.view.InsertColumn(col, -1)
 	}
 
 	model, err := store.CreateCollectionTreeModel(store.ArtistYearAlbumTree)
@@ -56,7 +56,7 @@ func createMusicCollections() (omc *onMusicCollections, err error) {
 		return
 	}
 
-	view.SetModel(model)
+	omc.view.SetModel(model)
 	return
 }
 
@@ -130,8 +130,14 @@ func (omc *onMusicCollections) contextPlayNow(mi *gtk.MenuItem) {
 	}
 }
 
-func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
-	values, err := store.GetTreeStoreValues(tv, path, []store.ModelColumn{store.CColTree, store.CColTreeIDList})
+func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
+	path *gtk.TreePath, col *gtk.TreeViewColumn) {
+
+	values, err := store.GetTreeStoreValues(
+		tv,
+		path,
+		[]store.ModelColumn{store.CColTree, store.CColTreeIDList},
+	)
 	if err != nil {
 		log.Error(err)
 		return

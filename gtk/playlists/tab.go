@@ -18,7 +18,6 @@ type onTab struct {
 	*onContext
 
 	headerName string
-	view       *gtk.TreeView
 	pageMenu   *gtk.Menu
 	img        *gtk.Image
 	label      *gtk.Label
@@ -51,7 +50,7 @@ outer:
 		for ipage := 0; ipage < nb.GetNPages(); ipage++ {
 			page, err := nb.GetNthPage(ipage)
 			if err != nil {
-				log.Error(err)
+				log.Warn(err)
 				continue
 			}
 			header, _ := nb.GetTabLabel(page)
@@ -111,8 +110,9 @@ outer:
 
 			tabsList = append(tabsList, tab)
 		}
-
 	}
+
+	setFocused()
 }
 
 func (ot *onTab) contextEvent(_ *gtk.EventBox, event *gdk.Event) {
@@ -256,7 +256,9 @@ func (ot *onTab) createContextMenus() (err error) {
 	return
 }
 
-func (ot *onTab) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
+func (ot *onTab) dblClicked(tv *gtk.TreeView, path *gtk.TreePath,
+	col *gtk.TreeViewColumn) {
+
 	values, err := store.GetListStoreValues(
 		tv,
 		path,
@@ -298,7 +300,10 @@ func (ot *onTab) doClose(btn *gtk.Button) {
 }
 
 func (ot *onTab) setLabel() (err error) {
-	ot.img, err = gtk.ImageNewFromIconName("media-playback-start", gtk.ICON_SIZE_MENU)
+	ot.img, err = gtk.ImageNewFromIconName(
+		"media-playback-start",
+		gtk.ICON_SIZE_MENU,
+	)
 	if err != nil {
 		return
 	}

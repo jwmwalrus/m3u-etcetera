@@ -14,27 +14,11 @@ var (
 	tabsList        []onTab
 	perspToNotebook map[m3uetcpb.Perspective]string
 	playlistDlg     *gtk.Dialog
+	focusRequest    struct {
+		p  m3uetcpb.Perspective
+		id int64
+	}
 )
-
-// GetFocused returns the ID of the focused playlist
-// for the given perspective
-func GetFocused(p m3uetcpb.Perspective) int64 {
-	nb, err := builder.GetNotebook(perspToNotebook[p])
-	if err != nil {
-		log.Error(err)
-		return 0
-	}
-
-	page, _ := nb.GetNthPage(nb.GetCurrentPage())
-	header, _ := nb.GetTabLabel(page)
-	pageName, _ := header.ToWidget().GetName()
-	for _, t := range tabsList {
-		if t.headerName == pageName {
-			return t.id
-		}
-	}
-	return 0
-}
 
 // Setup kickstarts playlists
 func Setup(signals *map[string]interface{}) (err error) {
@@ -57,15 +41,92 @@ func Setup(signals *map[string]interface{}) (err error) {
 	return
 }
 
+// GetFocused returns the ID of the focused playlist
+// for the given perspective
+func GetFocused(p m3uetcpb.Perspective) int64 {
+	nb, err := builder.GetNotebook(perspToNotebook[p])
+	if err != nil {
+		log.Error(err)
+		return 0
+	}
+
+	page, _ := nb.GetNthPage(nb.GetCurrentPage())
+	header, _ := nb.GetTabLabel(page)
+	pageName, _ := header.ToWidget().GetName()
+	for _, t := range tabsList {
+		if t.headerName == pageName {
+			return t.id
+		}
+	}
+	return 0
+}
+
+func RequestFocus(p m3uetcpb.Perspective, id int64) {
+	focusRequest.p = p
+	focusRequest.id = id
+}
+
 func createPlaylist(btn *gtk.Button, p m3uetcpb.Perspective) {
 	req := &m3uetcpb.ExecutePlaylistActionRequest{
 		Action:      m3uetcpb.PlaylistAction_PL_CREATE,
 		Perspective: p,
 	}
-	_, err := store.ExecutePlaylistAction(req)
+	res, err := store.ExecutePlaylistAction(req)
 	if err != nil {
 		log.Error(err)
 		return
+	}
+
+	RequestFocus(p, res.Id)
+}
+
+func setFocused() {
+
+	if focusRequest.id < 0 {
+		return
+	}
+
+	nb, err := builder.GetNotebook(perspToNotebook[focusRequest.p])
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if focusRequest.id == 0 {
+		nb.SetCurrentPage(int(focusRequest.id))
+		focusRequest.id = -1
+		return
+	}
+
+	var headerName string
+	for _, t := range tabsList {
+		if t.id == focusRequest.id {
+			headerName = t.headerName
+			break
+		}
+	}
+
+	if headerName == "" {
+		log.Error(
+			"Playlist with ID=%v is not open, so cannot be focused",
+			focusRequest.id,
+		)
+		return
+	}
+
+	for ipage := 0; ipage < nb.GetNPages(); ipage++ {
+		page, err := nb.GetNthPage(ipage)
+		if err != nil {
+			log.Warn(err)
+			continue
+		}
+		header, _ := nb.GetTabLabel(page)
+		pageName, _ := header.ToWidget().GetName()
+		if headerName == pageName {
+			nb.SetCurrentPage(ipage)
+			focusRequest.id = -1
+			break
+		}
 	}
 }
 

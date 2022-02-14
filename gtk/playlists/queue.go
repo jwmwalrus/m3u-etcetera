@@ -15,12 +15,12 @@ import (
 // OnQueue handles queue signals
 type OnQueue struct {
 	*onContext
-
-	view *gtk.TreeView
 }
 
 // CreateQueue returns a queue signals handler
-func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (oq *OnQueue, err error) {
+func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
+	oq *OnQueue, err error) {
+
 	log.WithFields(log.Fields{
 		"perspective": p,
 		"queueID":     queueID,
@@ -94,7 +94,9 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (oq *OnQ
 }
 
 // DblClicked handles double-click
-func (oq *OnQueue) DblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
+func (oq *OnQueue) DblClicked(tv *gtk.TreeView,
+	path *gtk.TreePath, col *gtk.TreeViewColumn) {
+
 	values, err := store.GetListStoreValues(
 		tv,
 		path,

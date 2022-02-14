@@ -22,7 +22,7 @@ func createMusicPlaylists() (ompl *onMusicPlaylist, err error) {
 		onContext: &onContext{ct: playlistContext},
 	}
 
-	view, err := builder.GetTreeView("music_playlists_view")
+	ompl.view, err = builder.GetTreeView("music_playlists_view")
 	if err != nil {
 		return
 	}
@@ -47,7 +47,7 @@ func createMusicPlaylists() (ompl *onMusicPlaylist, err error) {
 		if err != nil {
 			return
 		}
-		view.InsertColumn(col, -1)
+		ompl.view.InsertColumn(col, -1)
 	}
 
 	model, err := store.CreatePlaylistsTreeModel(m3uetcpb.Perspective_MUSIC)
@@ -55,7 +55,7 @@ func createMusicPlaylists() (ompl *onMusicPlaylist, err error) {
 		return
 	}
 
-	view.SetModel(model)
+	ompl.view.SetModel(model)
 	return
 }
 
@@ -149,10 +149,18 @@ func (ompl *onMusicPlaylist) contextOpen(mi *gtk.MenuItem) {
 		log.Error(err)
 		return
 	}
+
+	playlists.RequestFocus(m3uetcpb.Perspective_MUSIC, ids[0])
 }
 
-func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, col *gtk.TreeViewColumn) {
-	values, err := store.GetTreeStoreValues(tv, path, []store.ModelColumn{store.PLColTree, store.PLColTreeIDList, store.PLColTreeIsGroup})
+func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView,
+	path *gtk.TreePath, col *gtk.TreeViewColumn) {
+
+	values, err := store.GetTreeStoreValues(
+		tv,
+		path,
+		[]store.ModelColumn{store.PLColTree, store.PLColTreeIDList, store.PLColTreeIsGroup},
+	)
 	if err != nil {
 		log.Error(err)
 		return
@@ -183,6 +191,8 @@ func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView, path *gtk.TreePath, co
 		log.Error(err)
 		return
 	}
+
+	playlists.RequestFocus(m3uetcpb.Perspective_MUSIC, ids[0])
 }
 
 func (ompl *onMusicPlaylist) filtered(se *gtk.SearchEntry) {
@@ -194,7 +204,9 @@ func (ompl *onMusicPlaylist) filtered(se *gtk.SearchEntry) {
 	store.FilterPlaylistTreeBy(m3uetcpb.Perspective_MUSIC, text)
 }
 
-func (ompl *onMusicPlaylist) getPlaylistSelections(keep ...bool) (ids []int64, isGroup bool) {
+func (ompl *onMusicPlaylist) getPlaylistSelections(keep ...bool) (
+	ids []int64, isGroup bool) {
+
 	values := ompl.getSelectionValues(keep...)
 	if len(values) == 0 {
 		return
@@ -202,12 +214,12 @@ func (ompl *onMusicPlaylist) getPlaylistSelections(keep ...bool) (ids []int64, i
 
 	idstr, ok := values[store.PLColTreeIDList].(string)
 	if !ok {
-		log.Error("This should not happen!!!")
+		log.Errorf("This should not happen!!! values:%#v", values)
 	}
 
 	isGroup, ok = values[store.PLColTreeIsGroup].(bool)
 	if !ok {
-		log.Error("This should not happen!!!")
+		log.Error("This should not happen!!! values:%#v", values)
 	}
 
 	ids, err := store.StringToIDList(idstr)
