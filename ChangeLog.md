@@ -9,6 +9,29 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.15.0] 2022-02-14
+
+Papercuts
+
+## Fixed
+
+* Latency issue when stopping playback
+
+### Added
+
+* Focus request for GUI playlists
+* GtkApplication, to ensure there's only one GTK instance running
+
+### Modified
+
+* Played threshold when previousEvent is issued
+    * If track position is below threshold, restart current playback
+* Disable video and text in playback
+* Reduce the number of IdleAdd calls for playbar-related updates
+* Don't rebuild playlists from scratch after every update
+* Use a separate db session for scanning tracks
+* Update tests
+
 ## [0.14.0] 2022-02-05
 
 Features, fixes and improvements
