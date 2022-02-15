@@ -16,9 +16,7 @@ func TestGetPlayback(t *testing.T) {
 			false,
 			0,
 			&m3uetcpb.Empty{},
-			&m3uetcpb.GetPlaybackResponse{
-				Playing: false,
-			},
+			&m3uetcpb.GetPlaybackResponse{},
 			false,
 		},
 		{
@@ -28,12 +26,14 @@ func TestGetPlayback(t *testing.T) {
 			0,
 			&m3uetcpb.Empty{},
 			&m3uetcpb.GetPlaybackResponse{
-				Playing: true,
+				IsPlaying: true,
 				Playback: &m3uetcpb.Playback{
 					Id:       1,
 					Location: "./data/testing/audio1/track01.ogg",
 				},
-				Track: &m3uetcpb.Track{},
+				Track: &m3uetcpb.Track{
+					Location: "./data/testing/audio1/track01.ogg",
+				},
 			},
 			false,
 		},
@@ -44,7 +44,7 @@ func TestGetPlayback(t *testing.T) {
 			0,
 			&m3uetcpb.Empty{},
 			&m3uetcpb.GetPlaybackResponse{
-				Playing: true,
+				IsPlaying: true,
 				Playback: &m3uetcpb.Playback{
 					Id:       1,
 					Location: "./data/testing/audio1/track01.ogg",
@@ -73,8 +73,7 @@ func TestGetPlayback(t *testing.T) {
 			res, err := svc.GetPlayback(context.Background(), tc.req.(*m3uetcpb.Empty))
 
 			assert.Equal(t, err != nil, tc.err)
-			assert.Equal(t, res.Playing, exp.Playing)
-			if res.Playing {
+			if exp.IsPlaying {
 				assert.Equal(t, res.Playback != nil, true)
 				assert.Equal(t, res.Playback.Id, exp.Playback.Id)
 				assert.Equal(t, res.Playback.Location, exp.Playback.Location)

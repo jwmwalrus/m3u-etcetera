@@ -242,14 +242,14 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 		if err != nil {
 			return nil,
 				grpc.Errorf(codes.Internal,
-					"Error obtaining perspective:", err)
+					"Error obtaining perspective: %v", err)
 		}
 
 		pl, err = bar.CreateEntry(req.Name, req.Description)
 		if err != nil {
 			return nil,
 				grpc.Errorf(codes.Internal,
-					"Error creating playlist:", err)
+					"Error creating playlist: %v", err)
 		}
 	case m3uetcpb.PlaylistAction_PL_UPDATE:
 		bar := pl.Playbar
@@ -263,7 +263,7 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 		if err != nil {
 			return nil,
 				grpc.Errorf(codes.Internal,
-					"Error updating playlist:", err)
+					"Error updating playlist: %v", err)
 		}
 	case m3uetcpb.PlaylistAction_PL_DESTROY:
 		bar := pl.Playbar
@@ -271,7 +271,7 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 		if err != nil {
 			return nil,
 				grpc.Errorf(codes.Internal,
-					"Error deleting playlist:", err)
+					"Error deleting playlist: %v", err)
 		}
 	}
 
@@ -302,7 +302,7 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 		bar, err = models.PerspectiveIndex(pg.Perspective.Idx).GetPlaybar()
 		if err != nil {
 			return nil,
-				grpc.Errorf(codes.Internal, "Error obtaining perspective:", err)
+				grpc.Errorf(codes.Internal, "Error obtaining perspective: %v", err)
 		}
 	}
 
@@ -311,12 +311,12 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 		bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 		if err != nil {
 			return nil, grpc.Errorf(codes.Internal,
-				"Error obtaining perspective:", err)
+				"Error obtaining perspective: %v", err)
 		}
 		pg, err = bar.CreateGroup(req.Name, req.Description)
 		if err != nil {
 			return nil, grpc.Errorf(codes.Internal,
-				"Error creating playlist group:", err)
+				"Error creating playlist group: %v", err)
 		}
 	case m3uetcpb.PlaylistGroupAction_PG_UPDATE:
 		err := bar.UpdateGroup(pg, req.Name, req.Description,
@@ -325,13 +325,13 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 		if err != nil {
 			return nil,
 				grpc.Errorf(codes.Internal,
-					"Error updating playlist group:", err)
+					"Error updating playlist group: %v", err)
 		}
 	case m3uetcpb.PlaylistGroupAction_PG_DESTROY:
 		err := bar.DestroyGroup(pg)
 		if err != nil {
 			return nil, grpc.Errorf(codes.Internal,
-				"Error deleting playlist group:", err)
+				"Error deleting playlist group: %v", err)
 		}
 	}
 	return &m3uetcpb.ExecutePlaylistGroupActionResponse{Id: pg.ID}, nil

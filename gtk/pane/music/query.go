@@ -77,7 +77,6 @@ func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
 	}
 
 	ids := omqy.getSelection(true)
-	fmt.Println(ids)
 	if len(ids) != 1 {
 		return
 	}

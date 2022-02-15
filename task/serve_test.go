@@ -21,28 +21,28 @@ func TestServe(t *testing.T) {
 			"Start non-running",
 			[]string{"", "serve"},
 			&alive.ServerStarted{},
-			func() { alive.Serve(true) },
-			func() { alive.Serve(true) },
+			func() { alive.Serve(alive.ServeOptions{TurnOff: true}) },
+			func() { alive.Serve(alive.ServeOptions{TurnOff: true}) },
 		},
 		{
 			"Start already running",
 			[]string{"", "serve"},
 			&alive.ServerAlreadyRunning{},
-			func() { alive.Serve(false) },
-			func() { alive.Serve(true) },
+			func() { alive.Serve() },
+			func() { alive.Serve(alive.ServeOptions{TurnOff: true}) },
 		},
 		{
 			"Stop non-running",
-			[]string{"", "serve", "--off"},
+			[]string{"", "serve", "off"},
 			&alive.ServerNotRunning{},
-			func() { alive.Serve(true) },
+			func() { alive.Serve(alive.ServeOptions{TurnOff: true}) },
 			nil,
 		},
 		{
 			"Stop already running",
-			[]string{"", "serve", "--off"},
+			[]string{"", "serve", "off"},
 			&alive.ServerStopped{},
-			func() { alive.Serve(false) },
+			func() { alive.Serve() },
 			nil,
 		},
 	}
@@ -64,7 +64,6 @@ func TestServe(t *testing.T) {
 				tc.setup()
 			}
 			err := app.Run(tc.command)
-			t.Log(reflect.TypeOf(err))
 			if reflect.TypeOf(err) != reflect.TypeOf(tc.expected) {
 				t.Errorf("Expected type %T but got %T", tc.expected, err)
 			}

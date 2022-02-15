@@ -8,7 +8,6 @@ import (
 	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database"
-	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -70,27 +69,18 @@ func setupTest(t *testing.T, tc testCase) {
 		playback.StartEngine()
 	}
 
-	watchingDbg = true
-	go watchDebugChannel(t)
 	return
 }
 
 func teardownTest(t *testing.T) {
 	watchingDbg = false
 
-	playback.StopEngine()
+	playback.Unloader.Callback()
 	closeTestDatabase()
 
 	if _, err := os.Stat(database.DSN()); !os.IsNotExist(err) {
 		if err = os.Remove(database.DSN()); err != nil {
 			panic(err)
 		}
-	}
-}
-
-func watchDebugChannel(t *testing.T) {
-	for watchingDbg {
-		msg := <-models.DbgChan
-		t.Log(msg)
 	}
 }
