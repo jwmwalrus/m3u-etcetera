@@ -14,14 +14,21 @@ func GetTreeSelectionValue(sel *gtk.TreeSelection, col ModelColumn) (
 	model, iter, ok := sel.GetSelected()
 	if ok {
 		var gval *glib.Value
+
 		gval, err = model.(*gtk.TreeModel).GetValue(iter, int(col))
 		if err != nil {
 			log.Error(err)
 			return
 		}
+
 		value, err = gval.GoValue()
 		if err != nil {
 			log.Error(err)
+			return
+		}
+
+		if value == nil {
+			err = fmt.Errorf("Unable to get tree-selection value")
 			return
 		}
 	}
@@ -51,7 +58,16 @@ func GetListStoreModelValue(model *gtk.ListStore, iter *gtk.TreeIter,
 	if err != nil {
 		return
 	}
+
 	value, err = gval.GoValue()
+	if err != nil {
+		return
+	}
+
+	if value == nil {
+		err = fmt.Errorf("Unable to get list-store-model value")
+		return
+	}
 	return
 }
 
@@ -78,21 +94,33 @@ func GetListStoreValue(tv *gtk.TreeView, path *gtk.TreePath,
 	if err != nil {
 		return
 	}
+
 	model, ok := imodel.(*gtk.ListStore)
 	if !ok {
 		err = fmt.Errorf("Unable to get model from treeview")
 		return
 	}
+
 	iter, err := model.GetIter(path)
 	if err != nil {
 		log.Error(err)
 		return
 	}
+
 	gval, err := model.GetValue(iter, int(col))
 	if err != nil {
 		return
 	}
+
 	value, err = gval.GoValue()
+	if err != nil {
+		return
+	}
+
+	if value == nil {
+		err = fmt.Errorf("Unable to get list-store value")
+		return
+	}
 	return
 }
 
@@ -119,21 +147,33 @@ func GetTreeStoreValue(tv *gtk.TreeView, path *gtk.TreePath,
 	if err != nil {
 		return
 	}
+
 	model, ok := imodel.(*gtk.TreeStore)
 	if !ok {
 		err = fmt.Errorf("Unable to get model from treeview")
 		return
 	}
+
 	iter, err := model.GetIter(path)
 	if err != nil {
 		log.Error(err)
 		return
 	}
+
 	gval, err := model.GetValue(iter, int(col))
 	if err != nil {
 		return
 	}
+
 	value, err = gval.GoValue()
+	if err != nil {
+		return
+	}
+
+	if value == nil {
+		err = fmt.Errorf("Unable to get tree-store value")
+		return
+	}
 	return
 }
 
