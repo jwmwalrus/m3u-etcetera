@@ -28,15 +28,17 @@ var (
 
 	// LastCheck UTC timestamp for last check
 	LastCheck int64
+
+	lastStatus error
 )
 
 // CheckServerStatus If ServerCheckInterval is up, starts the server
-func CheckServerStatus() (err error) {
-	if time.Now().Unix()-LastCheck > ServerCheckInterval {
-		err = Serve()
+func CheckServerStatus() error {
+	if lastStatus == nil || (time.Now().Unix()-LastCheck > ServerCheckInterval) {
+		lastStatus = Serve()
 	}
 
-	return
+	return lastStatus
 }
 
 // Serve starts or stops the server
