@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"os"
 
@@ -20,6 +21,9 @@ var (
 	window    *gtk.ApplicationWindow
 	b         *gtk.Builder
 	activated bool
+
+	//go:embed ui images
+	data embed.FS
 )
 
 func main() {
@@ -40,14 +44,19 @@ func main() {
 		log.Infof("Activating primary instance: %v", appID)
 
 		activated = true
-		if b, err = gtk.BuilderNewFromFile("data/ui/appwindow.ui"); err != nil {
+		if b, err = builder.Setup(&data); err != nil {
 			log.Fatalf("Unable to create builder: %v", err)
 		}
 
-		builder.Setup(b)
-
 		if window, err = builder.GetApplicationWindow(); err != nil {
 			log.Fatalf("Unable to obtaain the application window: %v", err)
+		}
+
+		icon, err := builder.PixbufNewFromFile("images/m3u-etcetera.svg")
+		if err != nil {
+			log.Error(err)
+		} else {
+			window.SetIcon(icon)
 		}
 
 		window.SetApplication(app)

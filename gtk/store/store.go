@@ -1,7 +1,6 @@
 package store
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -317,7 +316,6 @@ func getClientConn1() (*grpc.ClientConn, error) {
 func sanityCheck() (err error) {
 	log.Info("Checking server status")
 	err = alive.CheckServerStatus()
-	fmt.Println("sanityCheck:", err)
 	switch err.(type) {
 	case *alive.ServerAlreadyRunning,
 		*alive.ServerStarted:

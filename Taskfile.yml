@@ -37,7 +37,9 @@ tasks:
     silent: true
   build:gtk:
     cmds:
+      - cp -r data/ui data/images cmd/m3uetc-gtk/ >/dev/null 2>&1
       - go build -v -ldflags=-w -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
+      - rm -rf cmd/m3uetc-gtk/ui cmd/m3uetc-gtk/images >/dev/null 2>&1
     silent: true
 
   dev:
@@ -62,7 +64,9 @@ tasks:
       - go build -v -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
   dev:gtk:
     cmds:
+      - cp -r data/ui data/images cmd/m3uetc-gtk/
       - go build -v -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
+      - rm -rf cmd/m3uetc-gtk/ui cmd/m3uetc-gtk/images
 
   race:
     cmds:

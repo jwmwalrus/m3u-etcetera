@@ -330,7 +330,6 @@
     <property name="window-position">center</property>
     <property name="default-width">800</property>
     <property name="default-height">600</property>
-    <property name="icon">../images/m3u-etcetera.svg</property>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>

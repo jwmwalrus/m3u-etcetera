@@ -193,7 +193,7 @@ func (omqy *onMusicQuery) contextNewPlaylist(mi *gtk.MenuItem) {
 func (omqy *onMusicQuery) createDialog() (err error) {
 	log.Info("Creating query dialog")
 
-	err = builder.AddFromFile("data/ui/pane/query-dialog.ui")
+	err = builder.AddFromFile("ui/pane/query-dialog.ui")
 	if err != nil {
 		err = fmt.Errorf("Unable to add query-dialog file to builder: %v", err)
 		return

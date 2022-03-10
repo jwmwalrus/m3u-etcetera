@@ -104,7 +104,7 @@ func (pbd *playbackData) setPlaybackUI() (err error) {
 		return
 	}
 
-	pbd.logoPixbuf, err = gdk.PixbufNewFromFile("data/images/m3u-etcetera.png")
+	pbd.logoPixbuf, err = builder.PixbufNewFromFile("images/m3u-etcetera.png")
 	if err != nil {
 		return
 	}

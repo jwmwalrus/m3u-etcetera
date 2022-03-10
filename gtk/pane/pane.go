@@ -68,22 +68,22 @@ func init() {
 	paneList = paneMap{
 		m3uetcpb.Perspective_MUSIC: paneData{
 			id:    "music_perspective_pane",
-			path:  "data/ui/pane/music.ui",
+			path:  "ui/pane/music.ui",
 			setup: musicpane.Setup,
 		},
 		m3uetcpb.Perspective_RADIO: paneData{
 			id:    "radio_perspective_pane",
-			path:  "data/ui/pane/radio.ui",
+			path:  "ui/pane/radio.ui",
 			setup: radiopane.Setup,
 		},
 		m3uetcpb.Perspective_PODCASTS: paneData{
 			id:    "podcasts_perspective_pane",
-			path:  "data/ui/pane/podcasts.ui",
+			path:  "ui/pane/podcasts.ui",
 			setup: podcastspane.Setup,
 		},
 		m3uetcpb.Perspective_AUDIOBOOKS: paneData{
 			id:    "audiobooks_perspective_pane",
-			path:  "data/ui/pane/audiobooks.ui",
+			path:  "ui/pane/audiobooks.ui",
 			setup: audiobookspane.Setup,
 		},
 	}

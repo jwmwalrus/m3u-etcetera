@@ -1,17 +1,24 @@
 package builder
 
 import (
+	"embed"
 	"log"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 )
 
 var (
-	app *gtk.Builder
+	app  *gtk.Builder
+	data *embed.FS
 )
 
 func AddFromFile(path string) error {
-	return app.AddFromFile(path)
+	bv, err := data.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return app.AddFromString(string(bv))
 }
 
 func ConnectSignals(signals map[string]interface{}) {
@@ -30,6 +37,24 @@ func GetApplicationWindow() (window *gtk.ApplicationWindow, err error) {
 	return
 }
 
-func Setup(b *gtk.Builder) {
-	app = b
+func PixbufNewFromFile(path string) (*gdk.Pixbuf, error) {
+	bv, err := data.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return gdk.PixbufNewFromDataOnly(bv)
+}
+
+func Setup(fs *embed.FS) (b *gtk.Builder, err error) {
+	data = fs
+	var bv []byte
+	if bv, err = data.ReadFile("ui/appwindow.ui"); err != nil {
+		return
+	}
+	app, err = gtk.BuilderNewFromString(string(bv))
+	if err == nil {
+		b = app
+	}
+	return
 }

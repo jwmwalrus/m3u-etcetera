@@ -28,7 +28,7 @@ func Setup(signals *map[string]interface{}) (err error) {
 		createPlaylist(btn, m3uetcpb.Perspective_MUSIC)
 	}
 
-	if err = builder.AddFromFile("data/ui/pane/playlist-dialog.ui"); err != nil {
+	if err = builder.AddFromFile("ui/pane/playlist-dialog.ui"); err != nil {
 		err = fmt.Errorf("Unable to add playlist-dialog file to builder: %v", err)
 		return
 	}
