@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jwmwalrus/bnp/stringing"
+	"github.com/jwmwalrus/bnp/ing2"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
@@ -372,7 +372,7 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 	if name == "" {
 		name = strings.Join([]string{
 			strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
-			stringing.GetRandomString(8),
+			ing2.GetRandomString(8),
 			def.Type(),
 		}, "-")
 	}

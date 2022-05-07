@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -49,7 +49,7 @@ func (*QueueSvc) GetQueue(_ context.Context,
 func (*QueueSvc) ExecuteQueueAction(_ context.Context,
 	req *m3uetcpb.ExecuteQueueActionRequest) (*m3uetcpb.Empty, error) {
 
-	if slice.Contains(
+	if slices.Contains(
 		[]m3uetcpb.QueueAction{
 			m3uetcpb.QueueAction_Q_APPEND,
 			m3uetcpb.QueueAction_Q_PREPEND,

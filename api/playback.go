@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -82,7 +82,7 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 	}
 
 	go func() {
-		if !slice.Contains(
+		if !slices.Contains(
 			[]m3uetcpb.PlaybackAction{
 				m3uetcpb.PlaybackAction_PB_PLAY,
 				m3uetcpb.PlaybackAction_PB_SEEK,

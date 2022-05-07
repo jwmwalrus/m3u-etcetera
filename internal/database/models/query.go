@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
@@ -14,6 +13,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -68,7 +68,7 @@ var supportedParams = []string{
 // CountSupportedParams returns the count of supported parameters in a slice
 func CountSupportedParams(qp []qparams.QParam) (n int) {
 	for _, x := range qp {
-		if !slice.Contains(supportedParams, x.Key) {
+		if !slices.Contains(supportedParams, x.Key) {
 			continue
 		}
 		n++
@@ -219,7 +219,7 @@ func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
 		if qy.Params != "" {
 			parsed, _ := qparams.ParseParams(qy.Params)
 			for _, x := range parsed {
-				if !slice.Contains(supportedParams, strings.ToLower(x.Key)) {
+				if !slices.Contains(supportedParams, strings.ToLower(x.Key)) {
 					log.Warnf("Ignored query paranmeter: %v", x.Key)
 					continue
 				}

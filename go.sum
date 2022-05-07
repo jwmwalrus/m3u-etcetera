@@ -146,8 +146,8 @@ github.com/jinzhu/now v1.1.4/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/jwmwalrus/bnp v1.8.0/go.mod h1:HujL86+h/GMqPY4NnSczQO8QQJ+FP3Fnha7OmCBYPQo=
-github.com/jwmwalrus/bnp v1.9.0 h1:xt5dbAcT5F1mIKTja+uwmP7ptbTrtZ/5tIRFeoxUP0E=
-github.com/jwmwalrus/bnp v1.9.0/go.mod h1:HujL86+h/GMqPY4NnSczQO8QQJ+FP3Fnha7OmCBYPQo=
+github.com/jwmwalrus/bnp v1.10.0 h1:pTWXt4tLScvLrKuQ0A04sNewC4LZZIf7Dfau2XSKkO4=
+github.com/jwmwalrus/bnp v1.10.0/go.mod h1:C+4FnM0i/rbndDIUlJoe6AABAD80vpL4iyvkjXQnXRY=
 github.com/jwmwalrus/onerror v0.1.0 h1:K+ZL8Kj2nMycpoFhUeAsQ3TfLHO5nosiLTGNZ2H62aw=
 github.com/jwmwalrus/onerror v0.1.0/go.mod h1:Z4CaL9kZCriXMrr79lpwOFVes6B/Xqe6joBtn/4VAJ0=
 github.com/jwmwalrus/seater v0.1.1 h1:VpeZ5XBBr3IrDsGrT4tZWfUz94WQr8NLzjI771MBSlg=
@@ -224,8 +224,6 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/tinyzimmer/go-glib v0.0.24 h1:ktZZC22/9t88kGRgNEFV/SESgIWhGHE+q7Z7Qj++luw=
 github.com/tinyzimmer/go-glib v0.0.24/go.mod h1:ltV0gO6xNFzZhsIRbFXv8RTq9NGoNT2dmAER4YmZfaM=
-github.com/tinyzimmer/go-gst v0.2.32 h1:bwJ1VfLyoeQPxuE7LgCTwwvMXFufnFoSws7QhaCfsY8=
-github.com/tinyzimmer/go-gst v0.2.32/go.mod h1:V4h+HPS3mVGSwUJ7IBi3WAkJWITZasebERyqk3TEXUM=
 github.com/tinyzimmer/go-gst v0.2.33-0.20220206094809-640725988f1e h1:MwmCHrme/WrBj9erXRaFBkSqBDjN/ookHMc9fUyitSs=
 github.com/tinyzimmer/go-gst v0.2.33-0.20220206094809-640725988f1e/go.mod h1:V4h+HPS3mVGSwUJ7IBi3WAkJWITZasebERyqk3TEXUM=
 github.com/urfave/cli/v2 v2.3.0 h1:qph92Y649prgesehzOrQjdWyxFOp/QVM+6imKHad91M=
@@ -251,6 +249,8 @@ golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPh
 golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a h1:kr2P4QFmQr29mSLA43kwrOcgcReGTfbE9N577tCTuBc=
 golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a/go.mod h1:P+XmwS30IXTQdn5tA2iutPOUgjI07+tq3H3K9MVA1s8=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
+golang.org/x/exp v0.0.0-20220428152302-39d4317da171 h1:TfdoLivD44QwvssI9Sv1xwa5DcL5XQr4au4sZ2F2NV4=
+golang.org/x/exp v0.0.0-20220428152302-39d4317da171/go.mod h1:lgLbSvA5ygNOMpwM/9anMpWVlVJ7Z+cHWq/eFuinpGE=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=
 golang.org/x/lint v0.0.0-20190227174305-5b3e6a55c961/go.mod h1:wehouNa3lNwaWXcvxsM5YxQ5yQlVC4a0KAMCusXpPoU=
 golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3/go.mod h1:6SW0HCj/g11FgYtHlgUYUwCkIfeOF89ocIRzGO/8vkc=
@@ -293,7 +293,6 @@ golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210330210617-4fbd30eecc44/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20210423082822-04245dca01da/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210510120138-977fb7262007/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220111092808-5a964db01320 h1:0jf+tOCoZ3LyutmCOWpVni1chK4VfFLhRsDK7MhqGRY=
@@ -303,7 +302,6 @@ golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.2/go.mod h1:bEr9sfX3Q8Zfm5fL9x+3itogRgK3+ptLWKqgva+5dAk=
 golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
 golang.org/x/text v0.3.5/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
-golang.org/x/text v0.3.6/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
 golang.org/x/text v0.3.7 h1:olpwvP2KacW1ZWvsR7uQhoyTYvKAupfQrRGBFM352Gk=
 golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
 golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=

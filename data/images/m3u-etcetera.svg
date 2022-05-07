@@ -7,7 +7,7 @@
    viewBox="0 0 210 297"
    version="1.1"
    id="svg5"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
    sodipodi:docname="m3u-etcetera.svg"
    inkscape:export-filename="/media/walrus/workspace/src/m3u-etcetera/data/images/m3u-etcetera.png"
    inkscape:export-xdpi="96"
@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="true"
-     inkscape:zoom="2.0989209"
-     inkscape:cx="-88.855183"
-     inkscape:cy="148.88603"
+     inkscape:zoom="0.7420806"
+     inkscape:cx="-763.39416"
+     inkscape:cy="400.89985"
      inkscape:window-width="2560"
      inkscape:window-height="1012"
      inkscape:window-x="0"
@@ -62,6 +62,22 @@
        inkscape:export-xdpi="96"
        inkscape:export-ydpi="96"
        transform="scale(-1)" />
+    <rect
+       style="fill:#000000;stroke-width:0.269806"
+       id="rect42-7-1"
+       width="6.1252937"
+       height="8.9133186"
+       x="1.439324"
+       y="-26.592468"
+       transform="matrix(-0.01769844,0.99984337,-0.99999046,0.00436898,0,0)" />
+    <rect
+       style="fill:#000000;stroke-width:0.25003"
+       id="rect42-7-1-2"
+       width="5.3300014"
+       height="8.7966557"
+       x="10.651373"
+       y="-26.779327"
+       transform="matrix(-0.02007306,0.99979852,-0.99999258,0.00385198,0,0)" />
     <rect
        style="fill:#000000;stroke-width:0.357448"
        id="rect3259-6-8-0-5-6"
@@ -247,6 +263,13 @@
        x="12.964583"
        y="2.6458321" />
     <rect
+       style="fill:#000000;stroke-width:0.343171"
+       id="rect42-70"
+       width="3.7091937"
+       height="23.8125"
+       x="23.542889"
+       y="1.3229166" />
+    <rect
        style="fill:#000000;stroke-width:0.344514"
        id="rect50"
        width="3.7383091"
@@ -303,29 +326,13 @@
        x="5.9874225"
        y="27.78125" />
     <rect
-       style="fill:#000000;stroke-width:0.275832"
-       id="rect38-3"
-       width="5.9499784"
-       height="9.5904169"
-       x="1.3048413"
-       y="-27.807037"
-       transform="matrix(-0.01960404,0.99980782,-0.99999222,0.00394416,0,0)" />
-    <rect
-       style="fill:#000000;stroke-width:0.291745"
-       id="rect40-6"
-       width="6.6562214"
-       height="9.590436"
-       x="9.8712721"
-       y="-27.760088"
-       transform="matrix(-0.017524,0.99984644,-0.99999026,0.00441249,0,0)" />
-    <rect
-       style="fill:#000000;stroke-width:0.27987"
+       style="fill:#000000;stroke-width:0.267673"
        id="rect42-7"
-       width="6.1254449"
-       height="9.5904207"
-       x="19.127258"
-       y="-27.756887"
-       transform="matrix(-0.01904246,0.99981868,-0.99999176,0.00406052,0,0)" />
+       width="6.1252637"
+       height="8.7729759"
+       x="19.133385"
+       y="-26.8986"
+       transform="matrix(-0.01741985,0.99984826,-0.99999015,0.00443887,0,0)" />
     <path
        sodipodi:type="star"
        style="fill:#ff0000"

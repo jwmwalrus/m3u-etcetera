@@ -6,10 +6,10 @@ import (
 	"io"
 
 	"github.com/gotk3/gotk3/glib"
-	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc/status"
 )
 
@@ -260,7 +260,7 @@ func processBDataItemReplacements() {
 
 		for i := range BData.OpenPlaylistTrack {
 			if BData.OpenPlaylistTrack[i].PlaylistId != pl.Id ||
-				slice.Contains(
+				slices.Contains(
 					BData.PlaylistTrackReplacementIDs,
 					BData.OpenPlaylistTrack[i].Id,
 				) {

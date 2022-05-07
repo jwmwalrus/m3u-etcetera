@@ -3,8 +3,8 @@ package base
 import (
 	"path/filepath"
 
-	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -87,7 +87,7 @@ func IsSupportedURL(s string) bool {
 
 // IsSupportedFile returns true if the path is supported
 func IsSupportedFile(path string) bool {
-	return slice.Contains(SupportedFileExtensions, filepath.Ext(path))
+	return slices.Contains(SupportedFileExtensions, filepath.Ext(path))
 }
 
 // IsSupportedPlaylistURL returns true if the path is supported
@@ -102,10 +102,10 @@ func IsSupportedPlaylistURL(s string) bool {
 
 // IsSupportedFile returns true if the path is supported
 func IsSupportedPlaylist(path string) bool {
-	return slice.Contains(SupportedPlaylistExtensions, filepath.Ext(path))
+	return slices.Contains(SupportedPlaylistExtensions, filepath.Ext(path))
 }
 
 // IsIgnoredFile returns true if the path should be ignored
 func IsIgnoredFile(path string) bool {
-	return slice.Contains(IgnoredFileExtensions, filepath.Ext(path))
+	return slices.Contains(IgnoredFileExtensions, filepath.Ext(path))
 }

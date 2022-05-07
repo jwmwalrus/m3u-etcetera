@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jwmwalrus/bnp/slice"
+	"golang.org/x/exp/slices"
 )
 
 // QParam defines a query parameter
@@ -195,7 +195,7 @@ func getKeyVal(s string) (k, v string, err error) {
 func isCondition(s string) bool {
 	conditions := []string{"and", "or", "not"}
 	cond := strings.ToLower(s)
-	return slice.Contains(conditions, cond)
+	return slices.Contains(conditions, cond)
 }
 
 func parseCondition(cond string) (or, not bool) {

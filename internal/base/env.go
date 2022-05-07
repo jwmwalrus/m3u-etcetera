@@ -10,7 +10,7 @@ import (
 	"syscall"
 
 	"github.com/adrg/xdg"
-	"github.com/jwmwalrus/bnp/stringing"
+	"github.com/jwmwalrus/bnp/ing2"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/config"
 	"github.com/pborman/getopt/v2"
 	log "github.com/sirupsen/logrus"
@@ -161,7 +161,7 @@ func init() {
 	InterruptSignal = make(chan os.Signal, 1)
 	signal.Notify(InterruptSignal, os.Interrupt, syscall.SIGTERM)
 
-	InstanceSuffix = stringing.GetRandomString(8)
+	InstanceSuffix = ing2.GetRandomString(8)
 
 	// XDG-related
 	DataDir = filepath.Join(xdg.DataHome, AppDirName)

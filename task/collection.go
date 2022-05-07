@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/slices"
 )
 
 // Collection defines the collection-related tasks
@@ -231,7 +231,7 @@ func collectionAddAction(c *cli.Context) (err error) {
 	}
 
 	persp := getPerspective(c)
-	if !slice.Contains([]m3uetcpb.Perspective{
+	if !slices.Contains([]m3uetcpb.Perspective{
 		m3uetcpb.Perspective_MUSIC, m3uetcpb.Perspective_AUDIOBOOKS}, persp) {
 		err = fmt.Errorf("Invalid perspective provided")
 		return

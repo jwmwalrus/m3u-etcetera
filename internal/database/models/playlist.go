@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -15,6 +14,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -413,7 +413,7 @@ func FindPlaylistsIn(ids []int64) (pls []*Playlist, notFound []int64) {
 	}
 
 	for _, id := range ids {
-		if !slice.Contains(actual, id) {
+		if !slices.Contains(actual, id) {
 			notFound = append(notFound, id)
 		}
 	}
@@ -435,7 +435,7 @@ func GetTransientNameForPlaylist() string {
 
 	for i := 1; i <= MaxOpenTransientPlaylists; i++ {
 		name := "Playlist " + strconv.Itoa(i)
-		if exists, _ := slice.HasValue(names, name); exists {
+		if slices.Contains(names, name) {
 			continue
 		}
 		return name

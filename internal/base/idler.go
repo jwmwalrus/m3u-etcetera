@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/jwmwalrus/bnp/slice"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -171,7 +171,7 @@ func IsAppBusy() bool {
 
 // IsAppBusyBy returns true if some process has registered as busy
 func IsAppBusyBy(is IdleStatus) bool {
-	return slice.Contains(idleStatusStack, is)
+	return slices.Contains(idleStatusStack, is)
 }
 
 // IsAppIdling returns true if the Idle method is active

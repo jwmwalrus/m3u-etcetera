@@ -1,6 +1,6 @@
 module github.com/jwmwalrus/m3u-etcetera
 
-go 1.17
+go 1.18
 
 require (
 	github.com/adrg/xdg v0.4.0
@@ -9,7 +9,7 @@ require (
 	github.com/go-testfixtures/testfixtures/v3 v3.6.1
 	github.com/godbus/dbus/v5 v5.0.6
 	github.com/gotk3/gotk3 v0.6.2-0.20211226093840-cf265f40b836
-	github.com/jwmwalrus/bnp v1.9.0
+	github.com/jwmwalrus/bnp v1.10.0
 	github.com/jwmwalrus/onerror v0.1.0
 	github.com/jwmwalrus/seater v0.1.1
 	github.com/nightlyone/lockfile v1.0.0
@@ -20,6 +20,7 @@ require (
 	github.com/tinyzimmer/go-glib v0.0.24
 	github.com/tinyzimmer/go-gst v0.2.33-0.20220206094809-640725988f1e
 	github.com/urfave/cli/v2 v2.3.0
+	golang.org/x/exp v0.0.0-20220428152302-39d4317da171
 	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/jwmwalrus/bnp/stringing"
+	"github.com/jwmwalrus/bnp/ing2"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
@@ -34,7 +34,7 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 		return
 	}
 
-	miSuffix := stringing.GetRandomString(6)
+	miSuffix := ing2.GetRandomString(6)
 	for _, l := range []string{"top", "up", "down", "bottom"} {
 		mi, err := builder.GetMenuItem(contextMenuID + "_" + l)
 		if err != nil {

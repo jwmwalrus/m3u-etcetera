@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/dhowden/tag"
-	"github.com/jwmwalrus/bnp/slice"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 
@@ -455,7 +455,7 @@ func FindTracksIn(ids []int64) (ts []*Track, notFound []int64) {
 	}
 
 	for _, id := range ids {
-		if !slice.Contains(actual, id) {
+		if !slices.Contains(actual, id) {
 			notFound = append(notFound, id)
 		}
 	}

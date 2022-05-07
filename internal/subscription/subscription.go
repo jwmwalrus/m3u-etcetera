@@ -3,7 +3,7 @@ package subscription
 import (
 	"sync"
 
-	"github.com/jwmwalrus/bnp/stringing"
+	"github.com/jwmwalrus/bnp/ing2"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
 )
@@ -71,7 +71,7 @@ func Subscribe(st Type) (*Subscriber, string) {
 
 	s := Subscriber{
 		st:    st,
-		id:    stringing.GetRandomString(16),
+		id:    ing2.GetRandomString(16),
 		Event: make(chan Event),
 	}
 	s.Unsubscribe = func() {
