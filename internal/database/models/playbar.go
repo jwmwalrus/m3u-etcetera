@@ -263,14 +263,6 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 
 // DestroyEntry deletes a playlist
 func (b *Playbar) DestroyEntry(pl *Playlist) error {
-	if pl.Transient {
-		tx := db.Session(&gorm.Session{SkipHooks: true})
-		pld := Playlist{}
-		if errd := tx.First(&pld).Error; errd == nil {
-			pld.DeleteTx(tx)
-		}
-		return nil
-	}
 	return pl.Delete()
 }
 

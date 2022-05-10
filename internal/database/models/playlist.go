@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
+	"github.com/jwmwalrus/bnp/ing2"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -80,31 +80,17 @@ func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
 		onerror.Log(pts[i].DeleteTx(tx))
 	}
 
-	if !pl.Transient {
-		pl.Transient = true
-		err = tx.Save(pl).Error
-		return
-	}
-
-	err = tx.Delete(pl).Error
+	pl.Transient = true
+	pl.Name += fmt.Sprintf(" (deleted %v)", ing2.GetRandomString(8))
+	err = tx.Save(pl).Error
 	return
 }
 
 // Read implements the DataReader interface
-func (pl *Playlist) Read(id int64) (err error) {
-	err = db.Joins("Playbar").
+func (pl *Playlist) Read(id int64) error {
+	return db.Joins("Playbar").
 		First(pl, id).
 		Error
-
-	if pl.Transient && !pl.Open {
-		go func() {
-			time.Sleep(2 * time.Second)
-			tx := db.Session(&gorm.Session{SkipHooks: true})
-			pl.DeleteTx(tx)
-		}()
-	}
-
-	return
 }
 
 // Save implements the DataUpdater interface
