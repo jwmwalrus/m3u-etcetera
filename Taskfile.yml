@@ -4,49 +4,86 @@
 version: '3'
 
 vars:
-  GREETING: Hello, World!
+  RACE_FLAG: ''
 
 tasks:
-  default:
-    cmds:
-      - echo "{{.GREETING}}"
-    silent: true
-
+  ## prod build commands
   build:
+    desc: Build for production
+    deps: [clean]
     cmds:
-      - task: clean
       - task: build:server
       - task: build:task
       - task: build:gtk
+    silent: true
+  build:server:
+    desc: Build server for production
+    cmds:
+      - task: build:go
+        vars: {SUFFIX: server}
+    silent: true
+  build:task:
+    desc: Build task for production
+    cmds:
+      - task: build:go
+        vars: {SUFFIX: task}
+    silent: true
+  build:gtk:
+    desc: Build gtk for production
+    deps: [copy-cmd-data]
+    cmds:
+      - defer: {task: remove-cmd-data}
+      - task: build:go
+        vars: {SUFFIX: gtk}
+    silent: true
+  build:go:
+    cmds:
+      - >
+        go build -v -ldflags=-w -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
+        ./cmd/m3uetc-{{.SUFFIX}}
+    silent: true
+
   build:s:
     cmds:
       - task: build:server
+    silent: true
   build:t:
     cmds:
       - task: build:task
+    silent: true
   build:g:
     cmds:
       - task: build:gtk
-  build:server:
-    cmds:
-      - go build -v -ldflags=-w -o ./m3uetc-server{{exeExt}} ./cmd/m3uetc-server
-    silent: true
-  build:task:
-    cmds:
-      - go build -v -ldflags=-w -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
-    silent: true
-  build:gtk:
-    cmds:
-      - cp -r data/ui data/images cmd/m3uetc-gtk/ >/dev/null 2>&1
-      - go build -v -ldflags=-w -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
-      - rm -rf cmd/m3uetc-gtk/ui cmd/m3uetc-gtk/images >/dev/null 2>&1
     silent: true
 
+  ## dev build commands
+
   dev:
+    desc: Build for development
     cmds:
       - task: dev:server
       - task: dev:task
       - task: dev:gtk
+  dev:server:
+    desc: Build server for development
+    cmds:
+      - task: dev:go
+        vars: {SUFFIX: task, RACE_FLAG: "{{.RACE_FLAG}}"}
+  dev:task:
+    desc: Build task for development
+    cmds:
+      - task: dev:go
+        vars: {SUFFIX: task, RACE_FLAG: "{{.RACE_FLAG}}"}
+  dev:gtk:
+    desc: Build gtk for development
+    deps: [copy-cmd-data]
+    cmds:
+      - defer: {task: remove-cmd-data}
+      - task: dev:go
+        vars: {SUFFIX: gtk, RACE_FLAG: "{{.RACE_FLAG}}"}
+  dev:go: >
+    go build -v {{.RACE_FLAG}} -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
+    ./cmd/m3uetc-{{.SUFFIX}}
   dev:s:
     cmds:
       - task: dev:server
@@ -56,23 +93,26 @@ tasks:
   dev:g:
     cmds:
       - task: dev:gtk
-  dev:server:
-    cmds:
-      - go build -v -o ./m3uetc-server{{exeExt}} ./cmd/m3uetc-server
-  dev:task:
-    cmds:
-      - go build -v -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
-  dev:gtk:
-    cmds:
-      - cp -r data/ui data/images cmd/m3uetc-gtk/
-      - go build -v -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
-      - rm -rf cmd/m3uetc-gtk/ui cmd/m3uetc-gtk/images
+
+  ## race dev build commands
 
   race:
     cmds:
       - task: race:server
       - task: race:task
       - task: race:gtk
+  race:server:
+    cmds:
+      - task: dev:server
+        vars: {RACE_FLAG: '-race'}
+  race:task:
+    cmds:
+      - task: dev:task
+        vars: {RACE_FLAG: '-race'}
+  race:gtk:
+    cmds:
+      - task: dev:gtk
+        vars: {RACE_FLAG: '-race'}
   race:s:
     cmds:
       - task: race:server
@@ -82,28 +122,26 @@ tasks:
   race:g:
     cmds:
       - task: race:gtk
-  race:server:
-    cmds:
-      - go build -v -race -o ./m3uetc-server{{exeExt}} ./cmd/m3uetc-server
-  race:task:
-    cmds:
-      - go build -v -race -o ./m3uetc-task{{exeExt}} ./cmd/m3uetc-task
-  race:gtk:
-    cmds:
-      - go build -v -race -o ./m3uetc-gtk{{exeExt}} ./cmd/m3uetc-gtk
 
-  clean:
+  ## semantic version commands
+
+  bump:minor:
+    desc: Bump minor version number
+    deps: [bumpy-exists]
     cmds:
-      - rm m3uetc-server > /dev/null 2>&1
-      - rm m3uetc-task > /dev/null 2>&1
-      - rm m3uetc-gtk > /dev/null 2>&1
+      - bumpy bump --minor
     silent: true
-
-  test:
+  bump:patch:
+    desc: Bump patch version number
+    deps: [bumpy-exists]
     cmds:
-      - go test -v -p 1 ./...
+      - bumpy bump --patch
     silent: true
-
+  tag:
+    desc: Create tag for the current ChangeLog
+    cmds:
+      - bumpy tag
+    silent: true
   bump:min:
     cmds:
       - task: bump:minor
@@ -112,20 +150,54 @@ tasks:
     cmds:
       - task: bump:patch
     silent: true
-  bump:minor:
-    cmds:
-      - bumpy bump --minor
-    silent: true
-  bump:patch:
-    cmds:
-      - bumpy bump --patch
-    silent: true
-  tag:
-    cmds:
-      - bumpy tag
-    silent: true
+
+  ## protobuf commands
 
   proto:
+    desc: Process protobuf files
     cmds:
       - protoc --go_out=. --go_opt=paths=source_relative api/m3uetcpb/*.proto
-      - protoc --go-grpc_out=. --go-grpc_opt=paths=source_relative api/m3uetcpb/*.proto
+      - protoc --go-grpc_out=. \
+        --go-grpc_opt=paths=source_relative api/m3uetcpb/*.proto
+
+  ## utility commands
+
+  clean:
+    desc: Clean, remove output files
+    deps: [clean-server, clean-task, clean-gtk]
+    silent: true
+  clean-server:
+    cmds:
+      - rm m3uetc-server > /dev/null 2>&1
+    status:
+      - test ! -f ./m3uetc-server
+    silent: true
+  clean-task:
+    cmds:
+      - rm m3uetc-task > /dev/null 2>&1
+    status:
+      - test ! -f ./m3uetc-task
+    silent: true
+  clean-gtk:
+    cmds:
+      - rm m3uetc-gtk > /dev/null 2>&1
+    status:
+      - test ! -f ./m3uetc-gtk
+    silent: true
+  copy-cmd-data:
+    deps: [remove-cmd-data]
+    cmds:
+      - cp -r data/ui data/images cmd/m3uetc-gtk/ >/dev/null 2>&1
+    silent: true
+  remove-cmd-data:
+    cmds:
+      - rm -rf cmd/m3uetc-gtk/ui cmd/m3uetc-gtk/images >/dev/null 2>&1
+    status:
+      - test ! -d cmd/m3uetc-gtk/ui
+      - test ! -d cmd/m3uetc-gtk/images
+    ignore_error: true
+    silent: true
+  bumpy-exists:
+    cmds:
+      - which bumpy
+    silent: true
