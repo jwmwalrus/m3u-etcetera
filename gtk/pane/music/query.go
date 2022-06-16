@@ -117,7 +117,6 @@ func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
 
 	if err := store.ApplyQuery(req, targetID); err != nil {
 		log.Error(err)
-		return
 	}
 }
 
@@ -134,7 +133,6 @@ func (omqy *onMusicQuery) contextDelete(mi *gtk.MenuItem) {
 
 	if err := store.RemoveQuery(req); err != nil {
 		log.Error(err)
-		return
 	}
 }
 
@@ -158,36 +156,9 @@ func (omqy *onMusicQuery) contextNewPlaylist(mi *gtk.MenuItem) {
 		return
 	}
 
-	reqpl := &m3uetcpb.ExecutePlaylistActionRequest{
-		Action:      m3uetcpb.PlaylistAction_PL_CREATE,
-		Perspective: m3uetcpb.Perspective_MUSIC,
+	if err := omqy.newPlaylist(ids[0]); err != nil {
+		log.Errorf("Error while creating playlist from query: %v", err)
 	}
-	respl, err := store.ExecutePlaylistAction(reqpl)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	reqqy := &m3uetcpb.ApplyQueryRequest{
-		Id: ids[0],
-	}
-
-	if err := store.ApplyQuery(reqqy, respl.Id); err != nil {
-		log.Error(err)
-
-		reqbar := &m3uetcpb.ExecutePlaybarActionRequest{
-			Action: m3uetcpb.PlaybarAction_BAR_CLOSE,
-			Ids:    []int64{reqpl.Id},
-		}
-
-		if err := store.ExecutePlaybarAction(reqbar); err != nil {
-			log.Error(err)
-		}
-		return
-	}
-
-	playlists.RequestFocus(m3uetcpb.Perspective_MUSIC, respl.Id)
-	return
 }
 
 func (omqy *onMusicQuery) createDialog() (err error) {
@@ -349,7 +320,7 @@ func (omqy *onMusicQuery) dblClicked(tv *gtk.TreeView,
 		return
 	}
 
-	if err := omqy.edit(ids[0]); err != nil {
+	if err := omqy.newPlaylist(ids[0]); err != nil {
 		log.Errorf("Error while editing query: %v", err)
 		return
 	}
@@ -510,6 +481,39 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 		Limit:       int32(omqy.limit.GetValue()),
 		Random:      omqy.random.GetActive(),
 	}
+	return
+}
+
+func (omqy *onMusicQuery) newPlaylist(id int64) (err error) {
+	reqpl := &m3uetcpb.ExecutePlaylistActionRequest{
+		Action:      m3uetcpb.PlaylistAction_PL_CREATE,
+		Perspective: m3uetcpb.Perspective_MUSIC,
+	}
+	respl, err := store.ExecutePlaylistAction(reqpl)
+	if err != nil {
+		return
+	}
+
+	reqqy := &m3uetcpb.ApplyQueryRequest{
+		Id: id,
+	}
+
+	if err = store.ApplyQuery(reqqy, respl.Id); err != nil {
+		log.Error(err)
+		err = nil
+
+		reqbar := &m3uetcpb.ExecutePlaybarActionRequest{
+			Action: m3uetcpb.PlaybarAction_BAR_CLOSE,
+			Ids:    []int64{reqpl.Id},
+		}
+
+		if err = store.ExecutePlaybarAction(reqbar); err != nil {
+			return
+		}
+		return
+	}
+
+	playlists.RequestFocus(m3uetcpb.Perspective_MUSIC, respl.Id)
 	return
 }
 

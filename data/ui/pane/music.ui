@@ -605,13 +605,12 @@
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <child>
-      <object class="GtkMenuItem" id="queries_view_context_edit">
+      <object class="GtkMenuItem" id="queries_view_context_new_playlist">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="tooltip-text" translatable="yes">Add the query results to the queue</property>
-        <property name="label" translatable="yes">Edit</property>
+        <property name="label" translatable="yes">Open as playlist</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_queries_view_context_edit_activate" swapped="no"/>
+        <signal name="activate" handler="on_queries_view_context_new_playlist_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -639,12 +638,18 @@
       </object>
     </child>
     <child>
-      <object class="GtkMenuItem" id="queries_view_context_new_playlist">
+      <object class="GtkSeparatorMenuItem">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Open as playlist</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="queries_view_context_edit">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Edit</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_queries_view_context_new_playlist_activate" swapped="no"/>
+        <signal name="activate" handler="on_queries_view_context_edit_activate" swapped="no"/>
       </object>
     </child>
     <child>
