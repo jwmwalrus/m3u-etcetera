@@ -24,21 +24,18 @@ type Playback struct { // too transient
 }
 
 // Create implements the DataCreator interface
-func (pb *Playback) Create() (err error) {
-	err = db.Create(pb).Error
-	return
+func (pb *Playback) Create() error {
+	return db.Create(pb).Error
 }
 
 // Read implements the DataReader interface
-func (pb *Playback) Read(id int64) (err error) {
-	err = db.First(pb, id).Error
-	return
+func (pb *Playback) Read(id int64) error {
+	return db.First(pb, id).Error
 }
 
 // Save implements the DataUpdater interface
-func (pb *Playback) Save() (err error) {
-	err = db.Save(pb).Error
-	return
+func (pb *Playback) Save() error {
+	return db.Save(pb).Error
 }
 
 // ToProtobuf implments ProtoOut interface

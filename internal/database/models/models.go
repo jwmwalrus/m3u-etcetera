@@ -18,7 +18,7 @@ var (
 	PlaybackChanged chan struct{}
 )
 
-// DataCreator defines a DML interface of CRUD to insert
+// DataCreator defines a DML interface of CRUD to create
 type DataCreator interface {
 	Create() error
 }
@@ -33,7 +33,7 @@ type DataDeleter interface {
 	Delete() error
 }
 
-// DataDeleterTx defines a DML interface of CRUD for writing, with transactions
+// DataDeleterTx defines a DML interface of CRUD to delete, with transactions
 type DataDeleterTx interface {
 	DeleteTx(*gorm.DB) error
 }

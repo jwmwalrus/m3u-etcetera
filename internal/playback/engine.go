@@ -251,13 +251,10 @@ func (e *engine) handleBusMessage(msg *gst.Message) bool {
 		log.Debugf("End of stream: %v", e.pb.Location)
 		e.wrapUp()
 		e.mainLoop.Quit()
-		break
-
 	case gst.MessageError:
 		log.Error(msg.String())
 		e.wrapUp()
 		e.mainLoop.Quit()
-		break
 	case gst.MessageWarning:
 		log.Warning(msg.String())
 	case gst.MessageInfo:
@@ -269,10 +266,8 @@ func (e *engine) handleBusMessage(msg *gst.Message) bool {
 			"newState":      e.state,
 		}).
 			Debug("Pipeline state changed")
-
 	case gst.MessageDurationChanged:
 		e.duration = 0
-
 	case gst.MessageBuffering:
 		e.buffering = msg.ParseBuffering()
 		if e.buffering < 100 {

@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"runtime"
-	"syscall"
 
 	"github.com/adrg/xdg"
 	"github.com/jwmwalrus/bnp/ing2"
@@ -157,9 +155,6 @@ func resolveSeverity() {
 
 func init() {
 	OS = runtime.GOOS
-
-	InterruptSignal = make(chan os.Signal, 1)
-	signal.Notify(InterruptSignal, os.Interrupt, syscall.SIGTERM)
 
 	InstanceSuffix = ing2.GetRandomString(8)
 

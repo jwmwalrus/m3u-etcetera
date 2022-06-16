@@ -2,6 +2,8 @@
 /m3uetc-task
 /m3uetc-gtk
 dump*.txt
+/*.m3u
+/*.pls
 
 
 # Binaries for programs and plugins
@@ -19,3 +21,5 @@ dump*.txt
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+dist/

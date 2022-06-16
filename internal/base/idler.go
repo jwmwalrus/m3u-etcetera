@@ -3,6 +3,8 @@ package base
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -182,4 +184,9 @@ func IsAppIdling() bool {
 // StartIdler -
 func StartIdler() {
 	GetFree(IdleStatusIdle)
+}
+
+func init() {
+	InterruptSignal = make(chan os.Signal, 1)
+	signal.Notify(InterruptSignal, os.Interrupt, syscall.SIGTERM)
 }

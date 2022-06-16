@@ -88,9 +88,8 @@ type Collection struct {
 }
 
 // Create implements DataCreator interface
-func (c *Collection) Create() (err error) {
-	err = db.Create(c).Error
-	return
+func (c *Collection) Create() error {
+	return db.Create(c).Error
 }
 
 // Delete implements DataDeleter interface
@@ -148,15 +147,13 @@ func (c *Collection) Delete() (err error) {
 // Read implements DataReader interface
 func (c *Collection) Read(id int64) error {
 	return db.Joins("Perspective").
-		// Joins("JOIN perspective ON collection.perspective_id = perspective.id").
 		First(c, id).
 		Error
 }
 
 // Save implements DataUpdater interface
-func (c *Collection) Save() (err error) {
-	err = db.Save(c).Error
-	return
+func (c *Collection) Save() error {
+	return db.Save(c).Error
 }
 
 // ToProtobuf implements ProtoOut interface
@@ -231,11 +228,11 @@ func (c *Collection) AfterDelete(tx *gorm.DB) error {
 
 // CountTracks counts tracks that belong to the collection
 func (c *Collection) CountTracks() {
-	log.Info("Counting tracks in collection")
-
 	if c.Scanned != 100 {
 		return
 	}
+
+	log.Info("Counting tracks in collection")
 
 	var tracks int64
 	err := db.Model(&Track{}).
