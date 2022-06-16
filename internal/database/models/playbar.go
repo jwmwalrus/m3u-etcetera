@@ -11,6 +11,7 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/poser"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -127,9 +128,7 @@ func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 		return
 	}
 
-	pts = append(pts, s...)
-	pts = reasignPlaylistTrackPositions(pts)
-
+	pts = poser.AppendTo(pts, s...)
 	err = db.Session(&gorm.Session{SkipHooks: true}).
 		Save(&pts).
 		Error
@@ -241,15 +240,7 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 		log.Error(err)
 		return
 	}
-	s := []PlaylistTrack{}
-	pt := PlaylistTrack{}
-	for i := range pts {
-		if pts[i].Position == position {
-			pt = pts[i]
-			continue
-		}
-		s = append(s, pts[i])
-	}
+	pts, pt := poser.DeleteAt(pts, position)
 
 	if pt.ID > 0 {
 		if err := pt.Delete(); err != nil {
@@ -257,8 +248,7 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 			return
 		}
 	}
-	s = reasignPlaylistTrackPositions(s)
-	onerror.Log(db.Save(&s).Error)
+	onerror.Log(db.Save(&pts).Error)
 }
 
 // DestroyEntry deletes a playlist
@@ -450,35 +440,15 @@ func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 		return
 	}
 
-	if position <= 1 {
-		s, err := pl.createTracks(trackIds, locations)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		aux := pts
-		pts = s
-		pts = append(pts, aux...)
-	} else if position > 1 && position <= len(pts) {
-		s, err := pl.createTracks(trackIds, locations)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		aux := pts
-		piv := position - 1
-		pts = aux[:piv]
-		pts = append(pts, s...)
-		pts = append(pts, aux[piv:]...)
-
-	} else {
-		b.AppendToPlaylist(pl, trackIds, locations)
+	s, err := pl.createTracks(trackIds, locations)
+	if err != nil {
+		log.Error(err)
 		return
 	}
 
-	pts = reasignPlaylistTrackPositions(pts)
+	pts = poser.InsertInto(pts, position, s...)
 
-	err := db.Session(&gorm.Session{SkipHooks: true}).
+	err = db.Session(&gorm.Session{SkipHooks: true}).
 		Save(&pts).
 		Error
 	onerror.Log(err)
@@ -505,30 +475,7 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 		return
 	}
 
-	var moved, afterPiv []PlaylistTrack
-	var piv *PlaylistTrack
-	for i := range pts {
-		if pts[i].Position == from {
-			piv = &pts[i]
-		} else if pts[i].Position < to {
-			moved = append(moved, pts[i])
-		} else if pts[i].Position > to {
-			afterPiv = append(afterPiv, pts[i])
-		} else if pts[i].Position == to {
-			if from < to {
-				moved = append(moved, pts[i])
-			} else {
-				afterPiv = append(afterPiv, pts[i])
-			}
-		}
-	}
-
-	if piv != nil {
-		moved = append(moved, *piv)
-	}
-	moved = append(moved, afterPiv...)
-
-	moved = reasignPlaylistTrackPositions(moved)
+	moved := poser.MoveTo(pts, to, from)
 	onerror.Log(db.Save(&moved).Error)
 }
 

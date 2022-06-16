@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/poser"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
@@ -108,14 +109,7 @@ func (q *Queue) DeleteAt(position int) {
 		return
 	}
 
-	for i := range s {
-		if s[i].Position == position {
-			s[i].Played = true
-			break
-		}
-	}
-
-	s = reasignQueueTrackPositions(s)
+	s = poser.DeleteAt(s, position)
 
 	if err := db.Save(&s).Error; err != nil {
 		log.Error(err)
@@ -171,30 +165,7 @@ func (q *Queue) MoveTo(to, from int) {
 		return
 	}
 
-	var moved, afterPiv []QueueTrack
-	var piv *QueueTrack
-	for i := range s {
-		if s[i].Position == from {
-			piv = &s[i]
-		} else if s[i].Position < to {
-			moved = append(moved, s[i])
-		} else if s[i].Position > to {
-			afterPiv = append(afterPiv, s[i])
-		} else if s[i].Position == to {
-			if from < to {
-				moved = append(moved, s[i])
-			} else {
-				afterPiv = append(afterPiv, s[i])
-			}
-		}
-	}
-
-	if piv != nil {
-		moved = append(moved, *piv)
-	}
-	moved = append(moved, afterPiv...)
-
-	moved = reasignQueueTrackPositions(moved)
+	moved := poser.MoveTo(s, to, from)
 
 	if err := db.Save(&moved).Error; err != nil {
 		return
@@ -213,17 +184,12 @@ func (q *Queue) Pop() (qt *QueueTrack) {
 		return
 	}
 
-	for i := range s {
-		if s[i].Position == 1 {
-			s[i].Played = true
-			qt = &s[i]
-			break
-		}
-	}
-	if qt == nil {
+	s, x := poser.Pop(s)
+
+	if x.ID == 0 {
 		return
 	}
-	s = reasignQueueTrackPositions(s)
+	qt = &x
 
 	log.Info("Found location to pop from queue:", qt.Location)
 	onerror.Log(db.Save(&s).Error)
@@ -252,8 +218,7 @@ func (q *Queue) appendTo(qt *QueueTrack) (err error) {
 		return
 	}
 
-	s = append(s, *qt)
-	s = reasignQueueTrackPositions(s)
+	s = poser.AppendTo(s, *qt)
 	if err = db.Save(&s).Error; err != nil {
 		return
 	}
@@ -284,23 +249,7 @@ func (q *Queue) insertInto(qt *QueueTrack) (err error) {
 	if err != nil {
 		return
 	}
-
-	if qt.Position <= 1 {
-		aux := s
-		s = []QueueTrack{*qt}
-		s = append(s, aux...)
-	} else if qt.Position > 1 && qt.Position <= len(s) {
-		aux := s
-		piv := int(qt.Position) - 1
-		s = aux[:piv]
-		s = append(s, *qt)
-		s = append(s, aux[piv:]...)
-	} else {
-		err = q.appendTo(qt)
-		return
-	}
-
-	s = reasignQueueTrackPositions(s)
+	s = poser.InsertInto(s, qt.Position, *qt)
 	if err = db.Save(&s).Error; err != nil {
 		return
 	}

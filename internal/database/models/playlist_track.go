@@ -87,6 +87,26 @@ func (pt *PlaylistTrack) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
+// GetPosition implements the Poser interface
+func (pt PlaylistTrack) GetPosition() int {
+	return pt.Position
+}
+
+// SetPosition implements the Poser interface
+func (pt PlaylistTrack) SetPosition(pos int) {
+	pt.Position = pos
+}
+
+// GetIgnore implements the Poser interface
+func (pt PlaylistTrack) GetIgnore() bool {
+	return false
+}
+
+// SetIgnore implements the Poser interface
+func (pt PlaylistTrack) SetIgnore(_ bool) {
+	return
+}
+
 // GetActivePlaylistTrack deletes a playlist
 func GetActivePlaylistTrack() (pt *PlaylistTrack) {
 	pb := Playback{}
