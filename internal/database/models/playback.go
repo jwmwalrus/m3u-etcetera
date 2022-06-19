@@ -6,6 +6,7 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
@@ -137,19 +138,15 @@ func AddPlaybackTrack(t *Track) (pb *Playback) {
 }
 
 // GetAllPlayback returns all the playback entries
-func GetAllPlayback() (pbs []*Playback) {
+func GetAllPlayback() []*Playback {
 	log.Info("Obtaining all playback")
 
-	pblist := []Playback{}
-	err := db.Where("played = 0").Find(&pblist).Error
+	pbs := []Playback{}
+	err := db.Where("played = 0").Find(&pbs).Error
 	if err != nil {
 		log.Error(err)
-		return
+		return []*Playback{}
 	}
 
-	pbs = []*Playback{}
-	for i := range pblist {
-		pbs = append(pbs, &pblist[i])
-	}
-	return
+	return pointers.FromSlice(pbs)
 }

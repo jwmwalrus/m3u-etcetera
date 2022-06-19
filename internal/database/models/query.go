@@ -10,6 +10,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/config"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
@@ -264,8 +265,7 @@ func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
 	ts = []*Track{}
 	for i := range qybs {
 		tx := buildStmt()
-		list := qybs[i].FindTracksTx(tx)
-		ts = appendToTrackList(ts, list)
+		ts = append(ts, qybs[i].FindTracksTx(tx)...)
 	}
 
 	if qy.Random {
@@ -285,20 +285,15 @@ func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
 
 // GetCollections returns all the collections associated to the given query
 // This adds forward support for CollectionQuery, required for ToProtobuf
-func (qy *Query) GetCollections() (cqs []*CollectionQuery) {
-	cqs = []*CollectionQuery{}
+func (qy *Query) GetCollections() []*CollectionQuery {
+	cqs := []CollectionQuery{}
 
-	list := []CollectionQuery{}
-	err := db.Where("query_id = ?", qy.ID).Find(&list).Error
+	err := db.Where("query_id = ?", qy.ID).Find(&cqs).Error
 	if err != nil {
 		log.Error(err)
-		return
+		return []*CollectionQuery{}
 	}
-
-	for i := range list {
-		cqs = append(cqs, &list[i])
-	}
-	return
+	return pointers.FromSlice(cqs)
 }
 
 // ProvideName provides a name before saving a query

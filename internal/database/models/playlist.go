@@ -12,6 +12,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -250,22 +251,18 @@ func (pl *Playlist) Export(format impexp.PlaylistType, location string) (err err
 }
 
 // GetQueries returns all queries bound by the given playlist
-func (pl *Playlist) GetQueries() (pqs []*PlaylistQuery) {
-	pqs = []*PlaylistQuery{}
-	s := []PlaylistQuery{}
+func (pl *Playlist) GetQueries() []*PlaylistQuery {
+	pqs := []PlaylistQuery{}
 	err := db.Joins("Query").
 		Where("playlist_id = ?", pl.ID).
-		Find(&s).
+		Find(&pqs).
 		Error
 	if err != nil {
 		log.Error(err)
-		return
+		return []*PlaylistQuery{}
 	}
 
-	for i := range s {
-		pqs = append(pqs, &s[i])
-	}
-	return
+	return pointers.FromSlice(pqs)
 }
 
 // GetTrackAfter returns the next playing track, if any, after the given position.
@@ -324,11 +321,9 @@ func (pl *Playlist) GetTrackAt(position int) (pt *PlaylistTrack, err error) {
 }
 
 // GetTracks returns all tracks in the playlist
-func (pl *Playlist) GetTracks(limit int) (pts []*PlaylistTrack, ts []*Track) {
-	pts = []*PlaylistTrack{}
-	ts = []*Track{}
+func (pl *Playlist) GetTracks(limit int) ([]*PlaylistTrack, []*Track) {
+	pts := []PlaylistTrack{}
 
-	s := []PlaylistTrack{}
 	tx := db.Joins("Track").
 		Where("playlist_id = ?", pl.ID).
 		Order("position ASC")
@@ -337,16 +332,16 @@ func (pl *Playlist) GetTracks(limit int) (pts []*PlaylistTrack, ts []*Track) {
 		tx.Limit(limit)
 	}
 
-	if err := tx.Find(&s).Error; err != nil {
+	if err := tx.Find(&pts).Error; err != nil {
 		log.Error(err)
-		return
+		return []*PlaylistTrack{}, []*Track{}
 	}
 
-	for i := range s {
-		pts = append(pts, &s[i])
-		ts = append(ts, &s[i].Track)
+	ts := []Track{}
+	for i := range pts {
+		ts = append(ts, pts[i].Track)
 	}
-	return
+	return pointers.FromSlice(pts), pointers.FromSlice(ts)
 }
 
 func (pl *Playlist) createTracks(trackIds []int64,
@@ -383,9 +378,9 @@ func FindPlaylistsIn(ids []int64) (pls []*Playlist, notFound []int64) {
 		return
 	}
 
-	list := []Playlist{}
+	s := []Playlist{}
 	err := db.Where("id in ?", ids).
-		Find(&list).
+		Find(&s).
 		Error
 	if err != nil {
 		log.Error(err)
@@ -393,9 +388,9 @@ func FindPlaylistsIn(ids []int64) (pls []*Playlist, notFound []int64) {
 	}
 
 	actual := []int64{}
-	for i := range list {
-		actual = append(actual, list[i].ID)
-		pls = append(pls, &list[i])
+	for i := range s {
+		actual = append(actual, s[i].ID)
+		pls = append(pls, &s[i])
 	}
 
 	for _, id := range ids {

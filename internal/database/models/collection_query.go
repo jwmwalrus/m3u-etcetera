@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -27,25 +28,21 @@ func (cq *CollectionQuery) DeleteTx(tx *gorm.DB) error {
 }
 
 // FindTracksTx implements QueryBoundaryTx interface
-func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) (ts []*Track) {
-	ts = []*Track{}
+func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) []*Track {
+	ts := []Track{}
 
-	list := []Track{}
 	err := tx.
 		Joins(
 			"JOIN collection ON track.collection_id = collection.id AND track.collection_id = ?",
 			cq.CollectionID,
 		).
-		Find(&list).
+		Find(&ts).
 		Error
 	if err != nil {
 		log.Error(err)
-		return
+		return []*Track{}
 	}
-	for i := range list {
-		ts = append(ts, &list[i])
-	}
-	return
+	return pointers.FromSlice(ts)
 }
 
 // GetQueryID implements QueryBoundaryID interface
@@ -69,13 +66,10 @@ func CollectionsToBoundaries(cts []*CollectionQuery) (qbs []QueryBoundaryTx) {
 
 // CreateCollectionQueries -
 func CreateCollectionQueries(ids []int64) (cqs []*CollectionQuery) {
-	list := []CollectionQuery{}
+	cqs = []*CollectionQuery{}
 	for _, id := range ids {
 		c := CollectionQuery{CollectionID: id}
-		list = append(list, c)
-	}
-	for i := range list {
-		cqs = append(cqs, &list[i])
+		cqs = append(cqs, &c)
 	}
 	return
 }
@@ -110,10 +104,8 @@ func FilterCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryID) {
 
 // GetApplicableCollectionQueries returns all the collections that can be
 // applied to the given query
-func GetApplicableCollectionQueries(qy *Query, ids ...int64) (cqs []*CollectionQuery) {
-	cqs = []*CollectionQuery{}
-
-	list := []CollectionQuery{}
+func GetApplicableCollectionQueries(qy *Query, ids ...int64) []*CollectionQuery {
+	cqs := []CollectionQuery{}
 	var err error
 
 	if qy.ID > 0 {
@@ -123,17 +115,17 @@ func GetApplicableCollectionQueries(qy *Query, ids ...int64) (cqs []*CollectionQ
 				Joins("JOIN collection on collection_query.collection_id = "+
 					"collection.id and collection.hidden = 0 and collection.disabled = 0").
 				Where("query_id = ?", qy.ID).
-				Find(&list).
+				Find(&cqs).
 				Error
 		} else {
 			cs := []Collection{}
 			err = db.Where("hidden = 0 and disabled = 0").Find(&cs).Error
 			if err != nil {
-				return
+				return []*CollectionQuery{}
 			}
 			for _, x := range cs {
 				c := CollectionQuery{CollectionID: x.ID, QueryID: qy.ID}
-				list = append(list, c)
+				cqs = append(cqs, c)
 			}
 		}
 	} else {
@@ -143,33 +135,29 @@ func GetApplicableCollectionQueries(qy *Query, ids ...int64) (cqs []*CollectionQ
 				Find(&cs).
 				Error
 			if err != nil {
-				return
+				return []*CollectionQuery{}
 			}
 			for _, x := range cs {
-				var c CollectionQuery
-				c = CollectionQuery{CollectionID: x.ID}
-				list = append(list, c)
+				c := CollectionQuery{CollectionID: x.ID}
+				cqs = append(cqs, c)
 			}
 		} else {
 			err = db.Where("hidden = 0 and disabled = 0").
 				Find(&cs).
 				Error
 			if err != nil {
-				return
+				return []*CollectionQuery{}
 			}
 			for _, x := range cs {
 				c := CollectionQuery{CollectionID: x.ID}
-				list = append(list, c)
+				cqs = append(cqs, c)
 			}
 		}
 	}
 	if err != nil {
 		log.Error(err)
-		return
+		return []*CollectionQuery{}
 	}
 
-	for i := range list {
-		cqs = append(cqs, &list[i])
-	}
-	return
+	return pointers.FromSlice(cqs)
 }

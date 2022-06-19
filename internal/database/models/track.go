@@ -469,19 +469,3 @@ func ReadTagsForLocation(location string) (t *Track, err error) {
 	err = t.updateTags()
 	return
 }
-
-func appendToTrackList(list []*Track, ts []*Track) []*Track {
-	for i := range ts {
-		found := false
-		for j := range list {
-			if list[j].ID == ts[i].ID {
-				found = true
-				break
-			}
-		}
-		if !found {
-			list = append(list, ts[i])
-		}
-	}
-	return list
-}

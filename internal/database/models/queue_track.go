@@ -115,21 +115,21 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts [
 
 	qts = []*QueueTrack{}
 	ts = []*Track{}
-	list := []QueueTrack{}
-	if err = tx.Find(&list).Error; err != nil {
+	s := []QueueTrack{}
+	if err = tx.Find(&s).Error; err != nil {
 		log.Error(err)
 		return
 	}
 
 	ids := []int64{}
 	locations := []string{}
-	for i := range list {
-		if list[i].TrackID > 0 {
-			ids = append(ids, list[i].TrackID)
+	for i := range s {
+		if s[i].TrackID > 0 {
+			ids = append(ids, s[i].TrackID)
 		} else {
-			locations = append(locations, list[i].Location)
+			locations = append(locations, s[i].Location)
 		}
-		qts = append(qts, &list[i])
+		qts = append(qts, &s[i])
 	}
 
 	ts, _ = FindTracksIn(ids)
@@ -148,12 +148,12 @@ func GetQueueStore() (qs []*QueueTrack, ts []*Track) {
 	log.Info("Getting queue store")
 
 	for _, idx := range PerspectiveIndexList() {
-		qout, tout := GetAllQueueTracks(idx, 0)
-		for i := range qout {
-			qs = append(qs, qout[i])
+		qsaux, tsaux := GetAllQueueTracks(idx, 0)
+		for i := range qsaux {
+			qs = append(qs, qsaux[i])
 		}
-		for i := range tout {
-			ts = append(ts, tout[i])
+		for i := range tsaux {
+			ts = append(ts, tsaux[i])
 		}
 	}
 	return

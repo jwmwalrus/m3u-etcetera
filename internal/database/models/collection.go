@@ -10,6 +10,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
@@ -429,46 +430,34 @@ func (c *Collection) addTrackFromPath(tx *gorm.DB, path string,
 }
 
 // GetAllCollections returns all valid collections
-func GetAllCollections() (s []*Collection) {
-	s = []*Collection{}
-
-	list := []Collection{}
-	err := db.Where("hidden = 0").Find(&list).Error
+func GetAllCollections() []*Collection {
+	s := []Collection{}
+	err := db.Where("hidden = 0").Find(&s).Error
 	if err != nil {
 		log.Error(err)
-		return
+		return []*Collection{}
 	}
-	for i := range list {
-		s = append(s, &list[i])
-	}
-	return
+	return pointers.FromSlice(s)
 }
 
 // GetCollectionStore returns all valid collection tracks
-func GetCollectionStore() (cs []*Collection, ts []*Track) {
-	cs = []*Collection{}
-	ts = []*Track{}
-
-	cList := []Collection{}
-	tList := []Track{}
+func GetCollectionStore() ([]*Collection, []*Track) {
+	cs := []Collection{}
+	ts := []Track{}
 
 	db.Joins(
 		"JOIN collection ON track.collection_id = collection.id AND collection.hidden = 0 AND collection.disabled = 0",
 	).
-		Find(&tList)
+		Find(&ts)
 
 	db.Joins("Perspective").
 		// Joins("JOIN perspective ON collection.perspective_id = perspective.id").
 		Where("hidden = 0").
-		Find(&cList)
+		Find(&cs)
 
-	for i := range tList {
-		ts = append(ts, &tList[i])
+	for i := range cs {
+		cs[i].CountTracks()
 	}
 
-	for i := range cList {
-		cList[i].CountTracks()
-		cs = append(cs, &cList[i])
-	}
-	return
+	return pointers.FromSlice(cs), pointers.FromSlice(ts)
 }

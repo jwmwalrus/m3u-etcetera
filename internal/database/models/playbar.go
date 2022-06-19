@@ -265,65 +265,52 @@ func (b *Playbar) DestroyGroup(pg *PlaylistGroup) error {
 }
 
 // GetAllEntries -
-func (b *Playbar) GetAllEntries(limit int) (pls []*Playlist) {
-	pls = []*Playlist{}
+func (b *Playbar) GetAllEntries(limit int) []*Playlist {
+	pls := []Playlist{}
 
-	s := []Playlist{}
 	tx := db.Joins("Playbar").
 		Where("playbar_id = ?", b.ID)
 	if limit > 0 {
 		tx.Limit(limit)
 	}
-	err := tx.Find(&s).Error
+	err := tx.Find(&pls).Error
 	if err != nil {
-		return
+		return []*Playlist{}
 	}
 
-	for i := range s {
-		pls = append(pls, &s[i])
-	}
-	return
+	return pointers.FromSlice(pls)
 }
 
 // GetAllGroups -
-func (b *Playbar) GetAllGroups(limit int) (pgs []*PlaylistGroup) {
-	pgs = []*PlaylistGroup{}
+func (b *Playbar) GetAllGroups(limit int) []*PlaylistGroup {
+	pgs := []PlaylistGroup{}
 
-	s := []PlaylistGroup{}
 	tx := db.Joins("Perspective").
 		Where("hidden = 0 and perspective_id = ?", b.PerspectiveID)
 	if limit > 0 {
 		tx.Limit(limit)
 	}
-	err := tx.Find(&s).Error
+	err := tx.Find(&pgs).Error
 	if err != nil {
 		log.Error(err)
-		return
+		return []*PlaylistGroup{}
 	}
 
-	for i := range s {
-		pgs = append(pgs, &s[i])
-	}
-	return
+	return pointers.FromSlice(pgs)
 }
 
 // GetAllOpenEntries -
-func (b *Playbar) GetAllOpenEntries() (pls []*Playlist) {
-	pls = []*Playlist{}
-
-	s := []Playlist{}
+func (b *Playbar) GetAllOpenEntries() []*Playlist {
+	pls := []Playlist{}
 	err := db.Joins("Playbar").
 		Where("open = 1 and playbar_id = ?", b.ID).
-		Find(&s).
+		Find(&pls).
 		Error
 	if err != nil {
-		return
+		return []*Playlist{}
 	}
 
-	for i := range s {
-		pls = append(pls, &s[i])
-	}
-	return
+	return pointers.FromSlice(pls)
 }
 
 // ImportPlaylist creates a playlist from the given location, if supported
@@ -620,31 +607,33 @@ func GetOpenEntries() (pls []*Playlist, pts []*PlaylistTrack, ts []*Track) {
 	pts = []*PlaylistTrack{}
 	ts = []*Track{}
 
-	pllist := []Playlist{}
-	err := db.Where("open = 1").Find(&pllist).Error
+	plsaux := []Playlist{}
+	err := db.Where("open = 1").Find(&plsaux).Error
 	if err != nil {
 		log.Error(err)
-		return
-	}
-	for i := range pllist {
-		pls = append(pls, &pllist[i])
+		return []*Playlist{}, []*PlaylistTrack{}, []*Track{}
 	}
 
-	ptlist := []PlaylistTrack{}
+	ptsaux := []PlaylistTrack{}
 	err = db.Preload("Track").
 		Joins("JOIN playlist ON playlist_track.playlist_id = playlist.id").
 		Where("playlist.open = 1").
 		Order("playlist_id").
-		Find(&ptlist).
+		Find(&ptsaux).
 		Error
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	for i := range ptlist {
-		pts = append(pts, &ptlist[i])
-		ts = append(ts, &ptlist[i].Track)
+	tsaux := []Track{}
+	for i := range pts {
+		tsaux = append(tsaux, pts[i].Track)
 	}
+
+	pls = pointers.FromSlice(plsaux)
+	pts = pointers.FromSlice(ptsaux)
+	ts = pointers.FromSlice(tsaux)
+
 	return
 }
 
@@ -662,35 +651,29 @@ func GetPlaybarStore() (
 	opts = []*PlaylistTrack{}
 	ots = []*Track{}
 
-	pglist := []PlaylistGroup{}
+	pgsaux := []PlaylistGroup{}
 	err := db.Joins("Perspective").
 		Where("hidden = 0").
 		Order("perspective_id").
-		Find(&pglist).
+		Find(&pgsaux).
 		Error
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	pllist := []Playlist{}
+	plsaux := []Playlist{}
 	err = db.Joins("Playbar").
 		Order("playbar_id").
-		Find(&pllist).
+		Find(&plsaux).
 		Error
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	for i := range pglist {
-		pgs = append(pgs, &pglist[i])
-	}
-
-	for i := range pllist {
-		pls = append(pls, &pllist[i])
-	}
-
+	pls = pointers.FromSlice(plsaux)
+	pgs = pointers.FromSlice(pgsaux)
 	opls, opts, ots = GetOpenEntries()
 
 	return
