@@ -71,22 +71,22 @@ func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 }
 
 // GetPosition implements the Poser interface
-func (qt QueueTrack) GetPosition() int {
+func (qt *QueueTrack) GetPosition() int {
 	return qt.Position
 }
 
 // SetPosition implements the Poser interface
-func (qt QueueTrack) SetPosition(pos int) {
+func (qt *QueueTrack) SetPosition(pos int) {
 	qt.Position = pos
 }
 
 // GetIgnore implements the Poser interface
-func (qt QueueTrack) GetIgnore() bool {
+func (qt *QueueTrack) GetIgnore() bool {
 	return qt.Played
 }
 
 // SetIgnore implements the Poser interface
-func (qt QueueTrack) SetIgnore(ignore bool) {
+func (qt *QueueTrack) SetIgnore(ignore bool) {
 	qt.Played = ignore
 }
 

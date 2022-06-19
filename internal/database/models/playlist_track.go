@@ -88,22 +88,22 @@ func (pt *PlaylistTrack) AfterDelete(tx *gorm.DB) error {
 }
 
 // GetPosition implements the Poser interface
-func (pt PlaylistTrack) GetPosition() int {
+func (pt *PlaylistTrack) GetPosition() int {
 	return pt.Position
 }
 
 // SetPosition implements the Poser interface
-func (pt PlaylistTrack) SetPosition(pos int) {
+func (pt *PlaylistTrack) SetPosition(pos int) {
 	pt.Position = pos
 }
 
 // GetIgnore implements the Poser interface
-func (pt PlaylistTrack) GetIgnore() bool {
+func (pt *PlaylistTrack) GetIgnore() bool {
 	return false
 }
 
 // SetIgnore implements the Poser interface
-func (pt PlaylistTrack) SetIgnore(_ bool) {
+func (pt *PlaylistTrack) SetIgnore(_ bool) {
 	return
 }
 

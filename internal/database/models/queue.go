@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/poser"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
@@ -109,7 +110,8 @@ func (q *Queue) DeleteAt(position int) {
 		return
 	}
 
-	s = poser.DeleteAt(s, position)
+	list, _ := poser.DeleteAt(pointers.FromSlice(s), position)
+	s = pointers.ToValues(list)
 
 	if err := db.Save(&s).Error; err != nil {
 		log.Error(err)
@@ -165,7 +167,8 @@ func (q *Queue) MoveTo(to, from int) {
 		return
 	}
 
-	moved := poser.MoveTo(s, to, from)
+	list := poser.MoveTo(pointers.FromSlice(s), to, from)
+	moved := pointers.ToValues(list)
 
 	if err := db.Save(&moved).Error; err != nil {
 		return
@@ -184,15 +187,16 @@ func (q *Queue) Pop() (qt *QueueTrack) {
 		return
 	}
 
-	s, x := poser.Pop(s)
+	list, qt := poser.Pop(pointers.FromSlice(s))
+	s = pointers.ToValues(list)
 
-	if x.ID == 0 {
+	if qt == nil {
 		return
 	}
-	qt = &x
 
 	log.Info("Found location to pop from queue:", qt.Location)
 	onerror.Log(db.Save(&s).Error)
+	onerror.Log(qt.Save())
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 	return
@@ -218,7 +222,8 @@ func (q *Queue) appendTo(qt *QueueTrack) (err error) {
 		return
 	}
 
-	s = poser.AppendTo(s, *qt)
+	list := poser.AppendTo(pointers.FromSlice(s), qt)
+	s = pointers.ToValues(list)
 	if err = db.Save(&s).Error; err != nil {
 		return
 	}
@@ -249,7 +254,8 @@ func (q *Queue) insertInto(qt *QueueTrack) (err error) {
 	if err != nil {
 		return
 	}
-	s = poser.InsertInto(s, qt.Position, *qt)
+	list := poser.InsertInto(pointers.FromSlice(s), qt.Position, qt)
+	s = pointers.ToValues(list)
 	if err = db.Save(&s).Error; err != nil {
 		return
 	}

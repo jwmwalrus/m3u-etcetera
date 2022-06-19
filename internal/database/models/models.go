@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -74,14 +75,25 @@ func SetConnection(conn *gorm.DB) {
 }
 
 func DoInitialCleanup() {
+	tx := db.Session(&gorm.Session{SkipHooks: true})
+
 	// Clean playback
-	db.Where("played = 1").Delete(&Playback{})
+	tx.Where("played = 1").Delete(&Playback{})
 
 	// Clean queue
-	db.Where("played = 1").Delete(&Queue{})
+	tx.Where("played = 1").Delete(&Queue{})
 
 	// Clean playlists
-	db.Where("open = 0 and transient = 1").Delete(&Playlist{})
+	pls := []Playlist{}
+	tx.Where("open = 0 and transient = 1").Find(&pls)
+	for _, pl := range pls {
+		err := tx.Where("playlist_id = ?", pl.ID).Delete(&PlaylistTrack{}).Error
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		tx.Where("id = ?", pl.ID).Delete(&Playlist{})
+	}
 }
 
 func getSuffler(n int) []int {

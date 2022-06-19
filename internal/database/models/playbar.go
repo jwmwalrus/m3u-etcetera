@@ -11,6 +11,7 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
+	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/poser"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
@@ -128,7 +129,8 @@ func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 		return
 	}
 
-	pts = poser.AppendTo(pts, s...)
+	list := poser.AppendTo(pointers.FromSlice(pts), pointers.FromSlice(s)...)
+	pts = pointers.ToValues(list)
 	err = db.Session(&gorm.Session{SkipHooks: true}).
 		Save(&pts).
 		Error
@@ -240,7 +242,8 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 		log.Error(err)
 		return
 	}
-	pts, pt := poser.DeleteAt(pts, position)
+	list, pt := poser.DeleteAt(pointers.FromSlice(pts), position)
+	pts = pointers.ToValues(list)
 
 	if pt.ID > 0 {
 		if err := pt.Delete(); err != nil {
@@ -446,7 +449,8 @@ func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 		return
 	}
 
-	pts = poser.InsertInto(pts, position, s...)
+	list := poser.InsertInto(pointers.FromSlice(pts), position, pointers.FromSlice(s)...)
+	s = pointers.ToValues(list)
 
 	err = db.Session(&gorm.Session{SkipHooks: true}).
 		Save(&pts).
@@ -475,7 +479,8 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 		return
 	}
 
-	moved := poser.MoveTo(pts, to, from)
+	list := poser.MoveTo(pointers.FromSlice(pts), to, from)
+	moved := pointers.ToValues(list)
 	onerror.Log(db.Save(&moved).Error)
 }
 
