@@ -9,6 +9,7 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
+	"github.com/jwmwalrus/m3u-etcetera/internal/mpris"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
 
@@ -48,6 +49,7 @@ type engine struct {
 	mode           EngineMode
 	lastEvent      engineEvent
 	hint           playbackHint
+	mprisInstance  *mpris.Instance
 	pt             *models.PlaylistTrack
 	pb             *models.Playback
 	t              *models.Track
@@ -299,6 +301,8 @@ func (e *engine) playStream(pb *models.Playback) {
 	}
 	log.Debug("Playback is valid")
 
+	e.setMpris()
+
 	var err error
 
 	e.mainLoop = glib.NewMainLoop(glib.MainContextDefault(), false)
@@ -440,6 +444,26 @@ func (e *engine) resumeActivePlaylist() {
 	if e.pt != nil {
 		log.Info("Resuming playback for active playlist")
 	}
+}
+
+func (e *engine) setMpris() {
+
+	if e.mprisInstance == nil {
+		e.mprisInstance = mpris.New()
+		p := &Player{e.mprisInstance}
+		if err := e.mprisInstance.Setup(p); err != nil {
+			log.Error(err)
+			e.mprisInstance.Delete()
+		}
+
+	}
+}
+
+func (e *engine) unsetMpris() {
+	if e.mprisInstance != nil {
+		e.mprisInstance.Delete()
+	}
+	e.mprisInstance = nil
 }
 
 func (e *engine) setPlaybackHint(h playbackHint) {

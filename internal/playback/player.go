@@ -1,90 +1,43 @@
-package mpris
+package playback
 
 import (
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
-	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
+	"github.com/jwmwalrus/m3u-etcetera/internal/mpris"
 )
 
 // Player -
 type Player struct {
-	*Instance
+	*mpris.Instance
 }
 
-func (*Player) introspectInterface() introspect.Interface {
-	return introspect.Interface{
-		Name: "org.mpris.MediaPlayer2.Player",
-		Properties: []introspect.Property{
-			{Name: "PlaybackStatus", Type: "s", Access: "read"},
-			{Name: "LoopStatus", Type: "s", Access: "readwrite"},
-			{Name: "Rate", Type: "d", Access: "readwrite"},
-			{Name: "Shuffle", Type: "b", Access: "readwrite"},
-			{Name: "Metadata", Type: "a{sv}", Access: "read"},
-			{Name: "Volume", Type: "d", Access: "readwrite"},
-			{Name: "Position", Type: "x", Access: "read"},
-			{Name: "MinimumRate", Type: "d", Access: "read"},
-			{Name: "MaximumRate", Type: "d", Access: "read"},
-			{Name: "CanGoNext", Type: "b", Access: "read"},
-			{Name: "CanGoPrevious", Type: "b", Access: "read"},
-			{Name: "CanPlay", Type: "b", Access: "read"},
-			{Name: "CanSeek", Type: "b", Access: "read"},
-			{Name: "CanControl", Type: "b", Access: "read"},
-		},
-		Signals: []introspect.Signal{
-			{
-				Name: "Seeked",
-				Args: []introspect.Arg{
-					{Name: "Position", Type: "x"},
-				},
-			},
-		},
-		Methods: []introspect.Method{
-			{Name: "Next"},
-			{Name: "Previous"},
-			{Name: "Pause"},
-			{Name: "PlayPause"},
-			{Name: "Stop"},
-			{Name: "Play"},
-			{
-				Name: "Seek",
-				Args: []introspect.Arg{
-					{Name: "Offset", Type: "x", Direction: "in"},
-				},
-			},
-			{
-				Name: "SetPosition",
-				Args: []introspect.Arg{
-					{Name: "TrackId", Type: "o", Direction: "in"},
-					{Name: "Position", Type: "x", Direction: "in"},
-				},
-			},
-		},
-	}
+func (*Player) IntrospectInterface() introspect.Interface {
+	return mpris.PlayerIntrospectInterface()
 }
 
 // Next -
 func (p *Player) Next() *dbus.Error {
-	playback.NextStream()
+	NextStream()
 	return nil
 }
 
 // Previous -
 func (p *Player) Previous() *dbus.Error {
-	playback.PreviousStream()
+	PreviousStream()
 	return nil
 }
 
 // Pause -
 func (p *Player) Pause() *dbus.Error {
-	playback.PauseStream(false)
+	PauseStream(false)
 	return nil
 }
 
 // PlayPause -
 func (p *Player) PlayPause() *dbus.Error {
-	if playback.IsPlaying() {
+	if IsPlaying() {
 		return p.Pause()
-	} else if playback.IsPaused() {
+	} else if IsPaused() {
 		return p.Play()
 	}
 	return nil
@@ -92,13 +45,13 @@ func (p *Player) PlayPause() *dbus.Error {
 
 // Stop -
 func (p *Player) Stop() *dbus.Error {
-	playback.StopAll()
+	StopAll()
 	return nil
 }
 
 // Play -
 func (p *Player) Play() *dbus.Error {
-	playback.PauseStream(true)
+	PauseStream(true)
 	return nil
 }
 
@@ -119,10 +72,10 @@ func (p *Player) OpenUri(s string) *dbus.Error {
 
 // PlaybackStatus -
 func (p *Player) PlaybackStatus() string {
-	if playback.IsPlaying() {
+	if IsPlaying() {
 		return "Playing"
 	}
-	if playback.IsPaused() {
+	if IsPaused() {
 		return "Paused"
 	}
 	return "Stopped"
@@ -157,7 +110,7 @@ func (p *Player) Volume(in float64) (float64, *dbus.Error) {
 
 // Position -
 func (p *Player) Position() int64 {
-	pb, _ := playback.GetPlayback()
+	pb, _ := GetPlayback()
 	return pb.Skip
 }
 

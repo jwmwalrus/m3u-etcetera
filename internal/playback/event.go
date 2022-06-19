@@ -186,6 +186,7 @@ func PauseStream(off bool) (err error) {
 		}
 		eng.state = gst.StatePaused
 		eng.playbin.SetState(eng.state)
+		eng.unsetMpris()
 	}
 
 	subscription.Broadcast(subscription.ToPlaybackEvent)
@@ -317,6 +318,7 @@ func StopAll() {
 	eng.lastEvent = stopAllEvent
 	log.Infof("Firing the %v event", eng.lastEvent)
 	StopStream()
+	eng.unsetMpris()
 }
 
 // StopStream stops the current stream
@@ -378,6 +380,7 @@ func quitPlayingFromList() {
 	eng.setPlaybackHint(hintStopPlaylist)
 	StopStream()
 	models.PlaybackChanged <- struct{}{}
+	eng.unsetMpris()
 	return
 }
 

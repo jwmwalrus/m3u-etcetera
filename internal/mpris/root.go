@@ -49,13 +49,13 @@ func (mp2 *MediaPlayer2) CanQuit() bool {
 }
 
 // Fullscreen -
-func (p *Player) Fullscreen(b bool) (bool, *dbus.Error) {
+func (mp2 *MediaPlayer2) Fullscreen(b bool) (bool, *dbus.Error) {
 	// TODO: implement
 	return false, nil
 }
 
 // CanSetFullscreen -
-func (p *Player) CanSetFullscreen(b bool) bool {
+func (mp2 *MediaPlayer2) CanSetFullscreen(b bool) bool {
 	// TODO: implement
 	return false
 }
