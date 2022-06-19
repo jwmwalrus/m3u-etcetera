@@ -68,7 +68,7 @@ tasks:
     desc: Build server for development
     cmds:
       - task: dev:go
-        vars: {SUFFIX: task, RACE_FLAG: "{{.RACE_FLAG}}"}
+        vars: {SUFFIX: server, RACE_FLAG: "{{.RACE_FLAG}}"}
   dev:task:
     desc: Build task for development
     cmds:
