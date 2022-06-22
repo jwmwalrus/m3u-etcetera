@@ -3,11 +3,14 @@ package mpris
 import (
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
+	"github.com/godbus/dbus/v5/prop"
 )
 
 // Player -
 type Player interface {
 	IntrospectInterface() introspect.Interface
+	Properties() map[string]*prop.Prop
+
 	Next() *dbus.Error
 	Previous() *dbus.Error
 	Pause() *dbus.Error
@@ -17,6 +20,9 @@ type Player interface {
 	Seek(x int64) *dbus.Error
 	SetPosition(o string, x int64) *dbus.Error
 	OpenUri(s string) *dbus.Error
+
+	// Seeked(x int64) *dbus.Error
+
 	PlaybackStatus() string
 	LoopStatus(s string) (string, *dbus.Error)
 	Rate(in float64) (float64, *dbus.Error)
@@ -50,6 +56,7 @@ func PlayerIntrospectInterface() introspect.Interface {
 			{Name: "CanGoNext", Type: "b", Access: "read"},
 			{Name: "CanGoPrevious", Type: "b", Access: "read"},
 			{Name: "CanPlay", Type: "b", Access: "read"},
+			{Name: "CanPause", Type: "b", Access: "read"},
 			{Name: "CanSeek", Type: "b", Access: "read"},
 			{Name: "CanControl", Type: "b", Access: "read"},
 		},
@@ -79,6 +86,12 @@ func PlayerIntrospectInterface() introspect.Interface {
 				Args: []introspect.Arg{
 					{Name: "TrackId", Type: "o", Direction: "in"},
 					{Name: "Position", Type: "x", Direction: "in"},
+				},
+			},
+			{
+				Name: "OpenUri",
+				Args: []introspect.Arg{
+					{Name: "Uri", Type: "s", Direction: "in"},
 				},
 			},
 		},

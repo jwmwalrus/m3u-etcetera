@@ -3,6 +3,7 @@ package mpris
 import (
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
+	"github.com/godbus/dbus/v5/prop"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 )
 
@@ -13,7 +14,7 @@ type MediaPlayer2 struct {
 
 func (*MediaPlayer2) introspectInterface() introspect.Interface {
 	return introspect.Interface{
-		Name: "org.mpris.MediaPlayer2",
+		Name: RootInterface,
 		Properties: []introspect.Property{
 			{Name: "CanQuit", Type: "b", Access: "read"},
 			{Name: "Fullscreen", Type: "b", Access: "readwrite"},
@@ -29,6 +30,20 @@ func (*MediaPlayer2) introspectInterface() introspect.Interface {
 			{Name: "Raise"},
 			{Name: "Quit"},
 		},
+	}
+}
+
+func (mp2 *MediaPlayer2) properties() map[string]*prop.Prop {
+	return map[string]*prop.Prop{
+		"CanQuit":             {Value: mp2.CanQuit()},
+		"Fullscreen":          {Value: false, Writable: true, Emit: prop.EmitTrue},
+		"CanSetFullscreen":    {Value: mp2.CanSetFullscreen()},
+		"CanRaise":            {Value: mp2.CanRaise()},
+		"HasTrackList":        {Value: mp2.HasTrackList()},
+		"Identity":            {Value: mp2.Identity()},
+		"DesktopEntry":        {Value: mp2.DesktopEntry()},
+		"SupportedUriSchemes": {Value: mp2.SupportedUriSchemes()},
+		"SupportedMimeTypes":  {Value: mp2.SupportedMimeTypes()},
 	}
 }
 
@@ -50,13 +65,11 @@ func (mp2 *MediaPlayer2) CanQuit() bool {
 
 // Fullscreen -
 func (mp2 *MediaPlayer2) Fullscreen(b bool) (bool, *dbus.Error) {
-	// TODO: implement
 	return false, nil
 }
 
 // CanSetFullscreen -
-func (mp2 *MediaPlayer2) CanSetFullscreen(b bool) bool {
-	// TODO: implement
+func (mp2 *MediaPlayer2) CanSetFullscreen() bool {
 	return false
 }
 

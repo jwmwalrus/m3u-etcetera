@@ -186,8 +186,9 @@ func PauseStream(off bool) (err error) {
 		}
 		eng.state = gst.StatePaused
 		eng.playbin.SetState(eng.state)
-		eng.unsetMpris()
 	}
+
+	go eng.updateMPRIS()
 
 	subscription.Broadcast(subscription.ToPlaybackEvent)
 	return
@@ -284,7 +285,7 @@ func SeekInStream(pos int64) {
 			-1,
 		)
 		if !eng.playbin.SendEvent(seek) {
-			log.Error("Error sending playback event: %v", gst.EventTypeSeek)
+			log.Errorf("Error sending playback event: %v", gst.EventTypeSeek)
 		}
 	}
 
@@ -318,7 +319,7 @@ func StopAll() {
 	eng.lastEvent = stopAllEvent
 	log.Infof("Firing the %v event", eng.lastEvent)
 	StopStream()
-	eng.unsetMpris()
+	eng.deleteMPRIS()
 }
 
 // StopStream stops the current stream
@@ -380,7 +381,7 @@ func quitPlayingFromList() {
 	eng.setPlaybackHint(hintStopPlaylist)
 	StopStream()
 	models.PlaybackChanged <- struct{}{}
-	eng.unsetMpris()
+	eng.deleteMPRIS()
 	return
 }
 

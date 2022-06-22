@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/godbus/dbus/v5"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
@@ -49,7 +50,7 @@ type engine struct {
 	mode           EngineMode
 	lastEvent      engineEvent
 	hint           playbackHint
-	mprisInstance  *mpris.Instance
+	mprisPlayer    *Player
 	pt             *models.PlaylistTrack
 	pb             *models.Playback
 	t              *models.Track
@@ -301,8 +302,6 @@ func (e *engine) playStream(pb *models.Playback) {
 	}
 	log.Debug("Playback is valid")
 
-	e.setMpris()
-
 	var err error
 
 	e.mainLoop = glib.NewMainLoop(glib.MainContextDefault(), false)
@@ -321,7 +320,7 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	flags, err := e.playbin.GetProperty("flags")
 	if err != nil {
-		log.Errorf("Unable to get flags:", err)
+		log.Errorf("Unable to get flags: %v", err)
 	} else {
 		eflags := flags.(uint)
 		eflags = eflags &^ (1 << 0) // no video
@@ -357,6 +356,8 @@ func (e *engine) playStream(pb *models.Playback) {
 		return
 	}
 	log.Debugf("State changed: %d\n", gst.StatePlaying)
+
+	go e.updateMPRIS()
 
 	pqctx, cancelpq := context.WithCancel(context.Background())
 	go e.performQueries(pqctx)
@@ -446,24 +447,33 @@ func (e *engine) resumeActivePlaylist() {
 	}
 }
 
-func (e *engine) setMpris() {
-
-	if e.mprisInstance == nil {
-		e.mprisInstance = mpris.New()
-		p := &Player{e.mprisInstance}
-		if err := e.mprisInstance.Setup(p); err != nil {
+func (e *engine) updateMPRIS() {
+	if e.mprisPlayer == nil {
+		mprisInstance := mpris.New()
+		e.mprisPlayer = &Player{mprisInstance}
+		if err := mprisInstance.Setup(e.mprisPlayer); err != nil {
 			log.Error(err)
-			e.mprisInstance.Delete()
+			e.deleteMPRIS()
 		}
-
+		return
 	}
+	err := e.mprisPlayer.Conn.Emit(mpris.RootPath,
+		mpris.PropertiesInterface+".PropertiesChanged",
+		map[string]dbus.Variant{
+			"PlaybackStatus": dbus.MakeVariant(e.mprisPlayer.PlaybackStatus()),
+			"Metadata":       dbus.MakeVariant(e.mprisPlayer.Metadata()),
+			"CanGoNext":      dbus.MakeVariant(e.mprisPlayer.CanGoNext()),
+		},
+		[]string{},
+	)
+	onerror.Log(err)
 }
 
-func (e *engine) unsetMpris() {
-	if e.mprisInstance != nil {
-		e.mprisInstance.Delete()
+func (e *engine) deleteMPRIS() {
+	if e.mprisPlayer != nil {
+		e.mprisPlayer.Delete()
 	}
-	e.mprisInstance = nil
+	e.mprisPlayer = nil
 }
 
 func (e *engine) setPlaybackHint(h playbackHint) {
