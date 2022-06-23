@@ -9,6 +9,28 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.16.0] 2022-06-21
+
+Fixes and dependencies
+
+## Fixed
+
+* `sanityCheck` on GTK's side
+* Ensure treview selection values are valid
+
+### Modified
+
+* Upgrade Go version
+* Update dependencies
+* Refactor/complete MPRIS implementation
+* Simplify handling of pointer slices
+* Abstract list handler out
+* Make opening query as playlist the default
+* Refactor Taskfile
+* Rename web directory to mobile
+* Defer deletion of transient playlists
+* Embed GTK resources
+
 ## [0.15.0] 2022-02-14
 
 Papercuts
