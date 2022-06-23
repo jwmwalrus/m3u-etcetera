@@ -611,7 +611,7 @@ func GetOpenEntries() (pls []*Playlist, pts []*PlaylistTrack, ts []*Track) {
 	err := db.Where("open = 1").Find(&plsaux).Error
 	if err != nil {
 		log.Error(err)
-		return []*Playlist{}, []*PlaylistTrack{}, []*Track{}
+		return
 	}
 
 	ptsaux := []PlaylistTrack{}
@@ -626,8 +626,8 @@ func GetOpenEntries() (pls []*Playlist, pts []*PlaylistTrack, ts []*Track) {
 		return
 	}
 	tsaux := []Track{}
-	for i := range pts {
-		tsaux = append(tsaux, pts[i].Track)
+	for i := range ptsaux {
+		tsaux = append(tsaux, ptsaux[i].Track)
 	}
 
 	pls = pointers.FromSlice(plsaux)
