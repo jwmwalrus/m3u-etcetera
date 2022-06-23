@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/adrg/xdg v0.4.0
-	github.com/dhowden/tag v0.0.0-20220530110423-77907a30b7f1
+	github.com/dhowden/tag v0.0.0-20220618230019-adf36e896086
 	github.com/go-gormigrate/gormigrate/v2 v2.0.2
 	github.com/go-testfixtures/testfixtures/v3 v3.6.1
 	github.com/godbus/dbus/v5 v5.1.0
@@ -19,13 +19,13 @@ require (
 	github.com/stretchr/testify v1.7.1
 	github.com/tinyzimmer/go-glib v0.0.25
 	github.com/tinyzimmer/go-gst v0.2.33
-	github.com/urfave/cli/v2 v2.8.1
-	golang.org/x/exp v0.0.0-20220602145555-4a0574d9293f
+	github.com/urfave/cli/v2 v2.10.2
+	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
-	gorm.io/driver/sqlite v1.3.2
-	gorm.io/gorm v1.23.5
+	gorm.io/driver/sqlite v1.3.4
+	gorm.io/gorm v1.23.6
 )
 
 require (
@@ -39,12 +39,12 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/net v0.0.0-20220621193019-9d032be2e588 // indirect
+	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20220602131408-e326c6e8e9c8 // indirect
+	google.golang.org/genproto v0.0.0-20220621134657-43db42f103f7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 // replace github.com/jwmwalrus/bnp => ../bnp
