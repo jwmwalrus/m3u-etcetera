@@ -88,6 +88,7 @@ func (e *engine) clearPendingPlayback() {
 func (e *engine) engineLoop() {
 	log.Info("Starting engine loop")
 
+	e.lastEvent = loopEvent
 loop:
 	for {
 		pb := &models.Playback{}

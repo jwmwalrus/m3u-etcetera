@@ -16,6 +16,7 @@ type engineEvent int
 
 const (
 	noLoopEvent engineEvent = iota
+	loopEvent
 	playEvent
 	pauseEvent
 	previousEvent
@@ -28,12 +29,12 @@ const (
 	stopPlaylistEvent
 	stopAllEvent
 	resumeAllEvent
-	watchQueue
 )
 
 func (ee engineEvent) String() string {
 	return [...]string{
 		"NO-LOOP",
+		"LOOP",
 		"PLAY",
 		"PAUSE",
 		"PREVIOUS",
@@ -46,7 +47,6 @@ func (ee engineEvent) String() string {
 		"STOP-PLAYLIST",
 		"STOP-ALL",
 		"RESUME-ALL",
-		"WATCH-QUEUE",
 	}[ee]
 }
 
