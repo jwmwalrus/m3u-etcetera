@@ -181,7 +181,7 @@ func (p *Player) MaximumRate() float64 {
 
 // CanGoNext -
 func (p *Player) CanGoNext() bool {
-	return true
+	return HasNextStream()
 }
 
 // CanGoPrevious -

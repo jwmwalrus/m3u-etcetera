@@ -1,10 +1,10 @@
 package models
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -89,7 +89,7 @@ func DoInitialCleanup() {
 	for _, pl := range pls {
 		err := tx.Where("playlist_id = ?", pl.ID).Delete(&PlaylistTrack{}).Error
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			break
 		}
 		tx.Where("id = ?", pl.ID).Delete(&Playlist{})

@@ -178,21 +178,20 @@ func (e *engine) getFirstInPlaylist() (pb *models.Playback) {
 
 func (e *engine) getNextInPlaylist(goingBack bool) (pb *models.Playback) {
 	if e.pt == nil {
-		log.Error("There is no playlist-track available")
-		return
-	}
-	pt := *e.pt
-	pl := e.pt.Playlist
-	if pl.ID == 0 {
-		log.Error("There is no list to play from")
+		log.Info("There is no playlist-track available")
 		return
 	}
 
 	log.WithField("pt", *e.pt).
 		Info("Obtaining next track in playlist")
 
-	newpt, err := pl.GetTrackAfter(pt, goingBack)
+	newpt, err := e.pt.GetTrackAfter(goingBack)
 	if err != nil {
+		pl := e.pt.Playlist
+		if pl.ID == 0 {
+			log.Error("There is no list to play from")
+			return
+		}
 		bar := models.Playbar{}
 		if errb := bar.Read(pl.PlaybarID); errb == nil {
 			bar.DeactivateEntry(&pl)

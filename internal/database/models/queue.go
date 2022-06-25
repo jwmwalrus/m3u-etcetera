@@ -149,6 +149,12 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
+func (q *Queue) IsEmpty() bool {
+	s := []QueueTrack{}
+	db.Where("queue_id = ? AND played = 0", q.ID).Order("position").Find(&s)
+	return len(s) == 0
+}
+
 // MoveTo moves one queue track from one position to another
 func (q *Queue) MoveTo(to, from int) {
 	if from == to || from < 1 {

@@ -119,6 +119,26 @@ func GetState() gst.State {
 	return eng.state
 }
 
+func HasNextStream() bool {
+	pb := &models.Playback{}
+	if pb.GetNextToPlay() != nil {
+		return true
+	}
+
+	q, _ := models.GetActivePerspectiveIndex().GetPerspectiveQueue()
+	if !q.IsEmpty() {
+		return true
+	}
+
+	if eng.pt != nil {
+		if _, err := eng.pt.GetTrackAfter(false); err == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
 // IsPaused checks if a stream is paused right now
 func IsPaused() bool {
 	return eng.playbin != nil && eng.state == gst.StatePaused

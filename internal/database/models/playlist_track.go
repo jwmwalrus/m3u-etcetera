@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/onerror"
@@ -105,6 +106,15 @@ func (pt *PlaylistTrack) GetIgnore() bool {
 // SetIgnore implements the Poser interface
 func (pt *PlaylistTrack) SetIgnore(_ bool) {
 	return
+}
+
+func (pt *PlaylistTrack) GetTrackAfter(goingBack bool) (*PlaylistTrack, error) {
+	pl := pt.Playlist
+	if pl.ID == 0 {
+		return nil, fmt.Errorf("There is no list to play from")
+	}
+
+	return pl.GetTrackAfter(*pt, goingBack)
 }
 
 // GetActivePlaylistTrack deletes a playlist
