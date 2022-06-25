@@ -35,15 +35,15 @@ func (*MediaPlayer2) introspectInterface() introspect.Interface {
 
 func (mp2 *MediaPlayer2) properties() map[string]*prop.Prop {
 	return map[string]*prop.Prop{
-		"CanQuit":             {Value: mp2.CanQuit()},
+		"CanQuit":             {Value: mp2.CanQuit(), Emit: prop.EmitTrue},
 		"Fullscreen":          {Value: false, Writable: true, Emit: prop.EmitTrue},
-		"CanSetFullscreen":    {Value: mp2.CanSetFullscreen()},
-		"CanRaise":            {Value: mp2.CanRaise()},
-		"HasTrackList":        {Value: mp2.HasTrackList()},
-		"Identity":            {Value: mp2.Identity()},
-		"DesktopEntry":        {Value: mp2.DesktopEntry()},
-		"SupportedUriSchemes": {Value: mp2.SupportedUriSchemes()},
-		"SupportedMimeTypes":  {Value: mp2.SupportedMimeTypes()},
+		"CanSetFullscreen":    {Value: mp2.CanSetFullscreen(), Emit: prop.EmitTrue},
+		"CanRaise":            {Value: mp2.CanRaise(), Emit: prop.EmitTrue},
+		"HasTrackList":        {Value: mp2.HasTrackList(), Emit: prop.EmitTrue},
+		"Identity":            {Value: mp2.Identity(), Emit: prop.EmitTrue},
+		"DesktopEntry":        {Value: mp2.DesktopEntry(), Emit: prop.EmitTrue},
+		"SupportedUriSchemes": {Value: mp2.SupportedUriSchemes(), Emit: prop.EmitTrue},
+		"SupportedMimeTypes":  {Value: mp2.SupportedMimeTypes(), Emit: prop.EmitTrue},
 	}
 }
 

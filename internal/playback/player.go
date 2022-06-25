@@ -10,9 +10,17 @@ import (
 	"github.com/jwmwalrus/onerror"
 )
 
+// Defined PlaybackStatuses.
+const (
+	PlaybackStatusPlaying = "Playing"
+	PlaybackStatusPaused  = "Paused"
+	PlaybackStatusStopped = "Stopped"
+)
+
 // Player -
 type Player struct {
 	*mpris.Instance
+	lastPlaybackStatus string
 }
 
 func (*Player) IntrospectInterface() introspect.Interface {
@@ -21,21 +29,21 @@ func (*Player) IntrospectInterface() introspect.Interface {
 
 func (p *Player) Properties() map[string]*prop.Prop {
 	return map[string]*prop.Prop{
-		"PlaybackStatus": {Value: p.PlaybackStatus()},
+		"PlaybackStatus": {Value: p.PlaybackStatus(), Emit: prop.EmitTrue},
 		"LoopStatus":     {Value: "None", Writable: true, Emit: prop.EmitTrue},
 		"Rate":           {Value: float64(1.), Writable: true, Emit: prop.EmitTrue},
 		"Shuffle":        {Value: false, Writable: true, Emit: prop.EmitTrue},
-		"Metadata":       {Value: p.Metadata()},
+		"Metadata":       {Value: p.Metadata(), Emit: prop.EmitTrue},
 		"Volume":         {Value: float64(1.), Writable: true, Emit: prop.EmitTrue},
-		"Position":       {Value: p.Position()},
-		"MinimumRate":    {Value: p.MinimumRate()},
-		"MaximumRate":    {Value: p.MaximumRate()},
-		"CanGoNext":      {Value: p.CanGoNext()},
-		"CanGoPrevious":  {Value: p.CanGoPrevious()},
-		"CanPlay":        {Value: p.CanPlay()},
-		"CanPause":       {Value: p.CanPause()},
-		"CanSeek":        {Value: p.CanSeek()},
-		"CanControl":     {Value: p.CanControl()},
+		"Position":       {Value: p.Position(), Emit: prop.EmitTrue},
+		"MinimumRate":    {Value: p.MinimumRate(), Emit: prop.EmitTrue},
+		"MaximumRate":    {Value: p.MaximumRate(), Emit: prop.EmitTrue},
+		"CanGoNext":      {Value: p.CanGoNext(), Emit: prop.EmitTrue},
+		"CanGoPrevious":  {Value: p.CanGoPrevious(), Emit: prop.EmitTrue},
+		"CanPlay":        {Value: p.CanPlay(), Emit: prop.EmitTrue},
+		"CanPause":       {Value: p.CanPause(), Emit: prop.EmitTrue},
+		"CanSeek":        {Value: p.CanSeek(), Emit: prop.EmitTrue},
+		"CanControl":     {Value: p.CanControl(), Emit: prop.EmitTrue},
 	}
 }
 
@@ -97,12 +105,12 @@ func (p *Player) OpenUri(s string) *dbus.Error {
 // PlaybackStatus -
 func (p *Player) PlaybackStatus() string {
 	if IsPlaying() {
-		return "Playing"
+		return PlaybackStatusPlaying
 	}
 	if IsPaused() {
-		return "Paused"
+		return PlaybackStatusPaused
 	}
-	return "Stopped"
+	return PlaybackStatusStopped
 }
 
 // LoopStatus -
@@ -128,17 +136,19 @@ func (p *Player) Metadata() map[string]dbus.Variant {
 	pb, t := GetPlayback()
 	if t != nil {
 		return map[string]dbus.Variant{
-			"mpris:trackid":        dbus.MakeVariant(t.ID),
-			"mpris:length":         dbus.MakeVariant(time.Duration(t.Duration) / time.Microsecond),
 			"xesam:album":          dbus.MakeVariant(t.Album),
 			"xesam:title":          dbus.MakeVariant(t.Title),
 			"xesam:url":            dbus.MakeVariant(t.Location),
 			"xesam:contentCreated": dbus.MakeVariant(t.Year),
-			"xesam:albumArtist":    dbus.MakeVariant(t.Albumartist),
-			"xesam:artist":         dbus.MakeVariant(t.Artist),
-			"xesam:genre":          dbus.MakeVariant(t.Genre),
-			"mpris:artUrl":         dbus.MakeVariant(t.Cover),
+			"xesam:albumArtist":    dbus.MakeVariant([]string{t.Albumartist}),
+			"xesam:artist":         dbus.MakeVariant([]string{t.Artist}),
+			"xesam:genre":          dbus.MakeVariant([]string{t.Genre}),
+			"xesam:composer":       dbus.MakeVariant([]string{t.Composer}),
 			"xesam:trackNumber":    dbus.MakeVariant(t.Tracknumber),
+			"xesam:discNumber":     dbus.MakeVariant(t.Discnumber),
+			"mpris:artUrl":         dbus.MakeVariant(t.Cover),
+			"mpris:length":         dbus.MakeVariant(time.Duration(t.Duration) / time.Microsecond),
+			"mpris:trackid":        dbus.MakeVariant(t.ID),
 		}
 	}
 	return map[string]dbus.Variant{

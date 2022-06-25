@@ -269,6 +269,8 @@ func (e *engine) handleBusMessage(msg *gst.Message) bool {
 			"newState":      e.state,
 		}).
 			Debug("Pipeline state changed")
+
+		e.updateMPRIS(false)
 	case gst.MessageDurationChanged:
 		e.duration = 0
 	case gst.MessageBuffering:
@@ -339,6 +341,7 @@ func (e *engine) playStream(pb *models.Playback) {
 	}
 
 	subscription.Broadcast(subscription.ToPlaybackEvent)
+	e.updateMPRIS(false)
 
 	if e.mode == TestMode {
 		// Location is relative
@@ -356,8 +359,6 @@ func (e *engine) playStream(pb *models.Playback) {
 		return
 	}
 	log.Debugf("State changed: %d\n", gst.StatePlaying)
-
-	go e.updateMPRIS()
 
 	pqctx, cancelpq := context.WithCancel(context.Background())
 	go e.performQueries(pqctx)
@@ -447,39 +448,6 @@ func (e *engine) resumeActivePlaylist() {
 	}
 }
 
-func (e *engine) updateMPRIS() {
-	if e.mprisPlayer == nil {
-		mprisInstance := mpris.New()
-		e.mprisPlayer = &Player{mprisInstance}
-		if err := mprisInstance.Setup(e.mprisPlayer); err != nil {
-			log.Error(err)
-			e.deleteMPRIS()
-		}
-		return
-	}
-	err := e.mprisPlayer.Conn.Emit(mpris.RootPath,
-		mpris.PropertiesInterface+".PropertiesChanged",
-		map[string]dbus.Variant{
-			"PlaybackStatus": dbus.MakeVariant(e.mprisPlayer.PlaybackStatus()),
-			"Metadata":       dbus.MakeVariant(e.mprisPlayer.Metadata()),
-			"CanGoNext":      dbus.MakeVariant(e.mprisPlayer.CanGoNext()),
-		},
-		[]string{},
-	)
-	onerror.Log(err)
-}
-
-func (e *engine) deleteMPRIS() {
-	if e.mprisPlayer != nil {
-		e.mprisPlayer.Delete()
-	}
-	e.mprisPlayer = nil
-}
-
-func (e *engine) setPlaybackHint(h playbackHint) {
-	e.hint = h
-}
-
 func (e *engine) reset() {
 	e.pb = nil
 	e.t = nil
@@ -490,6 +458,53 @@ func (e *engine) reset() {
 	e.lastPosition = 0
 	e.duration = 0
 	e.buffering = 0
+}
+
+func (e *engine) setPlaybackHint(h playbackHint) {
+	e.hint = h
+}
+
+func (e *engine) updateMPRIS(destroy bool) {
+	deleteMPRIS := func() {
+		if e.mprisPlayer != nil {
+			e.mprisPlayer.Delete()
+		}
+		e.mprisPlayer = nil
+	}
+
+	if destroy {
+		deleteMPRIS()
+		return
+	}
+
+	if e.mprisPlayer == nil {
+		mprisInstance := mpris.New()
+		e.mprisPlayer = &Player{mprisInstance, PlaybackStatusStopped}
+		if err := mprisInstance.Setup(e.mprisPlayer); err != nil {
+			log.Error(err)
+			deleteMPRIS()
+		}
+		return
+	}
+
+	currPbStatus := e.mprisPlayer.PlaybackStatus()
+	if currPbStatus == e.mprisPlayer.lastPlaybackStatus {
+		return
+	}
+
+	e.mprisPlayer.lastPlaybackStatus = currPbStatus
+	err := e.mprisPlayer.Conn.Emit(
+		mpris.RootPath,
+		mpris.PropertiesInterface+".PropertiesChanged",
+		mpris.PlayerInterface,
+		map[string]dbus.Variant{
+			"PlaybackStatus": dbus.MakeVariant(currPbStatus),
+			"Metadata":       dbus.MakeVariant(e.mprisPlayer.Metadata()),
+			"CanGoNext":      dbus.MakeVariant(e.mprisPlayer.CanGoNext()),
+		},
+		[]string{},
+	)
+	onerror.Log(err)
 }
 
 func (e *engine) wrapUp() {
