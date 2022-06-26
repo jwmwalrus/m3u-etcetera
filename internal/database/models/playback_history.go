@@ -66,7 +66,6 @@ func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
 	}
 	onerror.Log(h.Create())
 	if pb.TrackID > 0 {
-		t := &Track{}
 		t, err := pb.GetTrack()
 		if err != nil {
 			log.Error(err)

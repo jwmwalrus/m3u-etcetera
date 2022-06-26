@@ -9,8 +9,8 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"golang.org/x/exp/slices"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // QueueSvc defines the queue server
@@ -59,14 +59,14 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context,
 		if len(req.Locations) > 0 || len(req.Ids) > 0 {
 			unsup := base.CheckUnsupportedFiles(req.Locations)
 			if len(unsup) > 0 {
-				return nil, grpc.Errorf(codes.InvalidArgument,
+				return nil, status.Errorf(codes.InvalidArgument,
 					"Unsupported locations were provided: %+q", unsup)
 			}
 		}
 		if len(req.Ids) > 0 {
 			_, notFound := models.FindTracksIn(req.Ids)
 			if len(notFound) > 0 {
-				return nil, grpc.Errorf(codes.InvalidArgument,
+				return nil, status.Errorf(codes.InvalidArgument,
 					"Non-existing track IDs were provided: %+v", notFound)
 			}
 		}
@@ -133,7 +133,7 @@ sLoop:
 
 			res.Tracks = tList
 			if err := stream.Send(res); err != nil {
-				return grpc.Errorf(codes.Internal,
+				return status.Errorf(codes.Internal,
 					"Error sending queue event: %v",
 					err)
 			}
@@ -148,7 +148,7 @@ func (*QueueSvc) UnsubscribeFromQueueStore(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromQueueStoreRequest) (*m3uetcpb.Empty, error) {
 
 	if req.SubscriptionId == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"A non-empty subscription ID is required")
 	}
 	subscription.Broadcast(

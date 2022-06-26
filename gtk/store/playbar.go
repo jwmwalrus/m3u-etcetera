@@ -178,7 +178,7 @@ func PlaylistAlreadyExists(name string) bool {
 	defer BData.Mu.Unlock()
 
 	for _, pl := range BData.Playlist {
-		if strings.ToLower(pl.Name) == strings.ToLower(name) {
+		if strings.EqualFold(pl.Name, name) {
 			return true
 		}
 	}
@@ -192,7 +192,7 @@ func PlaylistGroupAlreadyExists(name string) bool {
 	defer BData.Mu.Unlock()
 
 	for _, pg := range BData.PlaylistGroup {
-		if strings.ToLower(pg.Name) == strings.ToLower(name) {
+		if strings.EqualFold(pg.Name, name) {
 			return true
 		}
 	}

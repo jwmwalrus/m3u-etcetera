@@ -6,6 +6,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/onerror"
 
 	// "github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
@@ -199,13 +200,13 @@ func PauseStream(off bool) (err error) {
 			return
 		}
 		eng.state = gst.StatePlaying
-		eng.playbin.SetState(eng.state)
+		err = eng.playbin.SetState(eng.state)
 	} else {
 		if !IsPlaying() {
 			return
 		}
 		eng.state = gst.StatePaused
-		eng.playbin.SetState(eng.state)
+		err = eng.playbin.SetState(eng.state)
 	}
 
 	subscription.Broadcast(subscription.ToPlaybackEvent)
@@ -280,7 +281,6 @@ func QuitPlayingFromBar(pl *models.Playlist) {
 	bar := pl.Playbar
 	bar.DeactivateEntry(pl)
 	quitPlayingFromList()
-	return
 }
 
 // SeekInStream seek a position in the current stream
@@ -306,8 +306,6 @@ func SeekInStream(pos int64) {
 			log.Errorf("Error sending playback event: %v", gst.EventTypeSeek)
 		}
 	}
-
-	return
 }
 
 // SetMode sets engine mode
@@ -329,7 +327,6 @@ func StartEngine() {
 	eng.resumeActivePlaylist()
 	go eng.engineLoop()
 	models.PlaybackChanged <- struct{}{}
-	return
 }
 
 // StopAll stops all playback
@@ -358,12 +355,10 @@ func StopStream() {
 	// just ending things here
 	if !IsPaused() {
 		eng.state = gst.StatePaused
-		eng.playbin.SetState(eng.state)
+		onerror.Log(eng.playbin.SetState(eng.state))
 	}
 	eng.wrapUp()
 	eng.mainLoop.Quit()
-
-	return
 }
 
 // TryPlayingFromBar starts a playlist in the playbar
@@ -380,14 +375,12 @@ func TryPlayingFromBar(pl *models.Playlist, position int) {
 
 	bar.ActivateEntry(pl)
 	tryPlayingFromList(pl, position)
-
-	return
 }
 
 func mockEngineLoop() {
 	aux := &models.Playback{}
 	aux.GetNextToPlay()
-	if aux != nil {
+	if aux.ID != 0 {
 		eng.pb = aux
 	}
 }
@@ -400,7 +393,6 @@ func quitPlayingFromList() {
 	StopStream()
 	models.PlaybackChanged <- struct{}{}
 	eng.updateMPRIS(true)
-	return
 }
 
 func stopEngine() {
@@ -433,8 +425,6 @@ func stopEngine() {
 		}
 		break
 	}
-
-	return
 }
 
 func tryPlayingFromList(pl *models.Playlist, position int) {

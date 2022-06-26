@@ -7,12 +7,15 @@ import (
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	musicQueueModel      *gtk.ListStore
-	podcastsQueueModel   *gtk.ListStore
+	musicQueueModel *gtk.ListStore
+	//nolint: unused //TODO
+	podcastsQueueModel *gtk.ListStore
+	//nolint: unused //TODO
 	audiobooksQueueModel *gtk.ListStore
 
 	// QData queue store
@@ -118,7 +121,7 @@ func updateQueueModels() bool {
 					[]interface{}{
 						qt.Id,
 						int(qt.Position),
-						int(count),
+						count,
 						qt.Played,
 						qt.Location,
 						int(qt.Perspective),
@@ -132,7 +135,7 @@ func updateQueueModels() bool {
 				for _, t := range QData.res.Tracks {
 					if qt.TrackId == t.Id {
 						dur := time.Duration(t.Duration) * time.Nanosecond
-						err = model.Set(
+						err := model.Set(
 							iter,
 							[]int{
 								int(QColFormat),
@@ -182,6 +185,7 @@ func updateQueueModels() bool {
 								t.Lastplayed,
 							},
 						)
+						onerror.Log(err)
 						break
 					}
 				}

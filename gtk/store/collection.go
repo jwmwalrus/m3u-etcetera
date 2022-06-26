@@ -45,7 +45,7 @@ func CollectionAlreadyExists(location, name string) bool {
 
 	for _, c := range CData.Collection {
 		if c.Location == location ||
-			strings.ToLower(c.Name) == strings.ToLower(name) {
+			strings.EqualFold(c.Name, name) {
 			return true
 		}
 	}

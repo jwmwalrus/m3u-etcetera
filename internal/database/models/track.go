@@ -200,6 +200,7 @@ func (t *Track) createTransientWithRaw(tx *gorm.DB,
 }
 
 func (t *Track) fillMissingTags(raw map[string]interface{}) {
+	const unknownTxt = "[Unknown]"
 	var title, album, artist, albumArtist, genre string
 	var full, partial time.Time
 	for k, v := range raw {
@@ -262,7 +263,7 @@ func (t *Track) fillMissingTags(raw map[string]interface{}) {
 		if title != "" {
 			t.Title = title
 		} else {
-			t.Title = "[Unknown]"
+			t.Title = unknownTxt
 			if unesc != "" {
 				t.Title += " (" + filepath.Base(unesc) + ")"
 			}
@@ -272,7 +273,7 @@ func (t *Track) fillMissingTags(raw map[string]interface{}) {
 		if album != "" {
 			t.Album = album
 		} else {
-			t.Album = "[Unknown]"
+			t.Album = unknownTxt
 			if unesc != "" {
 				t.Album += " (" + filepath.Dir(unesc) + ")"
 			}
@@ -285,14 +286,14 @@ func (t *Track) fillMissingTags(raw map[string]interface{}) {
 		} else if albumArtist != "" {
 			t.Artist = albumArtist
 		} else {
-			t.Artist = "[Unknown]"
+			t.Artist = unknownTxt
 		}
 	}
 	if strings.TrimSpace(t.Genre) == "" {
 		if genre != "" {
 			t.Genre = genre
 		} else {
-			t.Genre = "[Unknown]"
+			t.Genre = unknownTxt
 		}
 	}
 }
@@ -377,7 +378,7 @@ func DeleteDanglingTrack(id int64, withRemote bool) {
 	}
 
 	c := Collection{}
-	db.First(&c, t.CollectionID)
+	err = db.First(&c, t.CollectionID).Error
 	if err != nil {
 		log.Error(err)
 		return
@@ -404,7 +405,6 @@ func DeleteDanglingTrack(id int64, withRemote bool) {
 		pl.Playbar.DeleteFromPlaylist(&pl, pts[i].Position)
 	}
 	onerror.Log(t.Delete())
-	return
 }
 
 // DeleteTrackIfTransient removes a track only if it belongs
@@ -431,7 +431,6 @@ func DeleteTrackIfTransient(id int64) {
 		}
 		return
 	}
-	return
 }
 
 // FindTracksIn returns the tracks for the given IDs

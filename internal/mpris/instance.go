@@ -77,10 +77,13 @@ func (i *Instance) Setup(p Player) (err error) {
 		return
 	}
 
-	i.props = prop.New(i.Conn, RootPath, map[string]map[string]*prop.Prop{
+	i.props, err = prop.Export(i.Conn, RootPath, map[string]map[string]*prop.Prop{
 		RootInterface:   mp2.properties(),
 		PlayerInterface: p.Properties(),
 	})
+	if err != nil {
+		return
+	}
 
 	reply, err := i.Conn.RequestName(
 		serverName,

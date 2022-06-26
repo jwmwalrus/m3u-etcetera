@@ -14,7 +14,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
 
-	// "github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
 	"github.com/tinyzimmer/go-glib/glib"
 	"github.com/tinyzimmer/go-gst/gst"
@@ -376,7 +375,6 @@ func (e *engine) playStream(pb *models.Playback) {
 	log.Debug("End of playback")
 	e.state = gst.StateNull
 	e.playbin.SetState(e.state)
-	return
 }
 
 func (e *engine) performQueries(ctx context.Context) {

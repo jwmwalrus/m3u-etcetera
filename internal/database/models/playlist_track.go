@@ -104,9 +104,7 @@ func (pt *PlaylistTrack) GetIgnore() bool {
 }
 
 // SetIgnore implements the Poser interface
-func (pt *PlaylistTrack) SetIgnore(_ bool) {
-	return
-}
+func (pt *PlaylistTrack) SetIgnore(_ bool) {}
 
 func (pt *PlaylistTrack) GetTrackAfter(goingBack bool) (*PlaylistTrack, error) {
 	pl := pt.Playlist

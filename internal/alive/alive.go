@@ -245,7 +245,6 @@ func writeServerAliveFile() {
 
 	_, err = f.WriteString("1")
 	onerror.Log(err)
-	return
 }
 
 func init() {

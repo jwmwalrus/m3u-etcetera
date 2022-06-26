@@ -11,8 +11,8 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // PlaybarSvc defines the playbar service
@@ -27,7 +27,7 @@ func (*PlaybarSvc) GetPlaybar(_ context.Context,
 	bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 	if err != nil {
 		return nil,
-			grpc.Errorf(codes.Internal,
+			status.Errorf(codes.Internal,
 				"Error while obtaining perspective playbar: %v",
 				err)
 	}
@@ -51,13 +51,13 @@ func (*PlaybarSvc) GetPlaylist(_ context.Context,
 	req *m3uetcpb.GetPlaylistRequest) (*m3uetcpb.GetPlaylistResponse, error) {
 	if req.Id < 1 {
 		return nil,
-			grpc.Errorf(codes.InvalidArgument, "Playlist ID must be greater than zero")
+			status.Errorf(codes.InvalidArgument, "Playlist ID must be greater than zero")
 	}
 
 	pl := models.Playlist{}
 	err := pl.Read(req.Id)
 	if err != nil {
-		return nil, grpc.Errorf(codes.NotFound, "Playlist not found: %v", err)
+		return nil, status.Errorf(codes.NotFound, "Playlist not found: %v", err)
 	}
 
 	res := &m3uetcpb.GetPlaylistResponse{
@@ -84,7 +84,7 @@ func (*PlaybarSvc) GetAllPlaylists(_ context.Context,
 	bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 	if err != nil {
 		return nil,
-			grpc.Errorf(codes.Internal,
+			status.Errorf(codes.Internal,
 				"Error while obtaining perspective playbar: %v", err)
 	}
 
@@ -107,13 +107,13 @@ func (*PlaybarSvc) GetPlaylistGroup(_ context.Context,
 
 	if req.Id < 1 {
 		return nil,
-			grpc.Errorf(codes.InvalidArgument,
+			status.Errorf(codes.InvalidArgument,
 				"Playlist Group ID must be greater than zero")
 	}
 	pg := models.PlaylistGroup{}
 	if err := pg.Read(req.Id); err != nil {
 		return nil,
-			grpc.Errorf(codes.NotFound, "Playlist Group not found: %v", err)
+			status.Errorf(codes.NotFound, "Playlist Group not found: %v", err)
 	}
 	res := &m3uetcpb.GetPlaylistGroupResponse{
 		PlaylistGroup: pg.ToProtobuf().(*m3uetcpb.PlaylistGroup),
@@ -128,7 +128,7 @@ func (*PlaybarSvc) GetAllPlaylistGroups(_ context.Context,
 	bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 	if err != nil {
 		return nil,
-			grpc.Errorf(codes.Internal,
+			status.Errorf(codes.Internal,
 				"Error while obtaining perspective playbar: %v", err)
 	}
 
@@ -150,7 +150,7 @@ func (*PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 	req *m3uetcpb.ExecutePlaybarActionRequest) (*m3uetcpb.Empty, error) {
 
 	if len(req.Ids) < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"At least one playlist ID is required")
 	}
 
@@ -158,14 +158,14 @@ func (*PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 		req.Action == m3uetcpb.PlaybarAction_BAR_DEACTIVATE) &&
 		len(req.Ids) != 1 {
 		return nil,
-			grpc.Errorf(codes.InvalidArgument,
+			status.Errorf(codes.InvalidArgument,
 				"Only one playlist ID must be provided to activate|deactivate")
 	}
 
 	pls, notfound := models.FindPlaylistsIn(req.Ids)
 	if len(notfound) > 0 {
 		return nil,
-			grpc.Errorf(codes.InvalidArgument,
+			status.Errorf(codes.InvalidArgument,
 				"Some of the provided playlist IDs do not exist: %v", notfound)
 	}
 
@@ -218,21 +218,21 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 		req.Action == m3uetcpb.PlaylistAction_PL_DESTROY) &&
 		req.Id < 1 {
 		return nil,
-			grpc.Errorf(codes.InvalidArgument, "Invalid playlist ID: %v", req.Id)
+			status.Errorf(codes.InvalidArgument, "Invalid playlist ID: %v", req.Id)
 	}
 
 	pl := &models.Playlist{}
 	if req.Action != m3uetcpb.PlaylistAction_PL_CREATE {
 		if err := pl.Read(req.Id); err != nil {
 			return nil,
-				grpc.Errorf(codes.NotFound,
+				status.Errorf(codes.NotFound,
 					"Playlist with ID=%v does not exist: %v", req.Id, err)
 		}
 	}
 
 	if req.Action == m3uetcpb.PlaylistAction_PL_DESTROY && pl.Open {
 		return nil,
-			grpc.Errorf(codes.InvalidArgument,
+			status.Errorf(codes.InvalidArgument,
 				"A playlist cannot be deleted while open")
 	}
 
@@ -241,14 +241,14 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 		bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 		if err != nil {
 			return nil,
-				grpc.Errorf(codes.Internal,
+				status.Errorf(codes.Internal,
 					"Error obtaining perspective: %v", err)
 		}
 
 		pl, err = bar.CreateEntry(req.Name, req.Description)
 		if err != nil {
 			return nil,
-				grpc.Errorf(codes.Internal,
+				status.Errorf(codes.Internal,
 					"Error creating playlist: %v", err)
 		}
 	case m3uetcpb.PlaylistAction_PL_UPDATE:
@@ -262,7 +262,7 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 		)
 		if err != nil {
 			return nil,
-				grpc.Errorf(codes.Internal,
+				status.Errorf(codes.Internal,
 					"Error updating playlist: %v", err)
 		}
 	case m3uetcpb.PlaylistAction_PL_DESTROY:
@@ -270,7 +270,7 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 		err := bar.DestroyEntry(pl)
 		if err != nil {
 			return nil,
-				grpc.Errorf(codes.Internal,
+				status.Errorf(codes.Internal,
 					"Error deleting playlist: %v", err)
 		}
 	}
@@ -286,7 +286,7 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 	if req.Action != m3uetcpb.PlaylistGroupAction_PG_CREATE &&
 		req.Id < 1 {
 		return nil,
-			grpc.Errorf(codes.InvalidArgument, "Invalid playlist group ID")
+			status.Errorf(codes.InvalidArgument, "Invalid playlist group ID")
 	}
 
 	pg := &models.PlaylistGroup{}
@@ -295,14 +295,14 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 		var err error
 		if err = pg.Read(req.Id); err != nil {
 			return nil,
-				grpc.Errorf(codes.NotFound,
+				status.Errorf(codes.NotFound,
 					"Playlist Group with ID=%v does not exist: %v",
 					req.Id, err)
 		}
 		bar, err = models.PerspectiveIndex(pg.Perspective.Idx).GetPlaybar()
 		if err != nil {
 			return nil,
-				grpc.Errorf(codes.Internal, "Error obtaining perspective: %v", err)
+				status.Errorf(codes.Internal, "Error obtaining perspective: %v", err)
 		}
 	}
 
@@ -310,12 +310,12 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 	case m3uetcpb.PlaylistGroupAction_PG_CREATE:
 		bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 		if err != nil {
-			return nil, grpc.Errorf(codes.Internal,
+			return nil, status.Errorf(codes.Internal,
 				"Error obtaining perspective: %v", err)
 		}
 		pg, err = bar.CreateGroup(req.Name, req.Description)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Internal,
+			return nil, status.Errorf(codes.Internal,
 				"Error creating playlist group: %v", err)
 		}
 	case m3uetcpb.PlaylistGroupAction_PG_UPDATE:
@@ -324,13 +324,13 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 
 		if err != nil {
 			return nil,
-				grpc.Errorf(codes.Internal,
+				status.Errorf(codes.Internal,
 					"Error updating playlist group: %v", err)
 		}
 	case m3uetcpb.PlaylistGroupAction_PG_DESTROY:
 		err := bar.DestroyGroup(pg)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Internal,
+			return nil, status.Errorf(codes.Internal,
 				"Error deleting playlist group: %v", err)
 		}
 	}
@@ -343,20 +343,20 @@ func (*PlaybarSvc) ExecutePlaylistTrackAction(_ context.Context,
 
 	if req.PlaylistId < 1 {
 		return nil,
-			grpc.Errorf(codes.InvalidArgument,
+			status.Errorf(codes.InvalidArgument,
 				"Invalid playlist ID: %v", req.PlaylistId)
 	}
 
 	pl := &models.Playlist{}
 	if err := pl.Read(req.PlaylistId); err != nil {
 		return nil,
-			grpc.Errorf(codes.NotFound,
+			status.Errorf(codes.NotFound,
 				"Playlist with ID=%v does not exist: %v", req.PlaylistId, err)
 	}
 
 	if !pl.Open {
 		return nil,
-			grpc.Errorf(codes.InvalidArgument,
+			status.Errorf(codes.InvalidArgument,
 				"Playlist must be open to operate on it")
 	}
 
@@ -388,12 +388,12 @@ func (*PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest,
 
 	bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
 	if err != nil {
-		return grpc.Errorf(codes.Internal,
+		return status.Errorf(codes.Internal,
 			"Error while obtaining perspective playbar: %v", err)
 	}
 
 	if len(req.Locations) < 1 {
-		return grpc.Errorf(codes.InvalidArgument,
+		return status.Errorf(codes.InvalidArgument,
 			"At least one playlist location is required")
 	}
 
@@ -404,13 +404,13 @@ func (*PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest,
 			if err2 != nil {
 				un = l
 			}
-			return grpc.Errorf(codes.InvalidArgument,
+			return status.Errorf(codes.InvalidArgument,
 				"Error importing playlist at `%v`: %v", un, err)
 		}
 		req := &m3uetcpb.ImportPlaylistsResponse{Id: pl.ID, ImportErrors: msgs}
 		err = stream.Send(req)
 		if err != nil {
-			return grpc.Errorf(codes.Internal,
+			return status.Errorf(codes.Internal,
 				"Error sending stream: %v", err)
 		}
 	}
@@ -423,18 +423,18 @@ func (*PlaybarSvc) ExportPlaylist(_ context.Context,
 	req *m3uetcpb.ExportPlaylistRequest) (*m3uetcpb.Empty, error) {
 
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"A valid playlist ID is required")
 	}
 
 	pl := models.Playlist{}
 	if err := pl.Read(req.Id); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Playlist does not exist: %v", err)
 	}
 
 	if req.Location == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"The target location for the playlist is required")
 	}
 
@@ -445,19 +445,20 @@ func (*PlaybarSvc) ExportPlaylist(_ context.Context,
 	case m3uetcpb.PlaylistExportFormat_PLEF_PLS:
 		format = impexp.PLSPlaylist
 	default:
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Unsupported export format: %v", req.Format)
 	}
 
 	if err := pl.Export(format, req.Location); err != nil {
-		return nil, grpc.Errorf(codes.Internal,
+		return nil, status.Errorf(codes.Internal,
 			"Error exporting playlist: %v", err)
 	}
 	return &m3uetcpb.Empty{}, nil
 }
 
 // SubscribeToPlaybarStore implements m3uetcpb.PlaybarSvcServer
-func (*PlaybarSvc) SubscribeToPlaybarStore(_ *m3uetcpb.Empty, stream m3uetcpb.PlaybarSvc_SubscribeToPlaybarStoreServer) error {
+func (*PlaybarSvc) SubscribeToPlaybarStore(_ *m3uetcpb.Empty,
+	stream m3uetcpb.PlaybarSvc_SubscribeToPlaybarStoreServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToPlaybarStoreEvent)
 	defer func() { s.Unsubscribe() }()
@@ -544,7 +545,7 @@ sLoop:
 					},
 				)
 				if err != nil {
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error sending initial event (%v): %v",
 						m3uetcpb.PlaybarEvent_BE_INITIAL, err)
 				}
@@ -557,7 +558,7 @@ sLoop:
 						pgs[i],
 					)
 					if err != nil {
-						return grpc.Errorf(codes.Internal,
+						return status.Errorf(codes.Internal,
 							"Error sending initial event (%v): %v",
 							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
@@ -569,7 +570,7 @@ sLoop:
 						pls[i],
 					)
 					if err != nil {
-						return grpc.Errorf(codes.Internal,
+						return status.Errorf(codes.Internal,
 							"Error sending initial event (%v): %v",
 							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
@@ -581,7 +582,7 @@ sLoop:
 						opls[i],
 					)
 					if err != nil {
-						return grpc.Errorf(codes.Internal,
+						return status.Errorf(codes.Internal,
 							"Error sending initial event (%v): %v",
 							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
@@ -593,7 +594,7 @@ sLoop:
 						opts[i],
 					)
 					if err != nil {
-						return grpc.Errorf(codes.Internal,
+						return status.Errorf(codes.Internal,
 							"Error sending initial event (%v): %v",
 							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
@@ -605,7 +606,7 @@ sLoop:
 						ots[i],
 					)
 					if err != nil {
-						return grpc.Errorf(codes.Internal,
+						return status.Errorf(codes.Internal,
 							"Error sending initial event (%v): %v",
 							m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM, err)
 					}
@@ -618,7 +619,7 @@ sLoop:
 					},
 				)
 				if err != nil {
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error sending initial event (%v): %v",
 						m3uetcpb.PlaybarEvent_BE_INITIAL_DONE, err)
 				}
@@ -629,7 +630,7 @@ sLoop:
 				pl := &models.Playlist{}
 				err := pl.Read(e.Data.(int64))
 				if err != nil {
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error reading playlist for open items events: %v", err)
 				}
 
@@ -640,7 +641,7 @@ sLoop:
 					},
 				)
 				if err != nil {
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error sending open items event (%v): %v",
 						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS, err)
 				}
@@ -650,7 +651,7 @@ sLoop:
 					pl,
 				)
 				if err != nil {
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error sending open items event (%v): %v",
 						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM, err)
 				}
@@ -664,7 +665,7 @@ sLoop:
 							opts[i],
 						)
 						if err != nil {
-							return grpc.Errorf(codes.Internal,
+							return status.Errorf(codes.Internal,
 								"Error sending open items event (%v): %v",
 								m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM, err)
 						}
@@ -676,7 +677,7 @@ sLoop:
 							ots[i],
 						)
 						if err != nil {
-							return grpc.Errorf(codes.Internal,
+							return status.Errorf(codes.Internal,
 								"Error sending open items event (%v): %v",
 								m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM, err)
 						}
@@ -690,7 +691,7 @@ sLoop:
 					},
 				)
 				if err != nil {
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error sending open items event (%v): %v",
 						m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_DONE, err)
 				}
@@ -724,7 +725,7 @@ sLoop:
 			}
 
 			if err := fn(eout, e.Data.(models.ProtoOut)); err != nil {
-				return grpc.Errorf(codes.Internal,
+				return status.Errorf(codes.Internal,
 					"Error sending playbar event (%v): %v",
 					eout, err)
 			}
@@ -738,7 +739,7 @@ func (*PlaybarSvc) UnsubscribeFromPlaybarStore(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromPlaybarStoreRequest) (*m3uetcpb.Empty, error) {
 
 	if req.SubscriptionId == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"A non-empty subscription ID is required")
 	}
 	subscription.Broadcast(

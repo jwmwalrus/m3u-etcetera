@@ -31,7 +31,7 @@ func (lt loggerType) String() string {
 	}[lt]
 }
 
-func logBefore(lt loggerType, ctx context.Context, fullMethod string,
+func logBefore(ctx context.Context, lt loggerType, fullMethod string,
 	start time.Time) context.Context {
 
 	fields := log.Fields{

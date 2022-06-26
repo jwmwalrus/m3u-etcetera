@@ -244,7 +244,6 @@ func (c *Collection) CountTracks() {
 		return
 	}
 	c.Tracks = tracks
-	return
 }
 
 // Scan adds tracks to collection
@@ -294,6 +293,7 @@ func (c *Collection) Scan(withTags bool) {
 		nTrack++
 		return nil
 	})
+	onerror.Warn(err)
 
 	if nTrack == 0 {
 		return
@@ -337,9 +337,7 @@ func (c *Collection) Scan(withTags bool) {
 
 		return nil
 	})
-	if err != nil {
-		log.Warn(err)
-	}
+	onerror.Warn(err)
 	log.WithFields(log.Fields{
 		"tracksExpected":      nTrack,
 		"tracksFound":         iTrack,
@@ -350,7 +348,6 @@ func (c *Collection) Scan(withTags bool) {
 
 	c.Scanned = 100
 	onerror.Log(c.Save())
-	return
 }
 
 // Verify removes tracks that do not exist in the collection anymore

@@ -71,9 +71,9 @@ func (pi *PLS) Parse(f io.Reader) (err error) {
 	s := strings.ReplaceAll(string(bv), "\r", "")
 	lines := strings.Split(s, "\n")
 
-	headerre := regexp.MustCompile("^(\\[playlist\\])$")
-	trackre := regexp.MustCompile("^(File|Title|Length)(\\d+)=\\s*(.+)$")
-	footerre := regexp.MustCompile("^(NumberOfEntries|Version)=\\s*(.+)$")
+	headerre := regexp.MustCompile(`^(\\[playlist\\])$`)
+	trackre := regexp.MustCompile(`^(File|Title|Length)(\\d+)=\\s*(.+)$`)
+	footerre := regexp.MustCompile(`^(NumberOfEntries|Version)=\\s*(.+)$`)
 
 	ti := []TrackInfo{}
 	i := -1

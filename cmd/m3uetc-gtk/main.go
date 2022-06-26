@@ -22,6 +22,7 @@ var (
 	b         *gtk.Builder
 	activated bool
 
+	//nolint: typecheck // pre-buid step
 	//go:embed ui images
 	data embed.FS
 )

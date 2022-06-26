@@ -107,7 +107,7 @@ func setFocused() {
 	}
 
 	if headerName == "" {
-		log.Error(
+		log.Errorf(
 			"Playlist with ID=%v is not open, so cannot be focused",
 			focusRequest.id,
 		)

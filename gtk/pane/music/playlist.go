@@ -120,7 +120,6 @@ func (ompl *onMusicPlaylist) contextDelete(mi *gtk.MenuItem) {
 
 	_, err := store.ExecutePlaylistAction(req)
 	onerror.Log(err)
-	return
 }
 
 func (ompl *onMusicPlaylist) contextEdit(mi *gtk.MenuItem) {
@@ -219,7 +218,7 @@ func (ompl *onMusicPlaylist) getPlaylistSelections(keep ...bool) (
 
 	isGroup, ok = values[store.PLColTreeIsGroup].(bool)
 	if !ok {
-		log.Error("This should not happen!!! values:%#v", values)
+		log.Errorf("This should not happen!!! values:%#v", values)
 	}
 
 	ids, err := store.StringToIDList(idstr)

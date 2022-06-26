@@ -134,7 +134,7 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts [
 
 	ts, _ = FindTracksIn(ids)
 	for _, l := range locations {
-		t := &Track{}
+		var t *Track
 		if t, err = ReadTagsForLocation(l); err != nil {
 			continue
 		}
@@ -174,17 +174,4 @@ func findQueueTrack(qt *QueueTrack) {
 	}
 	qt.TrackID = t.ID
 	onerror.Log(qt.Save())
-	return
-}
-
-func reasignQueueTrackPositions(s []QueueTrack) []QueueTrack {
-	pos := 0
-	for i := range s {
-		if s[i].Played {
-			continue
-		}
-		pos++
-		s[i].Position = pos
-	}
-	return s
 }

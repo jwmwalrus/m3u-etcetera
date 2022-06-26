@@ -296,7 +296,7 @@ func (tree *collectionTree) rebuild() {
 	for i := range root {
 		root[i].appendNode(tree.model, nil)
 	}
-	log.Info("Tree built in ", time.Now().Sub(start))
+	log.Infof("Tree built in %v", time.Since(start))
 }
 
 func (tree *collectionTree) update() bool {

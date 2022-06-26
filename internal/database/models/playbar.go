@@ -183,7 +183,6 @@ func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error
 	}
 
 	var plname string
-	pl = &Playlist{}
 
 	isTransient := false
 	if name != "" {
@@ -322,6 +321,7 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 
 	if !base.IsSupportedPlaylist(path) {
 		err = fmt.Errorf("Unsupported playlist format: %v", location)
+		return
 	}
 
 	def, err := impexp.NewFromPath(path)
@@ -437,7 +437,7 @@ func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 	}
 
 	list := poser.InsertInto(pointers.FromSlice(pts), position, pointers.FromSlice(s)...)
-	s = pointers.ToValues(list)
+	pts = pointers.ToValues(list)
 
 	err = db.Session(&gorm.Session{SkipHooks: true}).
 		Save(&pts).
@@ -519,7 +519,7 @@ func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64,
 		}
 		newGroupID = groupID
 	} else if groupID < 0 {
-		var dpg *PlaylistGroup
+		dpg := &PlaylistGroup{}
 		err = dpg.ReadDefaultForPerspective(b.PerspectiveID)
 		if err == nil {
 			if dpg.PerspectiveID != b.PerspectiveID {

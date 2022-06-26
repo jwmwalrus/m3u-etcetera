@@ -11,13 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type playlistType int
-
-const (
-	queuePlaylist playlistType = iota
-	tabPlaylist
-)
-
 type onContext struct {
 	id          int64
 	perspective m3uetcpb.Perspective
@@ -85,7 +78,6 @@ func (oc *onContext) ContextClear(mi *gtk.MenuItem) {
 	}
 
 	onerror.Log(store.ExecuteQueueAction(req))
-	return
 }
 
 func (oc *onContext) ContextDelete(mi *gtk.MenuItem) {
@@ -111,7 +103,6 @@ func (oc *onContext) ContextDelete(mi *gtk.MenuItem) {
 	}
 
 	onerror.Log(store.ExecuteQueueAction(req))
-	return
 }
 
 func (oc *onContext) ContextEnqueue(mi *gtk.MenuItem) {
@@ -202,7 +193,6 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 	}
 
 	onerror.Log(store.ExecuteQueueAction(req))
-	return
 }
 
 func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
@@ -249,7 +239,6 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 	}
 
 	onerror.Log(store.ExecuteQueueAction(reqq))
-	return
 }
 
 func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {

@@ -69,7 +69,6 @@ func (q *Queue) Add(locations []string, ids []int64) {
 	}
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
-	return
 }
 
 // Clear removes all entries from the queue
@@ -93,7 +92,6 @@ func (q *Queue) Clear() {
 	}
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
-	return
 }
 
 // DeleteAt deletes the given position from the queue

@@ -152,7 +152,6 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 	case gtk.RESPONSE_CANCEL:
 	default:
 	}
-	return
 }
 
 func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
@@ -435,7 +434,6 @@ func (osm *onSettingsMenu) editPlaylistGroups(btn *gtk.Button) {
 	case gtk.RESPONSE_CANCEL:
 	default:
 	}
-	return
 }
 
 func (osm *onSettingsMenu) getCollectionsToggles() (

@@ -106,7 +106,6 @@ func (qy *Query) Save() error {
 // FromProtobuf implements ProtoIn interface
 func (qy *Query) FromProtobuf(in proto.Message) {
 	protobufToQuery(in.(*m3uetcpb.Query), qy)
-	return
 }
 
 // ToProtobuf implements ProtoOut interface
@@ -184,7 +183,7 @@ func (qy *Query) AfterDelete(tx *gorm.DB) error {
 }
 
 // Delete deletes a query from the DB
-func (qy *Query) Delete(qybs ...QueryBoundaryTx) (err error) {
+func (qy *Query) Delete(qybs ...QueryBoundaryTx) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		for _, b := range qybs {
 			if err := b.DeleteTx(tx); err != nil {

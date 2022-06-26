@@ -1,0 +1,70 @@
+---
+# This file contains only configs which differ from defaults.
+# All possible options can be found here
+# https://github.com/golangci/golangci-lint/blob/master/.golangci.reference.yml
+
+run:
+  concurrency: 4
+  tests: false
+  skip-dirs:
+    - api/m3uetcpb
+
+linters-settings:
+  cyclop:
+    max-complexity: 30
+    package-average: 10.0
+    skip-tests: true
+
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+
+  gosimple:
+    checks:
+      - all
+      - '-S1000'
+      - '-S1038'
+
+  govet:
+    check-shadowing: false
+    # Run `go tool vet help` to see all analyzers.
+    disable:
+      - fieldalignment
+
+  nolintlint:
+    require-explanation: true
+    require-specific: true
+
+  staticcheck:
+    checks:
+      - all
+      - '-SA1019'
+
+  varcheck:
+    exported-fields: false
+
+
+linters:
+  disable-all: true
+  enable:
+    ## enabled by default
+    - deadcode
+    # - errcheck # too annoying, ignores settings above
+    - gosimple
+    - govet
+    # - ineffassign # many false positives
+    - staticcheck
+    # - structcheck # not for go v1.18
+    - typecheck
+    - unused
+    - varcheck
+
+    ## disabled by default
+    # - cyclop
+    - nolintlint
+    - revive
+    - unconvert
+
+
+issues:
+  max-same-issues: 50

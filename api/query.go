@@ -10,8 +10,8 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // QuerySvc defines the query service
@@ -24,13 +24,13 @@ func (*QuerySvc) GetQuery(_ context.Context,
 	req *m3uetcpb.GetQueryRequest) (*m3uetcpb.GetQueryResponse, error) {
 
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Query id must be greater than zero")
 	}
 
 	qy := models.Query{}
 	if err := qy.Read(req.Id); err != nil {
-		return nil, grpc.Errorf(codes.NotFound, "%v", err)
+		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
 
 	out := qy.ToProtobuf().(*m3uetcpb.Query)
@@ -60,7 +60,7 @@ func (*QuerySvc) AddQuery(_ context.Context,
 	if req.Query.Params != "" {
 
 		if _, err := qparams.ParseParams(req.Query.Params); err != nil {
-			return nil, grpc.Errorf(codes.InvalidArgument,
+			return nil, status.Errorf(codes.InvalidArgument,
 				"Error parsing query params: %v", err)
 		}
 	}
@@ -71,7 +71,7 @@ func (*QuerySvc) AddQuery(_ context.Context,
 		models.CreateCollectionQueries(req.Query.CollectionIds),
 	)
 	if err := qy.SaveBound(qybs); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Error saving query: %v", err)
 	}
 
@@ -84,12 +84,12 @@ func (*QuerySvc) UpdateQuery(_ context.Context,
 
 	qy := models.Query{}
 	if err := qy.Read(req.Query.Id); err != nil {
-		return nil, grpc.Errorf(codes.NotFound, "%v", err)
+		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
 	qy.FromProtobuf(req.Query)
 
 	if err := models.DeleteCollectionQueries(qy.ID); err != nil {
-		return nil, grpc.Errorf(codes.Internal,
+		return nil, status.Errorf(codes.Internal,
 			"Error replacing collection boundaries: %v", err)
 	}
 
@@ -97,7 +97,7 @@ func (*QuerySvc) UpdateQuery(_ context.Context,
 		models.CreateCollectionQueries(req.Query.CollectionIds),
 	)
 	if err := qy.SaveBound(qybs); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Error saving query: %v", err)
 	}
 
@@ -109,11 +109,11 @@ func (*QuerySvc) RemoveQuery(_ context.Context,
 	req *m3uetcpb.RemoveQueryRequest) (*m3uetcpb.Empty, error) {
 	qy := models.Query{}
 	if err := qy.Read(req.Id); err != nil {
-		return nil, grpc.Errorf(codes.NotFound, "%v", err)
+		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
 
 	if err := qy.Delete(); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "%v", err)
+		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	return &m3uetcpb.Empty{}, nil
@@ -124,13 +124,13 @@ func (*QuerySvc) ApplyQuery(_ context.Context,
 	req *m3uetcpb.ApplyQueryRequest) (*m3uetcpb.ApplyQueryResponse, error) {
 
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Query id must be greater than zero")
 	}
 
 	qy := models.Query{}
 	if err := qy.Read(req.Id); err != nil {
-		return nil, grpc.Errorf(codes.NotFound, "%v", err)
+		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
 
 	qybs := models.CollectionsToBoundaries(
@@ -213,7 +213,7 @@ sLoop:
 				}
 				err := stream.Send(res)
 				if err != nil {
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error sending query event (%v): %v",
 						m3uetcpb.QueryEvent_QYE_INITIAL, err)
 				}
@@ -225,7 +225,7 @@ sLoop:
 						qys[i],
 					)
 					if err != nil {
-						return grpc.Errorf(codes.Internal,
+						return status.Errorf(codes.Internal,
 							"Error sending query event (%v): %v",
 							m3uetcpb.QueryEvent_QYE_INITIAL_ITEM, err)
 					}
@@ -255,7 +255,7 @@ sLoop:
 			}
 
 			if err := sendQuery(eout, e.Data.(models.ProtoOut)); err != nil {
-				return grpc.Errorf(codes.Internal,
+				return status.Errorf(codes.Internal,
 					"Error sending query event (%v): %v",
 					eout, err)
 			}
@@ -269,7 +269,7 @@ sLoop:
 func (*QuerySvc) UnsubscribeFromQueryStore(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromQueryStoreRequest) (*m3uetcpb.Empty, error) {
 	if req.SubscriptionId == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"A non-empty subscription ID is required")
 	}
 	subscription.Broadcast(

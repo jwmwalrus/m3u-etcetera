@@ -173,9 +173,7 @@ func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (
 			return
 		}
 
-		for _, msg := range res.ImportErrors {
-			msgList = append(msgList, msg)
-		}
+		msgList = append(msgList, res.ImportErrors...)
 	}
 	return
 }

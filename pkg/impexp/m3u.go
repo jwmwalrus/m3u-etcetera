@@ -75,9 +75,9 @@ func (mi *M3U) Parse(f io.Reader) (err error) {
 	s := strings.ReplaceAll(string(bv), "\r", "")
 	lines := strings.Split(s, "\n")
 
-	directre := regexp.MustCompile("^(#EXT\\w{3}\\b|#PLAYLIST\\b|#EXTGENRE\\b)")
-	extinf := regexp.MustCompile("^(\\d+),\\s*([^,]*)(,.*)?")
-	extalb := regexp.MustCompile("^(.+)\\s*([(]\\d{4}[)])?\\s*$")
+	directre := regexp.MustCompile(`^(#EXT\\w{3}\\b|#PLAYLIST\\b|#EXTGENRE\\b)`)
+	extinf := regexp.MustCompile(`^(\\d+),\\s*([^,]*)(,.*)?`)
+	extalb := regexp.MustCompile(`^(.+)\\s*([(]\\d{4}[)])?\\s*$`)
 
 	var encoding, name string
 	ti := []TrackInfo{{}}
@@ -97,9 +97,7 @@ func (mi *M3U) Parse(f io.Reader) (err error) {
 
 		if match := directre.FindStringSubmatch(lines[i]); len(match) > 1 {
 			lines[i] = strings.TrimPrefix(lines[i], match[1])
-			if strings.HasPrefix(lines[i], ":") {
-				lines[i] = strings.TrimPrefix(lines[i], ":")
-			}
+			lines[i] = strings.TrimPrefix(lines[i], ":")
 			switch match[1] {
 			case "#EXTM3U":
 				if i != 0 {

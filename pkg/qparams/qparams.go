@@ -211,7 +211,7 @@ func parseCondition(cond string) (or, not bool) {
 
 func splitCSV(in *QParam) (out []*QParam) {
 	work := *in
-	if strings.Index(work.Val, ",") < 0 {
+	if !strings.Contains(work.Val, ",") {
 		out = append(out, &work)
 		return
 	}

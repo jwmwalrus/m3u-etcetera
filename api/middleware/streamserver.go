@@ -23,8 +23,8 @@ func streamServerInterceptor() grpc.StreamServerInterceptor {
 		startTime := time.Now()
 
 		newCtx := logBefore(
-			streamLogger,
 			stream.Context(),
+			streamLogger,
 			info.FullMethod,
 			startTime,
 		)

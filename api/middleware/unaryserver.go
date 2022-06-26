@@ -20,7 +20,7 @@ func unaryServerInterceptor() grpc.UnaryServerInterceptor {
 
 		startTime := time.Now()
 
-		newCtx := logBefore(unaryLogger, ctx, info.FullMethod, startTime)
+		newCtx := logBefore(ctx, unaryLogger, info.FullMethod, startTime)
 		res, err := handler(newCtx, req)
 		logAfter(newCtx, err, time.Now(), false)
 		return res, err

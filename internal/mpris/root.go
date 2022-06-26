@@ -7,7 +7,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 )
 
-// MediaPlayer2 -
+// MediaPlayer2 implements the org.mpris.MediaPlayer2 root interface
 type MediaPlayer2 struct {
 	*Instance
 }
@@ -47,58 +47,59 @@ func (mp2 *MediaPlayer2) properties() map[string]*prop.Prop {
 	}
 }
 
-// Quit -
+// Quit implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) Quit() *dbus.Error {
 	// TODO: implement
 	return nil
 }
 
-// Raise -
+// Raise implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) Raise() *dbus.Error {
 	return nil
 }
 
-// CanQuit -
+// CanQuit implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) CanQuit() bool {
 	return true
 }
 
-// Fullscreen -
+// Fullscreen implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) Fullscreen(b bool) (bool, *dbus.Error) {
 	return false, nil
 }
 
-// CanSetFullscreen -
+// CanSetFullscreen implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) CanSetFullscreen() bool {
 	return false
 }
 
-// CanRaise -
+// CanRaise implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) CanRaise() bool {
 	return false
 }
 
-// HasTrackList -
+// HasTrackList implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) HasTrackList() bool {
 	return false
 }
 
-// Identity -
+// Identity implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) Identity() string {
 	return base.AppName
 }
 
-// DesktopEntry -
+// DesktopEntry implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) DesktopEntry() string {
 	return "m3uetc-server"
 }
 
-// SupportedUriSchemes -
+// SupportedUriSchemes implements the org.mpris.MediaPlayer2 root interface
+//nolint: revive // Implements interface
 func (mp2 *MediaPlayer2) SupportedUriSchemes() []string {
 	return base.SupportedURISchemes
 }
 
-// SupportedMimeTypes -
+// SupportedMimeTypes implements the org.mpris.MediaPlayer2 root interface
 func (mp2 *MediaPlayer2) SupportedMimeTypes() []string {
 	return base.SupportedMIMETypes
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // CollectionSvc defines the collection service
@@ -23,13 +23,13 @@ func (*CollectionSvc) GetCollection(_ context.Context,
 	req *m3uetcpb.GetCollectionRequest) (*m3uetcpb.GetCollectionResponse, error) {
 
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Collection ID must be greater than zero")
 	}
 
 	coll := models.Collection{}
 	if err := coll.Read(req.Id); err != nil {
-		return nil, grpc.Errorf(codes.NotFound, "Collection not found: %v", err)
+		return nil, status.Errorf(codes.NotFound, "Collection not found: %v", err)
 	}
 
 	coll.CountTracks()
@@ -61,7 +61,7 @@ func (*CollectionSvc) AddCollection(_ context.Context,
 	req *m3uetcpb.AddCollectionRequest) (*m3uetcpb.AddCollectionResponse, error) {
 
 	if req.Location == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Collection location must not be empty")
 	}
 
@@ -80,7 +80,7 @@ func (*CollectionSvc) AddCollection(_ context.Context,
 	}
 
 	if err := coll.Create(); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Error creating collection: %v", err)
 	}
 
@@ -97,13 +97,13 @@ func (*CollectionSvc) AddCollection(_ context.Context,
 func (*CollectionSvc) RemoveCollection(_ context.Context,
 	req *m3uetcpb.RemoveCollectionRequest) (*m3uetcpb.Empty, error) {
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Collection ID must be greater than zero")
 	}
 
 	coll := models.Collection{}
 	if err := coll.Read(req.Id); err != nil {
-		return nil, grpc.Errorf(codes.NotFound, "Collection not found: %v", err)
+		return nil, status.Errorf(codes.NotFound, "Collection not found: %v", err)
 	}
 
 	go func() {
@@ -118,13 +118,13 @@ func (*CollectionSvc) UpdateCollection(_ context.Context,
 	req *m3uetcpb.UpdateCollectionRequest) (*m3uetcpb.Empty, error) {
 
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Collection ID must be greater than zero")
 	}
 
 	coll := models.Collection{}
 	if err := coll.Read(req.Id); err != nil {
-		return nil, grpc.Errorf(codes.NotFound, "Collection not found: %v", err)
+		return nil, status.Errorf(codes.NotFound, "Collection not found: %v", err)
 	}
 
 	if req.NewName != "" {
@@ -164,7 +164,7 @@ func (*CollectionSvc) UpdateCollection(_ context.Context,
 	}
 
 	if err := coll.Save(); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Error updating collection: %v", err)
 	}
 
@@ -176,13 +176,13 @@ func (*CollectionSvc) ScanCollection(_ context.Context,
 	req *m3uetcpb.ScanCollectionRequest) (*m3uetcpb.Empty, error) {
 
 	if req.Id < 1 {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"Collection ID must be greater than zero")
 	}
 
 	coll := models.Collection{}
 	if err := coll.Read(req.Id); err != nil {
-		return nil, grpc.Errorf(codes.NotFound,
+		return nil, status.Errorf(codes.NotFound,
 			"Collection not found: %v", err)
 	}
 
@@ -261,7 +261,7 @@ sLoop:
 					}
 					err := stream.Send(res)
 					if err != nil {
-						return grpc.Errorf(codes.Internal,
+						return status.Errorf(codes.Internal,
 							"Error sending event (%v): %v",
 							m3uetcpb.CollectionEvent_CE_SCANNING_DONE, err)
 					}
@@ -273,7 +273,7 @@ sLoop:
 				}
 				err := stream.Send(res)
 				if err != nil {
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error sending event (%v): %v",
 						m3uetcpb.CollectionEvent_CE_INITIAL, err)
 				}
@@ -285,7 +285,7 @@ sLoop:
 						cs[i],
 					)
 					if err != nil {
-						return grpc.Errorf(codes.Internal,
+						return status.Errorf(codes.Internal,
 							"Error sending event (%v): %v",
 							m3uetcpb.CollectionEvent_CE_INITIAL_ITEM, err)
 					}
@@ -297,7 +297,7 @@ sLoop:
 						ts[i],
 					)
 					if err != nil {
-						return grpc.Errorf(codes.Internal,
+						return status.Errorf(codes.Internal,
 							"Error sending event (%v): %v",
 							m3uetcpb.CollectionEvent_CE_INITIAL_ITEM, err)
 					}
@@ -318,7 +318,7 @@ sLoop:
 				}
 				err := stream.Send(res)
 				if err != nil {
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error sending event (%v): %v",
 						m3uetcpb.CollectionEvent_CE_SCANNING, err)
 				}
@@ -352,7 +352,7 @@ sLoop:
 			}
 
 			if err := fn(eout, e.Data.(models.ProtoOut)); err != nil {
-				return grpc.Errorf(codes.Internal,
+				return status.Errorf(codes.Internal,
 					"Error sending event (%v): %v",
 					eout, err)
 			}
@@ -366,7 +366,7 @@ sLoop:
 func (*CollectionSvc) UnsubscribeFromCollectionStore(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromCollectionStoreRequest) (*m3uetcpb.Empty, error) {
 	if req.SubscriptionId == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"A non-empty subscription ID is required")
 	}
 	subscription.Broadcast(

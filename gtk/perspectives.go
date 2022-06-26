@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	perspective      *gtk.ComboBoxText
 	perspectivesList []m3uetcpb.Perspective
 	notebook         *gtk.Notebook
 )
@@ -19,7 +18,7 @@ var (
 func addPerspectives(signals *map[string]interface{}) (err error) {
 	log.Info("Adding perspectives")
 
-	perspective, err = builder.GetComboBoxText("perspective")
+	_, err = builder.GetComboBoxText("perspective")
 	if err != nil {
 		return
 	}

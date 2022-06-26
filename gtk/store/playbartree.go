@@ -224,7 +224,7 @@ func (bt *playbarTree) update() bool {
 				root[i].child[j].appendNode(tree.model, nil)
 			}
 		}
-		log.Infof("Tree built in %v", time.Now().Sub(start))
+		log.Infof("Tree built in %v", time.Since(start))
 	}
 	return false
 }

@@ -94,7 +94,6 @@ func (pb *Playback) FindTrack() {
 	}
 	pb.TrackID = t.ID
 	onerror.Log(pb.Save())
-	return
 }
 
 // GetNextToPlay returns the next playback entry to play

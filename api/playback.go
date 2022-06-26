@@ -11,8 +11,8 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // PlaybackSvc defines the playback service
@@ -68,14 +68,14 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 		if len(req.Locations) > 0 {
 			unsup := base.CheckUnsupportedFiles(req.Locations)
 			if len(unsup) > 0 {
-				return nil, grpc.Errorf(codes.InvalidArgument,
+				return nil, status.Errorf(codes.InvalidArgument,
 					"Unsupported locations were provided: %+q", unsup)
 			}
 		}
 		if len(req.Ids) > 0 {
 			_, notFound := models.FindTracksIn(req.Ids)
 			if len(notFound) > 0 {
-				return nil, grpc.Errorf(codes.InvalidArgument,
+				return nil, status.Errorf(codes.InvalidArgument,
 					"Non-existing track IDs were provided: %+v", notFound)
 			}
 		}
@@ -171,14 +171,14 @@ sLoop:
 				err := stream.Send(res)
 				if err != nil {
 					log.Warn(err)
-					return grpc.Errorf(codes.Internal,
+					return status.Errorf(codes.Internal,
 						"Error sending playback: %v", err)
 				}
 				continue sLoop
 			}
 			err := stream.Send(res)
 			if err != nil {
-				return grpc.Errorf(codes.Internal,
+				return status.Errorf(codes.Internal,
 					"Error sending playback: %v", err)
 			}
 		}
@@ -191,7 +191,7 @@ func (*PlaybackSvc) UnsubscribeFromPlayback(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromPlaybackRequest) (*m3uetcpb.Empty, error) {
 
 	if req.SubscriptionId == "" {
-		return nil, grpc.Errorf(codes.InvalidArgument,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"A non-empty subscription ID is required")
 	}
 	subscription.Broadcast(
