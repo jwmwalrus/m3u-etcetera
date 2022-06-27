@@ -113,6 +113,7 @@ outer:
 	}
 
 	setFocused()
+	go UpdateStatusBar(StatusBarDigest)
 }
 
 func (ot *onTab) contextEvent(_ *gtk.EventBox, event *gdk.Event) {

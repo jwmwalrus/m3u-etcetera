@@ -105,6 +105,17 @@ func GetCollectionTreeModel() *gtk.TreeStore {
 	return cTree.model
 }
 
+func GetCollectionTracksTotalCount() int64 {
+	CData.Mu.Lock()
+	defer CData.Mu.Unlock()
+
+	var total int64
+	for _, c := range CData.Collection {
+		total += c.Tracks
+	}
+	return total
+}
+
 func updateCollectionModel() bool {
 	if cTree.initialMode {
 		return false

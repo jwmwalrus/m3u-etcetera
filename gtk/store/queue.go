@@ -48,6 +48,18 @@ func CreateQueueModel(idx m3uetcpb.Perspective) (
 	return
 }
 
+func GetQueueDigest(idx m3uetcpb.Perspective) *m3uetcpb.PerspectiveDigest {
+	QData.Mu.Lock()
+	defer QData.Mu.Unlock()
+
+	for _, dig := range QData.res.Digest {
+		if dig.Perspective == idx {
+			return dig
+		}
+	}
+	return nil
+}
+
 // GetQueueModel returns the queue model for the given perspective
 func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 	log.WithField("idx", idx).
@@ -63,6 +75,19 @@ func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 	default:
 		return nil
 	}
+}
+
+func GetQueueTracksCount(idx m3uetcpb.Perspective) int64 {
+	QData.Mu.Lock()
+	defer QData.Mu.Unlock()
+
+	var count int64
+	for _, qt := range QData.res.QueueTracks {
+		if qt.Perspective == idx {
+			count++
+		}
+	}
+	return count
 }
 
 func updateQueueModels() bool {

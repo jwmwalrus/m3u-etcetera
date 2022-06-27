@@ -1,6 +1,10 @@
 package models
 
-import log "github.com/sirupsen/logrus"
+import (
+	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
+)
 
 // PerspectiveIndex defines the perpective index
 type PerspectiveIndex int
@@ -104,4 +108,17 @@ func GetActivePerspectiveIndex() (idx PerspectiveIndex) {
 // GetActivePerspectiveName -
 func GetActivePerspectiveName() string {
 	return GetActivePerspectiveIndex().String()
+}
+
+type PerspectiveDigest struct {
+	Idx      PerspectiveIndex
+	Duration int64
+}
+
+// ToProtobuf implements the ProtoOut interface
+func (pd *PerspectiveDigest) ToProtobuf() proto.Message {
+	return &m3uetcpb.PerspectiveDigest{
+		Perspective: m3uetcpb.Perspective(pd.Idx),
+		Duration:    pd.Duration,
+	}
 }

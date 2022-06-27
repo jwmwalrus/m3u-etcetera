@@ -26,6 +26,7 @@ message GetQueueRequest {
 message GetQueueResponse {
     repeated QueueTrack queue_tracks = 1;
     repeated Track tracks = 2;
+    int64 duration = 3;
 }
 
 message ExecuteQueueActionRequest {
@@ -41,6 +42,7 @@ message SubscribeToQueueStoreResponse {
     string subscription_id = 1;
     repeated QueueTrack queue_tracks = 2;
     repeated Track tracks = 3;
+    repeated PerspectiveDigest digest = 4;
 }
 
 message UnsubscribeFromQueueStoreRequest {

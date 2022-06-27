@@ -39,6 +39,7 @@ func (*QueueSvc) GetQueue(_ context.Context,
 	for _, t := range ts {
 		out := t.ToProtobuf().(*m3uetcpb.Track)
 		tList = append(tList, out)
+		res.Duration += t.Duration
 	}
 
 	res.Tracks = tList
@@ -116,7 +117,7 @@ sLoop:
 			}
 
 			res := &m3uetcpb.SubscribeToQueueStoreResponse{SubscriptionId: id}
-			qs, ts := models.GetQueueStore()
+			qs, ts, pds := models.GetQueueStore()
 
 			qtList := []*m3uetcpb.QueueTrack{}
 			for _, qt := range qs {
@@ -130,8 +131,15 @@ sLoop:
 				out := t.ToProtobuf().(*m3uetcpb.Track)
 				tList = append(tList, out)
 			}
-
 			res.Tracks = tList
+
+			pdList := []*m3uetcpb.PerspectiveDigest{}
+			for _, pd := range pds {
+				out := pd.ToProtobuf().(*m3uetcpb.PerspectiveDigest)
+				pdList = append(pdList, out)
+			}
+			res.Digest = pdList
+
 			if err := stream.Send(res); err != nil {
 				return status.Errorf(codes.Internal,
 					"Error sending queue event: %v",

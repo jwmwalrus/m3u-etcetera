@@ -165,6 +165,19 @@ func GetPlaylistModel(id int64) *gtk.ListStore {
 	return model
 }
 
+func GetPlaylistTracksCount(id int64) int64 {
+	BData.Mu.Lock()
+	defer BData.Mu.Unlock()
+
+	var count int64
+	for _, opt := range BData.OpenPlaylistTrack {
+		if opt.PlaylistId == id {
+			count++
+		}
+	}
+	return count
+}
+
 // GetPlaylistsTreeModel returns the current playlist tree model
 func GetPlaylistsTreeModel(p m3uetcpb.Perspective) *gtk.TreeStore {
 	v := barTree.pplt[p]

@@ -27,6 +27,9 @@ func Setup(signals *map[string]interface{}) (err error) {
 	(*signals)["on_music_playlist_new_clicked"] = func(btn *gtk.Button) {
 		createPlaylist(btn, m3uetcpb.Perspective_MUSIC)
 	}
+	(*signals)["on_music_playbar_switch_page"] = func(nb *gtk.Notebook) {
+		go UpdateStatusBar(StatusBarDigest)
+	}
 
 	if err = builder.AddFromFile("ui/pane/playlist-dialog.ui"); err != nil {
 		err = fmt.Errorf("Unable to add playlist-dialog file to builder: %v", err)
@@ -36,6 +39,10 @@ func Setup(signals *map[string]interface{}) (err error) {
 	playlistDlg, err = builder.GetDialog("playlist_dialog")
 	if err != nil {
 		err = fmt.Errorf("Unable to get playlist_dialog: %v", err)
+		return
+	}
+
+	if err = setupStatusbar(); err != nil {
 		return
 	}
 	return

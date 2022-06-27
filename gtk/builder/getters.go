@@ -257,6 +257,21 @@ func GetSpinButton(id string) (sb *gtk.SpinButton, err error) {
 	return
 }
 
+func GetStatusBar(id string) (sb *gtk.Statusbar, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get status-bar object: %v", err)
+		return
+	}
+
+	sb, ok := obj.(*gtk.Statusbar)
+	if !ok {
+		err = fmt.Errorf("Unable to create status-bar: %v", err)
+		return
+	}
+	return
+}
+
 func GetTextView(id string) (tv *gtk.TextView, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {

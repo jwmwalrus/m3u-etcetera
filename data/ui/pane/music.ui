@@ -396,6 +396,7 @@
         <property name="visible">True</property>
         <property name="can-focus">True</property>
         <property name="scrollable">True</property>
+        <signal name="switch-page" handler="on_music_playbar_switch_page" swapped="no"/>
         <child>
           <object class="GtkBox" id="music_queue">
             <property name="visible">True</property>

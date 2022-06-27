@@ -12,3 +12,8 @@ enum Perspective {
     PODCASTS = 2;
     AUDIOBOOKS = 3;
 }
+
+message PerspectiveDigest {
+    Perspective perspective = 1;
+    int64 duration = 2;
+}

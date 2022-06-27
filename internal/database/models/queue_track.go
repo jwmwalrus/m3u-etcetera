@@ -144,17 +144,23 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts [
 }
 
 // GetQueueStore returns all queue tracks for all perspectives
-func GetQueueStore() (qs []*QueueTrack, ts []*Track) {
+func GetQueueStore() (qs []*QueueTrack, ts []*Track, dig []*PerspectiveDigest) {
 	log.Info("Getting queue store")
+
+	dig = []*PerspectiveDigest{}
 
 	for _, idx := range PerspectiveIndexList() {
 		qsaux, tsaux := GetAllQueueTracks(idx, 0)
 		for i := range qsaux {
 			qs = append(qs, qsaux[i])
 		}
+		pd := PerspectiveDigest{}
+		pd.Idx = idx
 		for i := range tsaux {
 			ts = append(ts, tsaux[i])
+			pd.Duration += tsaux[i].Duration
 		}
+		dig = append(dig, &pd)
 	}
 	return
 }
