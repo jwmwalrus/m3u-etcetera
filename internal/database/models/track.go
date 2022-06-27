@@ -17,6 +17,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
+	"github.com/tinyzimmer/go-gst/gst/pbutils"
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -199,6 +200,20 @@ func (t *Track) createTransientWithRaw(tx *gorm.DB,
 	return
 }
 
+func (t *Track) discoverDuration() {
+	discoverer, err := pbutils.NewDiscoverer(time.Second * 15)
+
+	if err != nil {
+		return
+	}
+
+	info, err := discoverer.DiscoverURI(t.Location)
+	if err != nil {
+		return
+	}
+	t.Duration = int64(info.GetDuration() * time.Nanosecond)
+}
+
 func (t *Track) fillMissingTags(raw map[string]interface{}) {
 	const unknownTxt = "[Unknown]"
 	var title, album, artist, albumArtist, genre string
@@ -363,7 +378,12 @@ func (t *Track) updateTags() (err error) {
 
 		raw = m.Raw()
 	}
+
 	t.fillMissingTags(raw)
+
+	if t.Duration == 0 {
+		t.discoverDuration()
+	}
 
 	return
 }

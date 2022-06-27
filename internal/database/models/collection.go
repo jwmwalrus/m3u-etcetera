@@ -394,11 +394,15 @@ func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string,
 		}
 
 		if newt.CollectionID != trColl.ID {
-			err = fmt.Errorf("Track already belongs to another collection")
-			return
+			if newt.CollectionID != c.ID {
+				err = fmt.Errorf("Track already belongs to another collection")
+				return
+			}
+			log.WithField("location", newt.Location).Infof("Track already in `%v` collection", c.Name)
+		} else {
+			log.WithField("location", newt.Location).Info("Reusing transient track")
+			newt.CollectionID = c.ID
 		}
-		log.WithField("location", newt.Location).Info("Reusing transient track")
-		newt.CollectionID = c.ID
 	}
 
 	t = newt
