@@ -334,6 +334,7 @@ func StopAll() {
 	eng.lastEvent = stopAllEvent
 	log.Infof("Firing the %v event", eng.lastEvent)
 	StopStream()
+
 	eng.updateMPRIS(true)
 }
 
@@ -392,6 +393,7 @@ func quitPlayingFromList() {
 	eng.setPlaybackHint(hintStopPlaylist)
 	StopStream()
 	models.PlaybackChanged <- struct{}{}
+
 	eng.updateMPRIS(true)
 }
 

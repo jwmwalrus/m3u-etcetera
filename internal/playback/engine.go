@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/godbus/dbus/v5"
@@ -49,10 +50,14 @@ type engine struct {
 	mode           EngineMode
 	lastEvent      engineEvent
 	hint           playbackHint
-	mprisPlayer    *Player
 	pt             *models.PlaylistTrack
 	pb             *models.Playback
 	t              *models.Track
+
+	mpris struct {
+		player *Player
+		mu     sync.Mutex
+	}
 
 	mainLoop  *glib.MainLoop
 	prevState gst.State
@@ -463,11 +468,14 @@ func (e *engine) setPlaybackHint(h playbackHint) {
 }
 
 func (e *engine) updateMPRIS(destroy bool) {
+	e.mpris.mu.Lock()
+	defer e.mpris.mu.Unlock()
+
 	deleteMPRIS := func() {
-		if e.mprisPlayer != nil {
-			e.mprisPlayer.Delete()
+		if e.mpris.player != nil {
+			e.mpris.player.Delete()
 		}
-		e.mprisPlayer = nil
+		e.mpris.player = nil
 	}
 
 	if destroy {
@@ -475,30 +483,30 @@ func (e *engine) updateMPRIS(destroy bool) {
 		return
 	}
 
-	if e.mprisPlayer == nil {
+	if e.mpris.player == nil {
 		mprisInstance := mpris.New()
-		e.mprisPlayer = &Player{mprisInstance, PlaybackStatusStopped}
-		if err := mprisInstance.Setup(e.mprisPlayer); err != nil {
+		e.mpris.player = &Player{mprisInstance, PlaybackStatusStopped}
+		if err := mprisInstance.Setup(e.mpris.player); err != nil {
 			log.Error(err)
 			deleteMPRIS()
 		}
 		return
 	}
 
-	currPbStatus := e.mprisPlayer.PlaybackStatus()
-	if currPbStatus == e.mprisPlayer.lastPlaybackStatus {
+	currPbStatus := e.mpris.player.PlaybackStatus()
+	if currPbStatus == e.mpris.player.lastPlaybackStatus {
 		return
 	}
 
-	e.mprisPlayer.lastPlaybackStatus = currPbStatus
-	err := e.mprisPlayer.Conn.Emit(
+	e.mpris.player.lastPlaybackStatus = currPbStatus
+	err := e.mpris.player.Conn.Emit(
 		mpris.RootPath,
 		mpris.PropertiesInterface+".PropertiesChanged",
 		mpris.PlayerInterface,
 		map[string]dbus.Variant{
 			"PlaybackStatus": dbus.MakeVariant(currPbStatus),
-			"Metadata":       dbus.MakeVariant(e.mprisPlayer.Metadata()),
-			"CanGoNext":      dbus.MakeVariant(e.mprisPlayer.CanGoNext()),
+			"Metadata":       dbus.MakeVariant(e.mpris.player.Metadata()),
+			"CanGoNext":      dbus.MakeVariant(e.mpris.player.CanGoNext()),
 		},
 		[]string{},
 	)
