@@ -103,7 +103,9 @@ func (q *Queue) DeleteAt(position int) {
 		Info("Deleting entry from queue")
 
 	s := []QueueTrack{}
-	err := db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
+	err := db.Where("queue_id = ? AND played = 0", q.ID).Order("position ASC").
+		Find(&s).
+		Error
 	if err != nil {
 		return
 	}
@@ -166,15 +168,22 @@ func (q *Queue) MoveTo(to, from int) {
 		Info("Moving queue tracks")
 
 	s := []QueueTrack{}
-	db.Where("queue_id = ? AND played = 0", q.ID).Order("position").Find(&s)
+	err := db.Where("queue_id = ? AND played = 0", q.ID).Order("position").
+		Find(&s).
+		Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
 	if len(s) == 0 || from > len(s) {
 		return
 	}
 
 	list := poser.MoveTo(pointers.FromSlice(s), to, from)
-	moved := pointers.ToValues(list)
+	s = pointers.ToValues(list)
 
-	if err := db.Save(&moved).Error; err != nil {
+	if err := db.Save(&s).Error; err != nil {
+		log.Error(err)
 		return
 	}
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
@@ -186,8 +195,11 @@ func (q *Queue) Pop() (qt *QueueTrack) {
 		Debug("Popping from queue")
 
 	s := []QueueTrack{}
-	err := db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
+	err := db.Where("queue_id = ? AND played = 0", q.ID).Order("position ASC").
+		Find(&s).
+		Error
 	if err != nil {
+		log.Error(err)
 		return
 	}
 
@@ -223,7 +235,9 @@ func (q *Queue) appendTo(qt *QueueTrack) (err error) {
 	qt.Played = false
 
 	s := []QueueTrack{}
-	err = db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
+	err = db.Where("queue_id = ? AND played = 0", q.ID).Order("position ASC").
+		Find(&s).
+		Error
 	if err != nil {
 		return
 	}

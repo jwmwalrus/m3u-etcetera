@@ -118,7 +118,10 @@ func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 		Info("Appending tracks/locations to playlist")
 
 	pts := []PlaylistTrack{}
-	if err := db.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
+	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
+		Find(&pts).
+		Error
+	if err != nil {
 		log.Error(err)
 		return
 	}
@@ -237,7 +240,10 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 		Info("Deleting position in playlist")
 
 	pts := []PlaylistTrack{}
-	if err := db.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
+	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
+		Find(&pts).
+		Error
+	if err != nil {
 		log.Error(err)
 		return
 	}
@@ -425,7 +431,10 @@ func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 		Info("Inserting tracks/locations into playlist")
 
 	pts := []PlaylistTrack{}
-	if err := db.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
+	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
+		Find(&pts).
+		Error
+	if err != nil {
 		log.Error(err)
 		return
 	}
@@ -461,7 +470,10 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 		Info("Moving track in playlist")
 
 	pts := []PlaylistTrack{}
-	if err := db.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
+	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
+		Find(&pts).
+		Error
+	if err != nil {
 		log.Error(err)
 		return
 	}
