@@ -88,7 +88,6 @@ func createPlaylist(btn *gtk.Button, p m3uetcpb.Perspective) {
 }
 
 func setFocused() {
-
 	if focusRequest.id < 0 {
 		return
 	}
@@ -114,7 +113,7 @@ func setFocused() {
 	}
 
 	if headerName == "" {
-		log.Errorf(
+		log.Warnf(
 			"Playlist with ID=%v is not open, so cannot be focused",
 			focusRequest.id,
 		)
