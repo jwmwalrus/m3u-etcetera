@@ -110,8 +110,15 @@ func (q *Queue) DeleteAt(position int) {
 		return
 	}
 
-	list, _ := poser.DeleteAt(pointers.FromSlice(s), position)
+	list, qt := poser.DeleteAt(pointers.FromSlice(s), position)
 	s = pointers.ToValues(list)
+
+	if qt != nil && qt.ID > 0 {
+		if err := qt.Save(); err != nil {
+			log.Error(err)
+			return
+		}
+	}
 
 	if err := db.Save(&s).Error; err != nil {
 		log.Error(err)

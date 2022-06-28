@@ -250,7 +250,7 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 	list, pt := poser.DeleteAt(pointers.FromSlice(pts), position)
 	pts = pointers.ToValues(list)
 
-	if pt.ID > 0 {
+	if pt != nil && pt.ID > 0 {
 		if err := pt.Delete(); err != nil {
 			log.Error(err)
 			return
