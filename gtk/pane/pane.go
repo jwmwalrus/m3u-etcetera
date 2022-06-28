@@ -2,7 +2,6 @@ package pane
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -12,6 +11,8 @@ import (
 	podcastspane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/podcasts"
 	radiopane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/radio"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type paneData struct {
@@ -50,7 +51,7 @@ func Add(idx m3uetcpb.Perspective, nb *gtk.Notebook,
 		return
 	}
 
-	label, err := gtk.LabelNew(strings.Title(idx.String()))
+	label, err := gtk.LabelNew(cases.Title(language.English).String(idx.String()))
 	if err != nil {
 		err = fmt.Errorf("Unable to create %v label: %v", idx, err)
 		return

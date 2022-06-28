@@ -2,7 +2,6 @@ package playlists
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
@@ -12,6 +11,8 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type onTab struct {
@@ -444,7 +445,7 @@ func (ot *onTab) updateLabel() (err error) {
 		log.WithField("id", ot.id).Warn("Playlist no longer available")
 		return
 	}
-	name := strings.Title(pl.Name)
+	name := cases.Title(language.English).String(pl.Name)
 	if pl.Transient {
 		name += "*"
 	}

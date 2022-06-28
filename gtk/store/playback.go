@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -16,6 +15,8 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type playbackData struct {
@@ -137,7 +138,8 @@ func (pbd *playbackData) setPlaybackUI() (err error) {
 	for _, v := range base.Conf.GTK.Playback.CoverFilenames {
 		for _, ext := range []string{".jpeg", ".jpg", ".png"} {
 			pbd.coverFiles = append(pbd.coverFiles, v+ext)
-			pbd.coverFiles = append(pbd.coverFiles, strings.Title(v)+ext)
+			pbd.coverFiles = append(pbd.coverFiles,
+				cases.Title(language.English).String(v)+ext)
 		}
 	}
 
