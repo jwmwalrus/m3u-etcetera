@@ -9,6 +9,32 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.17.0] 2022-06-27
+
+Features and fixes
+
+### Fixed
+
+* Handling of deleted item returned by `poser.DeleteAt`
+* Ensure MPRIS updates are exclusive
+* Ensure queue and playlists are ordered before calling poser
+
+### Added
+
+* Status bar digest context
+* Track duration discovery
+* Config file for golangci-lint
+* MPPRIS' Player.CanGoNext
+
+### Modified
+
+* Emit proper MPRIS signal when playback changes
+* Ensure proper playback unload
+* Update protoc-gen-go-grpc version
+* Handle deprecations
+* Ignore playlist.setFocused error
+* Pick a better icon for dynamic mode
+
 ## [0.16.0] 2022-06-21
 
 Fixes and dependencies
