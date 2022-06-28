@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -203,12 +204,12 @@ func (pl *Playlist) DeleteDynamicTracks(tx *gorm.DB) {
 }
 
 func (pl *Playlist) Duration() int64 {
-	var d int64
+	var d sql.NullInt64
 	err := db.Raw("SELECT sum(t.duration) FROM track t JOIN playlist_track pt ON pt.track_id = t.id WHERE pt.playlist_id = ?", pl.ID).
 		Row().
 		Scan(&d)
 	onerror.Log(err)
-	return d
+	return d.Int64
 }
 
 // Export exports a playlist with the given format to the given location
