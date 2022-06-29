@@ -85,3 +85,13 @@ func parseLocations(locations []string) (parsed []string, err error) {
 	}
 	return
 }
+
+func parseSeconds(secs string) (parsed int64, err error) {
+	var aux float64
+	if aux, err = strconv.ParseFloat(secs, 64); err != nil {
+		return
+	}
+
+	parsed = int64(aux * 1e9)
+	return
+}

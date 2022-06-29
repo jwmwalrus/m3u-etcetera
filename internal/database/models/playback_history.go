@@ -73,7 +73,7 @@ func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
 		}
 
 		if time.Duration(position)*time.Nanosecond >=
-			time.Duration(base.Conf.Server.Playback.PlayedThreshold)*time.Second {
+			time.Duration(base.PlaybackPlayedThreshold)*time.Second {
 
 			t.Lastplayed = h.CreatedAt
 			t.Playcount++

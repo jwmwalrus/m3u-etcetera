@@ -432,6 +432,11 @@ func (e *engine) performQueries(ctx context.Context) {
 							"end":    end,
 						}).
 							Debug("Seeking is ENABLED")
+						go func() {
+							if e.pb.Skip > 0 {
+								SeekInStream(e.pb.Skip)
+							}
+						}()
 					} else {
 						log.Debug("Seeking is DISABLED for this stream")
 					}

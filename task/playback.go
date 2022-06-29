@@ -67,10 +67,10 @@ func Playback() *cli.Command {
 				Action:      playbackPlayAction,
 			},
 			{
-				Name:        "jump",
-				Usage:       "playback jump POSITION",
-				Description: "jumps to a `POSITION` in the current playback",
-				Action:      playbackJumpAction,
+				Name:        "seek",
+				Usage:       "playback seek POSITION",
+				Description: "seeks `POSITION` (seconds) in the current playback stream",
+				Action:      playbackSeekAction,
 			},
 			{
 				Name:        "list",
@@ -199,9 +199,38 @@ func playbackPlayAction(c *cli.Context) (err error) {
 	return
 }
 
-func playbackJumpAction(c *cli.Context) (err error) {
-	// TODO: implement
-	fmt.Printf("TODO\n")
+func playbackSeekAction(c *cli.Context) (err error) {
+	rest := c.Args().Slice()
+	if len(rest) < 1 {
+		err = fmt.Errorf("I need one POSITION to seek")
+	}
+	if len(rest) > 1 {
+		err = fmt.Errorf("Too many values in command")
+	}
+
+	req := &m3uetcpb.ExecutePlaybackActionRequest{
+		Action: m3uetcpb.PlaybackAction_PB_SEEK,
+	}
+
+	if req.Seek, err = parseSeconds(rest[0]); err != nil {
+		return
+	}
+
+	cc, err := getClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewPlaybackSvcClient(cc)
+	_, err = cl.ExecutePlaybackAction(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		err = fmt.Errorf(s.Message())
+		return
+	}
+
+	fmt.Printf("OK\n")
 	return
 }
 

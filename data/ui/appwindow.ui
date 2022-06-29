@@ -416,20 +416,6 @@
               </packing>
             </child>
             <child>
-              <object class="GtkProgressBar" id="progress">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="margin-top">12</property>
-                <property name="text" translatable="yes">Not Playing</property>
-                <property name="show-text">True</property>
-              </object>
-              <packing>
-                <property name="left-attach">0</property>
-                <property name="top-attach">5</property>
-                <property name="width">4</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
@@ -579,6 +565,28 @@
                 <property name="left-attach">1</property>
                 <property name="top-attach">4</property>
                 <property name="width">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEventBox" id="progress_eb">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <signal name="button-press-event" handler="on_progress_eb_button_press_event" swapped="no"/>
+                <child>
+                  <object class="GtkProgressBar" id="progress">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="events">GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
+                    <property name="margin-top">12</property>
+                    <property name="text" translatable="yes">Not Playing</property>
+                    <property name="show-text">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">5</property>
+                <property name="width">4</property>
               </packing>
             </child>
           </object>

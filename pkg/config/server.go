@@ -15,9 +15,6 @@ const (
 	// DefaultServerAPIVersion -
 	DefaultServerAPIVersion = "/api/v1"
 
-	// DefaultPlayedThreshold -
-	DefaultPlayedThreshold = 30
-
 	// DefaultQueryLimit -
 	DefaultQueryLimit = 0
 
@@ -37,7 +34,6 @@ type Server struct {
 	} `json:"database"`
 
 	Playback struct {
-		PlayedThreshold int `json:"playedThreshold"`
 	} `json:"playback"`
 
 	Query struct {
@@ -70,10 +66,6 @@ func (s *Server) SetDefaults() {
 	}
 
 	s.Database.Backup = true
-
-	if s.Playback.PlayedThreshold == 0 {
-		s.Playback.PlayedThreshold = DefaultPlayedThreshold
-	}
 
 	if s.Query.Limit == 0 {
 		s.Query.Limit = DefaultQueryLimit

@@ -243,7 +243,7 @@ func PlayStreams(force bool, locations []string, ids []int64) {
 // PreviousStream plays the previous stream in history
 func PreviousStream() {
 	if time.Duration(eng.lastPosition)*time.Nanosecond >=
-		time.Duration(base.Conf.Server.Playback.PlayedThreshold)*time.Second {
+		time.Duration(base.PlaybackPlayedThreshold)*time.Second {
 		SeekInStream(0)
 		return
 	}

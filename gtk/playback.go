@@ -28,6 +28,7 @@ func setupPlayback(signals *map[string]interface{}) (err error) {
 	(*signals)["on_control_next_clicked"] = func(btn *gtk.ToolButton) {
 		go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_NEXT)
 	}
+	(*signals)["on_progress_eb_button_press_event"] = store.OnProgressBarClicked
 	return
 }
 

@@ -35,6 +35,9 @@ const (
 	// ClientWaitTimeout Maximum amount of seconds a client should wait
 	// for an event to sync up
 	ClientWaitTimeout = 30
+
+	// PlaybackPlayedThreshold -
+	PlaybackPlayedThreshold = 30
 )
 
 var (

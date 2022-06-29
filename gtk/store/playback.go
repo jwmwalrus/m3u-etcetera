@@ -14,6 +14,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -45,7 +46,7 @@ var (
 
 func (pbd *playbackData) setCover() bool {
 	pbd.mu.Lock()
-	defer func() { pbd.mu.Unlock() }()
+	defer pbd.mu.Unlock()
 
 	if pbd.res.IsStreaming {
 		un, err := urlstr.URLToPath(pbd.res.Playback.Location)
@@ -150,8 +151,8 @@ func (pbd *playbackData) setPlaybackUI() (err error) {
 func (pbd *playbackData) updatePlayback() bool {
 	log.Debug("Updating playback")
 
-	pbd.mu.Lock()
 	iconName := "media-playback-pause"
+	pbd.mu.Lock()
 	if pbd.res.IsPaused {
 		iconName = "media-playback-start"
 	}
@@ -230,4 +231,27 @@ func (pbd *playbackData) updatePlayback() bool {
 		updatePlaybarModel()
 	}
 	return false
+}
+
+func OnProgressBarClicked(eb *gtk.EventBox, event *gdk.Event) {
+	pbdata.mu.Lock()
+	defer pbdata.mu.Unlock()
+
+	if !pbdata.res.IsStreaming {
+		return
+	}
+	duration := pbdata.res.Track.Duration
+
+	btn := gdk.EventButtonNewFromEvent(event)
+	x, _ := btn.MotionVal()
+	width := eb.Widget.GetAllocatedWidth()
+	seek := int64(x * float64(duration) / float64(width))
+
+	go func() {
+		req := &m3uetcpb.ExecutePlaybackActionRequest{
+			Action: m3uetcpb.PlaybackAction_PB_SEEK,
+			Seek:   seek,
+		}
+		onerror.Log(ExecutePlaybackAction(req))
+	}()
 }
