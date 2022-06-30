@@ -92,10 +92,11 @@ message ExecutePlaylistActionRequest {
     PlaylistAction action = 1;
     Perspective perspective = 2;
     int64 id = 3;
-    string name = 4;
-    string description = 5;
-    bool reset_description = 6;
-    int64 playlist_group_id = 7;
+    int64 id2 = 4;
+    string name = 5;
+    string description = 6;
+    bool reset_description = 7;
+    int64 playlist_group_id = 8;
 }
 
 message ExecutePlaylistActionResponse {
@@ -174,6 +175,7 @@ enum PlaylistAction {
     PL_CREATE = 1;
     PL_UPDATE = 2;
     PL_DESTROY = 3;
+    PL_MERGE = 4;
 }
 
 enum PlaylistGroupAction {

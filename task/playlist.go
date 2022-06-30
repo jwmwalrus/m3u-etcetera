@@ -93,6 +93,12 @@ func Playlist() *cli.Command {
 				Action:      playlistExecuteAction,
 			},
 			{
+				Name:        "merge",
+				Usage:       "playlist merge ID1 ID2",
+				Description: "Merge playlists identified by `ID1` and `ID2`. The merge playlist will be identified by ID1, and the playlist identified by ID2 will be deleted.",
+				Action:      playlistExecuteAction,
+			},
+			{
 				Name:    "import",
 				Aliases: []string{"imp"},
 				Flags: []cli.Flag{
@@ -197,12 +203,23 @@ func playlistInfoAction(c *cli.Context) (err error) {
 func playlistExecuteAction(c *cli.Context) (err error) {
 	const actionPrefix = "PL_"
 
-	var id int64
+	var id, id2 int64
 	if c.Command.Name == "create" {
 		err = mustNotParseExtraArgs(c)
 		if err != nil {
 			return
 		}
+	} else if c.Command.Name == "merge" {
+		rest := c.Args().Slice()
+		if len(rest) != 2 {
+			err = fmt.Errorf("I need two playlist IDs")
+			return
+		}
+		var s []int64
+		if s, err = parseIDs(rest); err != nil {
+			return
+		}
+		id, id2 = s[0], s[1]
 	} else {
 		id, err = mustParseSingleID(c)
 		if err != nil {
@@ -217,6 +234,10 @@ func playlistExecuteAction(c *cli.Context) (err error) {
 		Id:          id,
 		Name:        c.String("name"),
 		Description: c.String("descr"),
+	}
+
+	if c.Command.Name == "merge" {
+		req.Id2 = id2
 	}
 
 	cc, err := getClientConn()

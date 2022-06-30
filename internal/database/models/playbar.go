@@ -456,6 +456,36 @@ func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 	broadcastOpenPlaylist(pl.ID)
 }
 
+// MergePlaylists -
+func (b *Playbar) MergePlaylists(pl1, pl2 *Playlist) (err error) {
+	pts1, _ := pl1.GetTracks(0)
+	pts2, _ := pl2.GetTracks(0)
+
+	if len(pts2) == 0 {
+		return
+	}
+
+	s := []PlaylistTrack{}
+
+	for _, x := range pts2 {
+		pt := *x
+		pt.PlaylistID = pl1.ID
+		s = append(s, pt)
+	}
+
+	pts1 = poser.AppendTo(pts1, pointers.FromSlice(s)...)
+	s = pointers.ToValues(pts1)
+	err = db.Save(&s).Error
+	if err == nil {
+		isTransient := pl2.Transient
+		b.CloseEntry(pl2)
+		if !isTransient {
+			err = b.DestroyEntry(pl2)
+		}
+	}
+	return
+}
+
 // MovePlaylistTrack -
 func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 	if from == to || from < 1 {
