@@ -19,16 +19,20 @@ func getClientConn() (*grpc.ClientConn, error) {
 	return grpc.Dial(auth, opts...)
 }
 
-func getPerspective(c *cli.Context) (p m3uetcpb.Perspective) {
-	persp := strings.ToLower(c.String("persp"))
+func getPerspective(c *cli.Context) m3uetcpb.Perspective {
+	return getPerspectiveFromString(c.String("persp"))
+}
+
+func getPerspectiveFromString(s string) (out m3uetcpb.Perspective) {
+	persp := strings.ToLower(s)
 	if strings.HasPrefix(persp, "radio") {
-		p = m3uetcpb.Perspective_RADIO
+		out = m3uetcpb.Perspective_RADIO
 	} else if strings.HasPrefix(persp, "podcasts") {
-		p = m3uetcpb.Perspective_PODCASTS
+		out = m3uetcpb.Perspective_PODCASTS
 	} else if strings.HasPrefix(persp, "audiobooks") {
-		p = m3uetcpb.Perspective_AUDIOBOOKS
+		out = m3uetcpb.Perspective_AUDIOBOOKS
 	} else {
-		p = m3uetcpb.Perspective_MUSIC
+		out = m3uetcpb.Perspective_MUSIC
 	}
 	return
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	log "github.com/sirupsen/logrus"
@@ -40,7 +39,7 @@ func UpdateStatusBar(context uint) {
 }
 
 func pushToStatusBarDigest() bool {
-	p := m3uetcpb.Perspective_MUSIC
+	p := store.GetActivePerspective()
 	id := GetFocused(p)
 	var showing, duration int64
 	if id > 0 {

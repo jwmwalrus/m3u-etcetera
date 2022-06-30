@@ -7,6 +7,8 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/pane"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
+	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -52,4 +54,11 @@ func onPerspectiveChanged(cbt *gtk.ComboBoxText) {
 	if idx, ok := m3uetcpb.Perspective_value[text]; ok {
 		notebook.SetCurrentPage(int(idx))
 	}
+
+	go func() {
+		req := &m3uetcpb.SetActivePerspectiveRequest{
+			Perspective: m3uetcpb.Perspective(m3uetcpb.Perspective_value[strings.ToUpper(text)]),
+		}
+		onerror.Log(store.SetActivePerspective(req))
+	}()
 }

@@ -63,6 +63,7 @@ func main() {
 			task.Playlist(),
 			task.Playtrack(),
 			task.Playgroup(),
+			task.Perspective(),
 		},
 	}
 

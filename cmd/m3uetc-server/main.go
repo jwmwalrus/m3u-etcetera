@@ -42,6 +42,7 @@ func main() {
 	m3uetcpb.RegisterCollectionSvcServer(s, &api.CollectionSvc{})
 	m3uetcpb.RegisterQuerySvcServer(s, &api.QuerySvc{})
 	m3uetcpb.RegisterPlaybarSvcServer(s, &api.PlaybarSvc{})
+	m3uetcpb.RegisterPerspectiveSvcServer(s, &api.PerspectiveSvc{})
 
 	reflection.Register(s)
 

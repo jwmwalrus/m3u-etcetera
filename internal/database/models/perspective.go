@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 )
@@ -65,6 +66,9 @@ func (idx PerspectiveIndex) Activate() (err error) {
 	}
 
 	err = db.Where("id > 0").Save(&s).Error
+	if err == nil {
+		subscription.Broadcast(subscription.ToPerspectiveEvent)
+	}
 	return
 
 }

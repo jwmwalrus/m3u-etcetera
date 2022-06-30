@@ -4,7 +4,34 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-service PerspectiveSvc {}
+import 'api/m3uetcpb/empty.proto';
+
+service PerspectiveSvc {
+    rpc GetActivePerspective(Empty) returns (GetActivePerspectiveResponse);
+    rpc SetActivePerspective(SetActivePerspectiveRequest) returns (Empty);
+
+    rpc SubscribeToPerspective(Empty)
+        returns (stream SubscribeToPerspectiveResponse);
+    rpc UnsubscribeFromPerspective(UnsubscribeFromPerspectiveRequest)
+        returns (Empty);
+}
+
+message GetActivePerspectiveResponse {
+    Perspective perspective = 1;
+}
+
+message SetActivePerspectiveRequest {
+    Perspective perspective = 1;
+}
+
+message SubscribeToPerspectiveResponse {
+    string subscription_id = 1;
+    Perspective active_perspective = 2;
+}
+
+message UnsubscribeFromPerspectiveRequest {
+    string subscription_id = 1;
+}
 
 enum Perspective {
     MUSIC = 0;

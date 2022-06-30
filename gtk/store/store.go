@@ -180,6 +180,7 @@ var (
 	wgcollection          sync.WaitGroup
 	wgplaybar             sync.WaitGroup
 	wgquery               sync.WaitGroup
+	wgperspective         sync.WaitGroup
 	forceExit             bool
 	perspectivesList      []m3uetcpb.Perspective
 	perspectiveQueuesList []m3uetcpb.Perspective
@@ -246,12 +247,13 @@ func StringToIDList(s string) (ids []int64, err error) {
 // Subscribe start subscriptions to the server
 func Subscribe() {
 	onerror.Panic(pbdata.setPlaybackUI())
+	onerror.Panic(perspdata.setPerspectiveUI())
 
 	onerror.Panic(sanityCheck())
 
 	log.Info("Subscribing")
 
-	wg.Add(5)
+	wg.Add(6)
 
 	wgplayback.Add(1)
 	go subscribeToPlayback()
@@ -268,6 +270,9 @@ func Subscribe() {
 	wgquery.Add(1)
 	go subscribeToQueryStore()
 
+	wgperspective.Add(1)
+	go subscribeToPerspective()
+
 	wg.Wait()
 	log.Info("Done subscribing")
 }
@@ -283,11 +288,13 @@ func Unsubscribe() {
 	unsubscribeFromCollectionStore()
 	unsubscribeFromPlaybarStore()
 	unsubscribeFromQueryStore()
+	unsubscribeFromPerspective()
 	wgplayback.Wait()
 	wgqueue.Wait()
 	wgcollection.Wait()
 	wgplaybar.Wait()
 	wgquery.Wait()
+	wgperspective.Wait()
 
 	alive.Serve(
 		alive.ServeOptions{
