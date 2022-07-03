@@ -7,10 +7,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 )
 
 type playlistModelRow struct {
@@ -23,103 +25,51 @@ type playlistModel struct {
 	model *gtk.ListStore
 	rows  map[int]playlistModelRow
 }
+type playbarData struct {
+	subscriptionID              string
+	activeID                    int64
+	openPlaylist                []*m3uetcpb.Playlist
+	openPlaylistTrack           []*m3uetcpb.PlaylistTrack
+	openTrack                   []*m3uetcpb.Track
+	playlistGroup               []*m3uetcpb.PlaylistGroup
+	playlist                    []*m3uetcpb.Playlist
+	playlistReplacementID       int64
+	playlistTrackReplacementIDs []int64
+
+	mu sync.Mutex
+}
 
 var (
 	// BData playbar store
-	BData struct {
-		subscriptionID              string
-		Mu                          sync.Mutex
-		ActiveID                    int64
-		OpenPlaylist                []*m3uetcpb.Playlist
-		OpenPlaylistTrack           []*m3uetcpb.PlaylistTrack
-		OpenTrack                   []*m3uetcpb.Track
-		PlaylistGroup               []*m3uetcpb.PlaylistGroup
-		Playlist                    []*m3uetcpb.Playlist
-		PlaylistReplacementID       int64
-		PlaylistTrackReplacementIDs []int64
-	}
+	BData = &playbarData{}
+
+	// PerspectiveToPlaylists -
+	PerspectiveToPlaylists map[m3uetcpb.Perspective][]*m3uetcpb.Playlist
 
 	playlistTrackToTrack    map[int64]*m3uetcpb.Track
 	playlistToPlaylistGroup map[int64]*m3uetcpb.PlaylistGroup
 	playlists               = []*playlistModel{}
 	updatePlaybarView       func()
-	barTree                 playbarTree
 	playlistGroupsModel     *gtk.ListStore
 
-	// PerspectiveToPlaylists -
-	PerspectiveToPlaylists map[m3uetcpb.Perspective][]*m3uetcpb.Playlist
+	barTree playbarTree
 )
 
-// CreatePlaylistModel creates a playlist model
-func CreatePlaylistModel(id int64) (model *gtk.ListStore, err error) {
-	log.Info("Creating a playlist model")
+func (bd *playbarData) GetActiveID() int64 {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
 
-	model, _, err = createPlaylistModel(id)
-	return
-}
-
-// CreatePlaylistGroupsModel creates a playlist model
-func CreatePlaylistGroupsModel() (model *gtk.ListStore, err error) {
-	log.Info("Creating a playlist model")
-
-	playlistGroupsModel, err = gtk.ListStoreNew(PGColumns.getTypes()...)
-	if err != nil {
-		return
-	}
-
-	model = playlistGroupsModel
-	return
-}
-
-// CreatePlaylistsTreeModel creates a playlist model
-func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (
-	model *gtk.TreeStore, err error) {
-
-	log.Info("Creating playlists model")
-
-	model, err = gtk.TreeStoreNew(PLTreeColumn.getTypes()...)
-	if err != nil {
-		return
-	}
-
-	v := barTree.pplt[p]
-	v.model = model
-	barTree.pplt[p] = v
-	return
-}
-
-// DestroyPlaylistModel destroy a playlist model
-func DestroyPlaylistModel(id int64) (err error) {
-	log.Info("Destroying a playlist model")
-
-	n := len(playlists)
-	for i := range playlists {
-		if playlists[i].id == id {
-			playlists[i] = playlists[n-1]
-			playlists = playlists[:n-1]
-			return
-		}
-	}
-	err = fmt.Errorf("Playlist model is not in store")
-	return
-}
-
-// FilterPlaylistTreeBy filters the playlist tree by the given value
-func FilterPlaylistTreeBy(p m3uetcpb.Perspective, val string) {
-	v := barTree.pplt[p]
-	v.filterVal = val
-	barTree.pplt[p] = v
-	barTree.update()
+	return bd.activeID
 }
 
 // GetOpenPlaylist returns the open playlist for the given id.
-func GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
+func (bd *playbarData) GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 	log.WithField("id", id).
 		Info("Returning open playlist")
 
-	BData.Mu.Lock()
-	defer BData.Mu.Unlock()
-	for _, pl := range BData.OpenPlaylist {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
+	for _, pl := range bd.openPlaylist {
 		if pl.Id == id {
 			return pl
 		}
@@ -127,14 +77,24 @@ func GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 	return nil
 }
 
+// GetOpenPlaylists returns the list of open playlists
+func (bd *playbarData) GetOpenPlaylists() []*m3uetcpb.Playlist {
+	log.Info("Returning open playlists")
+
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
+
+	return bd.openPlaylist
+}
+
 // GetPlaylist returns the playlist for the given id.
-func GetPlaylist(id int64) *m3uetcpb.Playlist {
+func (bd *playbarData) GetPlaylist(id int64) *m3uetcpb.Playlist {
 	log.WithField("id", id).
 		Info("Returning playlist")
 
-	BData.Mu.Lock()
-	defer BData.Mu.Unlock()
-	for _, pl := range BData.Playlist {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
+	for _, pl := range bd.playlist {
 		if pl.Id == id {
 			return pl
 		}
@@ -143,13 +103,13 @@ func GetPlaylist(id int64) *m3uetcpb.Playlist {
 }
 
 // GetPlaylistGroup returns the playlist group for the given id.
-func GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
+func (bd *playbarData) GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
 	log.WithField("id", id).
 		Info("Returning playlist group")
 
-	BData.Mu.Lock()
-	defer BData.Mu.Unlock()
-	for _, pg := range BData.PlaylistGroup {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
+	for _, pg := range bd.playlistGroup {
 		if pg.Id == id {
 			return pg
 		}
@@ -157,40 +117,93 @@ func GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
 	return nil
 }
 
-// GetPlaylistModel returns the playlist model for the given ID
-func GetPlaylistModel(id int64) *gtk.ListStore {
-	log.Info("Returning playlist model")
+func (bd *playbarData) GetPlaylistGroupNames() map[int64]string {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
 
-	model, _ := getPlaylistModel(id)
-	return model
+	out := make(map[int64]string)
+	for _, pg := range bd.playlistGroup {
+		out[pg.Id] = pg.Name
+	}
+	return out
 }
 
-func GetPlaylistTracksCount(id int64) int64 {
-	BData.Mu.Lock()
-	defer BData.Mu.Unlock()
+func (bd *playbarData) GetPlaylistTracksCount(id int64) int64 {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
 
 	var count int64
-	for _, opt := range BData.OpenPlaylistTrack {
+	for _, opt := range bd.openPlaylistTrack {
 		if opt.PlaylistId == id {
 			count++
 		}
 	}
 	return count
 }
+func (bd *playbarData) GetSubscriptionID() string {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
 
-// GetPlaylistsTreeModel returns the current playlist tree model
-func GetPlaylistsTreeModel(p m3uetcpb.Perspective) *gtk.TreeStore {
-	v := barTree.pplt[p]
-	return v.model
+	return bd.subscriptionID
+}
+
+func (bd *playbarData) GetUpdatePlaylistGroupRequests() (
+	[]*m3uetcpb.ExecutePlaylistGroupActionRequest, error) {
+
+	model := playlistGroupsModel
+
+	requests := []*m3uetcpb.ExecutePlaylistGroupActionRequest{}
+
+	iter, ok := model.GetIterFirst()
+	for ok {
+		row, err := GetListStoreModelValues(
+			model,
+			iter,
+			[]ModelColumn{PGColPlaylistGroupID, PGColName, PGColDescription},
+		)
+		if err != nil {
+			return nil, err
+		}
+		id := row[PGColPlaylistGroupID].(int64)
+		for _, pg := range bd.playlistGroup {
+			if id != pg.Id {
+				continue
+			}
+
+			req := &m3uetcpb.ExecutePlaylistGroupActionRequest{
+				Action: m3uetcpb.PlaylistGroupAction_PG_UPDATE,
+				Id:     pg.Id,
+			}
+
+			newName := row[PGColName].(string)
+			if newName != pg.Name && newName != "" {
+				req.Name = newName
+			}
+
+			newDescription := row[PGColDescription].(string)
+			if newDescription != pg.Description {
+				if newDescription != "" {
+					req.Description = newDescription
+				} else {
+					req.ResetDescription = true
+				}
+			}
+
+			requests = append(requests, req)
+			break
+		}
+		ok = model.IterNext(iter)
+	}
+	return requests, nil
 }
 
 // PlaylistAlreadyExists returns true if a playlist with the given
 // name already exists
-func PlaylistAlreadyExists(name string) bool {
-	BData.Mu.Lock()
-	defer BData.Mu.Unlock()
+func (bd *playbarData) PlaylistAlreadyExists(name string) bool {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
 
-	for _, pl := range BData.Playlist {
+	for _, pl := range bd.playlist {
 		if strings.EqualFold(pl.Name, name) {
 			return true
 		}
@@ -200,11 +213,11 @@ func PlaylistAlreadyExists(name string) bool {
 
 // PlaylistGroupAlreadyExists returns true if a playlist group with the
 //given name already exists
-func PlaylistGroupAlreadyExists(name string) bool {
-	BData.Mu.Lock()
-	defer BData.Mu.Unlock()
+func (bd *playbarData) PlaylistGroupAlreadyExists(name string) bool {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
 
-	for _, pg := range BData.PlaylistGroup {
+	for _, pg := range bd.playlistGroup {
 		if strings.EqualFold(pg.Name, name) {
 			return true
 		}
@@ -212,70 +225,275 @@ func PlaylistGroupAlreadyExists(name string) bool {
 	return false
 }
 
-// SetUpdatePlaybarViewFn sets the update-playbar-view function
-func SetUpdatePlaybarViewFn(fn func()) {
-	updatePlaybarView = fn
-}
+func (bd *playbarData) ProcessSubscriptionResponse(
+	res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
 
-func createPlaylistModel(id int64) (model *gtk.ListStore,
-	rows map[int]playlistModelRow, err error) {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
 
-	log.Info("Creating a playlist model")
-
-	model, rows = getPlaylistModel(id)
-	if model != nil {
-		return
+	if bd.subscriptionID == "" {
+		bd.subscriptionID = res.SubscriptionId
 	}
 
-	model, err = gtk.ListStoreNew(TColumns.getTypes()...)
-	if err != nil {
-		return
+	switch res.Event {
+	case m3uetcpb.PlaybarEvent_BE_INITIAL:
+		barTree.initialMode = true
+		bd.activeID = 0
+		bd.openPlaylist = []*m3uetcpb.Playlist{}
+		bd.openPlaylistTrack = []*m3uetcpb.PlaylistTrack{}
+		bd.openTrack = []*m3uetcpb.Track{}
+		bd.playlistGroup = []*m3uetcpb.PlaylistGroup{}
+		bd.playlist = []*m3uetcpb.Playlist{}
+
+		bd.playlistReplacementID = 0
+		bd.playlistTrackReplacementIDs = []int64{}
+	case m3uetcpb.PlaybarEvent_BE_INITIAL_ITEM:
+		bd.activeID = res.ActivePlaylistId
+		bd.appendBDataItem(res)
+	case m3uetcpb.PlaybarEvent_BE_INITIAL_DONE:
+		barTree.initialMode = false
+	case m3uetcpb.PlaybarEvent_BE_ITEM_ADDED:
+		bd.activeID = res.ActivePlaylistId
+		bd.appendBDataItem(res)
+	case m3uetcpb.PlaybarEvent_BE_ITEM_CHANGED:
+		bd.activeID = res.ActivePlaylistId
+		bd.appendBDataItem(res)
+	case m3uetcpb.PlaybarEvent_BE_ITEM_REMOVED:
+		bd.activeID = res.ActivePlaylistId
+		bd.removeBDataItem(res)
+	case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS:
+		barTree.receivingOpenItems = true
+	case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM:
+		bd.appendBDataItem(res)
+		bd.trackBDataItemReplacements(res)
+	case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_DONE:
+		bd.processBDataItemReplacements()
+		barTree.receivingOpenItems = false
 	}
 
-	rows = map[int]playlistModelRow{}
-
-	playlists = append(playlists, &playlistModel{id, model, rows})
-	return
+	if !barTree.initialMode && !barTree.receivingOpenItems {
+		glib.IdleAdd(bd.updatePlaybarModel)
+		glib.IdleAdd(barTree.update)
+		glib.IdleAdd(bd.updatePlaylistGroupModel)
+	}
 }
 
-func getPlaylistModel(id int64) (*gtk.ListStore, map[int]playlistModelRow) {
-	log.Info("Returning playlist model")
+func (bd *playbarData) appendBDataItem(res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
+	switch res.Item.(type) {
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylist:
+		item := res.GetOpenPlaylist()
+		for i := range bd.openPlaylist {
+			if bd.openPlaylist[i].Id == item.Id {
+				bd.openPlaylist[i] = item
+				return
+			}
+		}
+		bd.openPlaylist = append(
+			bd.openPlaylist,
+			item,
+		)
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylistTrack:
+		item := res.GetOpenPlaylistTrack()
+		for i := range bd.openPlaylistTrack {
+			if bd.openPlaylistTrack[i].Id == item.Id {
+				bd.openPlaylistTrack[i] = item
+				return
+			}
+		}
+		bd.openPlaylistTrack = append(
+			bd.openPlaylistTrack,
+			item,
+		)
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenTrack:
+		item := res.GetOpenTrack()
+		for i := range bd.openTrack {
+			if bd.openTrack[i].Id == item.Id {
+				bd.openTrack[i] = item
+				return
+			}
+		}
+		bd.openTrack = append(bd.openTrack, item)
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_PlaylistGroup:
+		item := res.GetPlaylistGroup()
+		for i := range bd.playlistGroup {
+			if bd.playlistGroup[i].Id == item.Id {
+				bd.playlistGroup[i] = item
+				return
+			}
+		}
+		bd.playlistGroup = append(
+			bd.playlistGroup,
+			item,
+		)
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_Playlist:
+		item := res.GetPlaylist()
+		for i := range bd.playlist {
+			if bd.playlist[i].Id == item.Id {
+				bd.playlist[i] = item
+				return
+			}
+		}
+		bd.playlist = append(bd.playlist, item)
+	default:
+	}
+}
 
-	for _, pl := range playlists {
-		if pl.id == id {
-			return pl.model, pl.rows
+func (bd *playbarData) processBDataItemReplacements() {
+	defer func() {
+		bd.playlistReplacementID = 0
+		bd.playlistTrackReplacementIDs = []int64{}
+	}()
+
+	var pl *m3uetcpb.Playlist
+	for _, opl := range bd.openPlaylist {
+		if opl.Id == bd.playlistReplacementID {
+			pl = opl
+			break
 		}
 	}
-	return nil, nil
-}
 
-func setPlaylistModelRows(id int64, rows map[int]playlistModelRow) {
-	for _, pl := range playlists {
-		if pl.id == id {
-			pl.rows = rows
+	if pl.Open {
+		newpts := []*m3uetcpb.PlaylistTrack{}
+		newts := []*m3uetcpb.Track{}
+
+		for i := range bd.openPlaylistTrack {
+			if bd.openPlaylistTrack[i].PlaylistId != pl.Id ||
+				slices.Contains(
+					bd.playlistTrackReplacementIDs,
+					bd.openPlaylistTrack[i].Id,
+				) {
+
+				newpts = append(newpts, bd.openPlaylistTrack[i])
+				for j := range bd.openTrack {
+					if bd.openPlaylistTrack[i].TrackId ==
+						bd.openTrack[j].Id {
+						newts = append(newts, bd.openTrack[j])
+						break
+					}
+				}
+			}
+		}
+
+		bd.openPlaylistTrack = newpts
+		bd.openTrack = newts
+	} else {
+		newpts := []*m3uetcpb.PlaylistTrack{}
+		newts := []*m3uetcpb.Track{}
+
+		for i := range bd.openPlaylistTrack {
+			if bd.openPlaylistTrack[i].PlaylistId == pl.Id {
+				continue
+			}
+
+			newpts = append(newpts, bd.openPlaylistTrack[i])
+			for j := range bd.openTrack {
+				if bd.openPlaylistTrack[i].TrackId ==
+					bd.openTrack[j].Id {
+					newts = append(newts, bd.openTrack[j])
+					break
+				}
+			}
+		}
+		bd.openPlaylistTrack = newpts
+		bd.openTrack = newts
+
+		for i := range bd.openPlaylist {
+			if pl.Id == bd.openPlaylist[i].Id {
+				n := len(bd.openPlaylist)
+				bd.openPlaylist[i] = bd.openPlaylist[n-1]
+				bd.openPlaylist = bd.openPlaylist[:n-1]
+				break
+			}
 		}
 	}
-
 }
 
-func updatePlaybarMaps() {
-	BData.Mu.Lock()
-	defer BData.Mu.Unlock()
-
-	sort.SliceStable(BData.OpenPlaylistTrack, func(i, j int) bool {
-		if BData.OpenPlaylistTrack[i].PlaylistId !=
-			BData.OpenPlaylistTrack[j].PlaylistId {
-			return BData.OpenPlaylistTrack[i].PlaylistId < BData.OpenPlaylistTrack[j].PlaylistId
+func (bd *playbarData) removeBDataItem(res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
+	switch res.Item.(type) {
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylist:
+		item := res.GetOpenPlaylist()
+		n := len(bd.openPlaylist)
+		for i := range bd.openPlaylist {
+			if bd.openPlaylist[i].Id == item.Id {
+				bd.openPlaylist[i] = bd.openPlaylist[n-1]
+				bd.openPlaylist = bd.openPlaylist[:n-1]
+				break
+			}
 		}
-		return BData.OpenPlaylistTrack[i].Position < BData.OpenPlaylistTrack[j].Position
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylistTrack:
+		item := res.GetOpenPlaylistTrack()
+		n := len(bd.openPlaylistTrack)
+		for i := range bd.openPlaylistTrack {
+			if bd.openPlaylistTrack[i].Id == item.Id {
+				bd.openPlaylistTrack[i] = bd.openPlaylistTrack[n-1]
+				bd.openPlaylistTrack = bd.openPlaylistTrack[:n-1]
+				break
+			}
+		}
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenTrack:
+		item := res.GetOpenTrack()
+		n := len(bd.openTrack)
+		for i := range bd.openTrack {
+			if bd.openTrack[i].Id == item.Id {
+				bd.openTrack[i] = bd.openTrack[n-1]
+				bd.openTrack = bd.openTrack[:n-1]
+				break
+			}
+		}
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_PlaylistGroup:
+		item := res.GetPlaylistGroup()
+		n := len(bd.playlistGroup)
+		for i := range bd.playlistGroup {
+			if bd.playlistGroup[i].Id == item.Id {
+				bd.playlistGroup[i] = bd.playlistGroup[n-1]
+				bd.playlistGroup = bd.playlistGroup[:n-1]
+				break
+			}
+		}
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_Playlist:
+		item := res.GetPlaylist()
+		n := len(bd.playlist)
+		for i := range bd.playlist {
+			if bd.playlist[i].Id == item.Id {
+				bd.playlist[i] = bd.playlist[n-1]
+				bd.playlist = bd.playlist[:n-1]
+				break
+			}
+		}
+	}
+}
+
+func (bd *playbarData) trackBDataItemReplacements(res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
+	switch res.Item.(type) {
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylist:
+		bd.playlistReplacementID = res.GetOpenPlaylist().Id
+	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylistTrack:
+		bd.playlistTrackReplacementIDs = append(
+			bd.playlistTrackReplacementIDs,
+			res.GetOpenPlaylistTrack().Id,
+		)
+	default:
+	}
+}
+
+func (bd *playbarData) updatePlaybarMaps() {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
+
+	sort.SliceStable(bd.openPlaylistTrack, func(i, j int) bool {
+		if bd.openPlaylistTrack[i].PlaylistId !=
+			bd.openPlaylistTrack[j].PlaylistId {
+			return bd.openPlaylistTrack[i].PlaylistId < bd.openPlaylistTrack[j].PlaylistId
+		}
+		return bd.openPlaylistTrack[i].Position < bd.openPlaylistTrack[j].Position
 	})
 
 	playlistTrackToTrack = map[int64]*m3uetcpb.Track{}
-	for _, pt := range BData.OpenPlaylistTrack {
+	for _, pt := range bd.openPlaylistTrack {
 		t := &m3uetcpb.Track{}
-		for i := range BData.OpenTrack {
-			if pt.TrackId == BData.OpenTrack[i].Id {
-				t = BData.OpenTrack[i]
+		for i := range bd.openTrack {
+			if pt.TrackId == bd.openTrack[i].Id {
+				t = bd.openTrack[i]
 				break
 			}
 		}
@@ -283,11 +501,11 @@ func updatePlaybarMaps() {
 	}
 
 	playlistToPlaylistGroup = map[int64]*m3uetcpb.PlaylistGroup{}
-	for _, pl := range BData.Playlist {
+	for _, pl := range bd.playlist {
 		pg := &m3uetcpb.PlaylistGroup{}
-		for i := range BData.PlaylistGroup {
-			if pl.PlaylistGroupId == BData.PlaylistGroup[i].Id {
-				pg = BData.PlaylistGroup[i]
+		for i := range bd.playlistGroup {
+			if pl.PlaylistGroupId == bd.playlistGroup[i].Id {
+				pg = bd.playlistGroup[i]
 				break
 			}
 		}
@@ -295,32 +513,32 @@ func updatePlaybarMaps() {
 	}
 
 	PerspectiveToPlaylists = map[m3uetcpb.Perspective][]*m3uetcpb.Playlist{}
-	for i := range BData.OpenPlaylist {
+	for i := range bd.openPlaylist {
 		var list []*m3uetcpb.Playlist
-		list, ok := PerspectiveToPlaylists[BData.OpenPlaylist[i].Perspective]
+		list, ok := PerspectiveToPlaylists[bd.openPlaylist[i].Perspective]
 		if !ok {
 			list = []*m3uetcpb.Playlist{}
 		}
-		list = append(list, BData.OpenPlaylist[i])
-		PerspectiveToPlaylists[BData.OpenPlaylist[i].Perspective] = list
+		list = append(list, bd.openPlaylist[i])
+		PerspectiveToPlaylists[bd.openPlaylist[i].Perspective] = list
 	}
 }
 
-func updatePlaybarModel() bool {
+func (bd *playbarData) updatePlaybarModel() bool {
 	if barTree.initialMode || barTree.receivingOpenItems {
 		return false
 	}
 
 	log.Info("Updating playbar model")
 
-	updatePlaybarMaps()
+	bd.updatePlaybarMaps()
 
-	pbdata.mu.Lock()
-	playbackTrackID := pbdata.trackID
-	pbdata.mu.Unlock()
+	PbData.mu.Lock()
+	playbackTrackID := PbData.trackID
+	PbData.mu.Unlock()
 
-	BData.Mu.Lock()
-	for _, pl := range BData.OpenPlaylist {
+	bd.mu.Lock()
+	for _, pl := range bd.openPlaylist {
 		model, rows := getPlaylistModel(pl.Id)
 		if model == nil {
 			var err error
@@ -336,7 +554,7 @@ func updatePlaybarModel() bool {
 		}
 
 		nTracks := 0
-		for _, pt := range BData.OpenPlaylistTrack {
+		for _, pt := range bd.openPlaylistTrack {
 			if pt.PlaylistId != pl.Id {
 				continue
 			}
@@ -351,13 +569,13 @@ func updatePlaybarModel() bool {
 		}
 
 	ptLoop:
-		for _, pt := range BData.OpenPlaylistTrack {
+		for _, pt := range bd.openPlaylistTrack {
 			if pt.PlaylistId != pl.Id {
 				continue
 			}
 
 			weight := 400
-			if pt.PlaylistId == BData.ActiveID &&
+			if pt.PlaylistId == bd.activeID &&
 				playbackTrackID > 0 &&
 				playbackTrackID == pt.TrackId {
 				weight = 700
@@ -526,14 +744,14 @@ func updatePlaybarModel() bool {
 		}
 		setPlaylistModelRows(pl.Id, newRows)
 	}
-	BData.Mu.Unlock()
+	bd.mu.Unlock()
 
 	updatePlaybarView()
 
 	return false
 }
 
-func updatePlaylistGroupModel() bool {
+func (bd *playbarData) updatePlaylistGroupModel() bool {
 	if barTree.initialMode || barTree.receivingOpenItems {
 		return false
 	}
@@ -554,9 +772,9 @@ func updatePlaylistGroupModel() bool {
 		model.Clear()
 	}
 
-	BData.Mu.Lock()
+	bd.mu.Lock()
 	var iter *gtk.TreeIter
-	for _, pg := range BData.PlaylistGroup {
+	for _, pg := range bd.playlistGroup {
 		iter = model.Append()
 		err := model.Set(
 			iter,
@@ -575,7 +793,128 @@ func updatePlaylistGroupModel() bool {
 		)
 		onerror.Log(err)
 	}
-	BData.Mu.Unlock()
+	bd.mu.Unlock()
 
 	return false
+}
+
+// CreatePlaylistModel creates a playlist model
+func CreatePlaylistModel(id int64) (model *gtk.ListStore, err error) {
+	log.Info("Creating a playlist model")
+
+	model, _, err = createPlaylistModel(id)
+	return
+}
+
+// CreatePlaylistGroupsModel creates a playlist model
+func CreatePlaylistGroupsModel() (model *gtk.ListStore, err error) {
+	log.Info("Creating a playlist model")
+
+	playlistGroupsModel, err = gtk.ListStoreNew(PGColumns.getTypes()...)
+	if err != nil {
+		return
+	}
+
+	model = playlistGroupsModel
+	return
+}
+
+// CreatePlaylistsTreeModel creates a playlist model
+func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (
+	model *gtk.TreeStore, err error) {
+
+	log.Info("Creating playlists model")
+
+	model, err = gtk.TreeStoreNew(PLTreeColumn.getTypes()...)
+	if err != nil {
+		return
+	}
+
+	v := barTree.pplt[p]
+	v.model = model
+	barTree.pplt[p] = v
+	return
+}
+
+// DestroyPlaylistModel destroy a playlist model
+func DestroyPlaylistModel(id int64) (err error) {
+	log.Info("Destroying a playlist model")
+
+	n := len(playlists)
+	for i := range playlists {
+		if playlists[i].id == id {
+			playlists[i] = playlists[n-1]
+			playlists = playlists[:n-1]
+			return
+		}
+	}
+	err = fmt.Errorf("Playlist model is not in store")
+	return
+}
+
+// FilterPlaylistTreeBy filters the playlist tree by the given value
+func FilterPlaylistTreeBy(p m3uetcpb.Perspective, val string) {
+	v := barTree.pplt[p]
+	v.filterVal = val
+	barTree.pplt[p] = v
+	barTree.update()
+}
+
+// GetPlaylistModel returns the playlist model for the given ID
+func GetPlaylistModel(id int64) *gtk.ListStore {
+	log.Info("Returning playlist model")
+
+	model, _ := getPlaylistModel(id)
+	return model
+}
+
+// GetPlaylistsTreeModel returns the current playlist tree model
+func GetPlaylistsTreeModel(p m3uetcpb.Perspective) *gtk.TreeStore {
+	v := barTree.pplt[p]
+	return v.model
+}
+
+// SetUpdatePlaybarViewFn sets the update-playbar-view function
+func SetUpdatePlaybarViewFn(fn func()) {
+	updatePlaybarView = fn
+}
+
+func createPlaylistModel(id int64) (model *gtk.ListStore,
+	rows map[int]playlistModelRow, err error) {
+
+	log.Info("Creating a playlist model")
+
+	model, rows = getPlaylistModel(id)
+	if model != nil {
+		return
+	}
+
+	model, err = gtk.ListStoreNew(TColumns.getTypes()...)
+	if err != nil {
+		return
+	}
+
+	rows = map[int]playlistModelRow{}
+
+	playlists = append(playlists, &playlistModel{id, model, rows})
+	return
+}
+
+func getPlaylistModel(id int64) (*gtk.ListStore, map[int]playlistModelRow) {
+	log.Info("Returning playlist model")
+
+	for _, pl := range playlists {
+		if pl.id == id {
+			return pl.model, pl.rows
+		}
+	}
+	return nil, nil
+}
+
+func setPlaylistModelRows(id int64, rows map[int]playlistModelRow) {
+	for _, pl := range playlists {
+		if pl.id == id {
+			pl.rows = rows
+		}
+	}
 }

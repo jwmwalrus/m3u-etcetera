@@ -9,6 +9,7 @@ import (
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -140,7 +141,7 @@ func (te *collectionTreeEntry) appendNode(model *gtk.TreeStore,
 		int(CColTree),
 		te.label+suffix,
 	)
-	model.SetValue(citer, int(CColTreeIDList), IDListToString(te.ids))
+	model.SetValue(citer, int(CColTreeIDList), util.IDListToString(te.ids))
 
 	for i := range te.child {
 		te.child[i].appendNode(model, citer)
@@ -257,8 +258,8 @@ func (tree *collectionTree) rebuild() {
 		return strings.Join(list, ",")
 	}
 
-	CData.Mu.Lock()
-	for _, t := range CData.Track {
+	CData.mu.Lock()
+	for _, t := range CData.track {
 		if tree.filterVal != "" {
 			kw := getKeywords(t)
 			match := true
@@ -283,7 +284,7 @@ func (tree *collectionTree) rebuild() {
 		}
 		root[idx].completeTree(level+1, guide, t)
 	}
-	CData.Mu.Unlock()
+	CData.mu.Unlock()
 
 	sort.Slice(root, func(i, j int) bool {
 		return root[i].label < root[j].label

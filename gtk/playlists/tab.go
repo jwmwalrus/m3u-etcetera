@@ -8,6 +8,7 @@ import (
 	"github.com/jwmwalrus/bnp/ing2"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
@@ -28,18 +29,16 @@ func updatePlaybarView() {
 	keep := []onTab{}
 	remove := []onTab{}
 
-	store.BData.Mu.Lock()
 outer:
 	for i := range tabsList {
-		for j := range store.BData.OpenPlaylist {
-			if store.BData.OpenPlaylist[j].Id == tabsList[i].id {
+		for _, opl := range store.BData.GetOpenPlaylists() {
+			if opl.Id == tabsList[i].id {
 				keep = append(keep, tabsList[i])
 				continue outer
 			}
 		}
 		remove = append(remove, tabsList[i])
 	}
-	store.BData.Mu.Unlock()
 
 	for i := range remove {
 		nb, err := builder.GetNotebook(perspToNotebook[remove[i].perspective])
@@ -222,7 +221,7 @@ func (ot *onTab) createContextMenus() (err error) {
 	}
 	pageMenu.SetVisible(true)
 
-	pl := store.GetOpenPlaylist(ot.id)
+	pl := store.BData.GetOpenPlaylist(ot.id)
 	if pl == nil {
 		err = fmt.Errorf("Playlist no longer available")
 		return
@@ -284,7 +283,7 @@ func (ot *onTab) dblClicked(tv *gtk.TreeView, path *gtk.TreePath,
 		Ids:      []int64{ot.id},
 	}
 
-	if err := store.ExecutePlaybarAction(req); err != nil {
+	if err := dialer.ExecutePlaybarAction(req); err != nil {
 		log.Error(err)
 		return
 	}
@@ -296,7 +295,7 @@ func (ot *onTab) doClose(btn *gtk.Button) {
 		Ids:    []int64{ot.id},
 	}
 
-	if err := store.ExecutePlaybarAction(req); err != nil {
+	if err := dialer.ExecutePlaybarAction(req); err != nil {
 		log.Error(err)
 	}
 }
@@ -440,7 +439,7 @@ func (ot *onTab) setTreeView() (err error) {
 }
 
 func (ot *onTab) updateLabel() (err error) {
-	pl := store.GetOpenPlaylist(ot.id)
+	pl := store.BData.GetOpenPlaylist(ot.id)
 	if pl == nil {
 		log.WithField("id", ot.id).Warn("Playlist no longer available")
 		return
@@ -452,8 +451,6 @@ func (ot *onTab) updateLabel() (err error) {
 	ot.label.SetText(name)
 	ot.label.SetTooltipText(pl.Description)
 
-	store.BData.Mu.Lock()
-	ot.img.SetVisible(store.BData.ActiveID == ot.id)
-	store.BData.Mu.Unlock()
+	ot.img.SetVisible(store.BData.GetActiveID() == ot.id)
 	return
 }

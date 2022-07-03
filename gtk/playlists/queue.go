@@ -8,6 +8,7 @@ import (
 	"github.com/jwmwalrus/bnp/ing2"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	log "github.com/sirupsen/logrus"
 )
@@ -129,7 +130,7 @@ func (oq *OnQueue) DblClicked(tv *gtk.TreeView,
 
 	time.Sleep(200 * time.Millisecond)
 
-	if err := store.ExecutePlaybackAction(req); err != nil {
+	if err := dialer.ExecutePlaybackAction(req); err != nil {
 		log.Error(err)
 		return
 	}
@@ -139,7 +140,7 @@ func (oq *OnQueue) DblClicked(tv *gtk.TreeView,
 		Position: int32(pos),
 	}
 
-	if err := store.ExecuteQueueAction(req2); err != nil {
+	if err := dialer.ExecuteQueueAction(req2); err != nil {
 		log.Error(err)
 		return
 	}

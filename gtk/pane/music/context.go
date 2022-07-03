@@ -3,6 +3,7 @@ package musicpane
 import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -36,7 +37,7 @@ func (oc *onContext) getSelection(keep ...bool) (ids []int64) {
 		return
 	}
 
-	ids, err := store.StringToIDList(value)
+	ids, err := util.StringToIDList(value)
 	if err != nil {
 		log.Errorf("Error parsing selection IDs for context: %v", err)
 	}

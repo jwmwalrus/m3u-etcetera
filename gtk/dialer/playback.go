@@ -1,10 +1,12 @@
-package store
+package dialer
 
 import (
 	"context"
 
-	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
@@ -20,6 +22,27 @@ func ExecutePlaybackAction(req *m3uetcpb.ExecutePlaybackActionRequest) (err erro
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
 	_, err = cl.ExecutePlaybackAction(context.Background(), req)
 	return
+}
+
+func OnProgressBarClicked(eb *gtk.EventBox, event *gdk.Event) {
+	_, _, duration, status := store.PbData.GetCurrentPlayback()
+
+	if !status["is-streaming"] {
+		return
+	}
+
+	btn := gdk.EventButtonNewFromEvent(event)
+	x, _ := btn.MotionVal()
+	width := eb.Widget.GetAllocatedWidth()
+	seek := int64(x * float64(duration) / float64(width))
+
+	go func() {
+		req := &m3uetcpb.ExecutePlaybackActionRequest{
+			Action: m3uetcpb.PlaybackAction_PB_SEEK,
+			Seek:   seek,
+		}
+		onerror.Log(ExecutePlaybackAction(req))
+	}()
 }
 
 func subscribeToPlayback() {
@@ -50,12 +73,7 @@ func subscribeToPlayback() {
 			break
 		}
 
-		pbdata.mu.Lock()
-		pbdata.res = res
-		pbdata.mu.Unlock()
-
-		glib.IdleAdd(pbdata.updatePlayback)
-		glib.IdleAdd(pbdata.setCover)
+		store.PbData.ProcessSubscriptionResponse(res)
 
 		if !wgdone {
 			wg.Done()
@@ -67,9 +85,7 @@ func subscribeToPlayback() {
 func unsubscribeFromPlayback() {
 	log.Info("Unsubscribing from playback")
 
-	pbdata.mu.Lock()
-	id := pbdata.res.SubscriptionId
-	pbdata.mu.Unlock()
+	id := store.PbData.GetSubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

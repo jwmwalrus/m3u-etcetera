@@ -1,11 +1,11 @@
-package store
+package dialer
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/gotk3/gotk3/glib"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
@@ -96,12 +96,7 @@ func QueryBy(req *m3uetcpb.QueryByRequest) (count int, err error) {
 		return
 	}
 
-	QYData.Mu.Lock()
-	QYData.tracks = res.Tracks
-	count = len(res.Tracks)
-	QYData.Mu.Unlock()
-
-	glib.IdleAdd(updateQueryResults)
+	count = store.QYData.UpdateQueryByResults(res)
 	return
 }
 
@@ -165,39 +160,6 @@ func subscribeToQueryStore() {
 		return
 	}
 
-	appendItem := func(res *m3uetcpb.SubscribeToQueryStoreResponse) {
-		for _, qy := range QYData.Query {
-			if qy.Id == res.Query.Id {
-				return
-			}
-		}
-		QYData.Query = append(
-			QYData.Query,
-			res.Query,
-		)
-	}
-
-	changeItem := func(res *m3uetcpb.SubscribeToQueryStoreResponse) {
-		qy := res.Query
-		for i := range QYData.Query {
-			if QYData.Query[i].Id == qy.Id {
-				QYData.Query[i] = qy
-				break
-			}
-		}
-	}
-
-	removeItem := func(res *m3uetcpb.SubscribeToQueryStoreResponse) {
-		n := len(QYData.Query)
-		for i := range QYData.Query {
-			if QYData.Query[i].Id == res.Query.Id {
-				QYData.Query[i] = QYData.Query[n-1]
-				QYData.Query = QYData.Query[:n-1]
-				break
-			}
-		}
-	}
-
 	for {
 		res, err := stream.Recv()
 		if err != nil {
@@ -205,32 +167,8 @@ func subscribeToQueryStore() {
 			break
 		}
 
-		QYData.Mu.Lock()
+		store.QYData.ProcessSubscriptionResponse(res)
 
-		if QYData.subscriptionID == "" {
-			QYData.subscriptionID = res.SubscriptionId
-		}
-
-		switch res.Event {
-		case m3uetcpb.QueryEvent_QYE_INITIAL:
-			queryTree.initialMode = true
-			QYData.Query = []*m3uetcpb.Query{}
-		case m3uetcpb.QueryEvent_QYE_INITIAL_ITEM:
-			appendItem(res)
-		case m3uetcpb.QueryEvent_QYE_INITIAL_DONE:
-			queryTree.initialMode = false
-		case m3uetcpb.QueryEvent_QYE_ITEM_ADDED:
-			appendItem(res)
-		case m3uetcpb.QueryEvent_QYE_ITEM_CHANGED:
-			changeItem(res)
-		case m3uetcpb.QueryEvent_QYE_ITEM_REMOVED:
-			removeItem(res)
-		}
-		QYData.Mu.Unlock()
-
-		if !queryTree.initialMode {
-			glib.IdleAdd(queryTree.update)
-		}
 		if !wgdone {
 			wg.Done()
 			wgdone = true
@@ -241,9 +179,7 @@ func subscribeToQueryStore() {
 func unsubscribeFromQueryStore() {
 	log.Info("Unsubscribing from query store")
 
-	QYData.Mu.Lock()
-	id := QYData.subscriptionID
-	QYData.Mu.Unlock()
+	id := store.QYData.GetSubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

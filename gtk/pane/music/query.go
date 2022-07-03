@@ -10,8 +10,10 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
@@ -115,7 +117,7 @@ func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
 		Id: ids[0],
 	}
 
-	if err := store.ApplyQuery(req, targetID); err != nil {
+	if err := dialer.ApplyQuery(req, targetID); err != nil {
 		log.Error(err)
 	}
 }
@@ -131,7 +133,7 @@ func (omqy *onMusicQuery) contextDelete(mi *gtk.MenuItem) {
 		Id: ids[0],
 	}
 
-	if err := store.RemoveQuery(req); err != nil {
+	if err := dialer.RemoveQuery(req); err != nil {
 		log.Error(err)
 	}
 }
@@ -180,12 +182,19 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 		return
 	}
 
+	model, err := store.CreateQueryResultsModel()
+	if err != nil {
+		return
+	}
+
+	qyr := store.Renderer{Model: model, Columns: store.TColumns}
+
 	textro, err := gtk.CellRendererTextNew()
 	if err != nil {
 		return
 	}
 
-	togglerw, err := store.GetQueryResultsRenderer(store.TColToggleSelect)
+	togglerw, err := qyr.GetActivatable(store.TColToggleSelect)
 	if err != nil {
 		return
 	}
@@ -231,10 +240,6 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 		view.InsertColumn(col, -1)
 	}
 
-	model, err := store.CreateQueryResultsModel()
-	if err != nil {
-		return
-	}
 	view.SetModel(model)
 
 	omqy.name, err = builder.GetEntry("query_dialog_name")
@@ -309,7 +314,7 @@ func (omqy *onMusicQuery) dblClicked(tv *gtk.TreeView,
 	}
 	log.Debugf("Doouble-clicked column value: %v", values[store.CColTree])
 
-	ids, err := store.StringToIDList(values[store.QYColTreeIDList].(string))
+	ids, err := util.StringToIDList(values[store.QYColTreeIDList].(string))
 	if err != nil {
 		log.Error(err)
 		return
@@ -339,7 +344,7 @@ func (omqy *onMusicQuery) defineQuery(btn *gtk.ToolButton) {
 			log.Error(err)
 		} else {
 			req := &m3uetcpb.AddQueryRequest{Query: qy}
-			store.AddQuery(req)
+			dialer.AddQuery(req)
 		}
 	case gtk.RESPONSE_CANCEL:
 	default:
@@ -355,7 +360,7 @@ func (omqy *onMusicQuery) doSearch(btn *gtk.Button) {
 	}
 	qy.Name = ""
 	req := &m3uetcpb.QueryByRequest{Query: qy}
-	count, err := store.QueryBy(req)
+	count, err := dialer.QueryBy(req)
 	if err != nil {
 		log.Error(err)
 		return
@@ -366,7 +371,7 @@ func (omqy *onMusicQuery) doSearch(btn *gtk.Button) {
 }
 
 func (omqy *onMusicQuery) edit(id int64) (err error) {
-	qy := store.GetQuery(id)
+	qy := store.QYData.GetQuery(id)
 	if qy == nil {
 		log.Errorf("Query returned from store is nil")
 		return
@@ -385,7 +390,7 @@ func (omqy *onMusicQuery) edit(id int64) (err error) {
 			return
 		}
 		req := &m3uetcpb.UpdateQueryRequest{Query: qy}
-		store.UpdateQuery(req)
+		dialer.UpdateQuery(req)
 	case gtk.RESPONSE_CANCEL:
 	default:
 	}
@@ -424,7 +429,7 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 		if params != "" {
 			params += " and "
 		}
-		params += "id=" + store.IDListToString(ids)
+		params += "id=" + util.IDListToString(ids)
 	}
 
 	idTxt, err := omqy.id.GetText()
@@ -489,7 +494,7 @@ func (omqy *onMusicQuery) newPlaylist(id int64) (err error) {
 		Action:      m3uetcpb.PlaylistAction_PL_CREATE,
 		Perspective: m3uetcpb.Perspective_MUSIC,
 	}
-	respl, err := store.ExecutePlaylistAction(reqpl)
+	respl, err := dialer.ExecutePlaylistAction(reqpl)
 	if err != nil {
 		return
 	}
@@ -498,7 +503,7 @@ func (omqy *onMusicQuery) newPlaylist(id int64) (err error) {
 		Id: id,
 	}
 
-	if err = store.ApplyQuery(reqqy, respl.Id); err != nil {
+	if err = dialer.ApplyQuery(reqqy, respl.Id); err != nil {
 		log.Error(err)
 		err = nil
 
@@ -507,7 +512,7 @@ func (omqy *onMusicQuery) newPlaylist(id int64) (err error) {
 			Ids:    []int64{reqpl.Id},
 		}
 
-		if err = store.ExecutePlaybarAction(reqbar); err != nil {
+		if err = dialer.ExecutePlaybarAction(reqbar); err != nil {
 			return
 		}
 		return

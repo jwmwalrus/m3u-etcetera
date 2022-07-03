@@ -8,6 +8,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -26,8 +27,8 @@ type onSettingsMenu struct {
 		addBtn           *gtk.Button
 
 		editDlg       *gtk.Dialog
-		discoverBtn   *gtk.ToggleToolButton
-		updateTagsBtn *gtk.ToggleToolButton
+		discoverBtn   *gtk.ToggleButton
+		updateTagsBtn *gtk.ToggleButton
 	}
 	pg struct {
 		addDlg, editDlg *gtk.Dialog
@@ -67,7 +68,7 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 		}
 
 		osm.coll.addBtn.SetSensitive(
-			!store.CollectionAlreadyExists(loc, name),
+			!store.CData.CollectionAlreadyExists(loc, name),
 		)
 	})
 
@@ -93,7 +94,7 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 			Remote:      osm.coll.remote.GetActive(),
 		}
 
-		_, err := store.AddCollection(req)
+		_, err := dialer.AddCollection(req)
 		if err != nil {
 			log.Error(err)
 			return
@@ -117,7 +118,7 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 			osm.pg.addBtn.SetSensitive(false)
 			return
 		}
-		osm.pg.addBtn.SetSensitive(!store.PlaylistGroupAlreadyExists(name))
+		osm.pg.addBtn.SetSensitive(!store.BData.PlaylistGroupAlreadyExists(name))
 	})
 
 	res := osm.pg.addDlg.Run()
@@ -147,7 +148,7 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 		if descr == "" {
 			req.ResetDescription = true
 		}
-		_, err = store.ExecutePlaylistGroupAction(req)
+		_, err = dialer.ExecutePlaylistGroupAction(req)
 		onerror.Log(err)
 	case gtk.RESPONSE_CANCEL:
 	default:
@@ -202,14 +203,14 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		return
 	}
 
-	osm.coll.discoverBtn, err = builder.GetToggleToolButton(
+	osm.coll.discoverBtn, err = builder.GetToggleButton(
 		"collections_dialog_toggle_discover",
 	)
 	if err != nil {
 		return
 	}
 
-	osm.coll.updateTagsBtn, err = builder.GetToggleToolButton(
+	osm.coll.updateTagsBtn, err = builder.GetToggleButton(
 		"collections_dialog_toggle_update_tags",
 	)
 	if err != nil {
@@ -221,37 +222,39 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		return
 	}
 
+	model, err := store.CreateCollectionModel()
+	if err != nil {
+		return
+	}
+
 	textro, err := gtk.CellRendererTextNew()
 	if err != nil {
 		return
 	}
 
-	namerw, err := store.GetCollectionRenderer(store.CColName)
+	cr := store.Renderer{Model: model, Columns: store.CColumns}
+
+	namerw, err := cr.GetEditable(store.CColName)
 	if err != nil {
 		return
 	}
 
-	descriptionrw, err := store.GetCollectionRenderer(store.CColDescription)
+	descriptionrw, err := cr.GetEditable(store.CColDescription)
 	if err != nil {
 		return
 	}
 
-	remotelocationrw, err := store.GetCollectionRenderer(store.CColRemoteLocation)
+	remotelocationrw, err := cr.GetEditable(store.CColRemoteLocation)
 	if err != nil {
 		return
 	}
 
-	disabledrw, err := store.GetCollectionRenderer(store.CColDisabled)
+	disabledrw, err := cr.GetActivatable(store.CColDisabled)
 	if err != nil {
 		return
 	}
 
-	remoterw, err := store.GetCollectionRenderer(store.CColRemote)
-	if err != nil {
-		return
-	}
-
-	rescanrw, err := store.GetCollectionRenderer(store.CColRescan)
+	remoterw, err := cr.GetActivatable(store.CColRemote)
 	if err != nil {
 		return
 	}
@@ -267,7 +270,6 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		{store.CColTracksView, textro},
 		{store.CColDisabled, disabledrw},
 		{store.CColRemote, remoterw},
-		{store.CColRescan, rescanrw},
 		{store.CColRemoteLocation, remotelocationrw},
 	}
 
@@ -297,11 +299,70 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		view.InsertColumn(col, -1)
 	}
 
-	model, err := store.CreateCollectionModel()
+	view.SetModel(model)
+
+	actionsview, err := builder.GetTreeView("collections_dialog_actions_view")
 	if err != nil {
 		return
 	}
-	view.SetModel(model)
+
+	actionsmodel, err := store.CreateCollectionActionsModel()
+	if err != nil {
+		return
+	}
+
+	car := store.Renderer{Model: actionsmodel, Columns: store.CActionColumns}
+
+	namero, err := gtk.CellRendererTextNew()
+	if err != nil {
+		return
+	}
+
+	rescanrw, err := car.GetActivatable(store.CActionColRescan)
+	if err != nil {
+		return
+	}
+
+	removerw, err := car.GetActivatable(store.CActionColRemove)
+	if err != nil {
+		return
+	}
+
+	cols = []struct {
+		idx store.ModelColumn
+		r   gtk.ICellRenderer
+	}{
+		{store.CActionColName, namero},
+		{store.CActionColRescan, rescanrw},
+		{store.CActionColRemove, removerw},
+	}
+
+	for _, v := range cols {
+		var col *gtk.TreeViewColumn
+		if renderer, ok := v.r.(*gtk.CellRendererToggle); ok {
+			col, err = gtk.TreeViewColumnNewWithAttribute(
+				store.CActionColumns[v.idx].Name,
+				renderer,
+				"active",
+				int(v.idx),
+			)
+		} else if renderer, ok := v.r.(*gtk.CellRendererText); ok {
+			col, err = gtk.TreeViewColumnNewWithAttribute(
+				store.CActionColumns[v.idx].Name,
+				renderer,
+				"text",
+				int(v.idx),
+			)
+		} else {
+			log.Error("¿Cómo sabré si es pez o iguana?")
+			continue
+		}
+		if err != nil {
+			return
+		}
+		actionsview.InsertColumn(col, -1)
+	}
+	actionsview.SetModel(actionsmodel)
 
 	return
 }
@@ -348,17 +409,24 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 		return
 	}
 
+	model, err := store.CreatePlaylistGroupsModel()
+	if err != nil {
+		return
+	}
+
+	pgr := store.Renderer{Model: model, Columns: store.PGColumns}
+
 	textro, err := gtk.CellRendererTextNew()
 	if err != nil {
 		return
 	}
 
-	namerw, err := store.GetPlaylistGroupRenderer(store.PGColName)
+	namerw, err := pgr.GetEditable(store.PGColName)
 	if err != nil {
 		return
 	}
 
-	descriptionrw, err := store.GetPlaylistGroupRenderer(store.PGColDescription)
+	descriptionrw, err := pgr.GetEditable(store.PGColDescription)
 	if err != nil {
 		return
 	}
@@ -398,10 +466,6 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 		view.InsertColumn(col, -1)
 	}
 
-	model, err := store.CreatePlaylistGroupsModel()
-	if err != nil {
-		return
-	}
 	view.SetModel(model)
 	return
 }
@@ -416,7 +480,7 @@ func (osm *onSettingsMenu) editCollections(btn *gtk.Button) {
 
 	switch res {
 	case gtk.RESPONSE_APPLY:
-		store.ApplyCollectionChanges(osm.getCollectionsToggles())
+		dialer.ApplyCollectionChanges(osm.getCollectionsToggles())
 	case gtk.RESPONSE_CANCEL:
 	default:
 	}
@@ -430,7 +494,7 @@ func (osm *onSettingsMenu) editPlaylistGroups(btn *gtk.Button) {
 
 	switch res {
 	case gtk.RESPONSE_APPLY:
-		store.ApplyPlaylistGroupChanges()
+		dialer.ApplyPlaylistGroupChanges()
 	case gtk.RESPONSE_CANCEL:
 	default:
 	}
@@ -501,7 +565,7 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 			Locations: locs,
 		}
 
-		msgList, err := store.ImportPlaylists(req)
+		msgList, err := dialer.ImportPlaylists(req)
 		if err != nil {
 			log.Error(err)
 			return
@@ -566,7 +630,7 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 				Locations:  locs,
 			}
 
-			err := store.ExecutePlaylistTrackAction(req)
+			err := dialer.ExecutePlaylistTrackAction(req)
 			onerror.Log(err)
 		} else {
 			action := m3uetcpb.QueueAction_Q_APPEND
@@ -575,7 +639,7 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 				Locations: locs,
 			}
 
-			err := store.ExecuteQueueAction(req)
+			err := dialer.ExecuteQueueAction(req)
 			onerror.Log(err)
 		}
 	case gtk.RESPONSE_CANCEL:
@@ -589,7 +653,7 @@ func (osm *onSettingsMenu) openURL(btn *gtk.Button) {
 func (osm *onSettingsMenu) quitAll(btn *gtk.Button) {
 	osm.hide()
 
-	store.SetForceExit()
+	dialer.SetForceExit()
 	osm.window.Destroy()
 }
 

@@ -1,10 +1,10 @@
-package store
+package dialer
 
 import (
 	"context"
 
-	"github.com/gotk3/gotk3/glib"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
@@ -50,11 +50,7 @@ func subscribeToPerspective() {
 			break
 		}
 
-		perspdata.mu.Lock()
-		perspdata.res = res
-		perspdata.mu.Unlock()
-
-		glib.IdleAdd(perspdata.updateActivePerspective)
+		store.PerspData.ProcessSubscriptionResponse(res)
 
 		if !wgdone {
 			wg.Done()
@@ -66,9 +62,7 @@ func subscribeToPerspective() {
 func unsubscribeFromPerspective() {
 	log.Info("Unsubscribing from perspective")
 
-	perspdata.mu.Lock()
-	id := perspdata.res.SubscriptionId
-	perspdata.mu.Unlock()
+	id := store.PerspData.GetSubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

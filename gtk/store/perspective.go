@@ -4,6 +4,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -15,19 +16,27 @@ func GetActivePerspective() m3uetcpb.Perspective {
 	return m3uetcpb.Perspective_MUSIC
 }
 
-var (
-	perspdata = &perspectiveData{}
-)
-
 type perspectiveData struct {
-	mu  sync.Mutex
 	res *m3uetcpb.SubscribeToPerspectiveResponse
 
 	uiSet bool
 	combo *gtk.ComboBoxText
+
+	mu sync.Mutex
 }
 
-func (pd *perspectiveData) setPerspectiveUI() (err error) {
+var (
+	PerspData = &perspectiveData{}
+)
+
+func (pd *perspectiveData) GetSubscriptionID() string {
+	pd.mu.Lock()
+	defer pd.mu.Unlock()
+
+	return pd.res.SubscriptionId
+}
+
+func (pd *perspectiveData) SetPerspectiveUI() (err error) {
 	pd.combo, err = builder.GetComboBoxText("perspective")
 	if err != nil {
 		return
@@ -51,4 +60,12 @@ func (pd *perspectiveData) updateActivePerspective() bool {
 	}
 
 	return false
+}
+
+func (pd *perspectiveData) ProcessSubscriptionResponse(res *m3uetcpb.SubscribeToPerspectiveResponse) {
+	pd.mu.Lock()
+	defer pd.mu.Unlock()
+
+	pd.res = res
+	glib.IdleAdd(pd.updateActivePerspective)
 }

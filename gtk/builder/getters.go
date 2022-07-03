@@ -287,13 +287,13 @@ func GetTextView(id string) (tv *gtk.TextView, err error) {
 	return
 }
 
-func GetToggleToolButton(id string) (btn *gtk.ToggleToolButton, err error) {
+func GetToggleButton(id string) (btn *gtk.ToggleButton, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
 		err = fmt.Errorf("Unable to get button: %v", err)
 		return
 	}
-	btn, ok := obj.(*gtk.ToggleToolButton)
+	btn, ok := obj.(*gtk.ToggleButton)
 	if !ok {
 		err = fmt.Errorf("Unable to create button: %v", err)
 		return

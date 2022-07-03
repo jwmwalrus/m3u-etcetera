@@ -8,20 +8,19 @@ import (
 	"time"
 
 	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/bnp/ing2"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
 type playbackData struct {
-	mu  sync.Mutex
 	res *m3uetcpb.SubscribeToPlaybackResponse
 
 	trackID                      int64
@@ -34,6 +33,8 @@ type playbackData struct {
 	playBtn                      *gtk.ToolButton
 	title, artist, source, extra *gtk.Label
 	prog                         *gtk.ProgressBar
+
+	mu sync.Mutex
 }
 
 const (
@@ -41,61 +42,46 @@ const (
 )
 
 var (
-	pbdata = &playbackData{}
+	PbData = &playbackData{}
 )
 
-func (pbd *playbackData) setCover() bool {
+func (pbd *playbackData) GetCurrentPlayback() (pb *m3uetcpb.Playback,
+	t *m3uetcpb.Track, duration int64, status map[string]bool) {
 	pbd.mu.Lock()
 	defer pbd.mu.Unlock()
 
-	if pbd.res.IsStreaming {
-		un, err := urlstr.URLToPath(pbd.res.Playback.Location)
-		if err != nil {
-			return false
-		}
-		dir := filepath.Dir(un)
-		if dir != pbd.lastDir {
-			pbd.lastDir = dir
-			fp := ""
-
-			trackCover := pbd.res.Track.Cover
-			coverFiles := pbd.coverFiles
-
-			for _, v := range coverFiles {
-				dirfile := filepath.Join(pbd.lastDir, v)
-				if _, err := os.Stat(dirfile); !os.IsNotExist(err) {
-					fp = dirfile
-					break
-				}
-			}
-
-			if fp == "" && trackCover != "" {
-				trackCover = filepath.Join(base.CoversDir, trackCover)
-				if _, err := os.Stat(trackCover); !os.IsNotExist(err) {
-					fp = trackCover
-				}
-			}
-
-			if fp == "" {
-				pbd.cover.SetFromPixbuf(pbd.logoPixbuf)
-				return false
-			}
-
-			pixbuf, err := gdk.PixbufNewFromFileAtScale(fp, 150, 150, true)
-			if err != nil {
-				return false
-			}
-			pbd.cover.SetFromPixbuf(pixbuf)
-		}
-		return false
+	pb = pbd.res.Playback
+	t = pbd.res.Track
+	duration = pbd.res.Track.Duration
+	status = map[string]bool{
+		"is-ready":     pbd.res.IsReady,
+		"is-paused":    pbd.res.IsPaused,
+		"is-playing":   pbd.res.IsPlaying,
+		"is-stopped":   pbd.res.IsStopped,
+		"is-streaming": pbd.res.IsStreaming,
 	}
-
-	pbd.lastDir = ""
-	pbd.cover.SetFromPixbuf(pbd.logoPixbuf)
-	return false
+	return
 }
 
-func (pbd *playbackData) setPlaybackUI() (err error) {
+func (pbd *playbackData) GetSubscriptionID() string {
+	pbd.mu.Lock()
+	defer pbd.mu.Unlock()
+
+	id := pbd.res.SubscriptionId
+	return id
+}
+
+func (pbd *playbackData) ProcessSubscriptionResponse(res *m3uetcpb.SubscribeToPlaybackResponse) {
+	pbd.mu.Lock()
+	defer pbd.mu.Unlock()
+
+	pbd.res = res
+
+	glib.IdleAdd(pbd.updatePlayback)
+	glib.IdleAdd(pbd.setCover)
+}
+
+func (pbd *playbackData) SetPlaybackUI() (err error) {
 	pbd.headerbar, err = builder.GetHeaderBar("window_headerbar")
 	if err != nil {
 		return
@@ -146,6 +132,57 @@ func (pbd *playbackData) setPlaybackUI() (err error) {
 
 	pbd.uiSet = true
 	return
+}
+
+func (pbd *playbackData) setCover() bool {
+	pbd.mu.Lock()
+	defer pbd.mu.Unlock()
+
+	if pbd.res.IsStreaming {
+		un, err := urlstr.URLToPath(pbd.res.Playback.Location)
+		if err != nil {
+			return false
+		}
+		dir := filepath.Dir(un)
+		if dir != pbd.lastDir {
+			pbd.lastDir = dir
+			fp := ""
+
+			trackCover := pbd.res.Track.Cover
+			coverFiles := pbd.coverFiles
+
+			for _, v := range coverFiles {
+				dirfile := filepath.Join(pbd.lastDir, v)
+				if _, err := os.Stat(dirfile); !os.IsNotExist(err) {
+					fp = dirfile
+					break
+				}
+			}
+
+			if fp == "" && trackCover != "" {
+				trackCover = filepath.Join(base.CoversDir, trackCover)
+				if _, err := os.Stat(trackCover); !os.IsNotExist(err) {
+					fp = trackCover
+				}
+			}
+
+			if fp == "" {
+				pbd.cover.SetFromPixbuf(pbd.logoPixbuf)
+				return false
+			}
+
+			pixbuf, err := gdk.PixbufNewFromFileAtScale(fp, 150, 150, true)
+			if err != nil {
+				return false
+			}
+			pbd.cover.SetFromPixbuf(pixbuf)
+		}
+		return false
+	}
+
+	pbd.lastDir = ""
+	pbd.cover.SetFromPixbuf(pbd.logoPixbuf)
+	return false
 }
 
 func (pbd *playbackData) updatePlayback() bool {
@@ -228,30 +265,7 @@ func (pbd *playbackData) updatePlayback() bool {
 	pbd.source.SetTooltipText(location)
 
 	if oldTrackID != pbd.trackID {
-		updatePlaybarModel()
+		BData.updatePlaybarModel()
 	}
 	return false
-}
-
-func OnProgressBarClicked(eb *gtk.EventBox, event *gdk.Event) {
-	pbdata.mu.Lock()
-	defer pbdata.mu.Unlock()
-
-	if !pbdata.res.IsStreaming {
-		return
-	}
-	duration := pbdata.res.Track.Duration
-
-	btn := gdk.EventButtonNewFromEvent(event)
-	x, _ := btn.MotionVal()
-	width := eb.Widget.GetAllocatedWidth()
-	seek := int64(x * float64(duration) / float64(width))
-
-	go func() {
-		req := &m3uetcpb.ExecutePlaybackActionRequest{
-			Action: m3uetcpb.PlaybackAction_PB_SEEK,
-			Seek:   seek,
-		}
-		onerror.Log(ExecutePlaybackAction(req))
-	}()
 }

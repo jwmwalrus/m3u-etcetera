@@ -9,7 +9,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	gtkui "github.com/jwmwalrus/m3u-etcetera/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
-	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
@@ -63,7 +63,7 @@ func main() {
 		window.SetApplication(app)
 
 		window.Connect("destroy", func() {
-			store.Unsubscribe()
+			dialer.Unsubscribe()
 			fmt.Printf("\nBye %v from %v\n", base.OS, base.AppInstance)
 			app.Quit()
 		})
@@ -75,7 +75,7 @@ func main() {
 
 		builder.ConnectSignals(signals)
 
-		store.Subscribe()
+		dialer.Subscribe()
 
 		window.ShowAll()
 	})

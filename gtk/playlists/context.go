@@ -6,6 +6,7 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
@@ -68,7 +69,7 @@ func (oc *onContext) ContextClear(mi *gtk.MenuItem) {
 			Action:     m3uetcpb.PlaylistTrackAction_PT_CLEAR,
 		}
 
-		onerror.Log(store.ExecutePlaylistTrackAction(req))
+		onerror.Log(dialer.ExecutePlaylistTrackAction(req))
 		return
 	}
 
@@ -77,7 +78,7 @@ func (oc *onContext) ContextClear(mi *gtk.MenuItem) {
 		Action:      m3uetcpb.QueueAction_Q_CLEAR,
 	}
 
-	onerror.Log(store.ExecuteQueueAction(req))
+	onerror.Log(dialer.ExecuteQueueAction(req))
 }
 
 func (oc *onContext) ContextDelete(mi *gtk.MenuItem) {
@@ -93,7 +94,7 @@ func (oc *onContext) ContextDelete(mi *gtk.MenuItem) {
 			Position:   int32(values[store.TColPosition].(int)),
 		}
 
-		onerror.Log(store.ExecutePlaylistTrackAction(req))
+		onerror.Log(dialer.ExecutePlaylistTrackAction(req))
 		return
 	}
 
@@ -102,7 +103,7 @@ func (oc *onContext) ContextDelete(mi *gtk.MenuItem) {
 		Position: int32(values[store.QColPosition].(int)),
 	}
 
-	onerror.Log(store.ExecuteQueueAction(req))
+	onerror.Log(dialer.ExecuteQueueAction(req))
 }
 
 func (oc *onContext) ContextEnqueue(mi *gtk.MenuItem) {
@@ -130,7 +131,7 @@ func (oc *onContext) ContextEnqueue(mi *gtk.MenuItem) {
 		req.Locations = []string{loc}
 	}
 
-	if err := store.ExecuteQueueAction(req); err != nil {
+	if err := dialer.ExecuteQueueAction(req); err != nil {
 		log.Error(err)
 		return
 	}
@@ -182,7 +183,7 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 			FromPosition: int32(fromPos),
 		}
 
-		onerror.Log(store.ExecutePlaylistTrackAction(req))
+		onerror.Log(dialer.ExecutePlaylistTrackAction(req))
 		return
 	}
 
@@ -192,7 +193,7 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 		FromPosition: int32(fromPos),
 	}
 
-	onerror.Log(store.ExecuteQueueAction(req))
+	onerror.Log(dialer.ExecuteQueueAction(req))
 }
 
 func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
@@ -210,7 +211,7 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 			Ids:      []int64{oc.id},
 		}
 
-		onerror.Log(store.ExecutePlaybarAction(req))
+		onerror.Log(dialer.ExecutePlaybarAction(req))
 		return
 	}
 
@@ -228,7 +229,7 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 		reqbar.Locations = []string{loc}
 	}
 
-	if err := store.ExecutePlaybackAction(reqbar); err != nil {
+	if err := dialer.ExecutePlaybackAction(reqbar); err != nil {
 		log.Error(err)
 		return
 	}
@@ -238,7 +239,7 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 		Position: int32(pos),
 	}
 
-	onerror.Log(store.ExecuteQueueAction(reqq))
+	onerror.Log(dialer.ExecuteQueueAction(reqq))
 }
 
 func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {

@@ -9,8 +9,8 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
-	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 )
 
 var (
@@ -97,7 +97,7 @@ func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error
 func onInterruptSignal() {
 	<-interruptSignal
 
-	store.SetForceExit()
+	dialer.SetForceExit()
 	settingsMenuSignals.window.Destroy()
 }
 

@@ -43,17 +43,17 @@ func pushToStatusBarDigest() bool {
 	id := GetFocused(p)
 	var showing, duration int64
 	if id > 0 {
-		showing = store.GetPlaylistTracksCount(id)
-		pl := store.GetOpenPlaylist(id)
+		showing = store.BData.GetPlaylistTracksCount(id)
+		pl := store.BData.GetOpenPlaylist(id)
 		duration = pl.Duration
 	} else {
-		showing = store.GetQueueTracksCount(p)
-		dig := store.GetQueueDigest(p)
+		showing = store.QData.GetQueueTracksCount(p)
+		dig := store.QData.GetQueueDigest(p)
 		duration = dig.Duration
 	}
 
 	nano := time.Duration(duration) * time.Nanosecond
-	collTracks := store.GetCollectionTracksTotalCount()
+	collTracks := store.CData.GetTracksTotalCount()
 	msg := fmt.Sprintf("%v showing (%v), %v in collections", showing, nano.Truncate(time.Second), collTracks)
 
 	statusBar.RemoveAll(StatusBarDigest)

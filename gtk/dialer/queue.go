@@ -1,10 +1,10 @@
-package store
+package dialer
 
 import (
 	"context"
 
-	"github.com/gotk3/gotk3/glib"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
@@ -59,11 +59,7 @@ func subscribeToQueueStore() {
 			break
 		}
 
-		QData.Mu.Lock()
-		QData.res = res
-		QData.Mu.Unlock()
-
-		glib.IdleAdd(updateQueueModels)
+		store.QData.ProcessSubscriptionResponse(res)
 
 		if !wgdone {
 			wg.Done()
@@ -75,9 +71,7 @@ func subscribeToQueueStore() {
 func unsubscribeFromQueueStore() {
 	log.Info("Unsuubscribing from queue store")
 
-	QData.Mu.Lock()
-	id := QData.res.SubscriptionId
-	QData.Mu.Unlock()
+	id := store.QData.GetSubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

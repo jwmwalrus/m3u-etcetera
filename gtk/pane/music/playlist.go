@@ -5,8 +5,10 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 )
@@ -95,7 +97,7 @@ func (ompl *onMusicPlaylist) context(tv *gtk.TreeView, event *gdk.Event) {
 		return
 	}
 
-	pl := store.GetPlaylist(ids[0])
+	pl := store.BData.GetPlaylist(ids[0])
 	if pl == nil {
 		log.WithField("ids", ids).
 			Error("Playlist unavailable during context")
@@ -118,7 +120,7 @@ func (ompl *onMusicPlaylist) contextDelete(mi *gtk.MenuItem) {
 		Id:     ids[0],
 	}
 
-	_, err := store.ExecutePlaylistAction(req)
+	_, err := dialer.ExecutePlaylistAction(req)
 	onerror.Log(err)
 }
 
@@ -144,7 +146,7 @@ func (ompl *onMusicPlaylist) contextOpen(mi *gtk.MenuItem) {
 		Action: m3uetcpb.PlaybarAction_BAR_OPEN,
 	}
 
-	if err := store.ExecutePlaybarAction(req); err != nil {
+	if err := dialer.ExecutePlaybarAction(req); err != nil {
 		log.Error(err)
 		return
 	}
@@ -170,7 +172,7 @@ func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView,
 		return
 	}
 
-	ids, err := store.StringToIDList(values[store.PLColTreeIDList].(string))
+	ids, err := util.StringToIDList(values[store.PLColTreeIDList].(string))
 	if err != nil {
 		log.Error(err)
 		return
@@ -186,7 +188,7 @@ func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView,
 		Action: m3uetcpb.PlaybarAction_BAR_OPEN,
 	}
 
-	if err := store.ExecutePlaybarAction(req); err != nil {
+	if err := dialer.ExecutePlaybarAction(req); err != nil {
 		log.Error(err)
 		return
 	}
@@ -221,7 +223,7 @@ func (ompl *onMusicPlaylist) getPlaylistSelections(keep ...bool) (
 		log.Errorf("This should not happen!!! values:%#v", values)
 	}
 
-	ids, err := store.StringToIDList(idstr)
+	ids, err := util.StringToIDList(idstr)
 	onerror.Log(err)
 	return
 }

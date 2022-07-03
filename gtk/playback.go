@@ -3,7 +3,7 @@ package gtkui
 import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,7 +28,7 @@ func setupPlayback(signals *map[string]interface{}) (err error) {
 	(*signals)["on_control_next_clicked"] = func(btn *gtk.ToolButton) {
 		go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_NEXT)
 	}
-	(*signals)["on_progress_eb_button_press_event"] = store.OnProgressBarClicked
+	(*signals)["on_progress_eb_button_press_event"] = dialer.OnProgressBarClicked
 	return
 }
 
@@ -37,7 +37,7 @@ func onControlClicked(btn *gtk.ToolButton, action m3uetcpb.PlaybackAction) {
 		Info("ToolButton clicked fot playback action")
 
 	req := &m3uetcpb.ExecutePlaybackActionRequest{Action: action}
-	if err := store.ExecutePlaybackAction(req); err != nil {
+	if err := dialer.ExecutePlaybackAction(req); err != nil {
 		log.Error(err)
 	}
 }

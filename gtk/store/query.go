@@ -2,85 +2,38 @@ package store
 
 import (
 	"fmt"
-	"sort"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
 	log "github.com/sirupsen/logrus"
 )
 
-type queryTreeModel struct {
-	model       *gtk.TreeStore
-	filterVal   string
-	initialMode bool
+type queryData struct {
+	subscriptionID string
+	Query          []*m3uetcpb.Query
+	tracks         []*m3uetcpb.Track
+
+	mu sync.Mutex
 }
 
 var (
-	queryTree         queryTreeModel
+	// QYData query store
+	QYData = &queryData{}
+
 	queryResultsModel *gtk.ListStore
 
-	// QYData query store
-	QYData struct {
-		subscriptionID string
-		Mu             sync.Mutex
-		Query          []*m3uetcpb.Query
-		tracks         []*m3uetcpb.Track
-	}
+	queryTree queryTreeModel
 )
 
-// ClearQueryResults -
-func ClearQueryResults() {
-	model := queryResultsModel
-
-	_, ok := model.GetIterFirst()
-	if ok {
-		model.Clear()
-	}
-}
-
-// CreateQueryTreeModel creates a query model
-func CreateQueryTreeModel() (model *gtk.TreeStore, err error) {
-	log.Info("Creating query model")
-
-	queryTree.model, err = gtk.TreeStoreNew(QYTreeColumn.getTypes()...)
-	if err != nil {
-		return
-	}
-
-	model = queryTree.model
-	return
-}
-
-// CreateQueryResultsModel creates a query model
-func CreateQueryResultsModel() (model *gtk.ListStore, err error) {
-	log.Info("Creating query model")
-
-	queryResultsModel, err = gtk.ListStoreNew(TColumns.getTypes()...)
-	if err != nil {
-		return
-	}
-
-	model = queryResultsModel
-	return
-}
-
-// FilterQueryTreeBy filters the queryTree by the given value
-func FilterQueryTreeBy(val string) {
-	queryTree.filterVal = val
-	queryTree.update()
-}
-
 // GetQuery returns the query for the gven id
-func GetQuery(id int64) *m3uetcpb.Query {
-	QYData.Mu.Lock()
-	defer QYData.Mu.Unlock()
+func (qyd *queryData) GetQuery(id int64) *m3uetcpb.Query {
+	qyd.mu.Lock()
+	defer qyd.mu.Unlock()
 
-	for _, v := range QYData.Query {
+	for _, v := range qyd.Query {
 		if v.Id == id {
 			return v
 		}
@@ -88,132 +41,89 @@ func GetQuery(id int64) *m3uetcpb.Query {
 	return nil
 }
 
-// GetQueryTreeModel returns the current query model
-func GetQueryTreeModel() *gtk.TreeStore {
-	return queryTree.model
+func (qyd *queryData) GetSubscriptionID() string {
+	qyd.mu.Lock()
+	defer qyd.mu.Unlock()
+
+	return qyd.subscriptionID
 }
 
-// GetQueryResultsSelections returns the list of selected query results
-func GetQueryResultsSelections() (ids []int64, err error) {
-	model := queryResultsModel
-	if model == nil {
-		return
-	}
+func (qyd *queryData) ProcessSubscriptionResponse(
+	res *m3uetcpb.SubscribeToQueryStoreResponse) {
 
-	if model.GetNColumns() == 0 {
-		return
-	}
-
-	iter, ok := model.GetIterFirst()
-	for ok {
-		var values map[ModelColumn]interface{}
-		values, err = GetListStoreModelValues(
-			model,
-			iter,
-			[]ModelColumn{TColTrackID, TColToggleSelect},
+	appendItem := func(res *m3uetcpb.SubscribeToQueryStoreResponse) {
+		for _, qy := range qyd.Query {
+			if qy.Id == res.Query.Id {
+				return
+			}
+		}
+		qyd.Query = append(
+			qyd.Query,
+			res.Query,
 		)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		selected := values[TColToggleSelect].(bool)
-		if selected {
-			ids = append(ids, values[TColTrackID].(int64))
-		}
-		ok = model.IterNext(iter)
 	}
-	return
+
+	changeItem := func(res *m3uetcpb.SubscribeToQueryStoreResponse) {
+		qy := res.Query
+		for i := range qyd.Query {
+			if qyd.Query[i].Id == qy.Id {
+				qyd.Query[i] = qy
+				break
+			}
+		}
+	}
+
+	removeItem := func(res *m3uetcpb.SubscribeToQueryStoreResponse) {
+		n := len(qyd.Query)
+		for i := range qyd.Query {
+			if qyd.Query[i].Id == res.Query.Id {
+				qyd.Query[i] = qyd.Query[n-1]
+				qyd.Query = qyd.Query[:n-1]
+				break
+			}
+		}
+	}
+
+	qyd.mu.Lock()
+	defer qyd.mu.Unlock()
+
+	if qyd.subscriptionID == "" {
+		qyd.subscriptionID = res.SubscriptionId
+	}
+
+	switch res.Event {
+	case m3uetcpb.QueryEvent_QYE_INITIAL:
+		queryTree.initialMode = true
+		qyd.Query = []*m3uetcpb.Query{}
+	case m3uetcpb.QueryEvent_QYE_INITIAL_ITEM:
+		appendItem(res)
+	case m3uetcpb.QueryEvent_QYE_INITIAL_DONE:
+		queryTree.initialMode = false
+	case m3uetcpb.QueryEvent_QYE_ITEM_ADDED:
+		appendItem(res)
+	case m3uetcpb.QueryEvent_QYE_ITEM_CHANGED:
+		changeItem(res)
+	case m3uetcpb.QueryEvent_QYE_ITEM_REMOVED:
+		removeItem(res)
+	}
+
+	if !queryTree.initialMode {
+		glib.IdleAdd(queryTree.update)
+	}
 }
 
-func (qyt *queryTreeModel) update() bool {
-	log.Info("Updating query model")
+func (qyd *queryData) UpdateQueryByResults(res *m3uetcpb.QueryByResponse) int {
+	qyd.mu.Lock()
+	defer qyd.mu.Unlock()
 
-	model := qyt.model
-	if model == nil {
-		return false
-	}
+	qyd.tracks = res.Tracks
+	count := len(res.Tracks)
 
-	if model.GetNColumns() == 0 {
-		return false
-	}
-
-	type queryInfo struct {
-		id         int64
-		name       string
-		kw         string
-		hasCBounds bool
-	}
-
-	_, ok := model.GetIterFirst()
-	if ok {
-		model.Clear()
-	}
-
-	getKeywords := func(qy *m3uetcpb.Query) string {
-		list := strings.Split(qy.Name, " ")
-		if qy.Description != "" {
-			list = append(
-				list,
-				strings.Split(strings.ToLower(qy.Description), " ")...,
-			)
-		}
-		if qy.Params != "" {
-			if qp, err := qparams.ParseParams(qy.Params); err == nil {
-				for _, x := range qp {
-					list = append(
-						list,
-						strings.Split(strings.ToLower(x.Val), " ")...,
-					)
-				}
-			}
-		}
-		return strings.Join(list, ",")
-	}
-
-	all := []queryInfo{}
-
-	QYData.Mu.Lock()
-	for _, qy := range QYData.Query {
-		if qyt.filterVal != "" {
-			kw := getKeywords(qy)
-			match := false
-			for _, s := range strings.Split(qyt.filterVal, " ") {
-				match = match || strings.Contains(kw, s)
-				if match {
-					break
-				}
-			}
-			if !match {
-				continue
-			}
-		}
-
-		qi := queryInfo{id: qy.Id, name: qy.Name, kw: getKeywords(qy)}
-		if len(qy.CollectionIds) > 0 {
-			qi.hasCBounds = true
-		}
-		all = append(all, qi)
-	}
-	QYData.Mu.Unlock()
-
-	sort.SliceStable(all, func(i, j int) bool {
-		return all[i].name < all[j].name
-	})
-
-	for _, qi := range all {
-		iter := model.Append(nil)
-		name := qi.name
-		if qi.hasCBounds {
-			name += " (C)"
-		}
-		model.SetValue(iter, int(QYColTree), qi.name)
-		model.SetValue(iter, int(QYColTreeIDList), strconv.FormatInt(qi.id, 10))
-		model.SetValue(iter, int(QYColTreeKeywords), qi.kw)
-	}
-	return false
+	glib.IdleAdd(qyd.updateQueryResults)
+	return count
 }
 
-func updateQueryResults() bool {
+func (qyd *queryData) updateQueryResults() bool {
 	log.Info("Updating query results")
 
 	model := queryResultsModel
@@ -229,9 +139,11 @@ func updateQueryResults() bool {
 		model.Clear()
 	}
 
-	QYData.Mu.Lock()
+	qyd.mu.Lock()
+	defer qyd.mu.Unlock()
+
 	var iter *gtk.TreeIter
-	for i, t := range QYData.tracks {
+	for i, t := range qyd.tracks {
 		iter = model.Append()
 		dur := time.Duration(t.Duration) * time.Nanosecond
 		err := model.Set(
@@ -298,6 +210,60 @@ func updateQueryResults() bool {
 			return false
 		}
 	}
-	QYData.Mu.Unlock()
 	return false
+}
+
+// ClearQueryResults -
+func ClearQueryResults() {
+	model := queryResultsModel
+
+	_, ok := model.GetIterFirst()
+	if ok {
+		model.Clear()
+	}
+}
+
+// CreateQueryResultsModel creates a query model
+func CreateQueryResultsModel() (model *gtk.ListStore, err error) {
+	log.Info("Creating query model")
+
+	queryResultsModel, err = gtk.ListStoreNew(TColumns.getTypes()...)
+	if err != nil {
+		return
+	}
+
+	model = queryResultsModel
+	return
+}
+
+// GetQueryResultsSelections returns the list of selected query results
+func GetQueryResultsSelections() (ids []int64, err error) {
+	model := queryResultsModel
+	if model == nil {
+		return
+	}
+
+	if model.GetNColumns() == 0 {
+		return
+	}
+
+	iter, ok := model.GetIterFirst()
+	for ok {
+		var values map[ModelColumn]interface{}
+		values, err = GetListStoreModelValues(
+			model,
+			iter,
+			[]ModelColumn{TColTrackID, TColToggleSelect},
+		)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		selected := values[TColToggleSelect].(bool)
+		if selected {
+			ids = append(ids, values[TColTrackID].(int64))
+		}
+		ok = model.IterNext(iter)
+	}
+	return
 }

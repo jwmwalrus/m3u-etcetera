@@ -8,6 +8,7 @@ import (
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -57,7 +58,7 @@ func (te *playlistTreeEntry) appendNode(model *gtk.TreeStore, iter *gtk.TreeIter
 		int(PLColTree),
 		te.label+suffix,
 	)
-	model.SetValue(pliter, int(PLColTreeIDList), IDListToString(te.ids))
+	model.SetValue(pliter, int(PLColTreeIDList), util.IDListToString(te.ids))
 	model.SetValue(pliter, int(PLColTreeIsGroup), te.et == playlistGroupEntry)
 
 	for i := range te.child {
@@ -169,8 +170,8 @@ func (bt *playbarTree) update() bool {
 			return strings.Join(list, ",")
 		}
 
-		BData.Mu.Lock()
-		for _, pl := range BData.Playlist {
+		BData.mu.Lock()
+		for _, pl := range BData.playlist {
 			if pl.Transient {
 				continue
 			}
@@ -199,7 +200,7 @@ func (bt *playbarTree) update() bool {
 			}
 			root[idx].completeTree(level+1, guide, pl)
 		}
-		BData.Mu.Unlock()
+		BData.mu.Unlock()
 
 		sort.Slice(root, func(i, j int) bool {
 			return root[i].label < root[j].label

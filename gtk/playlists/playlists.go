@@ -6,6 +6,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	log "github.com/sirupsen/logrus"
 )
@@ -78,7 +79,7 @@ func createPlaylist(btn *gtk.Button, p m3uetcpb.Perspective) {
 		Action:      m3uetcpb.PlaylistAction_PL_CREATE,
 		Perspective: p,
 	}
-	res, err := store.ExecutePlaylistAction(req)
+	res, err := dialer.ExecutePlaylistAction(req)
 	if err != nil {
 		log.Error(err)
 		return

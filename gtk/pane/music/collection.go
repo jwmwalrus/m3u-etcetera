@@ -7,8 +7,10 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -91,7 +93,7 @@ func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
 			TrackIds:   ids,
 		}
 
-		if err := store.ExecutePlaylistTrackAction(req); err != nil {
+		if err := dialer.ExecutePlaylistTrackAction(req); err != nil {
 			log.Error(err)
 			return
 		}
@@ -105,7 +107,7 @@ func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
 			Ids:    ids,
 		}
 
-		if err := store.ExecuteQueueAction(req); err != nil {
+		if err := dialer.ExecuteQueueAction(req); err != nil {
 			log.Error(err)
 			return
 		}
@@ -124,7 +126,7 @@ func (omc *onMusicCollections) contextPlayNow(mi *gtk.MenuItem) {
 		Ids:    ids,
 	}
 
-	if err := store.ExecutePlaybackAction(req); err != nil {
+	if err := dialer.ExecutePlaybackAction(req); err != nil {
 		log.Error(err)
 		return
 	}
@@ -144,7 +146,7 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
 	}
 	log.Debugf("Doouble-clicked column value: %v", values[store.CColTree])
 
-	ids, err := store.StringToIDList(values[store.CColTreeIDList].(string))
+	ids, err := util.StringToIDList(values[store.CColTreeIDList].(string))
 	if err != nil {
 		log.Error(err)
 		return
@@ -159,7 +161,7 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
 			TrackIds:   ids,
 		}
 
-		if err := store.ExecutePlaylistTrackAction(req); err != nil {
+		if err := dialer.ExecutePlaylistTrackAction(req); err != nil {
 			log.Error(err)
 			return
 		}
@@ -169,7 +171,7 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
 			Ids:    ids,
 		}
 
-		if err := store.ExecuteQueueAction(req); err != nil {
+		if err := dialer.ExecuteQueueAction(req); err != nil {
 			log.Error(err)
 			return
 		}
