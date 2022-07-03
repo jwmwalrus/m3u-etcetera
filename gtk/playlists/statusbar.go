@@ -13,7 +13,7 @@ import (
 
 var (
 	statusBar       *gtk.Statusbar
-	StatusBarDigest uint
+	statusBarDigest uint
 )
 
 func setupStatusbar() (err error) {
@@ -24,15 +24,16 @@ func setupStatusbar() (err error) {
 		return
 	}
 
-	StatusBarDigest = statusBar.GetContextId("Active Digest")
-	statusBar.Push(StatusBarDigest, "Ready")
+	statusBarDigest = statusBar.GetContextId("Active Digest")
+	statusBar.Push(statusBarDigest, "Ready")
 	return
 }
 
+// UpdateStatusBar updates the status bar with a message suitable to the given context
 func UpdateStatusBar(context uint) {
 	time.Sleep(1 * time.Second)
 	switch context {
-	case StatusBarDigest:
+	case statusBarDigest:
 		glib.IdleAdd(pushToStatusBarDigest)
 	default:
 	}
@@ -56,8 +57,8 @@ func pushToStatusBarDigest() bool {
 	collTracks := store.CData.GetTracksTotalCount()
 	msg := fmt.Sprintf("%v showing (%v), %v in collections", showing, nano.Truncate(time.Second), collTracks)
 
-	statusBar.RemoveAll(StatusBarDigest)
-	statusBar.Push(StatusBarDigest, msg)
+	statusBar.RemoveAll(statusBarDigest)
+	statusBar.Push(statusBarDigest, msg)
 
 	return false
 }

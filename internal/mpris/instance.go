@@ -10,6 +10,7 @@ import (
 	"github.com/godbus/dbus/v5/prop"
 )
 
+// MPRIs interfaces
 const (
 	RootPath            = "/org/mpris/MediaPlayer2"
 	RootInterface       = "org.mpris.MediaPlayer2"
@@ -43,12 +44,14 @@ func (*Instance) introspectInterface() introspect.Interface {
 	return introspect.IntrospectData
 }
 
+// Delete closes the instance connection
 func (i *Instance) Delete() error {
 	i.Conn.ReleaseName(serverName)
 	i.Conn.Close()
 	return nil
 }
 
+// Setup sets the player
 func (i *Instance) Setup(p Player) (err error) {
 	mp2 := &MediaPlayer2{i}
 	err = i.Conn.Export(mp2, RootPath, RootInterface)

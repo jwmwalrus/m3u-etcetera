@@ -203,6 +203,7 @@ func (pl *Playlist) DeleteDynamicTracks(tx *gorm.DB) {
 	}
 }
 
+// Duration returns the duration of the playlist
 func (pl *Playlist) Duration() int64 {
 	var d sql.NullInt64
 	err := db.Raw("SELECT sum(t.duration) FROM track t JOIN playlist_track pt ON pt.track_id = t.id WHERE pt.playlist_id = ?", pl.ID).

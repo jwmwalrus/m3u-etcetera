@@ -199,7 +199,9 @@ var (
 	perspectiveQueuesList []m3uetcpb.Perspective
 
 	// CColumns collection columns
-	CColumns       storeColumns
+	CColumns storeColumns
+
+	// CActionColumns collection actions columns
 	CActionColumns storeColumns
 
 	// TColumns tracks columns

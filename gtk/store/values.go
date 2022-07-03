@@ -8,6 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GetTreeSelectionValue returns the value of the tree selection for the given
+// column
 func GetTreeSelectionValue(sel *gtk.TreeSelection, col ModelColumn) (
 	value interface{}, err error) {
 
@@ -35,6 +37,8 @@ func GetTreeSelectionValue(sel *gtk.TreeSelection, col ModelColumn) (
 	return
 }
 
+// GetTreeSelectionValues returns the values of the tree selection for the
+// given columns
 func GetTreeSelectionValues(sel *gtk.TreeSelection, cols []ModelColumn) (
 	values map[ModelColumn]interface{}, err error) {
 
@@ -51,6 +55,8 @@ func GetTreeSelectionValues(sel *gtk.TreeSelection, cols []ModelColumn) (
 	return
 }
 
+// GetListStoreModelValue returns the value of the list store for the given
+// column at the given tree-iter
 func GetListStoreModelValue(model *gtk.ListStore, iter *gtk.TreeIter,
 	col ModelColumn) (value interface{}, err error) {
 
@@ -71,6 +77,8 @@ func GetListStoreModelValue(model *gtk.ListStore, iter *gtk.TreeIter,
 	return
 }
 
+// GetListStoreModelValues returns the values of the list store for the given
+// columns at the given tree-iter
 func GetListStoreModelValues(model *gtk.ListStore, iter *gtk.TreeIter,
 	cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
 
@@ -87,6 +95,8 @@ func GetListStoreModelValues(model *gtk.ListStore, iter *gtk.TreeIter,
 	return
 }
 
+// GetListStoreValue returns the value of the list view for the given column at
+// the given tree-path
 func GetListStoreValue(tv *gtk.TreeView, path *gtk.TreePath,
 	col ModelColumn) (value interface{}, err error) {
 
@@ -124,6 +134,8 @@ func GetListStoreValue(tv *gtk.TreeView, path *gtk.TreePath,
 	return
 }
 
+// GetListStoreValues returns the values of the list view for the given columns
+// at the given tree-path
 func GetListStoreValues(tv *gtk.TreeView, path *gtk.TreePath,
 	cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
 
@@ -140,6 +152,8 @@ func GetListStoreValues(tv *gtk.TreeView, path *gtk.TreePath,
 	return
 }
 
+// GetTreeStoreValue returns the value of the list view for the given column at
+// the given tree-path
 func GetTreeStoreValue(tv *gtk.TreeView, path *gtk.TreePath,
 	col ModelColumn) (value interface{}, err error) {
 
@@ -177,6 +191,8 @@ func GetTreeStoreValue(tv *gtk.TreeView, path *gtk.TreePath,
 	return
 }
 
+// GetTreeStoreValues returns the values of the list view for the given columns
+// at the given tree-path
 func GetTreeStoreValues(tv *gtk.TreeView, path *gtk.TreePath,
 	cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
 

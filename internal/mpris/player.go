@@ -40,6 +40,7 @@ type Player interface {
 	CanControl() bool
 }
 
+// PlayerIntrospectInterface returns the instrospection for the player
 func PlayerIntrospectInterface() introspect.Interface {
 	return introspect.Interface{
 		Name: "org.mpris.MediaPlayer2.Player",

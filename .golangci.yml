@@ -30,6 +30,7 @@ linters-settings:
     # Run `go tool vet help` to see all analyzers.
     disable:
       - fieldalignment
+      - stdmethods
 
   nolintlint:
     require-explanation: true
@@ -67,4 +68,4 @@ linters:
 
 
 issues:
-  max-same-issues: 50
+  exclude-use-default: false

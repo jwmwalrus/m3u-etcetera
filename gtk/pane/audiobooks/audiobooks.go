@@ -9,6 +9,7 @@ var (
 	audiobooksQueueSignals *playlists.OnQueue
 )
 
+// Setup sets the audiobooks pane
 func Setup(signals *map[string]interface{}) (err error) {
 	audiobooksQueueSignals, err = playlists.CreateQueue(
 		m3uetcpb.Perspective_AUDIOBOOKS,

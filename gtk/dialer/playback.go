@@ -24,6 +24,8 @@ func ExecutePlaybackAction(req *m3uetcpb.ExecutePlaybackActionRequest) (err erro
 	return
 }
 
+// OnProgressBarClicked is the signal handler for the button-press-event on
+// the event-box that wraps the progress bar
 func OnProgressBarClicked(eb *gtk.EventBox, event *gdk.Event) {
 	_, _, duration, status := store.PbData.GetCurrentPlayback()
 

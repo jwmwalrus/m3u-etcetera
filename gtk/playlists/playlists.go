@@ -29,7 +29,7 @@ func Setup(signals *map[string]interface{}) (err error) {
 		createPlaylist(btn, m3uetcpb.Perspective_MUSIC)
 	}
 	(*signals)["on_music_playbar_switch_page"] = func(nb *gtk.Notebook) {
-		go UpdateStatusBar(StatusBarDigest)
+		go UpdateStatusBar(statusBarDigest)
 	}
 
 	if err = builder.AddFromFile("ui/pane/playlist-dialog.ui"); err != nil {
@@ -69,6 +69,8 @@ func GetFocused(p m3uetcpb.Perspective) int64 {
 	return 0
 }
 
+// RequestFocus registers a focus request for the given playlist ID on the
+// given perspective
 func RequestFocus(p m3uetcpb.Perspective, id int64) {
 	focusRequest.p = p
 	focusRequest.id = id

@@ -9,6 +9,7 @@ var (
 	podcastsQueueSignals *playlists.OnQueue
 )
 
+// Setup sets the podcasts pane
 func Setup(signals *map[string]interface{}) (err error) {
 
 	podcastsQueueSignals, err = playlists.CreateQueue(

@@ -13,6 +13,7 @@ var (
 	data *embed.FS
 )
 
+// AddFromFile - adds a new resource from the given embedded path
 func AddFromFile(path string) error {
 	bv, err := data.ReadFile(path)
 	if err != nil {
@@ -21,10 +22,12 @@ func AddFromFile(path string) error {
 	return app.AddFromString(string(bv))
 }
 
+// ConnectSignals connects the signals map
 func ConnectSignals(signals map[string]interface{}) {
 	app.ConnectSignals(signals)
 }
 
+// GetApplicationWindow returns the main application window
 func GetApplicationWindow() (window *gtk.ApplicationWindow, err error) {
 	obj, err := app.GetObject("window")
 	if err != nil {
@@ -37,6 +40,7 @@ func GetApplicationWindow() (window *gtk.ApplicationWindow, err error) {
 	return
 }
 
+// PixbufNewFromFile creates a pixbuf from the given file path
 func PixbufNewFromFile(path string) (*gdk.Pixbuf, error) {
 	bv, err := data.ReadFile(path)
 	if err != nil {
@@ -46,6 +50,7 @@ func PixbufNewFromFile(path string) (*gdk.Pixbuf, error) {
 	return gdk.PixbufNewFromDataOnly(bv)
 }
 
+// Setup -
 func Setup(fs *embed.FS) (b *gtk.Builder, err error) {
 	data = fs
 	var bv []byte

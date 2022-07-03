@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GetActivePerspective returns the active perspective
 func GetActivePerspective() m3uetcpb.Perspective {
 	// TODO: implement
 	return m3uetcpb.Perspective_MUSIC
@@ -26,6 +27,7 @@ type perspectiveData struct {
 }
 
 var (
+	// PerspData perspective data
 	PerspData = &perspectiveData{}
 )
 

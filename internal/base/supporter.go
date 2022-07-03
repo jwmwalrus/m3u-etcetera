@@ -100,7 +100,7 @@ func IsSupportedPlaylistURL(s string) bool {
 	return IsSupportedPlaylist(path)
 }
 
-// IsSupportedFile returns true if the path is supported
+// IsSupportedPlaylist returns true if the path is supported
 func IsSupportedPlaylist(path string) bool {
 	return slices.Contains(SupportedPlaylistExtensions, filepath.Ext(path))
 }

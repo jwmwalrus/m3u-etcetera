@@ -6,6 +6,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
+// GetButton -
 func GetButton(id string) (btn *gtk.Button, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -20,6 +21,7 @@ func GetButton(id string) (btn *gtk.Button, err error) {
 	return
 }
 
+// GetCheckButton -
 func GetCheckButton(id string) (c *gtk.CheckButton, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -34,6 +36,7 @@ func GetCheckButton(id string) (c *gtk.CheckButton, err error) {
 	return
 }
 
+// GetComboBoxText -
 func GetComboBoxText(id string) (cbt *gtk.ComboBoxText, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -48,6 +51,7 @@ func GetComboBoxText(id string) (cbt *gtk.ComboBoxText, err error) {
 	return
 }
 
+// GetDialog -
 func GetDialog(id string) (dlg *gtk.Dialog, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -62,6 +66,7 @@ func GetDialog(id string) (dlg *gtk.Dialog, err error) {
 	return
 }
 
+// GetEntry -
 func GetEntry(id string) (e *gtk.Entry, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -77,6 +82,7 @@ func GetEntry(id string) (e *gtk.Entry, err error) {
 	return
 }
 
+// GetFileChooserButton -
 func GetFileChooserButton(id string) (fcb *gtk.FileChooserButton, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -92,6 +98,7 @@ func GetFileChooserButton(id string) (fcb *gtk.FileChooserButton, err error) {
 	return
 }
 
+// GetHeaderBar -
 func GetHeaderBar(id string) (hb *gtk.HeaderBar, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -108,6 +115,7 @@ func GetHeaderBar(id string) (hb *gtk.HeaderBar, err error) {
 	return
 }
 
+// GetImage -
 func GetImage(id string) (im *gtk.Image, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -123,6 +131,7 @@ func GetImage(id string) (im *gtk.Image, err error) {
 	return
 }
 
+// GetLabel -
 func GetLabel(id string) (l *gtk.Label, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -138,6 +147,7 @@ func GetLabel(id string) (l *gtk.Label, err error) {
 	return
 }
 
+// GetListStore -
 func GetListStore(id string) (s *gtk.ListStore, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -153,6 +163,7 @@ func GetListStore(id string) (s *gtk.ListStore, err error) {
 	return
 }
 
+// GetMenu -
 func GetMenu(id string) (m *gtk.Menu, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -168,6 +179,7 @@ func GetMenu(id string) (m *gtk.Menu, err error) {
 	return
 }
 
+// GetMenuItem -
 func GetMenuItem(id string) (mi *gtk.MenuItem, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -183,6 +195,7 @@ func GetMenuItem(id string) (mi *gtk.MenuItem, err error) {
 	return
 }
 
+// GetNotebook -
 func GetNotebook(id string) (nb *gtk.Notebook, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -197,6 +210,7 @@ func GetNotebook(id string) (nb *gtk.Notebook, err error) {
 	return
 }
 
+// GetPane -
 func GetPane(id string) (p *gtk.Paned, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -212,6 +226,7 @@ func GetPane(id string) (p *gtk.Paned, err error) {
 	return
 }
 
+// GetPopoverMenu -
 func GetPopoverMenu(id string) (pm *gtk.PopoverMenu, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -227,6 +242,7 @@ func GetPopoverMenu(id string) (pm *gtk.PopoverMenu, err error) {
 	return
 }
 
+// GetProgressBar -
 func GetProgressBar(id string) (p *gtk.ProgressBar, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -242,6 +258,7 @@ func GetProgressBar(id string) (p *gtk.ProgressBar, err error) {
 	return
 }
 
+// GetSpinButton -
 func GetSpinButton(id string) (sb *gtk.SpinButton, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -257,6 +274,7 @@ func GetSpinButton(id string) (sb *gtk.SpinButton, err error) {
 	return
 }
 
+// GetStatusBar /
 func GetStatusBar(id string) (sb *gtk.Statusbar, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -272,6 +290,7 @@ func GetStatusBar(id string) (sb *gtk.Statusbar, err error) {
 	return
 }
 
+// GetTextView -
 func GetTextView(id string) (tv *gtk.TextView, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -287,6 +306,7 @@ func GetTextView(id string) (tv *gtk.TextView, err error) {
 	return
 }
 
+// GetToggleButton -
 func GetToggleButton(id string) (btn *gtk.ToggleButton, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -301,6 +321,7 @@ func GetToggleButton(id string) (btn *gtk.ToggleButton, err error) {
 	return
 }
 
+// GetToolButton -
 func GetToolButton(id string) (btn *gtk.ToolButton, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -316,6 +337,7 @@ func GetToolButton(id string) (btn *gtk.ToolButton, err error) {
 	return
 }
 
+// GetTreeStore -
 func GetTreeStore(id string) (s *gtk.TreeStore, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {
@@ -331,6 +353,7 @@ func GetTreeStore(id string) (s *gtk.TreeStore, err error) {
 	return
 }
 
+// GetTreeView -
 func GetTreeView(id string) (s *gtk.TreeView, err error) {
 	obj, err := app.GetObject(id)
 	if err != nil {

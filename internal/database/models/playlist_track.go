@@ -106,6 +106,7 @@ func (pt *PlaylistTrack) GetIgnore() bool {
 // SetIgnore implements the Poser interface
 func (pt *PlaylistTrack) SetIgnore(_ bool) {}
 
+// GetTrackAfter returns the track after the current one
 func (pt *PlaylistTrack) GetTrackAfter(goingBack bool) (*PlaylistTrack, error) {
 	pl := pt.Playlist
 	if pl.ID == 0 {

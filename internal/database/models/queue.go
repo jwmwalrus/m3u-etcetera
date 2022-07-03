@@ -156,6 +156,7 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
+// IsEmpty returns true if there are no tracks in the queue
 func (q *Queue) IsEmpty() bool {
 	s := []QueueTrack{}
 	db.Where("queue_id = ? AND played = 0", q.ID).Order("position").Find(&s)

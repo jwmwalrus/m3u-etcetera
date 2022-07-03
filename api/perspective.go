@@ -16,6 +16,7 @@ type PerspectiveSvc struct {
 	m3uetcpb.UnimplementedPerspectiveSvcServer
 }
 
+// GetActivePerspective implements m3uetcpb.PerspectiveSvcServer
 func (p *PerspectiveSvc) GetActivePerspective(_ context.Context,
 	_ *m3uetcpb.Empty) (*m3uetcpb.GetActivePerspectiveResponse, error) {
 	res := &m3uetcpb.GetActivePerspectiveResponse{
@@ -25,6 +26,7 @@ func (p *PerspectiveSvc) GetActivePerspective(_ context.Context,
 	return res, nil
 }
 
+// SetActivePerspective implements m3uetcpb.PerspectiveSvcServer
 func (p *PerspectiveSvc) SetActivePerspective(_ context.Context,
 	req *m3uetcpb.SetActivePerspectiveRequest) (*m3uetcpb.Empty, error) {
 
@@ -38,6 +40,7 @@ func (p *PerspectiveSvc) SetActivePerspective(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
+// SubscribeToPerspective implements m3uetcpb.PerspectiveSvcServer
 func (p *PerspectiveSvc) SubscribeToPerspective(_ *m3uetcpb.Empty,
 	stream m3uetcpb.PerspectiveSvc_SubscribeToPerspectiveServer) error {
 
@@ -74,6 +77,7 @@ sLoop:
 	return nil
 }
 
+// UnsubscribeFromPerspective implements m3uetcpb.PerspectiveSvcServer
 func (p *PerspectiveSvc) UnsubscribeFromPerspective(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromPerspectiveRequest) (*m3uetcpb.Empty, error) {
 

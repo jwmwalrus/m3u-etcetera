@@ -120,6 +120,8 @@ func GetState() gst.State {
 	return eng.state
 }
 
+// HasNextStream returns true if there is a playback/queue/playlist track after
+// the current one
 func HasNextStream() bool {
 	pb := &models.Playback{}
 	if pb.GetNextToPlay() != nil {

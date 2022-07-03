@@ -22,10 +22,12 @@ type Player struct {
 	lastPlaybackStatus string
 }
 
+// IntrospectInterface implements the mpris.Player interface
 func (*Player) IntrospectInterface() introspect.Interface {
 	return mpris.PlayerIntrospectInterface()
 }
 
+// Properties implements the mpris.Player interface
 func (p *Player) Properties() map[string]*prop.Prop {
 	return map[string]*prop.Prop{
 		"PlaybackStatus": {Value: p.PlaybackStatus(), Emit: prop.EmitTrue},
@@ -134,7 +136,7 @@ func (p *Player) Rate(in float64) (float64, *dbus.Error) {
 	return float64(1.), nil
 }
 
-// LoopStatus implements org.mpris.MediaPlayer2.Player interface
+// Shuffle implements org.mpris.MediaPlayer2.Player interface
 func (p *Player) Shuffle(b bool) (bool, *dbus.Error) {
 	// TODO: implement
 	return false, nil

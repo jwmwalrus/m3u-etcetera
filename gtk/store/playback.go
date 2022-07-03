@@ -42,6 +42,7 @@ const (
 )
 
 var (
+	// PbData playback data
 	PbData = &playbackData{}
 )
 

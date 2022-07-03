@@ -114,6 +114,7 @@ func GetActivePerspectiveName() string {
 	return GetActivePerspectiveIndex().String()
 }
 
+// PerspectiveDigest defines the perspective digest/summary
 type PerspectiveDigest struct {
 	Idx      PerspectiveIndex
 	Duration int64

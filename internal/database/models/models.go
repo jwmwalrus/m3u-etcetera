@@ -74,6 +74,7 @@ func SetConnection(conn *gorm.DB) {
 	db = conn
 }
 
+// DoInitialCleanup performs cleanup upon DB start
 func DoInitialCleanup() {
 	tx := db.Session(&gorm.Session{SkipHooks: true})
 

@@ -8,11 +8,13 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// Renderer defines a gtk.ICellRenderer generator
 type Renderer struct {
 	Model   *gtk.ListStore
 	Columns storeColumns
 }
 
+// GetActivatable returns an activatable cell renderer
 func (r *Renderer) GetActivatable(col ModelColumn) (gtk.ICellRenderer, error) {
 	if !slices.Contains(r.Columns.GetActivatableColumns(), col) {
 		return nil, fmt.Errorf("The provided column is not activatable: %v", col)
@@ -36,6 +38,7 @@ func (r *Renderer) GetActivatable(col ModelColumn) (gtk.ICellRenderer, error) {
 	return renderer, nil
 }
 
+// GetEditable returns an editable cell renderer
 func (r *Renderer) GetEditable(col ModelColumn) (gtk.ICellRenderer, error) {
 	if !slices.Contains(r.Columns.GetEditableColumns(), col) {
 		return nil, fmt.Errorf("The provided column is not editable: %v", col)
