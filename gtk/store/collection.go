@@ -32,14 +32,17 @@ type collectionData struct {
 }
 
 var (
+	// CData collection store
+	CData = &collectionData{}
+
 	cTree = &collectionTree{}
 
 	collectionModel        *gtk.ListStore
 	collectionActionsModel *gtk.ListStore
 	cProgress              *gtk.ProgressBar
 
-	// CData collection store
-	CData = &collectionData{}
+	collectionNameMap          map[int64]string
+	collectionTreeHierarchyMap map[string]collectionTreeHierarchy
 )
 
 // CollectionAlreadyExists returns true if the location and the name are not
@@ -235,6 +238,17 @@ func (cd *collectionData) ProcessSubscriptionResponse(res *m3uetcpb.SubscribeToC
 	}
 }
 
+func (cd *collectionData) SwitchHierarchyTo(id string, grouped bool) {
+	if cTree.initialMode || cTree.scanningMode {
+		return
+	}
+
+	cTree.hierarchy = collectionTreeHierarchyMap[id]
+	cTree.groupByCollection = grouped
+
+	glib.IdleAdd(cTree.update)
+}
+
 func (cd *collectionData) appendCDataItem(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
 	switch res.Item.(type) {
 	case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
@@ -306,6 +320,48 @@ func (cd *collectionData) removeCDataItem(res *m3uetcpb.SubscribeToCollectionSto
 	}
 }
 
+func (cd *collectionData) updateCollectionActionsModel() bool {
+	log.Info("Updating collection actions model")
+
+	model := collectionActionsModel
+	if model == nil {
+		return false
+	}
+
+	if model.GetNColumns() == 0 {
+		return false
+	}
+
+	_, ok := model.GetIterFirst()
+	if ok {
+		model.Clear()
+	}
+
+	if len(cd.collection) > 0 {
+		var iter *gtk.TreeIter
+		for _, c := range cd.collection {
+			iter = model.Append()
+			err := model.Set(
+				iter,
+				[]int{
+					int(CActionColCollectionID),
+					int(CActionColName),
+					int(CActionColRescan),
+					int(CActionColRemove),
+				},
+				[]interface{}{
+					c.Id,
+					c.Name,
+					false,
+					false,
+				},
+			)
+			onerror.Log(err)
+		}
+	}
+	return false
+}
+
 func (cd *collectionData) updateCollectionModel() bool {
 	if cTree.initialMode {
 		return false
@@ -372,46 +428,14 @@ func (cd *collectionData) updateCollectionModel() bool {
 	return false
 }
 
-func (cd *collectionData) updateCollectionActionsModel() bool {
-	log.Info("Updating collection actions model")
+func (cd *collectionData) updateCollectionNamesMap() {
+	cd.mu.Lock()
+	defer cd.mu.Unlock()
 
-	model := collectionActionsModel
-	if model == nil {
-		return false
+	collectionNameMap = make(map[int64]string)
+	for _, c := range cd.collection {
+		collectionNameMap[c.Id] = c.Name
 	}
-
-	if model.GetNColumns() == 0 {
-		return false
-	}
-
-	_, ok := model.GetIterFirst()
-	if ok {
-		model.Clear()
-	}
-
-	if len(cd.collection) > 0 {
-		var iter *gtk.TreeIter
-		for _, c := range cd.collection {
-			iter = model.Append()
-			err := model.Set(
-				iter,
-				[]int{
-					int(CActionColCollectionID),
-					int(CActionColName),
-					int(CActionColRescan),
-					int(CActionColRemove),
-				},
-				[]interface{}{
-					c.Id,
-					c.Name,
-					false,
-					false,
-				},
-			)
-			onerror.Log(err)
-		}
-	}
-	return false
 }
 
 func (cd *collectionData) updateScanningProgress() bool {
@@ -503,4 +527,20 @@ func GetCollectionModel() *gtk.ListStore {
 // GetCollectionTreeModel returns the current collection tree model
 func GetCollectionTreeModel() *gtk.TreeStore {
 	return cTree.model
+}
+
+func init() {
+	collectionNameMap = make(map[int64]string)
+
+	hl := []collectionTreeHierarchy{
+		ArtistYearAlbumTree,
+		ArtistAlbumTree,
+		AlbumTree,
+		GenreArtistAlbumTree,
+		YearArtistAlbumTree,
+	}
+	collectionTreeHierarchyMap = make(map[string]collectionTreeHierarchy)
+	for _, h := range hl {
+		collectionTreeHierarchyMap[h.String()] = h
+	}
 }

@@ -29,6 +29,8 @@ func Setup(signals *map[string]interface{}) (err error) {
 	(*signals)["on_collections_view_context_play_now_activate"] = musicCollectionsSignals.contextPlayNow
 	(*signals)["on_collections_view_row_activated"] = musicCollectionsSignals.dblClicked
 	(*signals)["on_collections_filter_search_changed"] = musicCollectionsSignals.filtered
+	(*signals)["on_collections_hierarchy_changed"] = musicCollectionsSignals.hierarchyChanged
+	(*signals)["on_collections_hierarchy_grouped_toggled"] = musicCollectionsSignals.hierarchyGroupToggled
 
 	musicQueueSignals, err = playlists.CreateQueue(m3uetcpb.Perspective_MUSIC, "music_queue_view", "music_queue_view_context")
 	if err != nil {

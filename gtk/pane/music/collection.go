@@ -16,6 +16,9 @@ import (
 
 type onMusicCollections struct {
 	*onContext
+
+	hierarchy        *gtk.ComboBoxText
+	hierarchyGrouped *gtk.ToggleButton
 }
 
 func createMusicCollections() (omc *onMusicCollections, err error) {
@@ -23,6 +26,16 @@ func createMusicCollections() (omc *onMusicCollections, err error) {
 
 	omc = &onMusicCollections{
 		onContext: &onContext{ct: collectionContext},
+	}
+
+	omc.hierarchy, err = builder.GetComboBoxText("collections_hierarchy")
+	if err != nil {
+		return
+	}
+
+	omc.hierarchyGrouped, err = builder.GetToggleButton("collections_hierarchy_grouped")
+	if err != nil {
+		return
 	}
 
 	omc.view, err = builder.GetTreeView("collections_view")
@@ -185,5 +198,28 @@ func (omc *onMusicCollections) filtered(se *gtk.SearchEntry) {
 		return
 	}
 	store.FilterCollectionTreeBy(text)
+}
 
+func (omc *onMusicCollections) hierarchyChanged(cbt *gtk.ComboBoxText) {
+	id := cbt.GetActiveID()
+	log.WithField("activeText", id).
+		Info("Collection hierarchy changed")
+
+	grouped := omc.hierarchyGrouped.GetActive()
+
+	go func() {
+		store.CData.SwitchHierarchyTo(id, grouped)
+	}()
+}
+
+func (omc *onMusicCollections) hierarchyGroupToggled(cb *gtk.ToggleButton) {
+	grouped := cb.GetActive()
+	log.WithField("grouped", grouped).
+		Info("Collection hierarchy group toggled")
+
+	id := omc.hierarchy.GetActiveID()
+
+	go func() {
+		store.CData.SwitchHierarchyTo(id, grouped)
+	}()
 }

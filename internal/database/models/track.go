@@ -113,6 +113,7 @@ func (t *Track) ToProtobuf() proto.Message {
 	out.Discnumber = int32(t.Discnumber)
 	out.Disctotal = int32(t.Disctotal)
 	out.Playcount = int32(t.Playcount)
+	out.CollectionId = t.CollectionID
 	out.Lastplayed = t.Lastplayed
 	out.CreatedAt = t.CreatedAt
 	out.UpdatedAt = t.UpdatedAt
@@ -388,47 +389,49 @@ func (t *Track) updateTags() (err error) {
 	return
 }
 
-// DeleteDanglingTrack removes a non-existent track from collection
-func DeleteDanglingTrack(id int64, withRemote bool) {
-	t := Track{}
-	err := t.Read(id)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	c := Collection{}
-	err = db.First(&c, t.CollectionID).Error
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
+// DeleteDanglingTrack removes a (presumably) non-existent track from collection
+func DeleteDanglingTrack(t *Track, c *Collection, withRemote bool) (err error) {
 	if !withRemote && (c.Remote || t.Remote) {
 		return
 	}
 
 	pts := []PlaylistTrack{}
-	err = db.Where("track_id = ?", id).Find(&pts).Error
+	err = db.Where("track_id = ?", t.ID).Find(&pts).Error
 	if err != nil {
-		log.Error(err)
 		return
 	}
 
 	for i := range pts {
 		pl := Playlist{}
-		err := db.Joins("Playbar").First(&pl, pts[i].PlaylistID).Error
+		err = db.Joins("Playbar").First(&pl, pts[i].PlaylistID).Error
 		if err != nil {
-			log.Error(err)
-			continue
+			return
 		}
 		pl.Playbar.DeleteFromPlaylist(&pl, pts[i].Position)
 	}
-	onerror.Log(t.Delete())
+	err = t.Delete()
+	return
+}
+
+// DeleteDanglingTrackByID removes a (presumably) non-existent track from collection
+func DeleteDanglingTrackByID(id int64, withRemote bool) error {
+	t := &Track{}
+	err := t.Read(id)
+	if err != nil {
+		return err
+	}
+
+	c := &Collection{}
+	err = db.First(c, t.CollectionID).Error
+	if err != nil {
+		return err
+	}
+
+	return DeleteDanglingTrack(t, c, withRemote)
 }
 
 // DeleteTrackIfTransient removes a track only if it belongs
-// to the transient collection
+// to the transient collection and is not being used anywhere else
 func DeleteTrackIfTransient(id int64) {
 	t := Track{}
 	err := t.Read(id)

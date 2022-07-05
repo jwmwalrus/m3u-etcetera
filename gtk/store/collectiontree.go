@@ -20,54 +20,72 @@ const (
 	// ArtistYearAlbumTree - Artist > Year - Album > Title
 	ArtistYearAlbumTree collectionTreeHierarchy = iota
 
-	// ArtistAlbumTree - Artist > Album > Title
+	// ArtistAlbumTree := Artist > Album > Title
 	ArtistAlbumTree
 
-	// AlbumTree - Album > Title
+	// AlbumTree := Album > Title
 	AlbumTree
 
-	// GenreArtistAlbumTree - Genre > Artist > Album > Title
+	// GenreArtistAlbumTree := Genre > Artist > Album > Title
 	GenreArtistAlbumTree
 
-	// YearArtistAlbumTree - Year > Artist > Album > Title
+	// YearArtistAlbumTree := Year > Artist > Album > Title
 	YearArtistAlbumTree
 )
 
+func (h collectionTreeHierarchy) String() string {
+	return []string{
+		"artist-year-album",
+		"artist-album",
+		"album",
+		"genre-artist-album",
+		"year-artist-album",
+	}[h]
+}
+
 func (h collectionTreeHierarchy) getGuide(groupByColl bool) map[int]collectionEntryType {
+	entries := []collectionEntryType{}
+	if groupByColl {
+		entries = append(entries, collectionEntry)
+	}
 	switch h {
 	case ArtistYearAlbumTree:
-		return map[int]collectionEntryType{
-			1: artistEntry,
-			2: yearAlbumEntry,
-			3: titleEntry,
-		}
+		entries = append(entries,
+			artistEntry,
+			yearAlbumEntry,
+			titleEntry,
+		)
 	case ArtistAlbumTree:
-		return map[int]collectionEntryType{
-			1: artistEntry,
-			2: albumEntry,
-			3: titleEntry,
-		}
+		entries = append(entries,
+			artistEntry,
+			albumEntry,
+			titleEntry,
+		)
 	case AlbumTree:
-		return map[int]collectionEntryType{
-			1: albumEntry,
-			2: titleEntry,
-		}
+		entries = append(entries,
+			albumEntry,
+			titleEntry,
+		)
 	case GenreArtistAlbumTree:
-		return map[int]collectionEntryType{
-			1: genreEntry,
-			2: artistEntry,
-			3: albumEntry,
-			4: titleEntry,
-		}
+		entries = append(entries,
+			genreEntry,
+			artistEntry,
+			albumEntry,
+			titleEntry,
+		)
 	case YearArtistAlbumTree:
-		return map[int]collectionEntryType{
-			1: yearEntry,
-			2: artistEntry,
-			3: albumEntry,
-			4: titleEntry,
-		}
+		entries = append(entries,
+			yearEntry,
+			artistEntry,
+			albumEntry,
+			titleEntry,
+		)
 	}
-	return nil
+	out := make(map[int]collectionEntryType)
+	for k, v := range entries {
+		out[k+1] = v
+	}
+	return out
 }
 
 type collectionEntryType int
@@ -101,6 +119,7 @@ func (et collectionEntryType) getLabel(t *m3uetcpb.Track) string {
 	case yearEntry:
 		return fmt.Sprintf("%v", t.Year)
 	case collectionEntry:
+		return collectionNameMap[t.CollectionId]
 	default:
 	}
 	return ""
@@ -258,10 +277,13 @@ func (tree *collectionTree) rebuild() {
 		return strings.Join(list, ",")
 	}
 
+	CData.updateCollectionNamesMap()
+
 	CData.mu.Lock()
 	for _, t := range CData.track {
+		kw := getKeywords(t)
+
 		if tree.filterVal != "" {
-			kw := getKeywords(t)
 			match := true
 			for _, s := range strings.Split(strings.ToLower(tree.filterVal), " ") {
 				match = match && strings.Contains(kw, s)
@@ -270,8 +292,6 @@ func (tree *collectionTree) rebuild() {
 				continue
 			}
 		}
-
-		kw := getKeywords(t)
 
 		level := 1
 		label := guide[level].getLabel(t)
