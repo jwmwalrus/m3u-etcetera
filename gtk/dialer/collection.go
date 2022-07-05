@@ -46,8 +46,8 @@ func ApplyCollectionChanges(o ...store.CollectionOptions) {
 	defer cc.Close()
 	cl := m3uetcpb.NewCollectionSvcClient(cc)
 
-	for i := range requests {
-		_, err := cl.UpdateCollection(context.Background(), requests[i])
+	for _, req := range requests {
+		_, err := cl.UpdateCollection(context.Background(), req)
 		onerror.Log(err)
 	}
 

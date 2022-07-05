@@ -16,6 +16,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	modifiableColumnHeaderSuffix = " (*)"
+)
+
 type onSettingsMenu struct {
 	window *gtk.ApplicationWindow
 	coll   struct {
@@ -260,31 +264,36 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 	}
 
 	cols := []struct {
-		idx store.ModelColumn
-		r   gtk.ICellRenderer
+		idx       store.ModelColumn
+		r         gtk.ICellRenderer
+		canModify bool
 	}{
-		{store.CColName, namerw},
-		{store.CColDescription, descriptionrw},
-		{store.CColLocation, textro},
-		{store.CColPerspective, textro},
-		{store.CColTracksView, textro},
-		{store.CColDisabled, disabledrw},
-		{store.CColRemote, remoterw},
-		{store.CColRemoteLocation, remotelocationrw},
+		{store.CColName, namerw, true},
+		{store.CColDescription, descriptionrw, true},
+		{store.CColLocation, textro, false},
+		{store.CColPerspective, textro, false},
+		{store.CColTracksView, textro, false},
+		{store.CColDisabled, disabledrw, true},
+		{store.CColRemote, remoterw, true},
+		{store.CColRemoteLocation, remotelocationrw, true},
 	}
 
 	for _, v := range cols {
 		var col *gtk.TreeViewColumn
+		var suffix string
+		if v.canModify {
+			suffix = modifiableColumnHeaderSuffix
+		}
 		if renderer, ok := v.r.(*gtk.CellRendererToggle); ok {
 			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.CColumns[v.idx].Name,
+				store.CColumns[v.idx].Name+suffix,
 				renderer,
 				"active",
 				int(v.idx),
 			)
 		} else if renderer, ok := v.r.(*gtk.CellRendererText); ok {
 			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.CColumns[v.idx].Name,
+				store.CColumns[v.idx].Name+suffix,
 				renderer,
 				"text",
 				int(v.idx),
@@ -328,7 +337,7 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		return
 	}
 
-	cols = []struct {
+	acols := []struct {
 		idx store.ModelColumn
 		r   gtk.ICellRenderer
 	}{
@@ -337,7 +346,7 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		{store.CActionColRemove, removerw},
 	}
 
-	for _, v := range cols {
+	for _, v := range acols {
 		var col *gtk.TreeViewColumn
 		if renderer, ok := v.r.(*gtk.CellRendererToggle); ok {
 			col, err = gtk.TreeViewColumnNewWithAttribute(
@@ -432,26 +441,31 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 	}
 
 	cols := []struct {
-		idx store.ModelColumn
-		r   gtk.ICellRenderer
+		idx       store.ModelColumn
+		r         gtk.ICellRenderer
+		canModify bool
 	}{
-		{store.PGColName, namerw},
-		{store.PGColDescription, descriptionrw},
-		{store.PGColPerspective, textro},
+		{store.PGColName, namerw, true},
+		{store.PGColDescription, descriptionrw, true},
+		{store.PGColPerspective, textro, false},
 	}
 
 	for _, v := range cols {
 		var col *gtk.TreeViewColumn
+		var suffix string
+		if v.canModify {
+			suffix = modifiableColumnHeaderSuffix
+		}
 		if renderer, ok := v.r.(*gtk.CellRendererToggle); ok {
 			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.PGColumns[v.idx].Name,
+				store.PGColumns[v.idx].Name+suffix,
 				renderer,
 				"active",
 				int(v.idx),
 			)
 		} else if renderer, ok := v.r.(*gtk.CellRendererText); ok {
 			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.PGColumns[v.idx].Name,
+				store.PGColumns[v.idx].Name+suffix,
 				renderer,
 				"text",
 				int(v.idx),

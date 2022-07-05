@@ -22,6 +22,8 @@ var (
 	// QData queue store
 	QData = &queueData{}
 
+	perspectiveQueuesList []m3uetcpb.Perspective
+
 	musicQueueModel *gtk.ListStore
 	//nolint: unused //TODO
 	podcastsQueueModel *gtk.ListStore
@@ -239,5 +241,13 @@ func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 		return musicQueueModel
 	default:
 		return nil
+	}
+}
+
+func init() {
+	perspectiveQueuesList = []m3uetcpb.Perspective{
+		m3uetcpb.Perspective_MUSIC,
+		m3uetcpb.Perspective_PODCASTS,
+		m3uetcpb.Perspective_AUDIOBOOKS,
 	}
 }

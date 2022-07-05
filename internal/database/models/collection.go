@@ -116,13 +116,13 @@ func (c *Collection) Delete() (err error) {
 	nTrack := len(s)
 	doNotDelete := 0
 	for i := 0; i < nTrack; i++ {
-		// delete track
-		if err := db.Delete(&s[i]).Error; err != nil {
-			onerror.Warn(err)
+		err := DeleteDanglingTrack(&s[i], c, true)
+		if err != nil {
+			log.Warn(err)
 			doNotDelete++
 			continue
 		}
-		if 1%100 == 0 {
+		if i%100 == 0 {
 			c.Scanned = int((float32(nTrack-i) / float32(nTrack)) * 100)
 			db.Save(c)
 		}
@@ -141,7 +141,7 @@ func (c *Collection) Delete() (err error) {
 	}
 
 	// delete collection
-	err = c.Delete()
+	err = db.Delete(c).Error
 	return
 }
 
@@ -365,12 +365,12 @@ func (c *Collection) Verify() {
 		return
 	}
 
-	for _, t := range s {
-		if urlstr.URLExists(t.Location) {
+	for i := range s {
+		if urlstr.URLExists(s[i].Location) {
 			continue
 		}
 
-		DeleteDanglingTrack(t.ID, true)
+		DeleteDanglingTrack(&s[i], c, true)
 	}
 }
 

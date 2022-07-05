@@ -202,6 +202,7 @@ func (*CollectionSvc) DiscoverCollections(_ context.Context,
 
 	go func() {
 		for _, coll := range s {
+			coll.Verify()
 			coll.Scan(false)
 		}
 	}()

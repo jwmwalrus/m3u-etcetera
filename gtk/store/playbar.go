@@ -52,7 +52,8 @@ var (
 	updatePlaybarView       func()
 	playlistGroupsModel     *gtk.ListStore
 
-	barTree playbarTree
+	barTree          playbarTree
+	perspectivesList []m3uetcpb.Perspective
 )
 
 func (bd *playbarData) GetActiveID() int64 {
@@ -916,5 +917,21 @@ func setPlaylistModelRows(id int64, rows map[int]playlistModelRow) {
 		if pl.id == id {
 			pl.rows = rows
 		}
+	}
+}
+
+func init() {
+	perspectivesList = []m3uetcpb.Perspective{
+		m3uetcpb.Perspective_MUSIC,
+		m3uetcpb.Perspective_RADIO,
+		m3uetcpb.Perspective_PODCASTS,
+		m3uetcpb.Perspective_AUDIOBOOKS,
+	}
+
+	barTree.pplt = map[m3uetcpb.Perspective]playlistTree{
+		m3uetcpb.Perspective_MUSIC:      {},
+		m3uetcpb.Perspective_RADIO:      {},
+		m3uetcpb.Perspective_PODCASTS:   {},
+		m3uetcpb.Perspective_AUDIOBOOKS: {},
 	}
 }

@@ -69,12 +69,13 @@
                         <property name="tooltip-text" translatable="yes">Active collections hierarchy</property>
                         <property name="active">0</property>
                         <items>
-                          <item id="&lt;Enter ID&gt;" translatable="yes">Artist &gt; Year - Album</item>
-                          <item translatable="yes">Artist &gt; Album</item>
-                          <item translatable="yes">Album</item>
-                          <item translatable="yes">Genre &gt; Artist &gt; Album</item>
-                          <item translatable="yes">Year &gt; Artist &gt; Album</item>
+                          <item id="artist-year-alkbum" translatable="yes">Artist &gt; Year - Album</item>
+                          <item id="artist-album" translatable="yes">Artist &gt; Album</item>
+                          <item id="album" translatable="yes">Album</item>
+                          <item id="genre-artist-album" translatable="yes">Genre &gt; Artist &gt; Album</item>
+                          <item id="year-artist-album" translatable="yes">Year &gt; Artist &gt; Album</item>
                         </items>
+                        <signal name="changed" handler="on_collections_hierarchy_changed" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -83,12 +84,15 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="collections_hierarchy_grouped">
-                        <property name="label" translatable="yes">Group</property>
+                      <object class="GtkToggleButton" id="collections_hierarchy_grouped">
+                        <property name="label" translatable="yes">Grouped</property>
+                        <property name="use-action-appearance">True</property>
+                        <property name="visible">True</property>
                         <property name="can-focus">True</property>
-                        <property name="receives-default">False</property>
+                        <property name="receives-default">True</property>
                         <property name="tooltip-text" translatable="yes">Group by collection</property>
-                        <property name="draw-indicator">True</property>
+                        <property name="margin-start">6</property>
+                        <signal name="toggled" handler="on_collections_hierarchy_grouped_toggled" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>

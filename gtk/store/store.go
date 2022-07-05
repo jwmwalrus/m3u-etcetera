@@ -2,7 +2,6 @@ package store
 
 import (
 	"github.com/gotk3/gotk3/glib"
-	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 )
 
 type storeColumns []columnDef
@@ -195,9 +194,6 @@ const (
 )
 
 var (
-	perspectivesList      []m3uetcpb.Perspective
-	perspectiveQueuesList []m3uetcpb.Perspective
-
 	// CColumns collection columns
 	CColumns storeColumns
 
@@ -227,26 +223,6 @@ var (
 )
 
 func init() {
-	perspectivesList = []m3uetcpb.Perspective{
-		m3uetcpb.Perspective_MUSIC,
-		m3uetcpb.Perspective_RADIO,
-		m3uetcpb.Perspective_PODCASTS,
-		m3uetcpb.Perspective_AUDIOBOOKS,
-	}
-
-	perspectiveQueuesList = []m3uetcpb.Perspective{
-		m3uetcpb.Perspective_MUSIC,
-		m3uetcpb.Perspective_PODCASTS,
-		m3uetcpb.Perspective_AUDIOBOOKS,
-	}
-
-	barTree.pplt = map[m3uetcpb.Perspective]playlistTree{
-		m3uetcpb.Perspective_MUSIC:      {},
-		m3uetcpb.Perspective_RADIO:      {},
-		m3uetcpb.Perspective_PODCASTS:   {},
-		m3uetcpb.Perspective_AUDIOBOOKS: {},
-	}
-
 	CTreeColumn = storeColumns{
 		columnDef{Name: "Tree", colType: glib.TYPE_STRING},
 		columnDef{Name: "ID List", colType: glib.TYPE_STRING},
