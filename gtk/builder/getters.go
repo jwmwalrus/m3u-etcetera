@@ -321,6 +321,21 @@ func GetToggleButton(id string) (btn *gtk.ToggleButton, err error) {
 	return
 }
 
+// GetToggleToolButton -
+func GetToggleToolButton(id string) (btn *gtk.ToggleToolButton, err error) {
+	obj, err := app.GetObject(id)
+	if err != nil {
+		err = fmt.Errorf("Unable to get button: %v", err)
+		return
+	}
+	btn, ok := obj.(*gtk.ToggleToolButton)
+	if !ok {
+		err = fmt.Errorf("Unable to create button: %v", err)
+		return
+	}
+	return
+}
+
 // GetToolButton -
 func GetToolButton(id string) (btn *gtk.ToolButton, err error) {
 	obj, err := app.GetObject(id)

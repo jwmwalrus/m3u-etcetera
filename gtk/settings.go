@@ -31,8 +31,8 @@ type onSettingsMenu struct {
 		addBtn           *gtk.Button
 
 		editDlg       *gtk.Dialog
-		discoverBtn   *gtk.ToggleButton
-		updateTagsBtn *gtk.ToggleButton
+		discoverBtn   *gtk.ToggleToolButton
+		updateTagsBtn *gtk.ToggleToolButton
 	}
 	pg struct {
 		addDlg, editDlg *gtk.Dialog
@@ -207,14 +207,14 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		return
 	}
 
-	osm.coll.discoverBtn, err = builder.GetToggleButton(
+	osm.coll.discoverBtn, err = builder.GetToggleToolButton(
 		"collections_dialog_toggle_discover",
 	)
 	if err != nil {
 		return
 	}
 
-	osm.coll.updateTagsBtn, err = builder.GetToggleButton(
+	osm.coll.updateTagsBtn, err = builder.GetToggleToolButton(
 		"collections_dialog_toggle_update_tags",
 	)
 	if err != nil {
@@ -263,18 +263,30 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		return
 	}
 
+	rescanrw, err := cr.GetActivatable(store.CColActionRescan)
+	if err != nil {
+		return
+	}
+
+	removerw, err := cr.GetActivatable(store.CColActionRemove)
+	if err != nil {
+		return
+	}
+
 	cols := []struct {
 		idx       store.ModelColumn
 		r         gtk.ICellRenderer
 		canModify bool
 	}{
 		{store.CColName, namerw, true},
-		{store.CColDescription, descriptionrw, true},
-		{store.CColLocation, textro, false},
 		{store.CColPerspective, textro, false},
 		{store.CColTracksView, textro, false},
+		{store.CColActionRescan, rescanrw, true},
+		{store.CColActionRemove, removerw, true},
 		{store.CColDisabled, disabledrw, true},
 		{store.CColRemote, remoterw, true},
+		{store.CColDescription, descriptionrw, true},
+		{store.CColLocation, textro, false},
 		{store.CColRemoteLocation, remotelocationrw, true},
 	}
 
@@ -309,69 +321,6 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 	}
 
 	view.SetModel(model)
-
-	actionsview, err := builder.GetTreeView("collections_dialog_actions_view")
-	if err != nil {
-		return
-	}
-
-	actionsmodel, err := store.CreateCollectionActionsModel()
-	if err != nil {
-		return
-	}
-
-	car := store.Renderer{Model: actionsmodel, Columns: store.CActionColumns}
-
-	namero, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return
-	}
-
-	rescanrw, err := car.GetActivatable(store.CActionColRescan)
-	if err != nil {
-		return
-	}
-
-	removerw, err := car.GetActivatable(store.CActionColRemove)
-	if err != nil {
-		return
-	}
-
-	acols := []struct {
-		idx store.ModelColumn
-		r   gtk.ICellRenderer
-	}{
-		{store.CActionColName, namero},
-		{store.CActionColRescan, rescanrw},
-		{store.CActionColRemove, removerw},
-	}
-
-	for _, v := range acols {
-		var col *gtk.TreeViewColumn
-		if renderer, ok := v.r.(*gtk.CellRendererToggle); ok {
-			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.CActionColumns[v.idx].Name,
-				renderer,
-				"active",
-				int(v.idx),
-			)
-		} else if renderer, ok := v.r.(*gtk.CellRendererText); ok {
-			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.CActionColumns[v.idx].Name,
-				renderer,
-				"text",
-				int(v.idx),
-			)
-		} else {
-			log.Error("¿Cómo sabré si es pez o iguana?")
-			continue
-		}
-		if err != nil {
-			return
-		}
-		actionsview.InsertColumn(col, -1)
-	}
-	actionsview.SetModel(actionsmodel)
 
 	return
 }

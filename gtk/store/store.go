@@ -56,18 +56,10 @@ const (
 	CColScanned
 	CColTracks
 	CColTracksView
+	CColActionRescan
+	CColActionRemove
 
 	CColsN
-)
-
-// CActionCol* column definition
-const (
-	CActionColCollectionID ModelColumn = iota
-	CActionColName
-	CActionColRescan
-	CActionColRemove
-
-	CActionColsN
 )
 
 // CColTree* column definition
@@ -197,9 +189,6 @@ var (
 	// CColumns collection columns
 	CColumns storeColumns
 
-	// CActionColumns collection actions columns
-	CActionColumns storeColumns
-
 	// TColumns tracks columns
 	TColumns storeColumns
 
@@ -243,11 +232,8 @@ func init() {
 
 	CColumns[CColTracksView] = columnDef{Name: "# Tracks", colType: glib.TYPE_STRING}
 
-	CActionColumns = make(storeColumns, CActionColsN)
-	CActionColumns[CActionColCollectionID] = columnDef{Name: "ID", colType: glib.TYPE_INT64}
-	CActionColumns[CActionColName] = columnDef{Name: "Name", colType: glib.TYPE_STRING}
-	CActionColumns[CActionColRescan] = columnDef{Name: "Re-scan", colType: glib.TYPE_BOOLEAN, activatable: true}
-	CActionColumns[CActionColRemove] = columnDef{Name: "Remove", colType: glib.TYPE_BOOLEAN, activatable: true}
+	CColumns[CColActionRescan] = columnDef{Name: "ACTION: Re-scan", colType: glib.TYPE_BOOLEAN, activatable: true}
+	CColumns[CColActionRemove] = columnDef{Name: "ACTION: Remove", colType: glib.TYPE_BOOLEAN, activatable: true}
 
 	TColumns = make(storeColumns, TColsN)
 	TColumns[TColTrackID] = columnDef{Name: "ID", colType: glib.TYPE_INT64}

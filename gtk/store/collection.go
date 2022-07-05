@@ -37,9 +37,8 @@ var (
 
 	cTree = &collectionTree{}
 
-	collectionModel        *gtk.ListStore
-	collectionActionsModel *gtk.ListStore
-	cProgress              *gtk.ProgressBar
+	collectionModel *gtk.ListStore
+	cProgress       *gtk.ProgressBar
 
 	collectionNameMap          map[int64]string
 	collectionTreeHierarchyMap map[string]collectionTreeHierarchy
@@ -61,7 +60,7 @@ func (cd *collectionData) CollectionAlreadyExists(location, name string) bool {
 }
 
 func (cd *collectionData) GetCollectionActionsChanges() (toScan, toRemove []int64) {
-	model := collectionActionsModel
+	model := collectionModel
 
 	cd.mu.Lock()
 	defer cd.mu.Unlock()
@@ -72,28 +71,28 @@ func (cd *collectionData) GetCollectionActionsChanges() (toScan, toRemove []int6
 			model,
 			iter,
 			[]ModelColumn{
-				CActionColCollectionID,
-				CActionColName,
-				CActionColRescan,
-				CActionColRemove,
+				CColCollectionID,
+				CColName,
+				CColActionRescan,
+				CColActionRemove,
 			},
 		)
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		id := row[CActionColCollectionID].(int64)
+		id := row[CColCollectionID].(int64)
 		for _, c := range cd.collection {
 			if id != c.Id {
 				continue
 			}
 
-			rescan := row[CActionColRescan].(bool)
+			rescan := row[CColActionRescan].(bool)
 			if rescan {
 				toScan = append(toScan, id)
 			}
 
-			remove := row[CActionColRemove].(bool)
+			remove := row[CColActionRemove].(bool)
 			if remove {
 				toRemove = append(toRemove, id)
 			}
@@ -320,48 +319,6 @@ func (cd *collectionData) removeCDataItem(res *m3uetcpb.SubscribeToCollectionSto
 	}
 }
 
-func (cd *collectionData) updateCollectionActionsModel() bool {
-	log.Info("Updating collection actions model")
-
-	model := collectionActionsModel
-	if model == nil {
-		return false
-	}
-
-	if model.GetNColumns() == 0 {
-		return false
-	}
-
-	_, ok := model.GetIterFirst()
-	if ok {
-		model.Clear()
-	}
-
-	if len(cd.collection) > 0 {
-		var iter *gtk.TreeIter
-		for _, c := range cd.collection {
-			iter = model.Append()
-			err := model.Set(
-				iter,
-				[]int{
-					int(CActionColCollectionID),
-					int(CActionColName),
-					int(CActionColRescan),
-					int(CActionColRemove),
-				},
-				[]interface{}{
-					c.Id,
-					c.Name,
-					false,
-					false,
-				},
-			)
-			onerror.Log(err)
-		}
-	}
-	return false
-}
-
 func (cd *collectionData) updateCollectionModel() bool {
 	if cTree.initialMode {
 		return false
@@ -407,6 +364,8 @@ func (cd *collectionData) updateCollectionModel() bool {
 					int(CColRemote),
 					int(CColTracks),
 					int(CColTracksView),
+					int(CColActionRescan),
+					int(CColActionRemove),
 				},
 				[]interface{}{
 					c.Id,
@@ -418,13 +377,14 @@ func (cd *collectionData) updateCollectionModel() bool {
 					c.Remote,
 					c.Tracks,
 					tracks,
+					false,
+					false,
 				},
 			)
 			onerror.Log(err)
 		}
 	}
 
-	cd.updateCollectionActionsModel()
 	return false
 }
 
@@ -461,19 +421,6 @@ func (cd *collectionData) updateScanningProgress() bool {
 	}
 	cProgress.SetVisible(false)
 	return false
-}
-
-// CreateCollectionActionsModel creates a collection model
-func CreateCollectionActionsModel() (model *gtk.ListStore, err error) {
-	log.Info("Creating collection actions model")
-
-	collectionActionsModel, err = gtk.ListStoreNew(CActionColumns.getTypes()...)
-	if err != nil {
-		return
-	}
-
-	model = collectionActionsModel
-	return
 }
 
 // CreateCollectionModel creates a collection model
