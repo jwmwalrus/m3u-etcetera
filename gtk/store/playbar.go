@@ -118,6 +118,45 @@ func (bd *playbarData) GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
 	return nil
 }
 
+// GetPlaylistGroupActionsChanges returns the list of playlist group actions
+// to be applied
+func (bd *playbarData) GetPlaylistGroupActionsChanges() (toRemove []int64) {
+	model := playlistGroupsModel
+
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
+
+	iter, ok := model.GetIterFirst()
+	for ok {
+		row, err := GetListStoreModelValues(
+			model,
+			iter,
+			[]ModelColumn{
+				PGColPlaylistGroupID,
+				PGColActionRemove,
+			},
+		)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		id := row[PGColPlaylistGroupID].(int64)
+		for _, pg := range bd.playlistGroup {
+			if id != pg.Id {
+				continue
+			}
+
+			remove := row[PGColActionRemove].(bool)
+			if remove {
+				toRemove = append(toRemove, id)
+			}
+		}
+		ok = model.IterNext(iter)
+	}
+
+	return
+}
+
 func (bd *playbarData) GetPlaylistGroupNames() map[int64]string {
 	bd.mu.Lock()
 	defer bd.mu.Unlock()
@@ -784,12 +823,14 @@ func (bd *playbarData) updatePlaylistGroupModel() bool {
 				int(PGColName),
 				int(PGColDescription),
 				int(PGColPerspective),
+				int(PGColActionRemove),
 			},
 			[]interface{}{
 				pg.Id,
 				pg.Name,
 				pg.Description,
 				pg.Perspective.String(),
+				false,
 			},
 		)
 		onerror.Log(err)

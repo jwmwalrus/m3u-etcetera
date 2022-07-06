@@ -389,14 +389,20 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 		return
 	}
 
+	removerw, err := pgr.GetActivatable(store.PGColActionRemove)
+	if err != nil {
+		return
+	}
+
 	cols := []struct {
 		idx       store.ModelColumn
 		r         gtk.ICellRenderer
 		canModify bool
 	}{
 		{store.PGColName, namerw, true},
-		{store.PGColDescription, descriptionrw, true},
 		{store.PGColPerspective, textro, false},
+		{store.PGColActionRemove, removerw, true},
+		{store.PGColDescription, descriptionrw, true},
 	}
 
 	for _, v := range cols {

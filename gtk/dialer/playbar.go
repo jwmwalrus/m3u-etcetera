@@ -33,6 +33,8 @@ func ApplyPlaylistGroupChanges() {
 		_, err := cl.ExecutePlaylistGroupAction(context.Background(), requests[i])
 		onerror.Log(err)
 	}
+
+	applyplaylistgroupactionschanges()
 }
 
 // ExecutePlaybarAction -
@@ -140,6 +142,29 @@ func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (
 		msgList = append(msgList, res.ImportErrors...)
 	}
 	return
+}
+
+func applyplaylistgroupactionschanges() {
+	log.Info("Applying playlist group actions changes")
+
+	toRemove := store.BData.GetPlaylistGroupActionsChanges()
+
+	cc, err := getClientConn1()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	defer cc.Close()
+	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+
+	for _, id := range toRemove {
+		req := &m3uetcpb.ExecutePlaylistGroupActionRequest{
+			Action: m3uetcpb.PlaylistGroupAction_PG_DESTROY,
+			Id:     id,
+		}
+		_, err := cl.ExecutePlaylistGroupAction(context.Background(), req)
+		onerror.Log(err)
+	}
 }
 
 func subscribeToPlaybarStore() {

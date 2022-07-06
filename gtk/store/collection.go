@@ -120,6 +120,7 @@ func (cd *collectionData) GetTracksTotalCount() int64 {
 	}
 	return total
 }
+
 func (cd *collectionData) GetUpdateCollectionRequests() ([]*m3uetcpb.UpdateCollectionRequest, error) {
 	requests := []*m3uetcpb.UpdateCollectionRequest{}
 

@@ -50,8 +50,29 @@ func (pg *PlaylistGroup) Create() (err error) {
 }
 
 // Delete implements the DataDeleter interface
-func (pg *PlaylistGroup) Delete() error {
-	return db.Delete(pg).Error
+func (pg *PlaylistGroup) Delete() (err error) {
+	pls := []Playlist{}
+	err = db.Where("playlist_group_id = ?", pg.ID).Find(&pls).Error
+	if err != nil {
+		return
+	}
+	if len(pls) > 0 {
+		pgd := PlaylistGroup{}
+		err = db.Where("hidden = 1 and idx > 0 and perspective_id = ?", pg.PerspectiveID).Find(&pgd).Error
+		if err != nil {
+			return
+		}
+		for i := range pls {
+			pls[i].PlaylistGroupID = pgd.ID
+		}
+		err = db.Save(&pls).Error
+		if err != nil {
+			return
+		}
+	}
+
+	err = db.Delete(pg).Error
+	return
 }
 
 // Read implements the DataReader interface

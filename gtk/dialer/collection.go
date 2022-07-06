@@ -51,11 +51,10 @@ func ApplyCollectionChanges(o ...store.CollectionOptions) {
 		onerror.Log(err)
 	}
 
-	ApplyCollectionActionsChanges(o...)
+	applyCollectionActionsChanges(o...)
 }
 
-// ApplyCollectionActionsChanges applies collection changes
-func ApplyCollectionActionsChanges(o ...store.CollectionOptions) {
+func applyCollectionActionsChanges(o ...store.CollectionOptions) {
 	log.WithField("collectionOptions", o).
 		Info("Applying collection actions changes")
 

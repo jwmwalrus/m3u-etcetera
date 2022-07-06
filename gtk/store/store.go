@@ -181,6 +181,7 @@ const (
 	PGColName
 	PGColDescription
 	PGColPerspective
+	PGColActionRemove
 
 	PGColsN
 )
@@ -332,5 +333,6 @@ func init() {
 	PGColumns[PGColName] = columnDef{Name: "Name", colType: glib.TYPE_STRING, editable: true}
 	PGColumns[PGColDescription] = columnDef{Name: "Description", colType: glib.TYPE_STRING, editable: true}
 	PGColumns[PGColPerspective] = columnDef{Name: "Perspective", colType: glib.TYPE_STRING}
+	PGColumns[PGColActionRemove] = columnDef{Name: "ACTION: Remove", colType: glib.TYPE_BOOLEAN, activatable: true}
 
 }
