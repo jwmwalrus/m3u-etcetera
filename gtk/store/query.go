@@ -267,3 +267,30 @@ func GetQueryResultsSelections() (ids []int64, err error) {
 	}
 	return
 }
+
+// ToggleQueryResultsSelection inverts the query results selection
+func ToggleQueryResultsSelection() {
+	log.Info("Toggling query results selection")
+
+	model := queryResultsModel
+
+	iter, ok := model.GetIterFirst()
+
+	for ok {
+		gval, err := model.GetValue(iter, int(TColToggleSelect))
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		value, err := gval.GoValue()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		model.SetValue(iter, int(TColToggleSelect), !value.(bool))
+
+		ok = model.IterNext(iter)
+	}
+}

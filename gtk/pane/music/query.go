@@ -562,3 +562,7 @@ func (omqy *onMusicQuery) setQuery(qy *m3uetcpb.Query) (err error) {
 
 	return
 }
+
+func (omqy *onMusicQuery) toggleSelection(btn *gtk.Button) {
+	store.ToggleQueryResultsSelection()
+}

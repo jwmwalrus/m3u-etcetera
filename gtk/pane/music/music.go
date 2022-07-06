@@ -67,6 +67,7 @@ func Setup(signals *map[string]interface{}) (err error) {
 	}
 	(*signals)["on_queries_add_clicked"] = musicQuerySignals.defineQuery
 	(*signals)["on_query_dialog_search_clicked"] = musicQuerySignals.doSearch
+	(*signals)["on_query_dialog_toggle_selection_clicked"] = musicQuerySignals.toggleSelection
 
 	musicPlaylistSignals, err = createMusicPlaylists()
 	if err != nil {
