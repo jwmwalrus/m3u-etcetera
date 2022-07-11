@@ -213,6 +213,8 @@ func (ot *onTab) createContextMenus() (err error) {
 	miDelete.SetName(fmt.Sprintf("menuitem-%s-%s", "delete", miSuffix))
 	ctxMenu.Add(miDelete)
 
+	ctxMenu.Connect("hide", ot.ContextHide)
+	ctxMenu.Connect("popped-up", ot.ContextPoppedUp)
 	ot.ctxMenu = ctxMenu
 
 	pageMenu, err := gtk.MenuNew()
@@ -260,7 +262,7 @@ func (ot *onTab) createContextMenus() (err error) {
 func (ot *onTab) dblClicked(tv *gtk.TreeView, path *gtk.TreePath,
 	col *gtk.TreeViewColumn) {
 
-	values, err := store.GetListStoreValues(
+	values, err := store.GetTreeViewTreePathValues(
 		tv,
 		path,
 		[]store.ModelColumn{
@@ -431,10 +433,12 @@ func (ot *onTab) setTreeView() (err error) {
 	if err != nil {
 		return
 	}
+	sel.SetMode(gtk.SELECTION_MULTIPLE)
 	sel.Connect("changed", ot.SelChanged)
 
 	ot.view.Connect("row-activated", ot.dblClicked)
 	ot.view.Connect("button-press-event", ot.Context)
+	ot.view.Connect("key-press-event", ot.Key)
 	return
 }
 

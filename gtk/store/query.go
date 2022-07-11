@@ -250,8 +250,8 @@ func GetQueryResultsSelections() (ids []int64, err error) {
 	iter, ok := model.GetIterFirst()
 	for ok {
 		var values map[ModelColumn]interface{}
-		values, err = GetListStoreModelValues(
-			model,
+		values, err = GetTreeModelValues(
+			model.ToTreeModel(),
 			iter,
 			[]ModelColumn{TColTrackID, TColToggleSelect},
 		)

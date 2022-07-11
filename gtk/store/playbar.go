@@ -128,8 +128,8 @@ func (bd *playbarData) GetPlaylistGroupActionsChanges() (toRemove []int64) {
 
 	iter, ok := model.GetIterFirst()
 	for ok {
-		row, err := GetListStoreModelValues(
-			model,
+		row, err := GetTreeModelValues(
+			model.ToTreeModel(),
 			iter,
 			[]ModelColumn{
 				PGColPlaylistGroupID,
@@ -196,8 +196,8 @@ func (bd *playbarData) GetUpdatePlaylistGroupRequests() (
 
 	iter, ok := model.GetIterFirst()
 	for ok {
-		row, err := GetListStoreModelValues(
-			model,
+		row, err := GetTreeModelValues(
+			model.ToTreeModel(),
 			iter,
 			[]ModelColumn{PGColPlaylistGroupID, PGColName, PGColDescription},
 		)

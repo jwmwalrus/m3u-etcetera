@@ -84,14 +84,20 @@ func (oc *onContext) selChanged(sel *gtk.TreeSelection) {
 	var err error
 	switch oc.ct {
 	case collectionContext:
-		oc.selection, err = store.GetTreeSelectionValue(sel, store.CColTreeIDList)
+		oc.selection, err = store.GetSingleTreeSelectionValue(
+			sel,
+			store.CColTreeIDList,
+		)
 	case playlistContext:
-		oc.selection, err = store.GetTreeSelectionValues(
+		oc.selection, err = store.GetSingleTreeSelectionValues(
 			sel,
 			[]store.ModelColumn{store.PLColTreeIDList, store.PLColTreeIsGroup},
 		)
 	case queryContext:
-		oc.selection, err = store.GetTreeSelectionValue(sel, store.QYColTreeIDList)
+		oc.selection, err = store.GetSingleTreeSelectionValue(
+			sel,
+			store.QYColTreeIDList,
+		)
 	}
 	if err != nil {
 		log.Error(err)

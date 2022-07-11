@@ -39,6 +39,7 @@ func Setup(signals *map[string]interface{}) (err error) {
 	(*signals)["on_music_queue_sel_changed"] = musicQueueSignals.SelChanged
 	(*signals)["on_music_queue_view_row_activated"] = musicQueueSignals.DblClicked
 	(*signals)["on_music_queue_view_button_press_event"] = musicQueueSignals.Context
+	(*signals)["on_music_queue_view_key_press_event"] = musicQueueSignals.Key
 	(*signals)["on_music_queue_view_context_play_now_activate"] = musicQueueSignals.ContextPlayNow
 	(*signals)["on_music_queue_view_context_enqueue_activate"] = musicQueueSignals.ContextEnqueue
 	(*signals)["on_music_queue_view_context_top_activate"] = musicQueueSignals.ContextMove
@@ -47,6 +48,8 @@ func Setup(signals *map[string]interface{}) (err error) {
 	(*signals)["on_music_queue_view_context_bottom_activate"] = musicQueueSignals.ContextMove
 	(*signals)["on_music_queue_view_context_delete_activate"] = musicQueueSignals.ContextDelete
 	(*signals)["on_music_queue_view_context_clear_activate"] = musicQueueSignals.ContextClear
+	(*signals)["on_music_queue_view_context_popped_up"] = musicQueueSignals.ContextPoppedUp
+	(*signals)["on_music_queue_view_context_hide"] = musicQueueSignals.ContextHide
 
 	musicQuerySignals, err = createMusicQueries()
 	if err != nil {

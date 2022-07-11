@@ -67,8 +67,8 @@ func (cd *collectionData) GetCollectionActionsChanges() (toScan, toRemove []int6
 
 	iter, ok := model.GetIterFirst()
 	for ok {
-		row, err := GetListStoreModelValues(
-			model,
+		row, err := GetTreeModelValues(
+			model.ToTreeModel(),
 			iter,
 			[]ModelColumn{
 				CColCollectionID,
@@ -131,8 +131,8 @@ func (cd *collectionData) GetUpdateCollectionRequests() ([]*m3uetcpb.UpdateColle
 
 	iter, ok := model.GetIterFirst()
 	for ok {
-		row, err := GetListStoreModelValues(
-			model,
+		row, err := GetTreeModelValues(
+			model.ToTreeModel(),
 			iter,
 			[]ModelColumn{
 				CColCollectionID,

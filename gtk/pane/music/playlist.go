@@ -157,7 +157,7 @@ func (ompl *onMusicPlaylist) contextOpen(mi *gtk.MenuItem) {
 func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView,
 	path *gtk.TreePath, col *gtk.TreeViewColumn) {
 
-	values, err := store.GetTreeStoreValues(
+	values, err := store.GetTreeViewTreePathValues(
 		tv,
 		path,
 		[]store.ModelColumn{store.PLColTree, store.PLColTreeIDList, store.PLColTreeIsGroup},

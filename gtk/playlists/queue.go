@@ -98,7 +98,7 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 func (oq *OnQueue) DblClicked(tv *gtk.TreeView,
 	path *gtk.TreePath, col *gtk.TreeViewColumn) {
 
-	values, err := store.GetListStoreValues(
+	values, err := store.GetTreeViewTreePathValues(
 		tv,
 		path,
 		[]store.ModelColumn{

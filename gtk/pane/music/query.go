@@ -303,7 +303,7 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 func (omqy *onMusicQuery) dblClicked(tv *gtk.TreeView,
 	path *gtk.TreePath, col *gtk.TreeViewColumn) {
 
-	values, err := store.GetTreeStoreValues(
+	values, err := store.GetTreeViewTreePathValues(
 		tv,
 		path,
 		[]store.ModelColumn{store.QYColTree, store.QYColTreeIDList},

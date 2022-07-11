@@ -148,7 +148,7 @@ func (omc *onMusicCollections) contextPlayNow(mi *gtk.MenuItem) {
 func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
 	path *gtk.TreePath, col *gtk.TreeViewColumn) {
 
-	values, err := store.GetTreeStoreValues(
+	values, err := store.GetTreeViewTreePathValues(
 		tv,
 		path,
 		[]store.ModelColumn{store.CColTree, store.CColTreeIDList},

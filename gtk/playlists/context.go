@@ -1,9 +1,11 @@
 package playlists
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
@@ -18,7 +20,11 @@ type onContext struct {
 	ctxMenu     *gtk.Menu
 	view        *gtk.TreeView
 
-	selection interface{}
+	selection struct {
+		values interface{}
+		keep   bool
+		paths  []*gtk.TreePath
+	}
 }
 
 func (oc *onContext) Context(tv *gtk.TreeView, event *gdk.Event) {
@@ -32,18 +38,30 @@ func (oc *onContext) Context(tv *gtk.TreeView, event *gdk.Event) {
 		return
 	}
 
-	var pos, lastpos int
-	if oc.id > 0 {
-		pos = values[store.TColPosition].(int)
-		lastpos = values[store.TColLastPosition].(int)
-	} else {
-		pos = values[store.QColPosition].(int)
-		lastpos = values[store.QColLastPosition].(int)
+	sensitive := map[string]bool{
+		"top":     false,
+		"up":      false,
+		"down":    false,
+		"bottom":  false,
+		"playnow": false,
 	}
 
-	atTop := pos == 1
-	atBottom := pos == lastpos
+	if len(values) == 1 {
+		var pos, lastpos int
+		if oc.id > 0 {
+			pos = values[0][store.TColPosition].(int)
+			lastpos = values[0][store.TColLastPosition].(int)
+		} else {
+			pos = values[0][store.QColPosition].(int)
+			lastpos = values[0][store.QColLastPosition].(int)
+		}
 
+		sensitive["top"] = !(pos == 1)
+		sensitive["up"] = !(pos == 1)
+		sensitive["down"] = !(pos == lastpos)
+		sensitive["bottom"] = !(pos == lastpos)
+		sensitive["playnow"] = true
+	}
 	oc.ctxMenu.GetChildren().Foreach(func(item interface{}) {
 		w, ok := item.(*gtk.Widget)
 		if !ok {
@@ -51,12 +69,11 @@ func (oc *onContext) Context(tv *gtk.TreeView, event *gdk.Event) {
 		}
 
 		l, _ := w.GetName()
-		if strings.Contains(l, "top") ||
-			strings.Contains(l, "up") {
-			w.SetSensitive(!atTop)
-		} else if strings.Contains(l, "down") ||
-			strings.Contains(l, "bottom") {
-			w.SetSensitive(!atBottom)
+		for k, v := range sensitive {
+			if strings.Contains(l, k) {
+				w.SetSensitive(v)
+				break
+			}
 		}
 	})
 	oc.ctxMenu.PopupAtPointer(event)
@@ -87,23 +104,7 @@ func (oc *onContext) ContextDelete(mi *gtk.MenuItem) {
 		return
 	}
 
-	if oc.id > 0 {
-		req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
-			PlaylistId: oc.id,
-			Action:     m3uetcpb.PlaylistTrackAction_PT_DELETE,
-			Position:   int32(values[store.TColPosition].(int)),
-		}
-
-		onerror.Log(dialer.ExecutePlaylistTrackAction(req))
-		return
-	}
-
-	req := &m3uetcpb.ExecuteQueueActionRequest{
-		Action:   m3uetcpb.QueueAction_Q_DELETE,
-		Position: int32(values[store.QColPosition].(int)),
-	}
-
-	onerror.Log(dialer.ExecuteQueueAction(req))
+	oc.DeleteRows(values)
 }
 
 func (oc *onContext) ContextEnqueue(mi *gtk.MenuItem) {
@@ -112,23 +113,18 @@ func (oc *onContext) ContextEnqueue(mi *gtk.MenuItem) {
 		return
 	}
 
-	var id int64
-	var loc string
-	if oc.id > 0 {
-		id = values[store.TColTrackID].(int64)
-		loc = values[store.TColLocation].(string)
-	} else {
-		id = values[store.QColTrackID].(int64)
-		loc = values[store.QColLocation].(string)
-	}
-
 	req := &m3uetcpb.ExecuteQueueActionRequest{
 		Action: m3uetcpb.QueueAction_Q_APPEND,
 	}
-	if id > 0 {
-		req.Ids = []int64{id}
+
+	if oc.id > 0 {
+		for _, m := range values {
+			req.Ids = append(req.Ids, m[store.TColTrackID].(int64))
+		}
 	} else {
-		req.Locations = []string{loc}
+		for _, m := range values {
+			req.Locations = append(req.Locations, m[store.QColLocation].(string))
+		}
 	}
 
 	if err := dialer.ExecuteQueueAction(req); err != nil {
@@ -137,9 +133,13 @@ func (oc *onContext) ContextEnqueue(mi *gtk.MenuItem) {
 	}
 }
 
+func (oc *onContext) ContextHide(m *gtk.Menu) {
+	oc.resetSelection()
+}
+
 func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 	values := oc.getSelection()
-	if len(values) == 0 {
+	if len(values) != 1 {
 		return
 	}
 
@@ -154,7 +154,7 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 	}
 
 	label := mi.GetLabel()
-	fromPos := values[rowPosition].(int)
+	fromPos := values[0][rowPosition].(int)
 	var pos int
 	if strings.Contains(label, "top") {
 		if fromPos == 1 {
@@ -166,12 +166,12 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 	} else if strings.Contains(label, "down") {
 		pos = fromPos + 1
 	} else if strings.Contains(label, "bottom") {
-		pos = values[lastPosition].(int)
+		pos = values[0][lastPosition].(int)
 		if fromPos == pos {
 			return
 		}
 	} else {
-		log.Error("Invalid/unsupported queue move")
+		log.Error("Invalid playlist/queue move")
 		return
 	}
 
@@ -198,12 +198,12 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 
 func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 	values := oc.getSelection()
-	if len(values) == 0 {
+	if len(values) != 1 {
 		return
 	}
 
 	if oc.id > 0 {
-		pos := values[store.TColPosition].(int)
+		pos := values[0][store.TColPosition].(int)
 
 		req := &m3uetcpb.ExecutePlaybarActionRequest{
 			Action:   m3uetcpb.PlaybarAction_BAR_ACTIVATE,
@@ -215,9 +215,9 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 		return
 	}
 
-	id := values[store.QColTrackID].(int64)
-	loc := values[store.QColLocation].(string)
-	pos := values[store.QColPosition].(int)
+	id := values[0][store.QColTrackID].(int64)
+	loc := values[0][store.QColLocation].(string)
+	pos := values[0][store.QColPosition].(int)
 
 	reqbar := &m3uetcpb.ExecutePlaybackActionRequest{
 		Action: m3uetcpb.PlaybackAction_PB_PLAY,
@@ -242,40 +242,103 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 	onerror.Log(dialer.ExecuteQueueAction(reqq))
 }
 
-func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {
-	var err error
+func (oc *onContext) ContextPoppedUp(m *gtk.Menu) {
+	glib.IdleAdd(func() bool {
+		sel, _ := oc.view.GetSelection()
+		if oc.selection.keep && oc.selection.paths != nil {
+			for i := range oc.selection.paths {
+				if sel.PathIsSelected(oc.selection.paths[i]) {
+					continue
+				}
+				sel.SelectPath(oc.selection.paths[i])
+			}
+		}
+		return false
+	})
+}
+
+func (oc *onContext) DeleteRows(values []map[store.ModelColumn]interface{}) {
+	colPosition := store.QColPosition
 	if oc.id > 0 {
-		oc.selection, err = store.GetTreeSelectionValues(
-			sel,
-			[]store.ModelColumn{
-				store.TColPosition,
-				store.TColTrackID,
-				store.TColLocation,
-				store.TColLastPosition,
-			},
-		)
-	} else {
-		oc.selection, err = store.GetTreeSelectionValues(
-			sel,
-			[]store.ModelColumn{
-				store.QColPosition,
-				store.QColTrackID,
-				store.QColLocation,
-				store.QColLastPosition,
-			},
-		)
+		colPosition = store.TColPosition
 	}
+
+	sort.Slice(values, func(i, j int) bool {
+		return values[i][colPosition].(int) <
+			values[j][colPosition].(int)
+	})
+
+	if oc.id > 0 {
+		for i := len(values) - 1; i >= 0; i-- {
+			req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
+				PlaylistId: oc.id,
+				Action:     m3uetcpb.PlaylistTrackAction_PT_DELETE,
+				Position:   int32(values[i][store.TColPosition].(int)),
+			}
+
+			onerror.Log(dialer.ExecutePlaylistTrackAction(req))
+		}
+		return
+	}
+
+	for i := len(values) - 1; i >= 0; i-- {
+		req := &m3uetcpb.ExecuteQueueActionRequest{
+			Action:   m3uetcpb.QueueAction_Q_DELETE,
+			Position: int32(values[i][store.QColPosition].(int)),
+		}
+
+		onerror.Log(dialer.ExecuteQueueAction(req))
+	}
+}
+
+func (oc *onContext) Key(tv *gtk.TreeView, event *gdk.Event) {
+	key := gdk.EventKeyNewFromEvent(event)
+	if key.KeyVal() != gdk.KEY_Delete {
+		return
+	}
+
+	values := oc.getSelection(true)
+	if len(values) == 0 {
+		return
+	}
+
+	oc.DeleteRows(values)
+}
+
+func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {
+	if oc.selection.keep {
+		log.Info("Ignoring selection change")
+		return
+	}
+	var err error
+	cols := []store.ModelColumn{
+		store.QColPosition,
+		store.QColTrackID,
+		store.QColLocation,
+		store.QColLastPosition,
+	}
+	if oc.id > 0 {
+		cols = []store.ModelColumn{
+			store.TColPosition,
+			store.TColTrackID,
+			store.TColLocation,
+			store.TColLastPosition,
+		}
+	}
+
+	oc.selection.values, oc.selection.paths, err = store.GetMultipleTreeSelectionValues(sel, oc.view, cols)
 	if err != nil {
 		log.Error(err)
 		return
 	}
+
 	log.Debugf("Selected context entres: %v", oc.selection)
 }
 
 func (oc *onContext) getSelection(keep ...bool) (
-	values map[store.ModelColumn]interface{}) {
+	values []map[store.ModelColumn]interface{}) {
 
-	if oc.selection == nil {
+	if oc.selection.values == nil {
 		sel, err := oc.view.GetSelection()
 		if err != nil {
 			log.Error(err)
@@ -284,20 +347,26 @@ func (oc *onContext) getSelection(keep ...bool) (
 		oc.SelChanged(sel)
 	}
 
-	values, ok := oc.selection.(map[store.ModelColumn]interface{})
+	values, ok := oc.selection.values.([]map[store.ModelColumn]interface{})
 	if !ok {
 		log.Debug("There is no selection available for context")
-		values = map[store.ModelColumn]interface{}{}
+		values = []map[store.ModelColumn]interface{}{}
 		return
 	}
 
-	reset := true
+	oc.selection.keep = false
 	if len(keep) > 0 {
-		reset = !keep[0]
+		oc.selection.keep = keep[0]
 	}
 
-	if reset {
-		oc.selection = nil
+	if !oc.selection.keep {
+		oc.resetSelection()
 	}
 	return
+}
+
+func (oc *onContext) resetSelection() {
+	oc.selection.keep = false
+	oc.selection.values = nil
+	oc.selection.paths = nil
 }
