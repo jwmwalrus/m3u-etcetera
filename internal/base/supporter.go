@@ -7,26 +7,41 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// Playlist extensions
+const (
+	SupportedFileExtensionMP3  = ".mp3"
+	SupportedFileExtensionM4A  = ".m4a"
+	SupportedFileExtensionOGG  = ".ogg"
+	SupportedFileExtensionFLAC = ".flac"
+
+	SupportedPlaylistExtensionM3U  = ".m3u"
+	SupportedPlaylistExtensionM3U8 = ".m3u8"
+	SupportedPlaylistExtensionPLS  = ".pls"
+
+	SupportedURISchemeFile = "file"
+	SupportedURISchemeHTTP = "http"
+)
+
 var (
 	// SupportedFileExtensions -
 	SupportedFileExtensions = []string{
-		".mp3",
-		".m4a",
-		".ogg",
-		".flac",
+		SupportedFileExtensionMP3,
+		SupportedFileExtensionM4A,
+		SupportedFileExtensionOGG,
+		SupportedFileExtensionFLAC,
 	}
 
 	// SupportedPlaylistExtensions -
 	SupportedPlaylistExtensions = []string{
-		".m3u",
-		".m3u8",
-		// ".pls",
+		SupportedPlaylistExtensionM3U,
+		SupportedPlaylistExtensionM3U8,
+		SupportedPlaylistExtensionPLS,
 	}
 
 	// SupportedURISchemes -
 	SupportedURISchemes = []string{
-		"file",
-		"http",
+		SupportedURISchemeFile,
+		SupportedURISchemeHTTP,
 	}
 
 	// SupportedMIMETypes -

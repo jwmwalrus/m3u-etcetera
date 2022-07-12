@@ -511,6 +511,7 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 		log.Error(err)
 		return
 	}
+	filter.SetName("Playlist files")
 
 	for _, v := range base.SupportedPlaylistExtensions {
 		filter.AddPattern("*" + v)

@@ -83,5 +83,6 @@ func Setup(signals *map[string]interface{}) (err error) {
 	(*signals)["on_music_playlists_view_context_delete_activate"] = musicPlaylistSignals.contextDelete
 	(*signals)["on_music_playlists_view_context_edit_activate"] = musicPlaylistSignals.contextEdit
 	(*signals)["on_music_playlists_view_context_open_activate"] = musicPlaylistSignals.contextOpen
+	(*signals)["on_music_playlists_view_context_export_activate"] = musicPlaylistSignals.contextExport
 	return
 }

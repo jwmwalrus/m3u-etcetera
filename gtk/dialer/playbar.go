@@ -110,6 +110,24 @@ func ExecutePlaylistTrackAction(req *m3uetcpb.ExecutePlaylistTrackActionRequest)
 	return
 }
 
+// ExportPlaylist -
+func ExportPlaylist(req *m3uetcpb.ExportPlaylistRequest) (err error) {
+	cc, err := getClientConn1()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	_, err = cl.ExportPlaylist(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		err = fmt.Errorf(s.Message())
+		return
+	}
+	return
+}
+
 // ImportPlaylists -
 func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (
 	msgList []string, err error) {

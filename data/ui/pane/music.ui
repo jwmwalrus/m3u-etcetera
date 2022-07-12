@@ -504,6 +504,22 @@
       </object>
     </child>
     <child>
+      <object class="GtkMenuItem" id="music_playlists_view_context_export">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="tooltip-text" translatable="yes">Export playlist as...</property>
+        <property name="label" translatable="yes">Export...</property>
+        <property name="use-underline">True</property>
+        <signal name="activate" handler="on_music_playlists_view_context_export_activate" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkMenuItem" id="music_playlists_view_context_delete">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
