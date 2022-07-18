@@ -9,6 +9,33 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.18.0] 2022-07-18
+
+New and improved features
+
+### Added
+
+* Exporting playlist from context menu
+* Multiple selection in playlists
+* Toggle selection in query results
+* Removing a playlist group
+* Collection hierarchy switch
+* The playlist merge task
+* Perspective activation
+* Playback seek
+* Keyboard events for the delete key.
+
+### Modified
+
+* Rework collection settings implementation
+* Progress bar seek cleanup
+* Improve/complete collection management features
+* Refactor store.values in terms of gtk.TreeModel.
+* Implement a better column renderer generator
+* Lock selected tree-view values until consumed or reset.
+* Further separate `store` from calls (a.k.a. `dialer`)
+    * Create a gtk/utils package
+
 ## [0.17.0] 2022-06-27
 
 Features and fixes
