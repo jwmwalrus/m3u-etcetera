@@ -8,6 +8,7 @@ package m3uetcpb
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -22,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RootSvcClient interface {
-	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
+	Status(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*StatusResponse, error)
 	Off(ctx context.Context, in *OffRequest, opts ...grpc.CallOption) (*OffResponse, error)
 }
 
@@ -34,7 +35,7 @@ func NewRootSvcClient(cc grpc.ClientConnInterface) RootSvcClient {
 	return &rootSvcClient{cc}
 }
 
-func (c *rootSvcClient) Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error) {
+func (c *rootSvcClient) Status(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*StatusResponse, error) {
 	out := new(StatusResponse)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.RootSvc/Status", in, out, opts...)
 	if err != nil {
@@ -56,7 +57,7 @@ func (c *rootSvcClient) Off(ctx context.Context, in *OffRequest, opts ...grpc.Ca
 // All implementations must embed UnimplementedRootSvcServer
 // for forward compatibility
 type RootSvcServer interface {
-	Status(context.Context, *Empty) (*StatusResponse, error)
+	Status(context.Context, *empty.Empty) (*StatusResponse, error)
 	Off(context.Context, *OffRequest) (*OffResponse, error)
 	mustEmbedUnimplementedRootSvcServer()
 }
@@ -65,7 +66,7 @@ type RootSvcServer interface {
 type UnimplementedRootSvcServer struct {
 }
 
-func (UnimplementedRootSvcServer) Status(context.Context, *Empty) (*StatusResponse, error) {
+func (UnimplementedRootSvcServer) Status(context.Context, *empty.Empty) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
 }
 func (UnimplementedRootSvcServer) Off(context.Context, *OffRequest) (*OffResponse, error) {
@@ -85,7 +86,7 @@ func RegisterRootSvcServer(s grpc.ServiceRegistrar, srv RootSvcServer) {
 }
 
 func _RootSvc_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func _RootSvc_Status_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: "/m3uetcpb.RootSvc/Status",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RootSvcServer).Status(ctx, req.(*Empty))
+		return srv.(RootSvcServer).Status(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

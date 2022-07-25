@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
@@ -104,7 +105,7 @@ func playbackAction(c *cli.Context) (err error) {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
-	res, err := cl.GetPlayback(context.Background(), &m3uetcpb.Empty{})
+	res, err := cl.GetPlayback(context.Background(), &empty.Empty{})
 	if err != nil {
 		return
 	}
@@ -246,7 +247,7 @@ func playbackListAction(c *cli.Context) (err error) {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
-	res, err := cl.GetPlaybackList(context.Background(), &m3uetcpb.Empty{})
+	res, err := cl.GetPlaybackList(context.Background(), &empty.Empty{})
 	if err != nil {
 		return
 	}

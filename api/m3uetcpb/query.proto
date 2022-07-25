@@ -4,23 +4,23 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-import 'api/m3uetcpb/empty.proto';
+import 'google/protobuf/empty.proto';
 import 'api/m3uetcpb/track.proto';
 
 service QuerySvc {
     rpc GetQuery(GetQueryRequest) returns (GetQueryResponse);
     rpc GetQueries(GetQueriesRequest) returns (GetQueriesResponse);
     rpc AddQuery(AddQueryRequest) returns (AddQueryResponse);
-    rpc UpdateQuery(UpdateQueryRequest) returns (Empty);
-    rpc RemoveQuery(RemoveQueryRequest) returns (Empty);
+    rpc UpdateQuery(UpdateQueryRequest) returns (google.protobuf.Empty);
+    rpc RemoveQuery(RemoveQueryRequest) returns (google.protobuf.Empty);
 
     rpc ApplyQuery(ApplyQueryRequest) returns (ApplyQueryResponse);
     rpc QueryBy(QueryByRequest) returns (QueryByResponse);
 
-    rpc SubscribeToQueryStore(Empty)
+    rpc SubscribeToQueryStore(google.protobuf.Empty)
         returns (stream SubscribeToQueryStoreResponse);
     rpc UnsubscribeFromQueryStore(UnsubscribeFromQueryStoreRequest)
-        returns (Empty);
+        returns (google.protobuf.Empty);
 }
 
 message GetQueryRequest {

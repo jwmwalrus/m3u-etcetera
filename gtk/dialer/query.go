@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
@@ -153,7 +154,7 @@ func subscribeToQueryStore() {
 	cl := m3uetcpb.NewQuerySvcClient(cc)
 	stream, err := cl.SubscribeToQueryStore(
 		context.Background(),
-		&m3uetcpb.Empty{},
+		&empty.Empty{},
 	)
 	if err != nil {
 		log.Errorf("Error subscribing to collection store: %v", err)

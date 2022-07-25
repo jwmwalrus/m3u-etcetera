@@ -4,17 +4,17 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-import 'api/m3uetcpb/empty.proto';
+import 'google/protobuf/empty.proto';
 import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/track.proto';
 
 service PlaybackSvc {
-    rpc GetPlayback(Empty) returns (GetPlaybackResponse);
-    rpc GetPlaybackList(Empty) returns (GetPlaybackListResponse);
-    rpc ExecutePlaybackAction(ExecutePlaybackActionRequest) returns (Empty);
+    rpc GetPlayback(google.protobuf.Empty) returns (GetPlaybackResponse);
+    rpc GetPlaybackList(google.protobuf.Empty) returns (GetPlaybackListResponse);
+    rpc ExecutePlaybackAction(ExecutePlaybackActionRequest) returns (google.protobuf.Empty);
 
-    rpc SubscribeToPlayback(Empty) returns (stream SubscribeToPlaybackResponse);
-    rpc UnsubscribeFromPlayback(UnsubscribeFromPlaybackRequest) returns (Empty);
+    rpc SubscribeToPlayback(google.protobuf.Empty) returns (stream SubscribeToPlaybackResponse);
+    rpc UnsubscribeFromPlayback(UnsubscribeFromPlaybackRequest) returns (google.protobuf.Empty);
 }
 
 message GetPlaybackResponse {

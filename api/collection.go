@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
@@ -43,7 +44,7 @@ func (*CollectionSvc) GetCollection(_ context.Context,
 
 // GetAllCollections implements m3uetcpb.CollectionSvcServer
 func (*CollectionSvc) GetAllCollections(_ context.Context,
-	_ *m3uetcpb.Empty) (*m3uetcpb.GetAllCollectionsResponse, error) {
+	_ *empty.Empty) (*m3uetcpb.GetAllCollectionsResponse, error) {
 
 	s := models.GetAllCollections()
 
@@ -95,7 +96,7 @@ func (*CollectionSvc) AddCollection(_ context.Context,
 
 // RemoveCollection implements m3uetcpb.CollectionSvcServer
 func (*CollectionSvc) RemoveCollection(_ context.Context,
-	req *m3uetcpb.RemoveCollectionRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.RemoveCollectionRequest) (*empty.Empty, error) {
 	if req.Id < 1 {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"Collection ID must be greater than zero")
@@ -110,12 +111,12 @@ func (*CollectionSvc) RemoveCollection(_ context.Context,
 		onerror.Log(coll.Delete())
 	}()
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // UpdateCollection implements m3uetcpb.CollectionSvcServer
 func (*CollectionSvc) UpdateCollection(_ context.Context,
-	req *m3uetcpb.UpdateCollectionRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.UpdateCollectionRequest) (*empty.Empty, error) {
 
 	if req.Id < 1 {
 		return nil, status.Errorf(codes.InvalidArgument,
@@ -168,12 +169,12 @@ func (*CollectionSvc) UpdateCollection(_ context.Context,
 			"Error updating collection: %v", err)
 	}
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // ScanCollection implements m3uetcpb.CollectionSvcServer
 func (*CollectionSvc) ScanCollection(_ context.Context,
-	req *m3uetcpb.ScanCollectionRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.ScanCollectionRequest) (*empty.Empty, error) {
 
 	if req.Id < 1 {
 		return nil, status.Errorf(codes.InvalidArgument,
@@ -191,12 +192,12 @@ func (*CollectionSvc) ScanCollection(_ context.Context,
 		coll.Scan(req.UpdateTags)
 	}()
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // DiscoverCollections implements m3uetcpb.CollectionSvcServer
 func (*CollectionSvc) DiscoverCollections(_ context.Context,
-	_ *m3uetcpb.Empty) (*m3uetcpb.Empty, error) {
+	_ *empty.Empty) (*empty.Empty, error) {
 
 	s := models.GetAllCollections()
 
@@ -207,11 +208,11 @@ func (*CollectionSvc) DiscoverCollections(_ context.Context,
 		}
 	}()
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // SubscribeToCollectionStore implements m3uetcpb.CollectionSvcServer
-func (*CollectionSvc) SubscribeToCollectionStore(_ *m3uetcpb.Empty,
+func (*CollectionSvc) SubscribeToCollectionStore(_ *empty.Empty,
 	stream m3uetcpb.CollectionSvc_SubscribeToCollectionStoreServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToCollectionStoreEvent)
@@ -365,7 +366,7 @@ sLoop:
 
 // UnsubscribeFromCollectionStore implements m3uetcpb.CollectionSvcServer
 func (*CollectionSvc) UnsubscribeFromCollectionStore(_ context.Context,
-	req *m3uetcpb.UnsubscribeFromCollectionStoreRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.UnsubscribeFromCollectionStoreRequest) (*empty.Empty, error) {
 	if req.SubscriptionId == "" {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"A non-empty subscription ID is required")
@@ -375,5 +376,5 @@ func (*CollectionSvc) UnsubscribeFromCollectionStore(_ context.Context,
 		subscription.Event{Data: req.SubscriptionId},
 	)
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }

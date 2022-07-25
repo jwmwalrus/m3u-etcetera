@@ -1,7 +1,0 @@
-syntax = 'proto3';
-
-package m3uetcpb;
-
-option go_package = './m3uetcpb';
-
-message Empty {}

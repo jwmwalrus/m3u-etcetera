@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
@@ -22,7 +23,7 @@ type PlaybackSvc struct {
 
 // GetPlayback implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) GetPlayback(_ context.Context,
-	_ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
+	_ *empty.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
 
 	res := &m3uetcpb.GetPlaybackResponse{
 		IsStreaming: playback.IsStreaming(),
@@ -46,7 +47,7 @@ func (*PlaybackSvc) GetPlayback(_ context.Context,
 
 // GetPlaybackList implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) GetPlaybackList(_ context.Context,
-	_ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackListResponse, error) {
+	_ *empty.Empty) (*m3uetcpb.GetPlaybackListResponse, error) {
 
 	res := &m3uetcpb.GetPlaybackListResponse{}
 	pbs := models.GetAllPlayback()
@@ -62,7 +63,7 @@ func (*PlaybackSvc) GetPlaybackList(_ context.Context,
 
 // ExecutePlaybackAction implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
-	req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.ExecutePlaybackActionRequest) (*empty.Empty, error) {
 
 	if req.Action == m3uetcpb.PlaybackAction_PB_PLAY {
 		if len(req.Locations) > 0 {
@@ -129,11 +130,11 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 		}
 	}()
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // SubscribeToPlayback implements m3uetcpb.PlaybackSvcServer
-func (*PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty,
+func (*PlaybackSvc) SubscribeToPlayback(_ *empty.Empty,
 	stream m3uetcpb.PlaybackSvc_SubscribeToPlaybackServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToPlaybackEvent)
@@ -188,7 +189,7 @@ sLoop:
 
 // UnsubscribeFromPlayback implements m3uetcpb.PlaybackSvcServer
 func (*PlaybackSvc) UnsubscribeFromPlayback(_ context.Context,
-	req *m3uetcpb.UnsubscribeFromPlaybackRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.UnsubscribeFromPlaybackRequest) (*empty.Empty, error) {
 
 	if req.SubscriptionId == "" {
 		return nil, status.Errorf(codes.InvalidArgument,
@@ -199,5 +200,5 @@ func (*PlaybackSvc) UnsubscribeFromPlayback(_ context.Context,
 		subscription.Event{Data: req.SubscriptionId},
 	)
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }

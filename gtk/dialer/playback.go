@@ -3,6 +3,7 @@ package dialer
 import (
 	"context"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
@@ -37,7 +38,7 @@ func subscribeToPlayback() {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
-	stream, err := cl.SubscribeToPlayback(context.Background(), &m3uetcpb.Empty{})
+	stream, err := cl.SubscribeToPlayback(context.Background(), &empty.Empty{})
 	if err != nil {
 		log.Errorf("Error subscribing to playback: %v", err)
 		return

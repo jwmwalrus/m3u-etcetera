@@ -3,6 +3,7 @@ package dialer
 import (
 	"context"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
@@ -82,7 +83,7 @@ func applyCollectionActionsChanges(o ...store.CollectionOptions) {
 	if opts.Discover {
 		_, err := cl.DiscoverCollections(
 			context.Background(),
-			&m3uetcpb.Empty{},
+			&empty.Empty{},
 		)
 		onerror.Log(err)
 	} else {
@@ -117,7 +118,7 @@ func subscribeToCollectionStore() {
 	cl := m3uetcpb.NewCollectionSvcClient(cc)
 	stream, err := cl.SubscribeToCollectionStore(
 		context.Background(),
-		&m3uetcpb.Empty{},
+		&empty.Empty{},
 	)
 	if err != nil {
 		log.Errorf("Error subscribing to collection store: %v", err)

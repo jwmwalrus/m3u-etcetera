@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
@@ -147,7 +148,7 @@ func (*PlaybarSvc) GetAllPlaylistGroups(_ context.Context,
 
 // ExecutePlaybarAction implements m3uetcpb.PlaybarSvcServer
 func (*PlaybarSvc) ExecutePlaybarAction(_ context.Context,
-	req *m3uetcpb.ExecutePlaybarActionRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.ExecutePlaybarActionRequest) (*empty.Empty, error) {
 
 	if len(req.Ids) < 1 {
 		return nil, status.Errorf(codes.InvalidArgument,
@@ -206,7 +207,7 @@ func (*PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 		}
 	}()
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // ExecutePlaylistAction implements m3uetcpb.PlaybarSvcServer
@@ -368,7 +369,7 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 
 // ExecutePlaylistTrackAction implements m3uetcpb.PlaybarSvcServer
 func (*PlaybarSvc) ExecutePlaylistTrackAction(_ context.Context,
-	req *m3uetcpb.ExecutePlaylistTrackActionRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.ExecutePlaylistTrackActionRequest) (*empty.Empty, error) {
 
 	if req.PlaylistId < 1 {
 		return nil,
@@ -408,7 +409,7 @@ func (*PlaybarSvc) ExecutePlaylistTrackAction(_ context.Context,
 		}
 	}()
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // ImportPlaylists implements m3uetcpb.PlaybarSvcServer
@@ -449,7 +450,7 @@ func (*PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest,
 
 // ExportPlaylist implements m3uetcpb.PlaybarSvcServer
 func (*PlaybarSvc) ExportPlaylist(_ context.Context,
-	req *m3uetcpb.ExportPlaylistRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.ExportPlaylistRequest) (*empty.Empty, error) {
 
 	if req.Id < 1 {
 		return nil, status.Errorf(codes.InvalidArgument,
@@ -482,11 +483,11 @@ func (*PlaybarSvc) ExportPlaylist(_ context.Context,
 		return nil, status.Errorf(codes.Internal,
 			"Error exporting playlist: %v", err)
 	}
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // SubscribeToPlaybarStore implements m3uetcpb.PlaybarSvcServer
-func (*PlaybarSvc) SubscribeToPlaybarStore(_ *m3uetcpb.Empty,
+func (*PlaybarSvc) SubscribeToPlaybarStore(_ *empty.Empty,
 	stream m3uetcpb.PlaybarSvc_SubscribeToPlaybarStoreServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToPlaybarStoreEvent)
@@ -765,7 +766,7 @@ sLoop:
 
 // UnsubscribeFromPlaybarStore implements m3uetcpb.PlaybarSvcServer
 func (*PlaybarSvc) UnsubscribeFromPlaybarStore(_ context.Context,
-	req *m3uetcpb.UnsubscribeFromPlaybarStoreRequest) (*m3uetcpb.Empty, error) {
+	req *m3uetcpb.UnsubscribeFromPlaybarStoreRequest) (*empty.Empty, error) {
 
 	if req.SubscriptionId == "" {
 		return nil, status.Errorf(codes.InvalidArgument,
@@ -776,5 +777,5 @@ func (*PlaybarSvc) UnsubscribeFromPlaybarStore(_ context.Context,
 		subscription.Event{Data: req.SubscriptionId},
 	)
 
-	return &m3uetcpb.Empty{}, nil
+	return &empty.Empty{}, nil
 }

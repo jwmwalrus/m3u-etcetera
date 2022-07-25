@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc/status"
@@ -44,7 +45,7 @@ func perspectiveAction(c *cli.Context) (err error) {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewPerspectiveSvcClient(cc)
-	res, err := cl.GetActivePerspective(context.Background(), &m3uetcpb.Empty{})
+	res, err := cl.GetActivePerspective(context.Background(), &empty.Empty{})
 	if err != nil {
 		return
 	}

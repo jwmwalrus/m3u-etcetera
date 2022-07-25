@@ -8,6 +8,7 @@ package m3uetcpb
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,14 +24,14 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CollectionSvcClient interface {
 	GetCollection(ctx context.Context, in *GetCollectionRequest, opts ...grpc.CallOption) (*GetCollectionResponse, error)
-	GetAllCollections(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetAllCollectionsResponse, error)
+	GetAllCollections(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetAllCollectionsResponse, error)
 	AddCollection(ctx context.Context, in *AddCollectionRequest, opts ...grpc.CallOption) (*AddCollectionResponse, error)
-	RemoveCollection(ctx context.Context, in *RemoveCollectionRequest, opts ...grpc.CallOption) (*Empty, error)
-	UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*Empty, error)
-	ScanCollection(ctx context.Context, in *ScanCollectionRequest, opts ...grpc.CallOption) (*Empty, error)
-	DiscoverCollections(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
-	SubscribeToCollectionStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (CollectionSvc_SubscribeToCollectionStoreClient, error)
-	UnsubscribeFromCollectionStore(ctx context.Context, in *UnsubscribeFromCollectionStoreRequest, opts ...grpc.CallOption) (*Empty, error)
+	RemoveCollection(ctx context.Context, in *RemoveCollectionRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ScanCollection(ctx context.Context, in *ScanCollectionRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	DiscoverCollections(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
+	SubscribeToCollectionStore(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (CollectionSvc_SubscribeToCollectionStoreClient, error)
+	UnsubscribeFromCollectionStore(ctx context.Context, in *UnsubscribeFromCollectionStoreRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type collectionSvcClient struct {
@@ -50,7 +51,7 @@ func (c *collectionSvcClient) GetCollection(ctx context.Context, in *GetCollecti
 	return out, nil
 }
 
-func (c *collectionSvcClient) GetAllCollections(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetAllCollectionsResponse, error) {
+func (c *collectionSvcClient) GetAllCollections(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetAllCollectionsResponse, error) {
 	out := new(GetAllCollectionsResponse)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.CollectionSvc/GetAllCollections", in, out, opts...)
 	if err != nil {
@@ -68,8 +69,8 @@ func (c *collectionSvcClient) AddCollection(ctx context.Context, in *AddCollecti
 	return out, nil
 }
 
-func (c *collectionSvcClient) RemoveCollection(ctx context.Context, in *RemoveCollectionRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *collectionSvcClient) RemoveCollection(ctx context.Context, in *RemoveCollectionRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.CollectionSvc/RemoveCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -77,8 +78,8 @@ func (c *collectionSvcClient) RemoveCollection(ctx context.Context, in *RemoveCo
 	return out, nil
 }
 
-func (c *collectionSvcClient) UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *collectionSvcClient) UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.CollectionSvc/UpdateCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -86,8 +87,8 @@ func (c *collectionSvcClient) UpdateCollection(ctx context.Context, in *UpdateCo
 	return out, nil
 }
 
-func (c *collectionSvcClient) ScanCollection(ctx context.Context, in *ScanCollectionRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *collectionSvcClient) ScanCollection(ctx context.Context, in *ScanCollectionRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.CollectionSvc/ScanCollection", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -95,8 +96,8 @@ func (c *collectionSvcClient) ScanCollection(ctx context.Context, in *ScanCollec
 	return out, nil
 }
 
-func (c *collectionSvcClient) DiscoverCollections(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *collectionSvcClient) DiscoverCollections(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.CollectionSvc/DiscoverCollections", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -104,7 +105,7 @@ func (c *collectionSvcClient) DiscoverCollections(ctx context.Context, in *Empty
 	return out, nil
 }
 
-func (c *collectionSvcClient) SubscribeToCollectionStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (CollectionSvc_SubscribeToCollectionStoreClient, error) {
+func (c *collectionSvcClient) SubscribeToCollectionStore(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (CollectionSvc_SubscribeToCollectionStoreClient, error) {
 	stream, err := c.cc.NewStream(ctx, &CollectionSvc_ServiceDesc.Streams[0], "/m3uetcpb.CollectionSvc/SubscribeToCollectionStore", opts...)
 	if err != nil {
 		return nil, err
@@ -136,8 +137,8 @@ func (x *collectionSvcSubscribeToCollectionStoreClient) Recv() (*SubscribeToColl
 	return m, nil
 }
 
-func (c *collectionSvcClient) UnsubscribeFromCollectionStore(ctx context.Context, in *UnsubscribeFromCollectionStoreRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *collectionSvcClient) UnsubscribeFromCollectionStore(ctx context.Context, in *UnsubscribeFromCollectionStoreRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.CollectionSvc/UnsubscribeFromCollectionStore", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -150,14 +151,14 @@ func (c *collectionSvcClient) UnsubscribeFromCollectionStore(ctx context.Context
 // for forward compatibility
 type CollectionSvcServer interface {
 	GetCollection(context.Context, *GetCollectionRequest) (*GetCollectionResponse, error)
-	GetAllCollections(context.Context, *Empty) (*GetAllCollectionsResponse, error)
+	GetAllCollections(context.Context, *empty.Empty) (*GetAllCollectionsResponse, error)
 	AddCollection(context.Context, *AddCollectionRequest) (*AddCollectionResponse, error)
-	RemoveCollection(context.Context, *RemoveCollectionRequest) (*Empty, error)
-	UpdateCollection(context.Context, *UpdateCollectionRequest) (*Empty, error)
-	ScanCollection(context.Context, *ScanCollectionRequest) (*Empty, error)
-	DiscoverCollections(context.Context, *Empty) (*Empty, error)
-	SubscribeToCollectionStore(*Empty, CollectionSvc_SubscribeToCollectionStoreServer) error
-	UnsubscribeFromCollectionStore(context.Context, *UnsubscribeFromCollectionStoreRequest) (*Empty, error)
+	RemoveCollection(context.Context, *RemoveCollectionRequest) (*empty.Empty, error)
+	UpdateCollection(context.Context, *UpdateCollectionRequest) (*empty.Empty, error)
+	ScanCollection(context.Context, *ScanCollectionRequest) (*empty.Empty, error)
+	DiscoverCollections(context.Context, *empty.Empty) (*empty.Empty, error)
+	SubscribeToCollectionStore(*empty.Empty, CollectionSvc_SubscribeToCollectionStoreServer) error
+	UnsubscribeFromCollectionStore(context.Context, *UnsubscribeFromCollectionStoreRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedCollectionSvcServer()
 }
 
@@ -168,28 +169,28 @@ type UnimplementedCollectionSvcServer struct {
 func (UnimplementedCollectionSvcServer) GetCollection(context.Context, *GetCollectionRequest) (*GetCollectionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCollection not implemented")
 }
-func (UnimplementedCollectionSvcServer) GetAllCollections(context.Context, *Empty) (*GetAllCollectionsResponse, error) {
+func (UnimplementedCollectionSvcServer) GetAllCollections(context.Context, *empty.Empty) (*GetAllCollectionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllCollections not implemented")
 }
 func (UnimplementedCollectionSvcServer) AddCollection(context.Context, *AddCollectionRequest) (*AddCollectionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddCollection not implemented")
 }
-func (UnimplementedCollectionSvcServer) RemoveCollection(context.Context, *RemoveCollectionRequest) (*Empty, error) {
+func (UnimplementedCollectionSvcServer) RemoveCollection(context.Context, *RemoveCollectionRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveCollection not implemented")
 }
-func (UnimplementedCollectionSvcServer) UpdateCollection(context.Context, *UpdateCollectionRequest) (*Empty, error) {
+func (UnimplementedCollectionSvcServer) UpdateCollection(context.Context, *UpdateCollectionRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateCollection not implemented")
 }
-func (UnimplementedCollectionSvcServer) ScanCollection(context.Context, *ScanCollectionRequest) (*Empty, error) {
+func (UnimplementedCollectionSvcServer) ScanCollection(context.Context, *ScanCollectionRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ScanCollection not implemented")
 }
-func (UnimplementedCollectionSvcServer) DiscoverCollections(context.Context, *Empty) (*Empty, error) {
+func (UnimplementedCollectionSvcServer) DiscoverCollections(context.Context, *empty.Empty) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DiscoverCollections not implemented")
 }
-func (UnimplementedCollectionSvcServer) SubscribeToCollectionStore(*Empty, CollectionSvc_SubscribeToCollectionStoreServer) error {
+func (UnimplementedCollectionSvcServer) SubscribeToCollectionStore(*empty.Empty, CollectionSvc_SubscribeToCollectionStoreServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToCollectionStore not implemented")
 }
-func (UnimplementedCollectionSvcServer) UnsubscribeFromCollectionStore(context.Context, *UnsubscribeFromCollectionStoreRequest) (*Empty, error) {
+func (UnimplementedCollectionSvcServer) UnsubscribeFromCollectionStore(context.Context, *UnsubscribeFromCollectionStoreRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromCollectionStore not implemented")
 }
 func (UnimplementedCollectionSvcServer) mustEmbedUnimplementedCollectionSvcServer() {}
@@ -224,7 +225,7 @@ func _CollectionSvc_GetCollection_Handler(srv interface{}, ctx context.Context, 
 }
 
 func _CollectionSvc_GetAllCollections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -236,7 +237,7 @@ func _CollectionSvc_GetAllCollections_Handler(srv interface{}, ctx context.Conte
 		FullMethod: "/m3uetcpb.CollectionSvc/GetAllCollections",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectionSvcServer).GetAllCollections(ctx, req.(*Empty))
+		return srv.(CollectionSvcServer).GetAllCollections(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -314,7 +315,7 @@ func _CollectionSvc_ScanCollection_Handler(srv interface{}, ctx context.Context,
 }
 
 func _CollectionSvc_DiscoverCollections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -326,13 +327,13 @@ func _CollectionSvc_DiscoverCollections_Handler(srv interface{}, ctx context.Con
 		FullMethod: "/m3uetcpb.CollectionSvc/DiscoverCollections",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectionSvcServer).DiscoverCollections(ctx, req.(*Empty))
+		return srv.(CollectionSvcServer).DiscoverCollections(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _CollectionSvc_SubscribeToCollectionStore_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Empty)
+	m := new(empty.Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}

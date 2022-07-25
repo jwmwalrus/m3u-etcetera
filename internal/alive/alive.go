@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -115,7 +116,7 @@ func isServerAlive() bool {
 	defer cc.Close()
 
 	c := m3uetcpb.NewRootSvcClient(cc)
-	res, err := c.Status(context.Background(), &m3uetcpb.Empty{})
+	res, err := c.Status(context.Background(), &empty.Empty{})
 	if err != nil {
 		log.Info(err)
 		return false
