@@ -83,6 +83,8 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 		if err != nil {
 			return
 		}
+		col.SetSizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+		col.SetResizable(true)
 		oq.view.InsertColumn(col, -1)
 	}
 

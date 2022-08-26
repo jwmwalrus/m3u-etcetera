@@ -418,10 +418,12 @@ func (ot *onTab) setTreeView() (err error) {
 			"text",
 			c,
 		)
-		col.AddAttribute(renderer, "weight", int(store.TColFontWeight))
 		if err != nil {
 			return
 		}
+		col.AddAttribute(renderer, "weight", int(store.TColFontWeight))
+		col.SetSizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+		col.SetResizable(true)
 		ot.view.InsertColumn(col, -1)
 	}
 
