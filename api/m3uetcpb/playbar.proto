@@ -127,7 +127,7 @@ message ExecutePlaylistTrackActionRequest {
 
 message ImportPlaylistsRequest {
     Perspective perspective = 1;
-    /* bool detect_perspective = 2; */
+    bool detect_perspective = 2;
     repeated string locations = 3;
 }
 
