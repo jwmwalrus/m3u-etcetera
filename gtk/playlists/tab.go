@@ -26,6 +26,8 @@ type onTab struct {
 }
 
 func updatePlaybarView() {
+	log.Info("Updating playbar view")
+
 	keep := []onTab{}
 	remove := []onTab{}
 

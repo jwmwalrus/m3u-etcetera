@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gotk3/gotk3/gtk"
@@ -240,11 +241,42 @@ type collectionTree struct {
 	scanningMode      bool
 	lastEvent         m3uetcpb.CollectionEvent
 	hierarchy         collectionTreeHierarchy
-	// rootIndex         map[string]int
-	// root              []treeEntry
+
+	mu sync.Mutex
+}
+
+func (tree *collectionTree) canBeUpdated() bool {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	return !(tree.initialMode || tree.scanningMode)
+}
+
+func (tree *collectionTree) getLastEvent() m3uetcpb.CollectionEvent {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	return tree.lastEvent
+}
+
+func (tree *collectionTree) getModel() *gtk.TreeStore {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	return tree.model
+}
+
+func (tree *collectionTree) isInInitialMode() bool {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	return tree.initialMode
 }
 
 func (tree *collectionTree) rebuild() {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
 	if tree.initialMode || tree.scanningMode {
 		return
 	}
@@ -320,10 +352,67 @@ func (tree *collectionTree) rebuild() {
 	log.Infof("Tree built in %v", time.Since(start))
 }
 
+func (tree *collectionTree) setFilterVal(val string) *collectionTree {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	tree.filterVal = val
+	return tree
+}
+
+func (tree *collectionTree) setGroupByCollection(groupByCollection bool) *collectionTree {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	tree.groupByCollection = groupByCollection
+	return tree
+}
+
+func (tree *collectionTree) setHierarchy(hierarchy collectionTreeHierarchy) *collectionTree {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	tree.hierarchy = hierarchy
+	return tree
+}
+
+func (tree *collectionTree) setInitialMode(initialMode bool) *collectionTree {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	tree.initialMode = initialMode
+	return tree
+}
+
+func (tree *collectionTree) setLastEvent(lastEvent m3uetcpb.CollectionEvent) *collectionTree {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	tree.lastEvent = lastEvent
+	return tree
+}
+
+func (tree *collectionTree) setModel(model *gtk.TreeStore) *collectionTree {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	tree.model = model
+	return tree
+}
+
+func (tree *collectionTree) setScanningMode(scanningMode bool) *collectionTree {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+
+	tree.scanningMode = scanningMode
+	return tree
+}
+
 func (tree *collectionTree) update() bool {
-	if tree.lastEvent == m3uetcpb.CollectionEvent_CE_ITEM_CHANGED {
+	if tree.getLastEvent() == m3uetcpb.CollectionEvent_CE_ITEM_CHANGED {
 		return false
 	}
+
 	tree.rebuild()
 	return false
 }

@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gotk3/gotk3/gtk"
@@ -131,9 +132,56 @@ type playbarTree struct {
 	pplt               map[m3uetcpb.Perspective]playlistTree
 	initialMode        bool
 	receivingOpenItems bool
+
+	mu sync.Mutex
+}
+
+func (bt *playbarTree) canBeUpdated() bool {
+	bt.mu.Lock()
+	defer bt.mu.Unlock()
+
+	return !(bt.initialMode || bt.receivingOpenItems)
+}
+
+func (bt *playbarTree) getPlaylistTree(p m3uetcpb.Perspective) playlistTree {
+	bt.mu.Lock()
+	defer bt.mu.Unlock()
+
+	pt, ok := bt.pplt[p]
+	if !ok {
+		log.Warningf("There is no playlist tree for perspective %v", p)
+	}
+	return pt
+}
+
+func (bt *playbarTree) setInitialMode(initialMode bool) *playbarTree {
+	bt.mu.Lock()
+	defer bt.mu.Unlock()
+
+	bt.initialMode = initialMode
+	return bt
+}
+
+func (bt *playbarTree) setPlaylistTree(p m3uetcpb.Perspective, pt playlistTree) *playbarTree {
+	bt.mu.Lock()
+	defer bt.mu.Unlock()
+
+	bt.pplt[p] = pt
+	return bt
+}
+
+func (bt *playbarTree) setReceivingOpenItems(receivingOpenItems bool) *playbarTree {
+	bt.mu.Lock()
+	defer bt.mu.Unlock()
+
+	bt.receivingOpenItems = receivingOpenItems
+	return bt
 }
 
 func (bt *playbarTree) update() bool {
+	bt.mu.Lock()
+	defer bt.mu.Unlock()
+
 	if bt.initialMode || bt.receivingOpenItems {
 		return false
 	}
@@ -227,5 +275,6 @@ func (bt *playbarTree) update() bool {
 		}
 		log.Infof("Tree built in %v", time.Since(start))
 	}
+
 	return false
 }

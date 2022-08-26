@@ -70,6 +70,7 @@ func (bd *playbarData) GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 
 	bd.mu.Lock()
 	defer bd.mu.Unlock()
+
 	for _, pl := range bd.openPlaylist {
 		if pl.Id == id {
 			return pl
@@ -95,6 +96,7 @@ func (bd *playbarData) GetPlaylist(id int64) *m3uetcpb.Playlist {
 
 	bd.mu.Lock()
 	defer bd.mu.Unlock()
+
 	for _, pl := range bd.playlist {
 		if pl.Id == id {
 			return pl
@@ -110,6 +112,7 @@ func (bd *playbarData) GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
 
 	bd.mu.Lock()
 	defer bd.mu.Unlock()
+
 	for _, pg := range bd.playlistGroup {
 		if pg.Id == id {
 			return pg
@@ -252,7 +255,7 @@ func (bd *playbarData) PlaylistAlreadyExists(name string) bool {
 }
 
 // PlaylistGroupAlreadyExists returns true if a playlist group with the
-//given name already exists
+// given name already exists
 func (bd *playbarData) PlaylistGroupAlreadyExists(name string) bool {
 	bd.mu.Lock()
 	defer bd.mu.Unlock()
@@ -277,7 +280,7 @@ func (bd *playbarData) ProcessSubscriptionResponse(
 
 	switch res.Event {
 	case m3uetcpb.PlaybarEvent_BE_INITIAL:
-		barTree.initialMode = true
+		barTree.setInitialMode(true)
 		bd.activeID = 0
 		bd.openPlaylist = []*m3uetcpb.Playlist{}
 		bd.openPlaylistTrack = []*m3uetcpb.PlaylistTrack{}
@@ -291,7 +294,7 @@ func (bd *playbarData) ProcessSubscriptionResponse(
 		bd.activeID = res.ActivePlaylistId
 		bd.appendBDataItem(res)
 	case m3uetcpb.PlaybarEvent_BE_INITIAL_DONE:
-		barTree.initialMode = false
+		barTree.setInitialMode(false)
 	case m3uetcpb.PlaybarEvent_BE_ITEM_ADDED:
 		bd.activeID = res.ActivePlaylistId
 		bd.appendBDataItem(res)
@@ -302,16 +305,16 @@ func (bd *playbarData) ProcessSubscriptionResponse(
 		bd.activeID = res.ActivePlaylistId
 		bd.removeBDataItem(res)
 	case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS:
-		barTree.receivingOpenItems = true
+		barTree.setReceivingOpenItems(true)
 	case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_ITEM:
 		bd.appendBDataItem(res)
 		bd.trackBDataItemReplacements(res)
 	case m3uetcpb.PlaybarEvent_BE_OPEN_ITEMS_DONE:
 		bd.processBDataItemReplacements()
-		barTree.receivingOpenItems = false
+		barTree.setReceivingOpenItems(false)
 	}
 
-	if !barTree.initialMode && !barTree.receivingOpenItems {
+	if barTree.canBeUpdated() {
 		glib.IdleAdd(bd.updatePlaybarModel)
 		glib.IdleAdd(barTree.update)
 		glib.IdleAdd(bd.updatePlaylistGroupModel)
@@ -520,6 +523,8 @@ func (bd *playbarData) updatePlaybarMaps() {
 	bd.mu.Lock()
 	defer bd.mu.Unlock()
 
+	log.Info("Updating playbar maps")
+
 	sort.SliceStable(bd.openPlaylistTrack, func(i, j int) bool {
 		if bd.openPlaylistTrack[i].PlaylistId !=
 			bd.openPlaylistTrack[j].PlaylistId {
@@ -565,7 +570,7 @@ func (bd *playbarData) updatePlaybarMaps() {
 }
 
 func (bd *playbarData) updatePlaybarModel() bool {
-	if barTree.initialMode || barTree.receivingOpenItems {
+	if !barTree.canBeUpdated() {
 		return false
 	}
 
@@ -573,9 +578,7 @@ func (bd *playbarData) updatePlaybarModel() bool {
 
 	bd.updatePlaybarMaps()
 
-	PbData.mu.Lock()
-	playbackTrackID := PbData.trackID
-	PbData.mu.Unlock()
+	playbackTrackID := PbData.getTrackID()
 
 	bd.mu.Lock()
 	for _, pl := range bd.openPlaylist {
@@ -792,11 +795,11 @@ func (bd *playbarData) updatePlaybarModel() bool {
 }
 
 func (bd *playbarData) updatePlaylistGroupModel() bool {
-	if barTree.initialMode || barTree.receivingOpenItems {
+	if !barTree.canBeUpdated() {
 		return false
 	}
 
-	log.Info("Updating playlit-group model")
+	log.Info("Updating playlist-group model")
 
 	model := playlistGroupsModel
 	if model == nil {
@@ -813,6 +816,8 @@ func (bd *playbarData) updatePlaylistGroupModel() bool {
 	}
 
 	bd.mu.Lock()
+	defer bd.mu.Unlock()
+
 	var iter *gtk.TreeIter
 	for _, pg := range bd.playlistGroup {
 		iter = model.Append()
@@ -835,7 +840,6 @@ func (bd *playbarData) updatePlaylistGroupModel() bool {
 		)
 		onerror.Log(err)
 	}
-	bd.mu.Unlock()
 
 	return false
 }
@@ -872,9 +876,7 @@ func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (
 		return
 	}
 
-	v := barTree.pplt[p]
-	v.model = model
-	barTree.pplt[p] = v
+	barTree.setPlaylistTree(p, playlistTree{model: model})
 	return
 }
 
@@ -896,9 +898,9 @@ func DestroyPlaylistModel(id int64) (err error) {
 
 // FilterPlaylistTreeBy filters the playlist tree by the given value
 func FilterPlaylistTreeBy(p m3uetcpb.Perspective, val string) {
-	v := barTree.pplt[p]
+	v := barTree.getPlaylistTree(p)
 	v.filterVal = val
-	barTree.pplt[p] = v
+	barTree.setPlaylistTree(p, v)
 	barTree.update()
 }
 

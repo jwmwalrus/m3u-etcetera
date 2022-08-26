@@ -208,16 +208,16 @@ func (cd *collectionData) ProcessSubscriptionResponse(res *m3uetcpb.SubscribeToC
 		cd.subscriptionID = res.SubscriptionId
 	}
 
-	cTree.lastEvent = res.Event
+	cTree.setLastEvent(res.Event)
 	switch res.Event {
 	case m3uetcpb.CollectionEvent_CE_INITIAL:
-		cTree.initialMode = true
+		cTree.setInitialMode(true)
 		cd.collection = []*m3uetcpb.Collection{}
 		cd.track = []*m3uetcpb.Track{}
 	case m3uetcpb.CollectionEvent_CE_INITIAL_ITEM:
 		cd.appendCDataItem(res)
 	case m3uetcpb.CollectionEvent_CE_INITIAL_DONE:
-		cTree.initialMode = false
+		cTree.setInitialMode(false)
 	case m3uetcpb.CollectionEvent_CE_ITEM_ADDED:
 		cd.appendCDataItem(res)
 	case m3uetcpb.CollectionEvent_CE_ITEM_CHANGED:
@@ -225,13 +225,13 @@ func (cd *collectionData) ProcessSubscriptionResponse(res *m3uetcpb.SubscribeToC
 	case m3uetcpb.CollectionEvent_CE_ITEM_REMOVED:
 		cd.removeCDataItem(res)
 	case m3uetcpb.CollectionEvent_CE_SCANNING:
-		cTree.scanningMode = true
+		cTree.setScanningMode(true)
 	case m3uetcpb.CollectionEvent_CE_SCANNING_DONE:
-		cTree.scanningMode = false
+		cTree.setScanningMode(false)
 	}
 
 	glib.IdleAdd(cd.updateCollectionModel)
-	if !cTree.initialMode && !cTree.scanningMode {
+	if cTree.canBeUpdated() {
 		glib.IdleAdd(cTree.update)
 	} else {
 		glib.IdleAdd(cd.updateScanningProgress)
@@ -239,12 +239,13 @@ func (cd *collectionData) ProcessSubscriptionResponse(res *m3uetcpb.SubscribeToC
 }
 
 func (cd *collectionData) SwitchHierarchyTo(id string, grouped bool) {
-	if cTree.initialMode || cTree.scanningMode {
+	if !cTree.canBeUpdated() {
 		return
 	}
 
-	cTree.hierarchy = collectionTreeHierarchyMap[id]
-	cTree.groupByCollection = grouped
+	cTree.
+		setHierarchy(collectionTreeHierarchyMap[id]).
+		setGroupByCollection(grouped)
 
 	glib.IdleAdd(cTree.update)
 }
@@ -321,7 +322,7 @@ func (cd *collectionData) removeCDataItem(res *m3uetcpb.SubscribeToCollectionSto
 }
 
 func (cd *collectionData) updateCollectionModel() bool {
-	if cTree.initialMode {
+	if cTree.isInInitialMode() {
 		return false
 	}
 
@@ -444,13 +445,14 @@ func CreateCollectionTreeModel(h collectionTreeHierarchy) (
 	log.WithField("hierarchy", h).
 		Info("Creating collection tree model")
 
-	cTree.model, err = gtk.TreeStoreNew(CTreeColumn.getTypes()...)
+	model, err = gtk.TreeStoreNew(CTreeColumn.getTypes()...)
 	if err != nil {
 		return
 	}
 
-	cTree.hierarchy = h
-	model = cTree.model
+	cTree.
+		setHierarchy(h).
+		setModel(model)
 
 	var errp error
 	cProgress, errp = builder.GetProgressBar("collections_scanning_progress")
@@ -463,8 +465,9 @@ func CreateCollectionTreeModel(h collectionTreeHierarchy) (
 
 // FilterCollectionTreeBy filters the collection tree by the given value
 func FilterCollectionTreeBy(val string) {
-	cTree.filterVal = val
-	cTree.rebuild()
+	cTree.
+		setFilterVal(val).
+		rebuild()
 }
 
 // GetCollectionModel returns the current collection model
@@ -474,7 +477,7 @@ func GetCollectionModel() *gtk.ListStore {
 
 // GetCollectionTreeModel returns the current collection tree model
 func GetCollectionTreeModel() *gtk.TreeStore {
-	return cTree.model
+	return cTree.getModel()
 }
 
 func init() {

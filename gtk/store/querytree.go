@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -15,10 +16,15 @@ type queryTreeModel struct {
 	model       *gtk.TreeStore
 	filterVal   string
 	initialMode bool
+
+	mu sync.Mutex
 }
 
 func (qyt *queryTreeModel) update() bool {
 	log.Info("Updating query model")
+
+	qyt.mu.Lock()
+	defer qyt.mu.Unlock()
 
 	model := qyt.model
 	if model == nil {

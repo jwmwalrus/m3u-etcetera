@@ -135,6 +135,13 @@ func (pbd *playbackData) SetPlaybackUI() (err error) {
 	return
 }
 
+func (pbd *playbackData) getTrackID() int64 {
+	pbd.mu.Lock()
+	defer pbd.mu.Unlock()
+
+	return pbd.trackID
+}
+
 func (pbd *playbackData) setCover() bool {
 	pbd.mu.Lock()
 	defer pbd.mu.Unlock()
@@ -190,6 +197,7 @@ func (pbd *playbackData) updatePlayback() bool {
 	log.Debug("Updating playback")
 
 	iconName := "media-playback-pause"
+
 	pbd.mu.Lock()
 	if pbd.res.IsPaused {
 		iconName = "media-playback-start"
@@ -214,7 +222,6 @@ func (pbd *playbackData) updatePlayback() bool {
 		location = ""
 		title, artist, album = "", "", ""
 	}
-	pbd.mu.Unlock()
 
 	if duration > 0 {
 		pos := time.Duration(position) * time.Nanosecond
@@ -264,8 +271,9 @@ func (pbd *playbackData) updatePlayback() bool {
 	pbd.artist.SetTooltipText(artist)
 	pbd.source.SetText(ing2.TruncateText(location, maxLen))
 	pbd.source.SetTooltipText(location)
+	pbd.mu.Unlock()
 
-	if oldTrackID != pbd.trackID {
+	if oldTrackID != pbd.getTrackID() {
 		BData.updatePlaybarModel()
 	}
 	return false
