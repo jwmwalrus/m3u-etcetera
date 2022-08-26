@@ -69,6 +69,11 @@ type ProtoOut interface {
 	ToProtobuf() proto.Message
 }
 
+func init() {
+	storageGuard = make(chan struct{}, 1)
+	PlaybackChanged = make(chan struct{}, 1)
+}
+
 // SetConnection sets the database connection for the whole package
 func SetConnection(conn *gorm.DB) {
 	db = conn
@@ -107,9 +112,4 @@ func getSuffler(n int) []int {
 	seed.Shuffle(n, func(i, j int) { s[i], s[j] = s[j], s[i] })
 
 	return s
-}
-
-func init() {
-	storageGuard = make(chan struct{}, 1)
-	PlaybackChanged = make(chan struct{}, 1)
 }

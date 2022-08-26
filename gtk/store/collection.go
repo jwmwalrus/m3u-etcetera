@@ -20,6 +20,22 @@ type CollectionOptions struct {
 	UpdateTags bool
 }
 
+func init() {
+	collectionNameMap = make(map[int64]string)
+
+	hl := []collectionTreeHierarchy{
+		ArtistYearAlbumTree,
+		ArtistAlbumTree,
+		AlbumTree,
+		GenreArtistAlbumTree,
+		YearArtistAlbumTree,
+	}
+	collectionTreeHierarchyMap = make(map[string]collectionTreeHierarchy)
+	for _, h := range hl {
+		collectionTreeHierarchyMap[h.String()] = h
+	}
+}
+
 // SetDefaults -
 func (co *CollectionOptions) SetDefaults() {}
 
@@ -478,20 +494,4 @@ func GetCollectionModel() *gtk.ListStore {
 // GetCollectionTreeModel returns the current collection tree model
 func GetCollectionTreeModel() *gtk.TreeStore {
 	return cTree.getModel()
-}
-
-func init() {
-	collectionNameMap = make(map[int64]string)
-
-	hl := []collectionTreeHierarchy{
-		ArtistYearAlbumTree,
-		ArtistAlbumTree,
-		AlbumTree,
-		GenreArtistAlbumTree,
-		YearArtistAlbumTree,
-	}
-	collectionTreeHierarchyMap = make(map[string]collectionTreeHierarchy)
-	for _, h := range hl {
-		collectionTreeHierarchyMap[h.String()] = h
-	}
 }

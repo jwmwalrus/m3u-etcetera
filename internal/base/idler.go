@@ -39,6 +39,11 @@ const (
 	IdleStatusFileOperations
 )
 
+func init() {
+	InterruptSignal = make(chan os.Signal, 1)
+	signal.Notify(InterruptSignal, os.Interrupt, syscall.SIGTERM)
+}
+
 func (is IdleStatus) String() string {
 	return []string{
 		"idle",
@@ -184,9 +189,4 @@ func IsAppIdling() bool {
 // StartIdler -
 func StartIdler() {
 	GetFree(IdleStatusIdle)
-}
-
-func init() {
-	InterruptSignal = make(chan os.Signal, 1)
-	signal.Notify(InterruptSignal, os.Interrupt, syscall.SIGTERM)
 }

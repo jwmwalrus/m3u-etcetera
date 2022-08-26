@@ -31,6 +31,14 @@ var (
 	audiobooksQueueModel *gtk.ListStore
 )
 
+func init() {
+	perspectiveQueuesList = []m3uetcpb.Perspective{
+		m3uetcpb.Perspective_MUSIC,
+		m3uetcpb.Perspective_PODCASTS,
+		m3uetcpb.Perspective_AUDIOBOOKS,
+	}
+}
+
 func (qd *queueData) GetQueueDigest(idx m3uetcpb.Perspective) *m3uetcpb.PerspectiveDigest {
 	qd.mu.Lock()
 	defer qd.mu.Unlock()
@@ -241,13 +249,5 @@ func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 		return musicQueueModel
 	default:
 		return nil
-	}
-}
-
-func init() {
-	perspectiveQueuesList = []m3uetcpb.Perspective{
-		m3uetcpb.Perspective_MUSIC,
-		m3uetcpb.Perspective_PODCASTS,
-		m3uetcpb.Perspective_AUDIOBOOKS,
 	}
 }

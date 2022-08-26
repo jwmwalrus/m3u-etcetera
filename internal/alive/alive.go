@@ -33,6 +33,10 @@ var (
 	lastStatus error
 )
 
+func init() {
+	readServerAlive()
+}
+
 // CheckServerStatus If ServerCheckInterval is up, starts the server
 func CheckServerStatus() error {
 	if lastStatus == nil || (time.Now().Unix()-LastCheck > ServerCheckInterval) {
@@ -246,8 +250,4 @@ func writeServerAliveFile() {
 
 	_, err = f.WriteString("1")
 	onerror.Log(err)
-}
-
-func init() {
-	readServerAlive()
 }

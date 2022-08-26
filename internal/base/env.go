@@ -95,6 +95,43 @@ var (
 	Conf config.Config
 )
 
+func init() {
+	OS = runtime.GOOS
+
+	InstanceSuffix = ing2.GetRandomString(8)
+
+	// XDG-related
+	DataDir = filepath.Join(xdg.DataHome, AppDirName)
+	ConfigDir = filepath.Join(xdg.ConfigHome, AppDirName)
+	CacheDir = filepath.Join(xdg.CacheHome, AppDirName)
+	RuntimeDir = filepath.Join(xdg.RuntimeDir, AppDirName)
+	CoversDir = filepath.Join(DataDir, "covers")
+
+	// Define global flags
+	getopt.FlagLong(&flagHelp, "help", 'h', "Display this help")
+	getopt.FlagLong(&FlagDry, "dry", 'n', "Dry run")
+	getopt.FlagLong(&FlagDebugMode, "debug", 0, "Start in debug mode")
+	getopt.FlagLong(&FlagTestingMode, "testing", 0, "Start in testing mode")
+	getopt.FlagLong(&FlagVerbose, "verbose", 'v', "Bump logging severity")
+	getopt.FlagLong(&FlagSeverity, "severity", 0, "Logging severity (debug|info|warn|error|fatal)")
+	getopt.FlagLong(&FlagEchoLogging, "echo-logging", 'e', "Echo logs to stderr")
+
+	// log-related
+	AppInstance = filepath.Base(os.Args[0])
+	logFilename = AppInstance + ".log"
+	logFilePath := filepath.Join(DataDir, logFilename)
+	logFile = &lumberjack.Logger{
+		Filename:   logFilePath,
+		MaxSize:    1, // megabytes
+		MaxBackups: 5,
+		MaxAge:     30,    //days
+		Compress:   false, // disabled by default
+	}
+	log.SetOutput(logFile)
+	log.SetFormatter(&log.TextFormatter{})
+	log.SetLevel(log.ErrorLevel)
+}
+
 // SetTestingMode -
 func SetTestingMode() {
 	FlagTestingMode = true
@@ -152,41 +189,4 @@ func resolveSeverity() {
 	log.SetLevel(level)
 	// log.SetReportCaller(true)
 	log.SetReportCaller(FlagSeverity == "debug")
-}
-
-func init() {
-	OS = runtime.GOOS
-
-	InstanceSuffix = ing2.GetRandomString(8)
-
-	// XDG-related
-	DataDir = filepath.Join(xdg.DataHome, AppDirName)
-	ConfigDir = filepath.Join(xdg.ConfigHome, AppDirName)
-	CacheDir = filepath.Join(xdg.CacheHome, AppDirName)
-	RuntimeDir = filepath.Join(xdg.RuntimeDir, AppDirName)
-	CoversDir = filepath.Join(DataDir, "covers")
-
-	// Define global flags
-	getopt.FlagLong(&flagHelp, "help", 'h', "Display this help")
-	getopt.FlagLong(&FlagDry, "dry", 'n', "Dry run")
-	getopt.FlagLong(&FlagDebugMode, "debug", 0, "Start in debug mode")
-	getopt.FlagLong(&FlagTestingMode, "testing", 0, "Start in testing mode")
-	getopt.FlagLong(&FlagVerbose, "verbose", 'v', "Bump logging severity")
-	getopt.FlagLong(&FlagSeverity, "severity", 0, "Logging severity (debug|info|warn|error|fatal)")
-	getopt.FlagLong(&FlagEchoLogging, "echo-logging", 'e', "Echo logs to stderr")
-
-	// log-related
-	AppInstance = filepath.Base(os.Args[0])
-	logFilename = AppInstance + ".log"
-	logFilePath := filepath.Join(DataDir, logFilename)
-	logFile = &lumberjack.Logger{
-		Filename:   logFilePath,
-		MaxSize:    1, // megabytes
-		MaxBackups: 5,
-		MaxAge:     30,    //days
-		Compress:   false, // disabled by default
-	}
-	log.SetOutput(logFile)
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetLevel(log.ErrorLevel)
 }

@@ -56,6 +56,22 @@ var (
 	perspectivesList []m3uetcpb.Perspective
 )
 
+func init() {
+	perspectivesList = []m3uetcpb.Perspective{
+		m3uetcpb.Perspective_MUSIC,
+		m3uetcpb.Perspective_RADIO,
+		m3uetcpb.Perspective_PODCASTS,
+		m3uetcpb.Perspective_AUDIOBOOKS,
+	}
+
+	barTree.pplt = map[m3uetcpb.Perspective]playlistTree{
+		m3uetcpb.Perspective_MUSIC:      {},
+		m3uetcpb.Perspective_RADIO:      {},
+		m3uetcpb.Perspective_PODCASTS:   {},
+		m3uetcpb.Perspective_AUDIOBOOKS: {},
+	}
+}
+
 func (bd *playbarData) GetActiveID() int64 {
 	bd.mu.Lock()
 	defer bd.mu.Unlock()
@@ -960,21 +976,5 @@ func setPlaylistModelRows(id int64, rows map[int]playlistModelRow) {
 		if pl.id == id {
 			pl.rows = rows
 		}
-	}
-}
-
-func init() {
-	perspectivesList = []m3uetcpb.Perspective{
-		m3uetcpb.Perspective_MUSIC,
-		m3uetcpb.Perspective_RADIO,
-		m3uetcpb.Perspective_PODCASTS,
-		m3uetcpb.Perspective_AUDIOBOOKS,
-	}
-
-	barTree.pplt = map[m3uetcpb.Perspective]playlistTree{
-		m3uetcpb.Perspective_MUSIC:      {},
-		m3uetcpb.Perspective_RADIO:      {},
-		m3uetcpb.Perspective_PODCASTS:   {},
-		m3uetcpb.Perspective_AUDIOBOOKS: {},
 	}
 }

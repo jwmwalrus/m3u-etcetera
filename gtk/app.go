@@ -19,6 +19,18 @@ var (
 	settingsMenuSignals = &onSettingsMenu{}
 )
 
+func init() {
+	interruptSignal = make(chan os.Signal, 1)
+	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM)
+
+	perspectivesList = []m3uetcpb.Perspective{
+		m3uetcpb.Perspective_MUSIC,
+		m3uetcpb.Perspective_RADIO,
+		m3uetcpb.Perspective_PODCASTS,
+		m3uetcpb.Perspective_AUDIOBOOKS,
+	}
+}
+
 // Setup sets the whole GTK UI
 func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error) {
 	settingsMenuSignals.window = w
@@ -99,17 +111,4 @@ func onInterruptSignal() {
 
 	dialer.SetForceExit()
 	settingsMenuSignals.window.Destroy()
-}
-
-func init() {
-	interruptSignal = make(chan os.Signal, 1)
-	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM)
-
-	perspectivesList = []m3uetcpb.Perspective{
-		m3uetcpb.Perspective_MUSIC,
-		m3uetcpb.Perspective_RADIO,
-		m3uetcpb.Perspective_PODCASTS,
-		m3uetcpb.Perspective_AUDIOBOOKS,
-	}
-
 }

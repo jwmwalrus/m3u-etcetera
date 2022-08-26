@@ -21,6 +21,15 @@ var (
 	}
 )
 
+func init() {
+	perspToNotebook = map[m3uetcpb.Perspective]string{
+		m3uetcpb.Perspective_MUSIC:      "music_playbar",
+		m3uetcpb.Perspective_RADIO:      "radio_playbar",
+		m3uetcpb.Perspective_PODCASTS:   "podcasts_playbar",
+		m3uetcpb.Perspective_AUDIOBOOKS: "audiobooks_playbar",
+	}
+}
+
 // Setup kickstarts playlists
 func Setup(signals *map[string]interface{}) (err error) {
 	store.SetUpdatePlaybarViewFn(updatePlaybarView)
@@ -136,14 +145,5 @@ func setFocused() {
 			focusRequest.id = -1
 			break
 		}
-	}
-}
-
-func init() {
-	perspToNotebook = map[m3uetcpb.Perspective]string{
-		m3uetcpb.Perspective_MUSIC:      "music_playbar",
-		m3uetcpb.Perspective_RADIO:      "radio_playbar",
-		m3uetcpb.Perspective_PODCASTS:   "podcasts_playbar",
-		m3uetcpb.Perspective_AUDIOBOOKS: "audiobooks_playbar",
 	}
 }

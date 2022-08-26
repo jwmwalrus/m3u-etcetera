@@ -65,6 +65,16 @@ type engine struct {
 	playbin   *gst.Element
 }
 
+func init() {
+	eng = &engine{
+		state:     gst.StateNull,
+		lastEvent: noLoopEvent,
+		mode:      NormalMode,
+		hint:      hintNone,
+	}
+	quitEngineLoop = make(chan struct{})
+}
+
 func (e *engine) addPlaybackFromQueue(qt *models.QueueTrack) (pb *models.Playback) {
 	log.WithField("qt", qt).
 		Info("Adding playback from queue")
@@ -528,14 +538,4 @@ func (e *engine) wrapUp() {
 		)
 	}
 	e.terminate = true
-}
-
-func init() {
-	eng = &engine{
-		state:     gst.StateNull,
-		lastEvent: noLoopEvent,
-		mode:      NormalMode,
-		hint:      hintNone,
-	}
-	quitEngineLoop = make(chan struct{})
 }
