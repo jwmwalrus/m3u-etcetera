@@ -55,9 +55,11 @@ type unsubscribeData struct {
 }
 
 var (
-	subscriptors []Subscriber
-	smu          sync.Mutex
-	unloading    = false
+	subscriptors struct {
+		s  []Subscriber
+		mu sync.Mutex
+	}
+	unloading = false
 
 	// Unloader declares the subscription unloader
 	Unloader = base.Unloader{
@@ -71,18 +73,20 @@ func Subscribe(st Type) (*Subscriber, string) {
 	log.WithField("st", st).
 		Info("Subscribing")
 
+	rl, _ := ing2.GetRandomLetters(16)
 	s := Subscriber{
 		st:    st,
-		id:    ing2.GetRandomString(16),
+		id:    rl,
 		Event: make(chan Event),
 	}
 	s.Unsubscribe = func() {
 		removeSubscription(s.id)
 	}
 
-	smu.Lock()
-	subscriptors = append(subscriptors, s)
-	smu.Unlock()
+	subscriptors.mu.Lock()
+	defer subscriptors.mu.Unlock()
+
+	subscriptors.s = append(subscriptors.s, s)
 	return &s, s.id
 }
 
@@ -99,18 +103,20 @@ func Broadcast(st Type, es ...Event) {
 		if !ok {
 			return
 		}
-		smu.Lock()
-		for i := range subscriptors {
-			if subscriptors[i].id != id {
+
+		subscriptors.mu.Lock()
+		defer subscriptors.mu.Unlock()
+
+		for i := range subscriptors.s {
+			if subscriptors.s[i].id != id {
 				continue
 			}
 			evt := Event{
 				Data: unsubscribeData{st: st, id: id},
 			}
-			subscriptors[i].Event <- evt
+			subscriptors.s[i].Event <- evt
 			break
 		}
-		smu.Unlock()
 		return
 	}
 
@@ -119,17 +125,17 @@ func Broadcast(st Type, es ...Event) {
 		list = []Event{{}}
 	}
 
-	smu.Lock()
-	for i := range subscriptors {
-		if subscriptors[i].st == st {
+	subscriptors.mu.Lock()
+	defer subscriptors.mu.Unlock()
+	for i := range subscriptors.s {
+		if subscriptors.s[i].st == st {
 			go func(i int) {
 				for _, x := range list {
-					subscriptors[i].Event <- x
+					subscriptors.s[i].Event <- x
 				}
 			}(i)
 		}
 	}
-	smu.Unlock()
 }
 
 // MustUnsubscribe checks if the event means unsubscribing
@@ -152,27 +158,29 @@ func removeSubscription(id string) {
 		return
 	}
 
-	smu.Lock()
-	for k := range subscriptors {
-		if subscriptors[k].id == id {
-			subscriptors[k] = subscriptors[len(subscriptors)-1]
-			subscriptors = subscriptors[:len(subscriptors)-1]
+	subscriptors.mu.Lock()
+	defer subscriptors.mu.Unlock()
+
+	for k := range subscriptors.s {
+		if subscriptors.s[k].id == id {
+			subscriptors.s[k] = subscriptors.s[len(subscriptors.s)-1]
+			subscriptors.s = subscriptors.s[:len(subscriptors.s)-1]
 			break
 		}
 	}
-	smu.Unlock()
 }
 
 func unloadSubscriptions() error {
 	unloading = true
 
-	smu.Lock()
-	for i := range subscriptors {
+	subscriptors.mu.Lock()
+	defer subscriptors.mu.Unlock()
+
+	for i := range subscriptors.s {
 		evt := Event{
-			Data: unsubscribeData{st: ToNone, id: subscriptors[i].id},
+			Data: unsubscribeData{st: ToNone, id: subscriptors.s[i].id},
 		}
-		subscriptors[i].Event <- evt
+		subscriptors.s[i].Event <- evt
 	}
-	smu.Unlock()
 	return nil
 }

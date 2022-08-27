@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -40,8 +42,8 @@ const (
 )
 
 func init() {
-	InterruptSignal = make(chan os.Signal, 1)
 	signal.Notify(InterruptSignal, os.Interrupt, syscall.SIGTERM)
+	idleStatusStack.s = []IdleStatus{IdleStatusIdle}
 }
 
 func (is IdleStatus) String() string {
@@ -59,22 +61,25 @@ var (
 	idleCancel context.CancelFunc
 	idleCtx    context.Context
 
-	forceExit       = false
-	idleStatusStack = []IdleStatus{IdleStatusIdle}
-	doneEmmitted    = 0
-	idleGotCalled   = false
+	forceExit       atomic.Bool
+	doneEmmitted    atomic.Int32
+	idleGotCalled   atomic.Bool
+	idleStatusStack struct {
+		s  []IdleStatus
+		mu sync.RWMutex
+	}
 
 	// InterruptSignal -
-	InterruptSignal chan os.Signal
+	InterruptSignal chan os.Signal = make(chan os.Signal, 1)
 )
 
 // DoTerminate forces immediate termination of the application
 func DoTerminate(force bool) {
-	forceExit = force || IsAppIdling()
+	forceExit.Store(force || IsAppIdling())
 
 	log.WithFields(log.Fields{
 		"force":     force,
-		"forceExit": forceExit,
+		"forceExit": forceExit.Load(),
 	}).
 		Debug("Immediate termination status")
 }
@@ -88,23 +93,27 @@ func GetBusy(is IdleStatus) {
 	log.WithField("is", is).
 		Debug("server got a lot busier")
 
-	idleStatusStack = append(idleStatusStack, is)
+	idleStatusStack.mu.Lock()
+	idleStatusStack.s = append(idleStatusStack.s, is)
+	idleStatusStack.mu.Unlock()
 
-	if idleGotCalled {
+	if idleGotCalled.Load() {
 		idleCancel()
 	}
 }
 
 // GetFree registers a process as less busy
 func GetFree(is IdleStatus) {
+	idleStatusStack.mu.Lock()
+	defer idleStatusStack.mu.Unlock()
 	if is != IdleStatusIdle {
 		log.WithField("is", is).
 			Debug("server got a little less busy")
 
-		for i := len(idleStatusStack) - 1; i >= 0; i-- {
-			if is == idleStatusStack[i] {
-				idleStatusStack[i] = idleStatusStack[len(idleStatusStack)-1]
-				idleStatusStack = idleStatusStack[:len(idleStatusStack)-1]
+		for i := len(idleStatusStack.s) - 1; i >= 0; i-- {
+			if is == idleStatusStack.s[i] {
+				idleStatusStack.s[i] = idleStatusStack.s[len(idleStatusStack.s)-1]
+				idleStatusStack.s = idleStatusStack.s[:len(idleStatusStack.s)-1]
 				break
 			}
 		}
@@ -112,11 +121,11 @@ func GetFree(is IdleStatus) {
 
 	log.Debugf(
 		"Topmost idle status is %v",
-		idleStatusStack[len(idleStatusStack)-1],
+		idleStatusStack.s[len(idleStatusStack.s)-1],
 	)
 
-	if len(idleStatusStack) == 1 {
-		if !idleGotCalled {
+	if len(idleStatusStack.s) == 1 {
+		if !idleGotCalled.Load() {
 			idleCtx, idleCancel = context.WithCancel(context.Background())
 			go Idle(idleCtx)
 		}
@@ -126,20 +135,23 @@ func GetFree(is IdleStatus) {
 // Idle exits the server if it has been idle for a while and no long-term
 // processes are pending
 func Idle(ctx context.Context) {
+	idleStatusStack.mu.RLock()
+
 	log.WithFields(log.Fields{
-		"forceExit":            forceExit,
-		"len(idleStatusStack)": len(idleStatusStack) - 1,
+		"forceExit":            forceExit.Load(),
+		"len(idleStatusStack)": len(idleStatusStack.s) - 1,
 	}).
 		Info("Starting Idle checks")
+	idleStatusStack.mu.RUnlock()
 
-	if !forceExit {
-		if IsAppBusy() || idleGotCalled {
+	if !forceExit.Load() {
+		if IsAppBusy() || idleGotCalled.Load() {
 			log.Info("Server is busy or already idling, so cancelling request")
 			<-ctx.Done()
 			return
 		}
 
-		idleGotCalled = true
+		idleGotCalled.Store(true)
 		log.Info("Entering Idle state")
 
 		select {
@@ -152,20 +164,20 @@ func Idle(ctx context.Context) {
 			break
 		case <-ctx.Done():
 			log.Info("idleCancel got called explicitly")
-			idleGotCalled = false
+			idleGotCalled.Store(false)
 			return
 		}
 	}
 
-	if doneEmmitted > 0 {
-		log.WithField("doneEmmitted", doneEmmitted).
+	if doneEmmitted.Load() > 0 {
+		log.WithField("doneEmmitted", doneEmmitted.Load()).
 			Warn("ignoring further attempt at ctx.Done()")
 
-		doneEmmitted++
+		doneEmmitted.Add(1)
 		return
 	}
 
-	doneEmmitted++
+	doneEmmitted.Add(1)
 
 	log.Info("Server seems to have been Idle for a while, and that's gotta stop!")
 	InterruptSignal <- os.Interrupt
@@ -173,17 +185,26 @@ func Idle(ctx context.Context) {
 
 // IsAppBusy returns true if some process has registered as busy
 func IsAppBusy() bool {
-	return len(idleStatusStack) > 1
+	idleStatusStack.mu.RLock()
+	defer idleStatusStack.mu.RUnlock()
+
+	return len(idleStatusStack.s) > 1
 }
 
 // IsAppBusyBy returns true if some process has registered as busy
 func IsAppBusyBy(is IdleStatus) bool {
-	return slices.Contains(idleStatusStack, is)
+	idleStatusStack.mu.RLock()
+	defer idleStatusStack.mu.RUnlock()
+
+	return slices.Contains(idleStatusStack.s, is)
 }
 
 // IsAppIdling returns true if the Idle method is active
 func IsAppIdling() bool {
-	return idleGotCalled || len(idleStatusStack) == 1
+	idleStatusStack.mu.RLock()
+	defer idleStatusStack.mu.RUnlock()
+
+	return idleGotCalled.Load() || len(idleStatusStack.s) == 1
 }
 
 // StartIdler -

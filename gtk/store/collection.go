@@ -44,7 +44,7 @@ type collectionData struct {
 	collection     []*m3uetcpb.Collection
 	track          []*m3uetcpb.Track
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 var (
@@ -63,8 +63,8 @@ var (
 // CollectionAlreadyExists returns true if the location and the name are not
 // already in use by another collection
 func (cd *collectionData) CollectionAlreadyExists(location, name string) bool {
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
+	cd.mu.RLock()
+	defer cd.mu.RUnlock()
 
 	for _, c := range cd.collection {
 		if c.Location == location ||
@@ -78,8 +78,8 @@ func (cd *collectionData) CollectionAlreadyExists(location, name string) bool {
 func (cd *collectionData) GetCollectionActionsChanges() (toScan, toRemove []int64) {
 	model := collectionModel
 
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
+	cd.mu.RLock()
+	defer cd.mu.RUnlock()
 
 	iter, ok := model.GetIterFirst()
 	for ok {
@@ -120,15 +120,15 @@ func (cd *collectionData) GetCollectionActionsChanges() (toScan, toRemove []int6
 }
 
 func (cd *collectionData) GetSubscriptionID() string {
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
+	cd.mu.RLock()
+	defer cd.mu.RUnlock()
 
 	return cd.subscriptionID
 }
 
 func (cd *collectionData) GetTracksTotalCount() int64 {
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
+	cd.mu.RLock()
+	defer cd.mu.RUnlock()
 
 	var total int64
 	for _, c := range cd.collection {
@@ -142,8 +142,8 @@ func (cd *collectionData) GetUpdateCollectionRequests() ([]*m3uetcpb.UpdateColle
 
 	model := GetCollectionModel()
 
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
+	cd.mu.RLock()
+	defer cd.mu.RUnlock()
 
 	iter, ok := model.GetIterFirst()
 	for ok {
@@ -267,6 +267,7 @@ func (cd *collectionData) SwitchHierarchyTo(id string, grouped bool) {
 }
 
 func (cd *collectionData) appendCDataItem(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
+	// NOTE: cd.mu lock is already set
 	switch res.Item.(type) {
 	case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
 		item := res.GetCollection()
@@ -292,6 +293,7 @@ func (cd *collectionData) appendCDataItem(res *m3uetcpb.SubscribeToCollectionSto
 }
 
 func (cd *collectionData) changeCDataItem(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
+	// NOTE: cd.mu lock is already set
 	switch res.Item.(type) {
 	case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
 		c := res.GetCollection()
@@ -313,6 +315,7 @@ func (cd *collectionData) changeCDataItem(res *m3uetcpb.SubscribeToCollectionSto
 }
 
 func (cd *collectionData) removeCDataItem(res *m3uetcpb.SubscribeToCollectionStoreResponse) {
+	// NOTE: cd.mu lock is already set
 	switch res.Item.(type) {
 	case *m3uetcpb.SubscribeToCollectionStoreResponse_Collection:
 		c := res.GetCollection()
@@ -344,8 +347,8 @@ func (cd *collectionData) updateCollectionModel() bool {
 
 	log.Info("Updating collection model")
 
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
+	cd.mu.RLock()
+	defer cd.mu.RUnlock()
 
 	model := collectionModel
 	if model == nil {
@@ -407,8 +410,8 @@ func (cd *collectionData) updateCollectionModel() bool {
 }
 
 func (cd *collectionData) updateCollectionNamesMap() {
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
+	cd.mu.RLock()
+	defer cd.mu.RUnlock()
 
 	collectionNameMap = make(map[int64]string)
 	for _, c := range cd.collection {
@@ -422,8 +425,8 @@ func (cd *collectionData) updateScanningProgress() bool {
 		return false
 	}
 
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
+	cd.mu.RLock()
+	defer cd.mu.RUnlock()
 
 	scanned := 0
 	for _, c := range cd.collection {

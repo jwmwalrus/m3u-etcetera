@@ -15,7 +15,7 @@ import (
 type queueData struct {
 	res *m3uetcpb.SubscribeToQueueStoreResponse
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 var (
@@ -40,8 +40,8 @@ func init() {
 }
 
 func (qd *queueData) GetQueueDigest(idx m3uetcpb.Perspective) *m3uetcpb.PerspectiveDigest {
-	qd.mu.Lock()
-	defer qd.mu.Unlock()
+	qd.mu.RLock()
+	defer qd.mu.RUnlock()
 
 	for _, dig := range qd.res.Digest {
 		if dig.Perspective == idx {
@@ -52,8 +52,8 @@ func (qd *queueData) GetQueueDigest(idx m3uetcpb.Perspective) *m3uetcpb.Perspect
 }
 
 func (qd *queueData) GetQueueTracksCount(idx m3uetcpb.Perspective) int64 {
-	qd.mu.Lock()
-	defer qd.mu.Unlock()
+	qd.mu.RLock()
+	defer qd.mu.RUnlock()
 
 	var count int64
 	for _, qt := range qd.res.QueueTracks {
@@ -65,8 +65,8 @@ func (qd *queueData) GetQueueTracksCount(idx m3uetcpb.Perspective) int64 {
 }
 
 func (qd *queueData) GetSubscriptionID() string {
-	qd.mu.Lock()
-	defer qd.mu.Unlock()
+	qd.mu.RLock()
+	defer qd.mu.RUnlock()
 
 	return qd.res.SubscriptionId
 }

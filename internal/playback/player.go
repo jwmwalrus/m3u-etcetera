@@ -49,7 +49,7 @@ func (p *Player) Properties() map[string]*prop.Prop {
 }
 
 // Next implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Next() *dbus.Error {
+func (*Player) Next() *dbus.Error {
 	err := NextStream()
 	if err != nil {
 		return dbus.MakeFailedError(err)
@@ -58,13 +58,13 @@ func (p *Player) Next() *dbus.Error {
 }
 
 // Previous implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Previous() *dbus.Error {
+func (*Player) Previous() *dbus.Error {
 	PreviousStream()
 	return nil
 }
 
 // Pause implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Pause() *dbus.Error {
+func (*Player) Pause() *dbus.Error {
 	err := PauseStream(false)
 	if err != nil {
 		return dbus.MakeFailedError(err)
@@ -83,13 +83,13 @@ func (p *Player) PlayPause() *dbus.Error {
 }
 
 // Stop implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Stop() *dbus.Error {
+func (*Player) Stop() *dbus.Error {
 	StopAll()
 	return nil
 }
 
 // Play implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Play() *dbus.Error {
+func (*Player) Play() *dbus.Error {
 	err := PauseStream(true)
 	if err != nil {
 		return dbus.MakeFailedError(err)
@@ -98,23 +98,23 @@ func (p *Player) Play() *dbus.Error {
 }
 
 // Seek implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Seek(x int64) *dbus.Error {
+func (*Player) Seek(x int64) *dbus.Error {
 	return nil
 }
 
 // SetPosition implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) SetPosition(o string, x int64) *dbus.Error {
+func (*Player) SetPosition(o string, x int64) *dbus.Error {
 	return nil
 }
 
 // OpenUri implements org.mpris.MediaPlayer2.Player interface
-//nolint: revive // Implements interface
-func (p *Player) OpenUri(s string) *dbus.Error {
+// nolint: revive // Implements interface
+func (*Player) OpenUri(s string) *dbus.Error {
 	return nil
 }
 
 // PlaybackStatus implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) PlaybackStatus() string {
+func (*Player) PlaybackStatus() string {
 	if IsPlaying() {
 		return PlaybackStatusPlaying
 	}
@@ -125,25 +125,25 @@ func (p *Player) PlaybackStatus() string {
 }
 
 // LoopStatus implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) LoopStatus(s string) (string, *dbus.Error) {
+func (*Player) LoopStatus(s string) (string, *dbus.Error) {
 	// TODO: implement
 	return "None", nil
 }
 
 // Rate implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Rate(in float64) (float64, *dbus.Error) {
+func (*Player) Rate(in float64) (float64, *dbus.Error) {
 	// TODO: implement
 	return float64(1.), nil
 }
 
 // Shuffle implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Shuffle(b bool) (bool, *dbus.Error) {
+func (*Player) Shuffle(b bool) (bool, *dbus.Error) {
 	// TODO: implement
 	return false, nil
 }
 
 // Metadata implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Metadata() map[string]dbus.Variant {
+func (*Player) Metadata() map[string]dbus.Variant {
 	pb, t := GetPlayback()
 	if t != nil {
 		return map[string]dbus.Variant{
@@ -169,53 +169,53 @@ func (p *Player) Metadata() map[string]dbus.Variant {
 }
 
 // Volume implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Volume(in float64) (float64, *dbus.Error) {
+func (*Player) Volume(in float64) (float64, *dbus.Error) {
 	// TODO: implement
 	return float64(1.), nil
 }
 
 // Position implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) Position() int64 {
+func (*Player) Position() int64 {
 	pb, _ := GetPlayback()
 	return pb.Skip
 }
 
 // MinimumRate implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) MinimumRate() float64 {
+func (*Player) MinimumRate() float64 {
 	return float64(1.)
 }
 
 // MaximumRate implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) MaximumRate() float64 {
+func (*Player) MaximumRate() float64 {
 	return float64(1.)
 }
 
 // CanGoNext implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) CanGoNext() bool {
+func (*Player) CanGoNext() bool {
 	return HasNextStream()
 }
 
 // CanGoPrevious implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) CanGoPrevious() bool {
+func (*Player) CanGoPrevious() bool {
 	return true
 }
 
 // CanPlay implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) CanPlay() bool {
+func (*Player) CanPlay() bool {
 	return true
 }
 
 // CanPause implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) CanPause() bool {
+func (*Player) CanPause() bool {
 	return true
 }
 
 // CanSeek implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) CanSeek() bool {
+func (*Player) CanSeek() bool {
 	return false
 }
 
 // CanControl implements org.mpris.MediaPlayer2.Player interface
-func (p *Player) CanControl() bool {
+func (*Player) CanControl() bool {
 	return true
 }

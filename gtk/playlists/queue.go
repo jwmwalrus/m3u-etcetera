@@ -35,7 +35,7 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 		return
 	}
 
-	miSuffix := ing2.GetRandomString(6)
+	miSuffix, _ := ing2.GetRandomLetters(6)
 	for _, l := range []string{"top", "up", "down", "bottom"} {
 		mi, err := builder.GetMenuItem(contextMenuID + "_" + l)
 		if err != nil {

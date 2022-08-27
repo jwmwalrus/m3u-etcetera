@@ -14,13 +14,12 @@ import (
 )
 
 var (
-	interruptSignal chan os.Signal
+	interruptSignal chan os.Signal = make(chan os.Signal, 1)
 
 	settingsMenuSignals = &onSettingsMenu{}
 )
 
 func init() {
-	interruptSignal = make(chan os.Signal, 1)
 	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM)
 
 	perspectivesList = []m3uetcpb.Perspective{

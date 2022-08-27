@@ -348,9 +348,10 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 	name := def.Name()
 
 	if name == "" {
+		rl, _ := ing2.GetRandomLetters(8)
 		name = strings.Join([]string{
 			strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
-			ing2.GetRandomString(8),
+			rl,
 			def.Type(),
 		}, "-")
 	}

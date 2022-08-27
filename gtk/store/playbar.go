@@ -36,7 +36,7 @@ type playbarData struct {
 	playlistReplacementID       int64
 	playlistTrackReplacementIDs []int64
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 var (
@@ -73,8 +73,8 @@ func init() {
 }
 
 func (bd *playbarData) GetActiveID() int64 {
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	return bd.activeID
 }
@@ -84,8 +84,8 @@ func (bd *playbarData) GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 	log.WithField("id", id).
 		Info("Returning open playlist")
 
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	for _, pl := range bd.openPlaylist {
 		if pl.Id == id {
@@ -99,8 +99,8 @@ func (bd *playbarData) GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 func (bd *playbarData) GetOpenPlaylists() []*m3uetcpb.Playlist {
 	log.Info("Returning open playlists")
 
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	return bd.openPlaylist
 }
@@ -110,8 +110,8 @@ func (bd *playbarData) GetPlaylist(id int64) *m3uetcpb.Playlist {
 	log.WithField("id", id).
 		Info("Returning playlist")
 
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	for _, pl := range bd.playlist {
 		if pl.Id == id {
@@ -126,8 +126,8 @@ func (bd *playbarData) GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
 	log.WithField("id", id).
 		Info("Returning playlist group")
 
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	for _, pg := range bd.playlistGroup {
 		if pg.Id == id {
@@ -177,8 +177,8 @@ func (bd *playbarData) GetPlaylistGroupActionsChanges() (toRemove []int64) {
 }
 
 func (bd *playbarData) GetPlaylistGroupNames() map[int64]string {
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	out := make(map[int64]string)
 	for _, pg := range bd.playlistGroup {
@@ -188,8 +188,8 @@ func (bd *playbarData) GetPlaylistGroupNames() map[int64]string {
 }
 
 func (bd *playbarData) GetPlaylistTracksCount(id int64) int64 {
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	var count int64
 	for _, opt := range bd.openPlaylistTrack {
@@ -200,8 +200,8 @@ func (bd *playbarData) GetPlaylistTracksCount(id int64) int64 {
 	return count
 }
 func (bd *playbarData) GetSubscriptionID() string {
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	return bd.subscriptionID
 }
@@ -259,8 +259,8 @@ func (bd *playbarData) GetUpdatePlaylistGroupRequests() (
 // PlaylistAlreadyExists returns true if a playlist with the given
 // name already exists
 func (bd *playbarData) PlaylistAlreadyExists(name string) bool {
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	for _, pl := range bd.playlist {
 		if strings.EqualFold(pl.Name, name) {
@@ -273,8 +273,8 @@ func (bd *playbarData) PlaylistAlreadyExists(name string) bool {
 // PlaylistGroupAlreadyExists returns true if a playlist group with the
 // given name already exists
 func (bd *playbarData) PlaylistGroupAlreadyExists(name string) bool {
-	bd.mu.Lock()
-	defer bd.mu.Unlock()
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
 
 	for _, pg := range bd.playlistGroup {
 		if strings.EqualFold(pg.Name, name) {
@@ -338,6 +338,7 @@ func (bd *playbarData) ProcessSubscriptionResponse(
 }
 
 func (bd *playbarData) appendBDataItem(res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
+	// NOTE: bd.mu lock is already set
 	switch res.Item.(type) {
 	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylist:
 		item := res.GetOpenPlaylist()
@@ -398,6 +399,7 @@ func (bd *playbarData) appendBDataItem(res *m3uetcpb.SubscribeToPlaybarStoreResp
 }
 
 func (bd *playbarData) processBDataItemReplacements() {
+	// NOTE: bd.mu lock is already set
 	defer func() {
 		bd.playlistReplacementID = 0
 		bd.playlistTrackReplacementIDs = []int64{}
@@ -468,6 +470,7 @@ func (bd *playbarData) processBDataItemReplacements() {
 }
 
 func (bd *playbarData) removeBDataItem(res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
+	// NOTE: bd.mu lock is already set
 	switch res.Item.(type) {
 	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylist:
 		item := res.GetOpenPlaylist()
@@ -523,6 +526,7 @@ func (bd *playbarData) removeBDataItem(res *m3uetcpb.SubscribeToPlaybarStoreResp
 }
 
 func (bd *playbarData) trackBDataItemReplacements(res *m3uetcpb.SubscribeToPlaybarStoreResponse) {
+	// NOTE: bd.mu lock is already set
 	switch res.Item.(type) {
 	case *m3uetcpb.SubscribeToPlaybarStoreResponse_OpenPlaylist:
 		bd.playlistReplacementID = res.GetOpenPlaylist().Id

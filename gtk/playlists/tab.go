@@ -136,7 +136,7 @@ func (ot *onTab) createContextMenus() (err error) {
 	}
 	ctxMenu.SetVisible(true)
 
-	miSuffix := ing2.GetRandomString(6)
+	miSuffix, _ := ing2.GetRandomLetters(6)
 
 	miPlayNow, err := gtk.MenuItemNewWithLabel("Play now")
 	if err != nil {

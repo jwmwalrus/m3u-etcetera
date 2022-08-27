@@ -23,7 +23,7 @@ type perspectiveData struct {
 	uiSet bool
 	combo *gtk.ComboBoxText
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 var (
@@ -32,8 +32,8 @@ var (
 )
 
 func (pd *perspectiveData) GetSubscriptionID() string {
-	pd.mu.Lock()
-	defer pd.mu.Unlock()
+	pd.mu.RLock()
+	defer pd.mu.RUnlock()
 
 	return pd.res.SubscriptionId
 }
@@ -51,8 +51,8 @@ func (pd *perspectiveData) SetPerspectiveUI() (err error) {
 func (pd *perspectiveData) updateActivePerspective() bool {
 	log.Debug("Updating active perspective")
 
-	pd.mu.Lock()
-	defer pd.mu.Unlock()
+	pd.mu.RLock()
+	defer pd.mu.RUnlock()
 
 	active := pd.res.ActivePerspective
 

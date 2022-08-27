@@ -2,6 +2,7 @@ package mpris
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/jwmwalrus/onerror"
@@ -23,11 +24,10 @@ const (
 
 // New returns a new dbus instance implementing MPRIS
 func New() *Instance {
-	var err error
-
 	ins := &Instance{Name: serverName}
-	ins.Conn, err = dbus.ConnectSessionBus()
+	conn, err := dbus.ConnectSessionBus()
 	onerror.Panic(err)
+	ins.Conn.Store(conn)
 
 	return ins
 }
@@ -35,9 +35,9 @@ func New() *Instance {
 // Instance -
 type Instance struct {
 	Name string
-	Conn *dbus.Conn
+	Conn atomic.Pointer[dbus.Conn]
 	// Obj   *dbus.Object
-	props *prop.Properties
+	props atomic.Pointer[prop.Properties]
 }
 
 func (*Instance) introspectInterface() introspect.Interface {
@@ -46,25 +46,26 @@ func (*Instance) introspectInterface() introspect.Interface {
 
 // Delete closes the instance connection
 func (i *Instance) Delete() error {
-	i.Conn.ReleaseName(serverName)
-	i.Conn.Close()
+
+	i.Conn.Load().ReleaseName(serverName)
+	i.Conn.Load().Close()
 	return nil
 }
 
 // Setup sets the player
 func (i *Instance) Setup(p Player) (err error) {
 	mp2 := &MediaPlayer2{i}
-	err = i.Conn.Export(mp2, RootPath, RootInterface)
+	err = i.Conn.Load().Export(mp2, RootPath, RootInterface)
 	if err != nil {
 		return
 	}
 
-	err = i.Conn.Export(p, RootPath, PlayerInterface)
+	err = i.Conn.Load().Export(p, RootPath, PlayerInterface)
 	if err != nil {
 		return
 	}
 
-	err = i.Conn.Export(
+	err = i.Conn.Load().Export(
 		introspect.NewIntrospectable(&introspect.Node{
 			Name: serverName,
 			Interfaces: []introspect.Interface{
@@ -80,15 +81,16 @@ func (i *Instance) Setup(p Player) (err error) {
 		return
 	}
 
-	i.props, err = prop.Export(i.Conn, RootPath, map[string]map[string]*prop.Prop{
+	props, err := prop.Export(i.Conn.Load(), RootPath, map[string]map[string]*prop.Prop{
 		RootInterface:   mp2.properties(),
 		PlayerInterface: p.Properties(),
 	})
+	i.props.Store(props)
 	if err != nil {
 		return
 	}
 
-	reply, err := i.Conn.RequestName(
+	reply, err := i.Conn.Load().RequestName(
 		serverName,
 		dbus.NameFlagDoNotQueue|dbus.NameFlagReplaceExisting,
 	)

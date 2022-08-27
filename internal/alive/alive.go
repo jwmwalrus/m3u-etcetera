@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -28,7 +29,7 @@ var (
 	serverAliveFilename = "server-alive"
 
 	// LastCheck UTC timestamp for last check
-	LastCheck int64
+	LastCheck atomic.Int64
 
 	lastStatus error
 )
@@ -39,7 +40,7 @@ func init() {
 
 // CheckServerStatus If ServerCheckInterval is up, starts the server
 func CheckServerStatus() error {
-	if lastStatus == nil || (time.Now().Unix()-LastCheck > ServerCheckInterval) {
+	if lastStatus == nil || (time.Now().Unix()-LastCheck.Load() > ServerCheckInterval) {
 		lastStatus = Serve()
 	}
 
@@ -133,7 +134,7 @@ func readServerAlive() {
 	// Last alive check for server
 	info, err := os.Stat(filepath.Join(base.DataDir, serverAliveFilename))
 	if !os.IsNotExist(err) {
-		LastCheck = info.ModTime().Unix()
+		LastCheck.Store(info.ModTime().Unix())
 	}
 }
 

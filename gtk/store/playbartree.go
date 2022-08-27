@@ -133,12 +133,12 @@ type playbarTree struct {
 	initialMode        bool
 	receivingOpenItems bool
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 func (bt *playbarTree) canBeUpdated() bool {
-	bt.mu.Lock()
-	defer bt.mu.Unlock()
+	bt.mu.RLock()
+	defer bt.mu.RUnlock()
 
 	return !(bt.initialMode || bt.receivingOpenItems)
 }
@@ -218,7 +218,7 @@ func (bt *playbarTree) update() bool {
 			return strings.Join(list, ",")
 		}
 
-		BData.mu.Lock()
+		BData.mu.RLock()
 		for _, pl := range BData.playlist {
 			if pl.Transient {
 				continue
@@ -248,7 +248,7 @@ func (bt *playbarTree) update() bool {
 			}
 			root[idx].completeTree(level+1, guide, pl)
 		}
-		BData.mu.Unlock()
+		BData.mu.RUnlock()
 
 		sort.Slice(root, func(i, j int) bool {
 			return root[i].label < root[j].label

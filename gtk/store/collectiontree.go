@@ -242,33 +242,33 @@ type collectionTree struct {
 	lastEvent         m3uetcpb.CollectionEvent
 	hierarchy         collectionTreeHierarchy
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 func (tree *collectionTree) canBeUpdated() bool {
-	tree.mu.Lock()
-	defer tree.mu.Unlock()
+	tree.mu.RLock()
+	defer tree.mu.RUnlock()
 
 	return !(tree.initialMode || tree.scanningMode)
 }
 
 func (tree *collectionTree) getLastEvent() m3uetcpb.CollectionEvent {
-	tree.mu.Lock()
-	defer tree.mu.Unlock()
+	tree.mu.RLock()
+	defer tree.mu.RUnlock()
 
 	return tree.lastEvent
 }
 
 func (tree *collectionTree) getModel() *gtk.TreeStore {
-	tree.mu.Lock()
-	defer tree.mu.Unlock()
+	tree.mu.RLock()
+	defer tree.mu.RUnlock()
 
 	return tree.model
 }
 
 func (tree *collectionTree) isInInitialMode() bool {
-	tree.mu.Lock()
-	defer tree.mu.Unlock()
+	tree.mu.RLock()
+	defer tree.mu.RUnlock()
 
 	return tree.initialMode
 }
@@ -311,7 +311,7 @@ func (tree *collectionTree) rebuild() {
 
 	CData.updateCollectionNamesMap()
 
-	CData.mu.Lock()
+	CData.mu.RLock()
 	for _, t := range CData.track {
 		kw := getKeywords(t)
 
@@ -336,7 +336,7 @@ func (tree *collectionTree) rebuild() {
 		}
 		root[idx].completeTree(level+1, guide, t)
 	}
-	CData.mu.Unlock()
+	CData.mu.RUnlock()
 
 	sort.Slice(root, func(i, j int) bool {
 		return root[i].label < root[j].label

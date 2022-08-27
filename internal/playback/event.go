@@ -1,6 +1,7 @@
 package playback
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -13,10 +14,13 @@ import (
 	"github.com/tinyzimmer/go-gst/gst"
 )
 
-type engineEvent int
+type engineEvent struct {
+	atomic.Int32
+}
 
+// engine events
 const (
-	noLoopEvent engineEvent = iota
+	noLoopEvent = iota
 	loopEvent
 	playEvent
 	pauseEvent
@@ -32,7 +36,13 @@ const (
 	resumeAllEvent
 )
 
-func (ee engineEvent) String() string {
+func (ee *engineEvent) Store(val int32) {
+	ee.Int32.Store(val)
+	log.Infof("Firing the %v event", ee.String())
+}
+
+// eeString returns the engine event string
+func (ee *engineEvent) String() string {
 	return [...]string{
 		"NO-LOOP",
 		"LOOP",
@@ -48,7 +58,7 @@ func (ee engineEvent) String() string {
 		"STOP-PLAYLIST",
 		"STOP-ALL",
 		"RESUME-ALL",
-	}[ee]
+	}[ee.Load()]
 }
 
 // EngineMode defines the engine mode type
@@ -81,24 +91,24 @@ var (
 
 // GetPlayback returns a copy of the current playback
 func GetPlayback() (pb *models.Playback, t *models.Track) {
-	if eng.pb == nil {
+	if eng.pb.Load() == nil {
 		return
 	}
 
 	log.Debug("Obtaining current playback")
 
-	pbcopy := *eng.pb
+	pbcopy := *eng.pb.Load()
 	pb = &pbcopy
 	if pb.TrackID > 0 {
 		t = &models.Track{}
-		if eng.t != nil {
-			t = eng.t
+		if eng.t.Load() != nil {
+			t = eng.t.Load()
 		} else {
 			if err := t.Read(pb.TrackID); err != nil {
 				log.Error(err)
 				return
 			}
-			eng.t = t
+			eng.t.Store(t)
 		}
 	} else {
 		var err error
@@ -109,15 +119,15 @@ func GetPlayback() (pb *models.Playback, t *models.Track) {
 	}
 
 	if t != nil && t.Duration == 0 {
-		t.Duration = eng.duration
+		t.Duration = eng.duration.Load()
 	}
-	pb.Skip = eng.lastPosition
+	pb.Skip = eng.lastPosition.Load()
 	return
 }
 
 // GetState returns the current state of the playback
 func GetState() gst.State {
-	return eng.state
+	return eng.state.Load()
 }
 
 // HasNextStream returns true if there is a playback/queue/playlist track after
@@ -133,8 +143,8 @@ func HasNextStream() bool {
 		return true
 	}
 
-	if eng.pt != nil {
-		if _, err := eng.pt.GetTrackAfter(false); err == nil {
+	if eng.pt.Load() != nil {
+		if _, err := eng.pt.Load().GetTrackAfter(false); err == nil {
 			return true
 		}
 	}
@@ -144,17 +154,17 @@ func HasNextStream() bool {
 
 // IsPaused checks if a stream is paused right now
 func IsPaused() bool {
-	return eng.playbin != nil && eng.state == gst.StatePaused
+	return eng.playbin.Load() != nil && eng.state.Load() == gst.StatePaused
 }
 
 // IsPlaying checks if a stream is playing right now
 func IsPlaying() bool {
-	return eng.playbin != nil && eng.state == gst.StatePlaying
+	return eng.playbin.Load() != nil && eng.state.Load() == gst.StatePlaying
 }
 
 // IsReady checks if a stream is ready
 func IsReady() bool {
-	return eng.playbin != nil && eng.state == gst.StateReady
+	return eng.playbin.Load() != nil && eng.state.Load() == gst.StateReady
 }
 
 // IsStreaming check if a stream is playing or paused
@@ -164,13 +174,12 @@ func IsStreaming() bool {
 
 // IsStopped checks if a stream is playing right now
 func IsStopped() bool {
-	return eng.lastEvent == stopAllEvent
+	return eng.lastEvent.Load() == stopAllEvent
 }
 
 // NextStream plays the next stream in playlist
 func NextStream() (err error) {
-	eng.lastEvent = nextEvent
-	log.Infof("Firing the %v event", eng.lastEvent)
+	eng.lastEvent.Store(nextEvent)
 
 	if !(IsStreaming() || IsReady()) {
 		return
@@ -184,31 +193,29 @@ func NextStream() (err error) {
 
 // PauseStream pauses the current stream
 func PauseStream(off bool) (err error) {
-	if eng.playbin == nil {
+	if eng.playbin.Load() == nil {
 		if !IsStopped() {
 			return
 		}
-		eng.lastEvent = resumeAllEvent
-		log.Infof("Firing the %v event", eng.lastEvent)
+		eng.lastEvent.Store(resumeAllEvent)
 		models.PlaybackChanged <- struct{}{}
 		return
 	}
 
-	eng.lastEvent = pauseEvent
-	log.Infof("Firing the %v event", eng.lastEvent)
+	eng.lastEvent.Store(pauseEvent)
 
 	if off {
 		if !IsPaused() {
 			return
 		}
-		eng.state = gst.StatePlaying
-		err = eng.playbin.SetState(eng.state)
+		eng.state.Store(gst.StatePlaying)
+		err = eng.playbin.Load().SetState(eng.state.Load())
 	} else {
 		if !IsPlaying() {
 			return
 		}
-		eng.state = gst.StatePaused
-		err = eng.playbin.SetState(eng.state)
+		eng.state.Store(gst.StatePaused)
+		err = eng.playbin.Load().SetState(eng.state.Load())
 	}
 
 	subscription.Broadcast(subscription.ToPlaybackEvent)
@@ -217,12 +224,12 @@ func PauseStream(off bool) (err error) {
 
 // PlayStreams starts playback for the given streams
 func PlayStreams(force bool, locations []string, ids []int64) {
-	eng.lastEvent = playEvent
+	eng.lastEvent.Store(playEvent)
 	log.WithFields(log.Fields{
 		"locations": locations,
 		"ids":       ids,
 	}).
-		Infof("Firing the %v event", eng.lastEvent)
+		Infof("Playing streams")
 
 	for _, v := range locations {
 		models.AddPlaybackLocation(v)
@@ -244,20 +251,19 @@ func PlayStreams(force bool, locations []string, ids []int64) {
 
 // PreviousStream plays the previous stream in history
 func PreviousStream() {
-	if time.Duration(eng.lastPosition)*time.Nanosecond >=
+	if time.Duration(eng.lastPosition.Load())*time.Nanosecond >=
 		time.Duration(base.PlaybackPlayedThreshold)*time.Second {
 		SeekInStream(0)
 		return
 	}
 
-	eng.lastEvent = previousEvent
-	log.Infof("Firing the %v event", eng.lastEvent)
+	eng.lastEvent.Store(previousEvent)
 
 	eng.clearPendingPlayback()
 
 	var hint playbackHint
 	if IsStreaming() {
-		if eng.pt != nil {
+		if eng.pt.Load() != nil {
 			hint = hintPrevInPlaylist
 		} else {
 			hint = hintPrevInHistory
@@ -272,9 +278,9 @@ func PreviousStream() {
 
 // QuitPlayingFromBar stops reproducing a playlist
 func QuitPlayingFromBar(pl *models.Playlist) {
-	eng.lastEvent = stopPlaybarEvent
+	eng.lastEvent.Store(stopPlaybarEvent)
 	log.WithField("pl", *pl).
-		Infof("Firing the %v event", eng.lastEvent)
+		Infof("Quit playing from bar")
 
 	if !(pl.Open && pl.Active) {
 		return
@@ -287,14 +293,13 @@ func QuitPlayingFromBar(pl *models.Playlist) {
 
 // SeekInStream seek a position in the current stream
 func SeekInStream(pos int64) {
-	eng.lastEvent = seekEvent
-	log.Infof("Firing the %v event", eng.lastEvent)
+	eng.lastEvent.Store(seekEvent)
 
 	if !IsPlaying() {
 		return
 	}
 
-	if eng.seekable {
+	if eng.seekable.Load() {
 		seek := gst.NewSeekEvent(
 			1.0,
 			gst.FormatTime,
@@ -304,7 +309,8 @@ func SeekInStream(pos int64) {
 			gst.SeekTypeNone,
 			-1,
 		)
-		if !eng.playbin.SendEvent(seek) {
+
+		if !eng.playbin.Load().SendEvent(seek) {
 			log.Errorf("Error sending playback event: %v", gst.EventTypeSeek)
 		}
 	}
@@ -333,8 +339,7 @@ func StartEngine() {
 
 // StopAll stops all playback
 func StopAll() {
-	eng.lastEvent = stopAllEvent
-	log.Infof("Firing the %v event", eng.lastEvent)
+	eng.lastEvent.Store(stopAllEvent)
 	StopStream()
 
 	eng.updateMPRIS(true)
@@ -344,9 +349,8 @@ func StopAll() {
 func StopStream() {
 	log.Info("Stopping current playback")
 
-	if eng.lastEvent != stopAllEvent {
-		eng.lastEvent = stopStreamEvent
-		log.Infof("Firing the %v event", eng.lastEvent)
+	if eng.lastEvent.Load() != stopAllEvent {
+		eng.lastEvent.Store(stopStreamEvent)
 	}
 
 	if !IsStreaming() {
@@ -357,8 +361,8 @@ func StopStream() {
 	// latency, and conflicts with the paused state, so we are
 	// just ending things here
 	if !IsPaused() {
-		eng.state = gst.StatePaused
-		onerror.Log(eng.playbin.SetState(eng.state))
+		eng.state.Store(gst.StatePaused)
+		onerror.Log(eng.playbin.Load().SetState(eng.state.Load()))
 	}
 	eng.wrapUp()
 	eng.mainLoop.Quit()
@@ -366,9 +370,9 @@ func StopStream() {
 
 // TryPlayingFromBar starts a playlist in the playbar
 func TryPlayingFromBar(pl *models.Playlist, position int) {
-	eng.lastEvent = playbarEvent
+	eng.lastEvent.Store(playbarEvent)
 	log.WithField("pl", pl).
-		Infof("Firing the %v event", eng.lastEvent)
+		Infof("Try playing from bar")
 
 	bar := models.Playbar{}
 	if err := bar.Read(pl.PlaybarID); err != nil {
@@ -383,14 +387,14 @@ func TryPlayingFromBar(pl *models.Playlist, position int) {
 func mockEngineLoop() {
 	aux := &models.Playback{}
 	aux.GetNextToPlay()
+
 	if aux.ID != 0 {
-		eng.pb = aux
+		eng.pb.Store(aux)
 	}
 }
 
 func quitPlayingFromList() {
-	eng.lastEvent = stopPlaylistEvent
-	log.Infof("Firing the %v event", eng.lastEvent)
+	eng.lastEvent.Store(stopPlaylistEvent)
 
 	eng.setPlaybackHint(hintStopPlaylist)
 	StopStream()
@@ -404,16 +408,16 @@ func stopEngine() {
 		return
 	}
 
-	if eng.lastEvent == noLoopEvent {
+	if eng.lastEvent.Load() == noLoopEvent {
 		return
 	}
 	log.Info("Stopping engine")
 
-	eng.freezePlayback = true
+	eng.freezePlayback.Store(true)
 	StopAll()
 
 	for i := 0; i < base.ServerWaitTimeout; i++ {
-		if eng.playbin != nil {
+		if eng.playbin.Load() != nil {
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -423,7 +427,7 @@ func stopEngine() {
 	quitEngineLoop <- struct{}{}
 
 	for i := 0; i < base.ServerWaitTimeout; i++ {
-		if eng.lastEvent != noLoopEvent {
+		if eng.lastEvent.Load() != noLoopEvent {
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -432,15 +436,16 @@ func stopEngine() {
 }
 
 func tryPlayingFromList(pl *models.Playlist, position int) {
-	eng.lastEvent = playlistEvent
-	log.Infof("Firing the %v event", eng.lastEvent)
+	eng.lastEvent.Store(playlistEvent)
 
 	pt, err := pl.GetTrackAt(position)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	eng.pt = pt
+
+	eng.pt.Store(pt)
+
 	eng.setPlaybackHint(hintStartPlaylist)
 	StopStream()
 	models.PlaybackChanged <- struct{}{}

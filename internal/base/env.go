@@ -98,7 +98,7 @@ var (
 func init() {
 	OS = runtime.GOOS
 
-	InstanceSuffix = ing2.GetRandomString(8)
+	InstanceSuffix, _ = ing2.GetRandomLetters(8)
 
 	// XDG-related
 	DataDir = filepath.Join(xdg.DataHome, AppDirName)

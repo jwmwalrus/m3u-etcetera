@@ -17,7 +17,7 @@ type queryTreeModel struct {
 	filterVal   string
 	initialMode bool
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 func (qyt *queryTreeModel) update() bool {
@@ -70,7 +70,7 @@ func (qyt *queryTreeModel) update() bool {
 
 	all := []queryInfo{}
 
-	QYData.mu.Lock()
+	QYData.mu.RLock()
 	for _, qy := range QYData.Query {
 		if qyt.filterVal != "" {
 			kw := getKeywords(qy)
@@ -92,7 +92,7 @@ func (qyt *queryTreeModel) update() bool {
 		}
 		all = append(all, qi)
 	}
-	QYData.mu.Unlock()
+	QYData.mu.RUnlock()
 
 	sort.SliceStable(all, func(i, j int) bool {
 		return all[i].name < all[j].name

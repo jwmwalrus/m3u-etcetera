@@ -13,10 +13,10 @@ var (
 	db *gorm.DB
 
 	// make sure we only do heavy collection tasks one at a time
-	storageGuard chan struct{}
+	storageGuard chan struct{} = make(chan struct{}, 1)
 
 	// PlaybackChanged is the AfterCreate-hook channel for QueueTrack and Playback
-	PlaybackChanged chan struct{}
+	PlaybackChanged chan struct{} = make(chan struct{}, 1)
 )
 
 // DataCreator defines a DML interface of CRUD to create
@@ -67,11 +67,6 @@ type ProtoIn interface {
 // ProtoOut defines an interface to convert to protocol buffers
 type ProtoOut interface {
 	ToProtobuf() proto.Message
-}
-
-func init() {
-	storageGuard = make(chan struct{}, 1)
-	PlaybackChanged = make(chan struct{}, 1)
 }
 
 // SetConnection sets the database connection for the whole package

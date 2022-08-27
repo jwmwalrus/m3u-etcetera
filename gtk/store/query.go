@@ -16,7 +16,7 @@ type queryData struct {
 	Query          []*m3uetcpb.Query
 	tracks         []*m3uetcpb.Track
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 var (
@@ -30,8 +30,8 @@ var (
 
 // GetQuery returns the query for the gven id
 func (qyd *queryData) GetQuery(id int64) *m3uetcpb.Query {
-	qyd.mu.Lock()
-	defer qyd.mu.Unlock()
+	qyd.mu.RLock()
+	defer qyd.mu.RUnlock()
 
 	for _, v := range qyd.Query {
 		if v.Id == id {
@@ -42,8 +42,8 @@ func (qyd *queryData) GetQuery(id int64) *m3uetcpb.Query {
 }
 
 func (qyd *queryData) GetSubscriptionID() string {
-	qyd.mu.Lock()
-	defer qyd.mu.Unlock()
+	qyd.mu.RLock()
+	defer qyd.mu.RUnlock()
 
 	return qyd.subscriptionID
 }

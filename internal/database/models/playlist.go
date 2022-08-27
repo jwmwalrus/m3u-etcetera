@@ -83,7 +83,8 @@ func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
 	}
 
 	pl.Transient = true
-	pl.Name += fmt.Sprintf(" (deleted %v)", ing2.GetRandomString(8))
+	rl, _ := ing2.GetRandomLetters(8)
+	pl.Name += fmt.Sprintf(" (deleted %v)", rl)
 	err = tx.Save(pl).Error
 	return
 }

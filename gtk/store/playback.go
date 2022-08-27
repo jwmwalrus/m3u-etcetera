@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
@@ -34,7 +35,7 @@ type playbackData struct {
 	title, artist, source, extra *gtk.Label
 	prog                         *gtk.ProgressBar
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
 const (
@@ -48,8 +49,8 @@ var (
 
 func (pbd *playbackData) GetCurrentPlayback() (pb *m3uetcpb.Playback,
 	t *m3uetcpb.Track, duration int64, status map[string]bool) {
-	pbd.mu.Lock()
-	defer pbd.mu.Unlock()
+	pbd.mu.RLock()
+	defer pbd.mu.RUnlock()
 
 	pb = pbd.res.Playback
 	t = pbd.res.Track
@@ -65,8 +66,8 @@ func (pbd *playbackData) GetCurrentPlayback() (pb *m3uetcpb.Playback,
 }
 
 func (pbd *playbackData) GetSubscriptionID() string {
-	pbd.mu.Lock()
-	defer pbd.mu.Unlock()
+	pbd.mu.RLock()
+	defer pbd.mu.RUnlock()
 
 	id := pbd.res.SubscriptionId
 	return id
@@ -136,8 +137,8 @@ func (pbd *playbackData) SetPlaybackUI() (err error) {
 }
 
 func (pbd *playbackData) getTrackID() int64 {
-	pbd.mu.Lock()
-	defer pbd.mu.Unlock()
+	pbd.mu.RLock()
+	defer pbd.mu.RUnlock()
 
 	return pbd.trackID
 }
