@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -63,7 +64,7 @@ func (pb *Playback) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if !base.FlagTestingMode &&
 			!base.IsAppBusyBy(base.IdleStatusEngineLoop) {
-			PlaybackChanged <- struct{}{}
+			TriggerPlaybackChange()
 		}
 	}()
 	return nil
@@ -76,24 +77,6 @@ func (pb *Playback) ClearPending() {
 		Update("played", 1).
 		Error
 	onerror.Warn(err)
-}
-
-// FindTrack attempts to find track from location
-func (pb *Playback) FindTrack() {
-	if pb.TrackID > 0 {
-		return
-	}
-
-	log.WithField("pb", *pb).
-		Info("Finding track for current playback")
-
-	t := Track{}
-	err := db.Where("location = ?", pb.Location).First(&t).Error
-	if err != nil {
-		return
-	}
-	pb.TrackID = t.ID
-	onerror.Log(pb.Save())
 }
 
 // GetNextToPlay returns the next playback entry to play
@@ -122,7 +105,9 @@ func AddPlaybackLocation(location string) (pb *Playback) {
 		log.Error(err)
 		return
 	}
-	go pb.FindTrack()
+	go func() {
+		playbackTrackNeeded <- pb.ID
+	}()
 	return
 }
 
@@ -148,4 +133,36 @@ func GetAllPlayback() []*Playback {
 	}
 
 	return pointers.FromSlice(pbs)
+}
+
+// findPlaybackTrack attempts to find track from location
+func findPlaybackTrack(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case id := <-playbackTrackNeeded:
+			pb := Playback{}
+			err := pb.Read(id)
+			if err != nil {
+				log.Error(err)
+				break
+			}
+			if pb.TrackID > 0 {
+				break
+			}
+
+			log.WithField("pb", pb).
+				Info("Finding track for current playback")
+
+			t := Track{}
+			err = db.Where("location = ?", pb.Location).First(&t).Error
+			if err != nil {
+				break
+			}
+			pb.TrackID = t.ID
+			onerror.Log(pb.Save())
+
+		}
+	}
 }

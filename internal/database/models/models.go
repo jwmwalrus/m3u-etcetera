@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"math/rand"
 	"time"
 
@@ -11,6 +12,10 @@ import (
 
 var (
 	db *gorm.DB
+
+	playbackTrackNeeded = make(chan int64, 1)
+
+	queueTrackNeeded = make(chan int64, 1)
 
 	// make sure we only do heavy collection tasks one at a time
 	storageGuard chan struct{} = make(chan struct{}, 1)
@@ -69,13 +74,30 @@ type ProtoOut interface {
 	ToProtobuf() proto.Message
 }
 
-// SetConnection sets the database connection for the whole package
-func SetConnection(conn *gorm.DB) {
+// SetUp sets the database used by the models and starts some listeners
+func SetUp(ctx context.Context, conn *gorm.DB) {
 	db = conn
+
+	doInitialCleanup()
+
+	go findPlaybackTrack(ctx)
+	go findQueueTrack(ctx)
 }
 
-// DoInitialCleanup performs cleanup upon DB start
-func DoInitialCleanup() {
+// TearDown unsets the models listeners
+func TearDown() {
+	close(playbackTrackNeeded)
+	close(queueTrackNeeded)
+}
+
+// TriggerPlaybackChange signals the PlaybackChanged channel
+func TriggerPlaybackChange() {
+	if len(PlaybackChanged) < 1 {
+		PlaybackChanged <- struct{}{}
+	}
+}
+
+func doInitialCleanup() {
 	tx := db.Session(&gorm.Session{SkipHooks: true})
 
 	// Clean playback

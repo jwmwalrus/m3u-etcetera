@@ -256,7 +256,9 @@ func (q *Queue) appendTo(qt *QueueTrack) (err error) {
 		return
 	}
 
-	go findQueueTrack(qt)
+	go func() {
+		queueTrackNeeded <- qt.ID
+	}()
 	return
 }
 
@@ -288,6 +290,9 @@ func (q *Queue) insertInto(qt *QueueTrack) (err error) {
 		return
 	}
 
-	go findQueueTrack(qt)
+	go func() {
+		queueTrackNeeded <- qt.ID
+	}()
+
 	return
 }

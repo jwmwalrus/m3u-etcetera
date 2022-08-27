@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -105,7 +104,6 @@ func (*QueueSvc) SubscribeToQueueStore(_ *empty.Empty,
 	defer func() { s.Unsubscribe() }()
 
 	go func() {
-		time.Sleep(2 * time.Second)
 		s.Event <- subscription.Event{}
 	}()
 

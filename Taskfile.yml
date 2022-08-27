@@ -39,7 +39,7 @@ tasks:
   build:go:
     cmds:
       - >
-        go build -v -ldflags=-w -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
+        go build -v -ldflags="-s -w" -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
         ./cmd/m3uetc-{{.SUFFIX}}
     silent: true
 

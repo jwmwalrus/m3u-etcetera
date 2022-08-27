@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"os"
 	"os/exec"
@@ -26,6 +27,9 @@ const (
 var (
 	conn *gorm.DB
 
+	modelsCtx    context.Context
+	modelsCancel context.CancelFunc
+
 	// Unloader -
 	Unloader = base.Unloader{
 		Description: "CloseDatabase",
@@ -41,6 +45,10 @@ func Close() {
 	if conn == nil {
 		return
 	}
+
+	modelsCancel()
+
+	models.TearDown()
 
 	var err error
 	var sqlDB *sql.DB
@@ -70,8 +78,6 @@ func Open() *gorm.DB {
 	})
 	onerror.Panic(err)
 
-	models.SetConnection(conn)
-
 	// TODO: connect with logrus
 
 	// Migrate the schema
@@ -80,7 +86,8 @@ func Open() *gorm.DB {
 	m.InitSchema(migrations.InitSchema)
 	onerror.Panic(m.Migrate())
 
-	go models.DoInitialCleanup()
+	modelsCtx, modelsCancel = context.WithCancel(context.Background())
+	go models.SetUp(modelsCtx, conn)
 
 	log.WithField("dsn", DSN()).
 		Info("Database loaded")

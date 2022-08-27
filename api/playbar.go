@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/bnp/urlstr"
@@ -494,7 +493,6 @@ func (*PlaybarSvc) SubscribeToPlaybarStore(_ *empty.Empty,
 	defer func() { s.Unsubscribe() }()
 
 	go func() {
-		time.Sleep(2 * time.Second)
 		s.Event <- subscription.Event{Idx: int(models.PlaybarEventInitial)}
 	}()
 

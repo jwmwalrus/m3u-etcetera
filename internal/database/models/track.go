@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -325,7 +324,7 @@ func (t *Track) savePicture(p *tag.Picture, sum string) {
 			fn = sum + "." + p.Ext
 		}
 		file := filepath.Join(base.CoversDir, fn)
-		err := ioutil.WriteFile(file, p.Data, 0644)
+		err := os.WriteFile(file, p.Data, 0644)
 		if err != nil {
 			log.Error(err)
 			return

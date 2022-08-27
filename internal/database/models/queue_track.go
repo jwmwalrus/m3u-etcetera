@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -28,6 +29,11 @@ type QueueTrack struct { // too transient
 func (qt *QueueTrack) Create() (err error) {
 	err = db.Create(qt).Error
 	return
+}
+
+// Read implements the DataReader interface
+func (qt *QueueTrack) Read(id int64) error {
+	return db.First(qt, id).Error
 }
 
 // Save implements the DataUpdater interface
@@ -64,7 +70,7 @@ func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if !base.FlagTestingMode &&
 			!base.IsAppBusyBy(base.IdleStatusEngineLoop) {
-			PlaybackChanged <- struct{}{}
+			TriggerPlaybackChange()
 		}
 	}()
 	return nil
@@ -166,18 +172,31 @@ func GetQueueStore() (qs []*QueueTrack, ts []*Track, dig []*PerspectiveDigest) {
 }
 
 // findQueueTrack attempts to find track from location
-func findQueueTrack(qt *QueueTrack) {
-	if qt.TrackID > 0 {
-		return
-	}
+func findQueueTrack(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case id := <-queueTrackNeeded:
+			qt := QueueTrack{}
+			err := qt.Read(id)
+			if err != nil {
+				log.Error(err)
+				break
+			}
+			if qt.TrackID > 0 {
+				break
+			}
 
-	log.WithField("qt", *qt).
-		Info("Finding track for queue entry")
+			log.WithField("qt", qt).
+				Info("Finding track for queue entry")
 
-	t := Track{}
-	if err := db.Where("location = ?", qt.Location).First(&t).Error; err != nil {
-		return
+			t := Track{}
+			if err := db.Where("location = ?", qt.Location).First(&t).Error; err != nil {
+				break
+			}
+			qt.TrackID = t.ID
+			onerror.Log(qt.Save())
+		}
 	}
-	qt.TrackID = t.ID
-	onerror.Log(qt.Save())
 }

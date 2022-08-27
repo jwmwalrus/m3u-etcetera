@@ -187,7 +187,7 @@ func NextStream() (err error) {
 
 	eng.setPlaybackHint(hintNextInPlaylist)
 	StopStream()
-	models.PlaybackChanged <- struct{}{}
+	models.TriggerPlaybackChange()
 	return
 }
 
@@ -198,7 +198,7 @@ func PauseStream(off bool) (err error) {
 			return
 		}
 		eng.lastEvent.Store(resumeAllEvent)
-		models.PlaybackChanged <- struct{}{}
+		models.TriggerPlaybackChange()
 		return
 	}
 
@@ -273,7 +273,7 @@ func PreviousStream() {
 	}
 	eng.setPlaybackHint(hint)
 	StopStream()
-	models.PlaybackChanged <- struct{}{}
+	models.TriggerPlaybackChange()
 }
 
 // QuitPlayingFromBar stops reproducing a playlist
@@ -334,7 +334,7 @@ func StartEngine() {
 
 	eng.resumeActivePlaylist()
 	go eng.engineLoop()
-	models.PlaybackChanged <- struct{}{}
+	models.TriggerPlaybackChange()
 }
 
 // StopAll stops all playback
@@ -398,7 +398,7 @@ func quitPlayingFromList() {
 
 	eng.setPlaybackHint(hintStopPlaylist)
 	StopStream()
-	models.PlaybackChanged <- struct{}{}
+	models.TriggerPlaybackChange()
 
 	eng.updateMPRIS(true)
 }
@@ -448,5 +448,5 @@ func tryPlayingFromList(pl *models.Playlist, position int) {
 
 	eng.setPlaybackHint(hintStartPlaylist)
 	StopStream()
-	models.PlaybackChanged <- struct{}{}
+	models.TriggerPlaybackChange()
 }

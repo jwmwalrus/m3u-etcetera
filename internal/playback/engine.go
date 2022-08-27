@@ -3,7 +3,6 @@ package playback
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -158,7 +157,7 @@ loop:
 			log.Debug("There is a playback")
 			e.playStream(pb)
 			go func() {
-				models.PlaybackChanged <- struct{}{}
+				models.TriggerPlaybackChange()
 			}()
 			continue loop
 		}
@@ -398,12 +397,14 @@ func (e *engine) playStream(pb *models.Playback) {
 }
 
 func (e *engine) performQueries(ctx context.Context) {
-	tick := time.NewTicker(time.Duration(positionThreshold) * time.Nanosecond).C
+	tick := time.NewTicker(time.Duration(positionThreshold) * time.Nanosecond)
+	defer tick.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-tick:
+		case <-tick.C:
 			if e.terminate.Load() {
 				break
 			}
@@ -529,17 +530,20 @@ func (e *engine) updateMPRIS(destroy bool) {
 		},
 		[]string{},
 	)
-	onerror.Log(err)
+	onerror.Warn(err)
 }
 
 func (e *engine) wrapUp() {
-	if e.getPlaybackHint(true) != hintPrevInHistory {
-		go models.AddPlaybackToHistory(
-			e.pb.Load().ID,
-			e.lastPosition.Load(),
-			e.duration.Load(),
-			e.freezePlayback.Load(),
-		)
+	defer e.terminate.Store(true)
+
+	if e.getPlaybackHint(true) == hintPrevInHistory {
+		return
 	}
-	e.terminate.Store(true)
+
+	go models.AddPlaybackToHistory(
+		e.pb.Load().ID,
+		e.lastPosition.Load(),
+		e.duration.Load(),
+		e.freezePlayback.Load(),
+	)
 }
