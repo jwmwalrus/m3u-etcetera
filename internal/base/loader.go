@@ -19,7 +19,7 @@ type Unloader struct {
 // unloading the application
 type UnloaderCallback func() error
 
-var unloadRegistry []Unloader
+var unloadRegistry []*Unloader
 
 // Load Loads application's configuration
 func Load(noParseArgs ...bool) (args []string) {
@@ -56,11 +56,12 @@ func Load(noParseArgs ...bool) (args []string) {
 }
 
 // RegisterUnloader registers an Unloader, to be invoked before stopping the app
-func RegisterUnloader(u Unloader) {
+func RegisterUnloader(u *Unloader) {
 	unloadRegistry = append(unloadRegistry, u)
 }
 
-// Unload Cleans up server before exit
+// Unload Cleans up server before exit.
+// Registered unloaders are invoked in reverse order of registration.
 func Unload() {
 	log.Info("Unloading application")
 
@@ -71,8 +72,8 @@ func Unload() {
 		onerror.Log(err)
 	}
 
-	for _, u := range unloadRegistry {
-		log.Infof("Calling unloader: %v", u.Description)
-		onerror.Log(u.Callback())
+	for i := len(unloadRegistry) - 1; i >= 0; i-- {
+		log.Infof("Calling unloader: %v", unloadRegistry[i].Description)
+		onerror.Log(unloadRegistry[i].Callback())
 	}
 }

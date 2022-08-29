@@ -20,9 +20,9 @@ func main() {
 	base.Load()
 	base.StartIdler()
 
-	database.Open()
+	base.RegisterUnloader(database.Open())
 
-	playback.StartEngine()
+	base.RegisterUnloader(playback.StartEngine())
 
 	log.Info("Starting server...")
 
@@ -46,14 +46,14 @@ func main() {
 
 	reflection.Register(s)
 
-	serverUnloader := base.Unloader{
+	base.RegisterUnloader(&base.Unloader{
 		Description: "StopServer",
 		Callback: func() error {
 			s.Stop()
 			listener.Close()
 			return nil
 		},
-	}
+	})
 
 	go func() {
 		if err := s.Serve(listener); err != nil {
@@ -62,9 +62,6 @@ func main() {
 	}()
 
 	base.RegisterUnloader(subscription.Unloader)
-	base.RegisterUnloader(serverUnloader)
-	base.RegisterUnloader(playback.Unloader)
-	base.RegisterUnloader(database.Unloader)
 
 	<-base.InterruptSignal
 

@@ -30,8 +30,7 @@ var (
 	modelsCtx    context.Context
 	modelsCancel context.CancelFunc
 
-	// Unloader -
-	Unloader = base.Unloader{
+	unloader = &base.Unloader{
 		Description: "CloseDatabase",
 		Callback: func() error {
 			Close()
@@ -64,7 +63,7 @@ func DSN() string {
 }
 
 // Open creates the application database, if it doesn't exist
-func Open() *gorm.DB {
+func Open() *base.Unloader {
 	var err error
 
 	backupDatabase()
@@ -92,7 +91,7 @@ func Open() *gorm.DB {
 	log.WithField("dsn", DSN()).
 		Info("Database loaded")
 
-	return conn
+	return unloader
 }
 
 func backupDatabase() {

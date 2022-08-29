@@ -62,7 +62,7 @@ var (
 	unloading = false
 
 	// Unloader declares the subscription unloader
-	Unloader = base.Unloader{
+	Unloader = &base.Unloader{
 		Description: "UnsubscribeAll",
 		Callback:    unloadSubscriptions,
 	}

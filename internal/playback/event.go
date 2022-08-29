@@ -79,8 +79,7 @@ func (em EngineMode) String() string {
 var (
 	eng *engine
 
-	// Unloader -
-	Unloader = base.Unloader{
+	unloader = &base.Unloader{
 		Description: "StopEngine",
 		Callback: func() error {
 			stopEngine()
@@ -322,12 +321,12 @@ func SetMode(mode EngineMode) {
 }
 
 // StartEngine starts the playback engine
-func StartEngine() {
+func StartEngine() *base.Unloader {
 	log.Info("Starting playback engine")
 
 	if eng.mode == TestMode {
 		mockEngineLoop()
-		return
+		return unloader
 	}
 
 	gst.Init(nil)
@@ -335,6 +334,8 @@ func StartEngine() {
 	eng.resumeActivePlaylist()
 	go eng.engineLoop()
 	models.TriggerPlaybackChange()
+
+	return unloader
 }
 
 // StopAll stops all playback
