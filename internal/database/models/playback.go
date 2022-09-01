@@ -97,12 +97,12 @@ func (pb *Playback) GetTrack() (t *Track, err error) {
 
 // AddPlaybackLocation adds a playback entry by location
 func AddPlaybackLocation(location string) (pb *Playback) {
-	log.WithField("location", location).
-		Info("Adding playback entry by location")
+	entry := log.WithField("location", location)
+	entry.Info("Adding playback entry by location")
 
 	pb = &Playback{Location: location}
 	if err := pb.Create(); err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 	go func() {
@@ -113,11 +113,11 @@ func AddPlaybackLocation(location string) (pb *Playback) {
 
 // AddPlaybackTrack adds a playback entry by track
 func AddPlaybackTrack(t *Track) (pb *Playback) {
-	log.WithField("t", t).
-		Info("Adding playback entry by track")
+	entry := log.WithField("t", t)
+	entry.Info("Adding playback entry by track")
 
 	pb = &Playback{Location: t.Location, TrackID: t.ID}
-	onerror.Log(pb.Create())
+	onerror.WithEntry(entry).Log(pb.Create())
 	return
 }
 
@@ -152,8 +152,8 @@ func findPlaybackTrack(ctx context.Context) {
 				break
 			}
 
-			log.WithField("pb", pb).
-				Info("Finding track for current playback")
+			entry := log.WithField("pb", pb)
+			entry.Info("Finding track for current playback")
 
 			t := Track{}
 			err = db.Where("location = ?", pb.Location).First(&t).Error
@@ -161,7 +161,7 @@ func findPlaybackTrack(ctx context.Context) {
 				break
 			}
 			pb.TrackID = t.ID
-			onerror.Log(pb.Save())
+			onerror.WithEntry(entry).Log(pb.Save())
 
 		}
 	}

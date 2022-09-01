@@ -192,19 +192,19 @@ func (e *engine) getFirstInPlaylist() (pb *models.Playback) {
 }
 
 func (e *engine) getNextInPlaylist(goingBack bool) (pb *models.Playback) {
+	entry := log.WithField("pt", *e.pt.Load())
+	entry.Info("Obtaining next track in playlist")
+
 	if e.pt.Load() == nil {
-		log.Info("There is no playlist-track available")
+		entry.Info("There is no playlist-track available")
 		return
 	}
-
-	log.WithField("pt", *e.pt.Load()).
-		Info("Obtaining next track in playlist")
 
 	newpt, err := e.pt.Load().GetTrackAfter(goingBack)
 	if err != nil {
 		pl := e.pt.Load().Playlist
 		if pl.ID == 0 {
-			log.Error("There is no list to play from")
+			entry.Error("There is no list to play from")
 			return
 		}
 		bar := models.Playbar{}
@@ -212,7 +212,7 @@ func (e *engine) getNextInPlaylist(goingBack bool) (pb *models.Playback) {
 			bar.DeactivateEntry(&pl)
 		}
 		e.pt.Store(nil)
-		log.Info(err)
+		entry.Info(err)
 		return
 	}
 
@@ -305,8 +305,8 @@ func (e *engine) handleBusMessage(msg *gst.Message) bool {
 }
 
 func (e *engine) playStream(pb *models.Playback) {
-	log.WithField("pb", *pb).
-		Info("Starting playStream")
+	entry := log.WithField("pb", *pb)
+	entry.Info("Starting playStream")
 
 	e.pb.Store(pb)
 	e.terminate.Store(false)
@@ -319,7 +319,7 @@ func (e *engine) playStream(pb *models.Playback) {
 	if e.pb.Load() == nil || pb.Location == "" {
 		return
 	}
-	log.Debug("Playback is valid")
+	entry.Debug("Playback is valid")
 
 	var err error
 
@@ -328,19 +328,19 @@ func (e *engine) playStream(pb *models.Playback) {
 	playbin, err := gst.NewElementWithName("playbin", "m3uetc-playbin")
 	e.playbin.Store(playbin)
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
-	log.Debug("Playbin created")
+	entry.Debug("Playbin created")
 
 	if e.playbin.Load() == nil {
-		log.Error("Not all elements could be created")
+		entry.Error("Not all elements could be created")
 		return
 	}
 
 	flags, err := e.playbin.Load().GetProperty("flags")
 	if err != nil {
-		log.Errorf("Unable to get flags: %v", err)
+		entry.Errorf("Unable to get flags: %v", err)
 	} else {
 		eflags := flags.(uint)
 		eflags = eflags &^ (1 << 0) // no video
@@ -349,7 +349,7 @@ func (e *engine) playStream(pb *models.Playback) {
 		e.playbin.Load().SetArg("flags", strconv.FormatInt(int64(eflags), 10))
 		fflags, _ := e.playbin.Load().GetProperty("flags")
 		if fflags.(uint) != eflags {
-			log.WithFields(log.Fields{
+			entry.WithFields(log.Fields{
 				"initialFlags":  flags.(uint),
 				"expectedFlags": eflags,
 				"finalFlags":    fflags,
@@ -373,10 +373,10 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	e.state.Store(gst.StatePlaying)
 	if err := e.playbin.Load().SetState(e.state.Load()); err != nil {
-		log.Errorf("Unable to start playback: %v", err)
+		entry.Errorf("Unable to start playback: %v", err)
 		return
 	}
-	log.Debugf("State changed: %d\n", gst.StatePlaying)
+	entry.Debugf("State changed: %d\n", gst.StatePlaying)
 
 	pqctx, cancelpq := context.WithCancel(context.Background())
 	go e.performQueries(pqctx)
@@ -391,7 +391,7 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	cancelpq()
 
-	log.Debug("End of playback")
+	entry.Debug("End of playback")
 	e.state.Store(gst.StateNull)
 	e.playbin.Load().SetState(e.state.Load())
 }

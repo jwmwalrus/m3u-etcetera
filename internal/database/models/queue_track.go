@@ -99,15 +99,15 @@ func (qt *QueueTrack) SetIgnore(ignore bool) {
 // GetAllQueueTracks returns all queue tracks for the given perspective,
 // constrained by a limit
 func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts []*Track) {
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"idx":   idx,
 		"limit": limit,
-	}).
-		Info("Getting all queue tracks")
+	})
+	entry.Info("Getting all queue tracks")
 
 	q, err := idx.GetPerspectiveQueue()
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -123,7 +123,7 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts [
 	ts = []*Track{}
 	s := []QueueTrack{}
 	if err = tx.Find(&s).Error; err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -188,15 +188,15 @@ func findQueueTrack(ctx context.Context) {
 				break
 			}
 
-			log.WithField("qt", qt).
-				Info("Finding track for queue entry")
+			entry := log.WithField("qt", qt)
+			entry.Info("Finding track for queue entry")
 
 			t := Track{}
 			if err := db.Where("location = ?", qt.Location).First(&t).Error; err != nil {
 				break
 			}
 			qt.TrackID = t.ID
-			onerror.Log(qt.Save())
+			onerror.WithEntry(entry).Log(qt.Save())
 		}
 	}
 }

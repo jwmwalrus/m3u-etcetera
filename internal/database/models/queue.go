@@ -41,17 +41,17 @@ func (q *Queue) Read(id int64) (err error) {
 
 // Add adds the given locations/IDs to the end of the queue
 func (q *Queue) Add(locations []string, ids []int64) {
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"locations": locations,
 		"ids":       ids,
-	}).
-		Info("Adding payload to queue")
+	})
+	entry.Info("Adding payload to queue")
 
 	for _, v := range locations {
 		qt := QueueTrack{Location: v}
 
 		if err := q.appendTo(&qt); err != nil {
-			log.Error(err)
+			entry.Error(err)
 			continue
 		}
 	}
@@ -60,12 +60,12 @@ func (q *Queue) Add(locations []string, ids []int64) {
 		t := Track{}
 
 		if err = t.Read(v); err != nil {
-			log.Error(err)
+			entry.Error(err)
 			continue
 		}
 
 		qt := QueueTrack{Location: t.Location, TrackID: v}
-		onerror.Log(q.appendTo(&qt))
+		onerror.WithEntry(entry).Log(q.appendTo(&qt))
 	}
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
@@ -73,8 +73,8 @@ func (q *Queue) Add(locations []string, ids []int64) {
 
 // Clear removes all entries from the queue
 func (q *Queue) Clear() {
-	log.WithField("q", *q).
-		Info("Clearing queue")
+	entry := log.WithField("q", *q)
+	entry.Info("Clearing queue")
 
 	s := []QueueTrack{}
 	err := db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
@@ -87,7 +87,7 @@ func (q *Queue) Clear() {
 	}
 
 	if err = db.Save(&s).Error; err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -96,11 +96,11 @@ func (q *Queue) Clear() {
 
 // DeleteAt deletes the given position from the queue
 func (q *Queue) DeleteAt(position int) {
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"q":        *q,
 		"position": position,
-	}).
-		Info("Deleting entry from queue")
+	})
+	entry.Info("Deleting entry from queue")
 
 	s := []QueueTrack{}
 	err := db.Where("queue_id = ? AND played = 0", q.ID).Order("position ASC").
@@ -115,13 +115,13 @@ func (q *Queue) DeleteAt(position int) {
 
 	if qt != nil && qt.ID > 0 {
 		if err := qt.Save(); err != nil {
-			log.Error(err)
+			entry.Error(err)
 			return
 		}
 	}
 
 	if err := db.Save(&s).Error; err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -130,27 +130,27 @@ func (q *Queue) DeleteAt(position int) {
 
 // InsertAt inserts the given locations and IDs into the queue
 func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"q":         q,
 		"position":  position,
 		"locations": locations,
 		"ids":       ids,
-	}).
-		Info("Inserting entry into queue")
+	})
+	entry.Info("Inserting entry into queue")
 
 	for i := len(ids) - 1; i >= 0; i-- {
 		t := Track{}
 		if err := t.Read(ids[i]); err != nil {
-			log.Error(err)
+			entry.Error(err)
 			continue
 		}
 
 		qt := QueueTrack{Location: t.Location, TrackID: ids[i], Position: position}
-		onerror.Log(q.insertInto(&qt))
+		onerror.WithEntry(entry).Log(q.insertInto(&qt))
 	}
 	for i := len(locations) - 1; i >= 0; i-- {
 		qt := QueueTrack{Location: locations[i], Position: position}
-		onerror.Log(q.insertInto(&qt))
+		onerror.WithEntry(entry).Log(q.insertInto(&qt))
 	}
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
@@ -169,18 +169,18 @@ func (q *Queue) MoveTo(to, from int) {
 		return
 	}
 
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"from": from,
 		"to":   to,
-	}).
-		Info("Moving queue tracks")
+	})
+	entry.Info("Moving queue tracks")
 
 	s := []QueueTrack{}
 	err := db.Where("queue_id = ? AND played = 0", q.ID).Order("position").
 		Find(&s).
 		Error
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 	if len(s) == 0 || from > len(s) {
@@ -191,7 +191,7 @@ func (q *Queue) MoveTo(to, from int) {
 	s = pointers.ToValues(list)
 
 	if err := db.Save(&s).Error; err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
@@ -199,15 +199,15 @@ func (q *Queue) MoveTo(to, from int) {
 
 // Pop returns the next entry to be played from the queue
 func (q *Queue) Pop() (qt *QueueTrack) {
-	log.WithField("q", *q).
-		Debug("Popping from queue")
+	entry := log.WithField("q", *q)
+	entry.Debug("Popping from queue")
 
 	s := []QueueTrack{}
 	err := db.Where("queue_id = ? AND played = 0", q.ID).Order("position ASC").
 		Find(&s).
 		Error
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -218,11 +218,11 @@ func (q *Queue) Pop() (qt *QueueTrack) {
 		return
 	}
 
-	log.Info("Found location to pop from queue:", qt.Location)
+	entry.Info("Found location to pop from queue:", qt.Location)
 	if len(s) > 0 {
-		onerror.Log(db.Save(&s).Error)
+		onerror.WithEntry(entry).Log(db.Save(&s).Error)
 	}
-	onerror.Log(qt.Save())
+	onerror.WithEntry(entry).Log(qt.Save())
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 	return

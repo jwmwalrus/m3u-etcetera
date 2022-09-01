@@ -55,31 +55,31 @@ func (pl *Playlist) Delete() (err error) {
 
 // DeleteTx implements the DataDeleterTx interface
 func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
-	log.WithField("pl", pl).
-		Info("Deleting playlist")
+	entry := log.WithField("pl", pl)
+	entry.Info("Deleting playlist")
 
 	pl.DeleteDynamicTracks(tx)
 
 	pqys := []PlaylistQuery{}
 	if err = tx.Where("playlist_id = ?", pl.ID).Find(&pqys).Error; err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
 	pts := []PlaylistTrack{}
 	if err = tx.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
 	for i := range pqys {
 		if err := pqys[i].DeleteTx(tx); err != nil {
-			log.Warn(err)
+			entry.Warn(err)
 		}
 	}
 
 	for i := range pts {
-		onerror.Log(pts[i].DeleteTx(tx))
+		onerror.WithEntry(entry).Log(pts[i].DeleteTx(tx))
 	}
 
 	pl.Transient = true

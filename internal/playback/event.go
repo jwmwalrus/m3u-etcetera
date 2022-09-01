@@ -224,11 +224,12 @@ func PauseStream(off bool) (err error) {
 // PlayStreams starts playback for the given streams
 func PlayStreams(force bool, locations []string, ids []int64) {
 	eng.lastEvent.Store(playEvent)
-	log.WithFields(log.Fields{
+
+	entry := log.WithFields(log.Fields{
 		"locations": locations,
 		"ids":       ids,
-	}).
-		Infof("Playing streams")
+	})
+	entry.Infof("Playing streams")
 
 	for _, v := range locations {
 		models.AddPlaybackLocation(v)
@@ -237,7 +238,7 @@ func PlayStreams(force bool, locations []string, ids []int64) {
 		t := &models.Track{}
 		err := t.Read(v)
 		if err != nil {
-			log.Error(err)
+			entry.Error(err)
 			continue
 		}
 		models.AddPlaybackTrack(t)
@@ -372,12 +373,13 @@ func StopStream() {
 // TryPlayingFromBar starts a playlist in the playbar
 func TryPlayingFromBar(pl *models.Playlist, position int) {
 	eng.lastEvent.Store(playbarEvent)
-	log.WithField("pl", pl).
-		Infof("Try playing from bar")
+
+	entry := log.WithField("pl", pl)
+	entry.Infof("Try playing from bar")
 
 	bar := models.Playbar{}
 	if err := bar.Read(pl.PlaybarID); err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 

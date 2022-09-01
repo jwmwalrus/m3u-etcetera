@@ -104,11 +104,13 @@ func GetBusy(is IdleStatus) {
 
 // GetFree registers a process as less busy
 func GetFree(is IdleStatus) {
+	entry := log.WithField("is", is)
+
 	idleStatusStack.mu.Lock()
 	defer idleStatusStack.mu.Unlock()
+
 	if is != IdleStatusIdle {
-		log.WithField("is", is).
-			Debug("server got a little less busy")
+		entry.Debug("server got a little less busy")
 
 		for i := len(idleStatusStack.s) - 1; i >= 0; i-- {
 			if is == idleStatusStack.s[i] {
@@ -119,7 +121,7 @@ func GetFree(is IdleStatus) {
 		}
 	}
 
-	log.Debugf(
+	entry.Debugf(
 		"Topmost idle status is %v",
 		idleStatusStack.s[len(idleStatusStack.s)-1],
 	)
@@ -136,41 +138,41 @@ func GetFree(is IdleStatus) {
 // processes are pending
 func Idle(ctx context.Context) {
 	idleStatusStack.mu.RLock()
-
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"forceExit":            forceExit.Load(),
 		"len(idleStatusStack)": len(idleStatusStack.s) - 1,
-	}).
-		Info("Starting Idle checks")
+	})
 	idleStatusStack.mu.RUnlock()
+
+	entry.Info("Starting Idle checks")
 
 	if !forceExit.Load() {
 		if IsAppBusy() || idleGotCalled.Load() {
-			log.Info("Server is busy or already idling, so cancelling request")
+			entry.Info("Server is busy or already idling, so cancelling request")
 			<-ctx.Done()
 			return
 		}
 
 		idleGotCalled.Store(true)
-		log.Info("Entering Idle state")
+		entry.Info("Entering Idle state")
 
 		select {
 		case <-time.After(time.Duration(ServerIdleTimeout) * time.Second):
 			if IsAppBusy() {
-				log.Info("Server is busy, so cancelling timeout")
+				entry.Info("Server is busy, so cancelling timeout")
 				<-ctx.Done()
 				return
 			}
 			break
 		case <-ctx.Done():
-			log.Info("idleCancel got called explicitly")
+			entry.Info("idleCancel got called explicitly")
 			idleGotCalled.Store(false)
 			return
 		}
 	}
 
 	if doneEmmitted.Load() > 0 {
-		log.WithField("doneEmmitted", doneEmmitted.Load()).
+		entry.WithField("doneEmmitted", doneEmmitted.Load()).
 			Warn("ignoring further attempt at ctx.Done()")
 
 		doneEmmitted.Add(1)
@@ -179,7 +181,7 @@ func Idle(ctx context.Context) {
 
 	doneEmmitted.Add(1)
 
-	log.Info("Server seems to have been Idle for a while, and that's gotta stop!")
+	entry.Info("Server seems to have been Idle for a while, and that's gotta stop!")
 	InterruptSignal <- os.Interrupt
 }
 

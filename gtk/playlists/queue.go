@@ -22,16 +22,16 @@ type OnQueue struct {
 func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 	oq *OnQueue, err error) {
 
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"perspective": p,
 		"queueID":     queueID,
 		"queueMenuID": contextMenuID,
-	}).
-		Info("Creating queue view and model")
+	})
+	entry.Info("Creating queue view and model")
 
 	ctxMenu, err := builder.GetMenu(contextMenuID)
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -39,7 +39,7 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 	for _, l := range []string{"top", "up", "down", "bottom"} {
 		mi, err := builder.GetMenuItem(contextMenuID + "_" + l)
 		if err != nil {
-			log.Error(err)
+			entry.Error(err)
 			continue
 		}
 		mi.SetName(fmt.Sprintf("menuitem-%s-%s", l, miSuffix))

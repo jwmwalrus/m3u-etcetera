@@ -39,19 +39,21 @@ func (h *PlaybackHistory) ReadLast() (err error) {
 
 // AddPlaybackToHistory adds unplayed playback to history and marks it as played
 func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
+	entry := log.WithFields(log.Fields{
+		"position": position,
+		"duration": duration,
+	})
 	pb := Playback{}
 	if err := pb.Read(id); err != nil {
-		log.Errorf("Error adding playback to history: %v", err)
+		entry.Errorf("Error adding playback to history: %v", err)
 		return
 	}
 
-	log.WithFields(log.Fields{
+	entry = entry.WithFields(log.Fields{
 		"location": pb.Location,
 		"trackId":  pb.TrackID,
-		"position": position,
-		"duration": duration,
-	}).
-		Info("Adding playback to history")
+	})
+	entry.Info("Adding playback to history")
 
 	if !freeze {
 		pb.Played = true
@@ -64,11 +66,11 @@ func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
 		TrackID:  pb.TrackID,
 		Duration: position,
 	}
-	onerror.Log(h.Create())
+	onerror.WithEntry(entry).Log(h.Create())
 	if pb.TrackID > 0 {
 		t, err := pb.GetTrack()
 		if err != nil {
-			log.Error(err)
+			entry.Error(err)
 			return
 		}
 
@@ -81,6 +83,6 @@ func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
 		if t.Duration == 0 {
 			t.Duration = duration
 		}
-		onerror.Warn(t.Save())
+		onerror.WithEntry(entry).Warn(t.Save())
 	}
 }

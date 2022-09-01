@@ -11,7 +11,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/gotk3/gotk3 v0.6.2-0.20211226093840-cf265f40b836
 	github.com/jwmwalrus/bnp v1.11.0
-	github.com/jwmwalrus/onerror v0.1.1
+	github.com/jwmwalrus/onerror v0.2.0
 	github.com/jwmwalrus/seater v0.1.1
 	github.com/nightlyone/lockfile v1.0.0
 	github.com/pborman/getopt/v2 v2.1.0
@@ -41,11 +41,12 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
-	golang.org/x/sys v0.0.0-20220825204002-c680a09ffe64 // indirect
+	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
 	google.golang.org/genproto v0.0.0-20220822174746-9e6da59bd2fc // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
+// replace github.com/jwmwalrus/onerror => ../onerror
 // replace github.com/jwmwalrus/bnp => ../bnp
 // replace github.com/tinyzimmer/go-gst => github.com/jwmwalrus/go-gst v0.2.33-0.20220205191536-6a7b117cbaee

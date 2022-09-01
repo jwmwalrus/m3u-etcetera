@@ -461,8 +461,8 @@ func CreateCollectionModel() (model *gtk.ListStore, err error) {
 func CreateCollectionTreeModel(h collectionTreeHierarchy) (
 	model *gtk.TreeStore, err error) {
 
-	log.WithField("hierarchy", h).
-		Info("Creating collection tree model")
+	entry := log.WithField("hierarchy", h)
+	entry.Info("Creating collection tree model")
 
 	model, err = gtk.TreeStoreNew(CTreeColumn.getTypes()...)
 	if err != nil {
@@ -477,7 +477,7 @@ func CreateCollectionTreeModel(h collectionTreeHierarchy) (
 	cProgress, errp = builder.GetProgressBar("collections_scanning_progress")
 	if errp != nil {
 		cProgress = nil
-		log.Error(errp)
+		entry.Error(errp)
 	}
 	return
 }

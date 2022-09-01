@@ -199,11 +199,11 @@ func (qy *Query) Delete(qybs ...QueryBoundaryTx) error {
 
 // FindTracks return the list of tracks that match the query
 func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"qy":        qy,
 		"len(qybs)": len(qybs),
-	}).
-		Info("Finding tracks")
+	})
+	entry.Info("Finding tracks")
 
 	limit := config.DefaultQueryMaxLimit
 	if base.Conf.Server.Query.Limit > 0 {
@@ -220,13 +220,13 @@ func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
 			parsed, _ := qparams.ParseParams(qy.Params)
 			for _, x := range parsed {
 				if !slices.Contains(supportedParams, strings.ToLower(x.Key)) {
-					log.Warnf("Ignored query paranmeter: %v", x.Key)
+					entry.Warnf("Ignored query paranmeter: %v", x.Key)
 					continue
 				}
 				comp := " LIKE ?"
 				if x.Key == "id" {
 					if _, err := strconv.ParseInt(x.Val, 10, 64); err != nil {
-						log.Warnf("Ignoring `id` value due to parsing error:%v", x.Val)
+						entry.Warnf("Ignoring `id` value due to parsing error:%v", x.Val)
 						continue
 					}
 					comp = " = ?"
@@ -333,17 +333,17 @@ func FromProtobuf(in *m3uetcpb.Query) (qy *Query) {
 
 // GetAllQueries returns all queries, constrained by a limit and collections
 func GetAllQueries(limit int, qybs ...QueryBoundaryID) (s []*Query) {
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"limit":     limit,
 		"len(qybs)": len(qybs),
-	}).
-		Info("Getting all queries")
+	})
+	entry.Info("Getting all queries")
 
 	s = []*Query{}
 
 	qys := []Query{}
 	if err := db.Find(&qys).Error; err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 

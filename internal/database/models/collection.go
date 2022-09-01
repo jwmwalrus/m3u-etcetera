@@ -248,12 +248,17 @@ func (c *Collection) CountTracks() {
 
 // Scan adds tracks to collection
 func (c *Collection) Scan(withTags bool) {
+	entry := log.WithFields(log.Fields{
+		"c":        *c,
+		"withTags": withTags,
+	})
+
 	if c.Disabled {
-		log.Info("Cannot scan collection while disabled")
+		entry.Info("Cannot scan collection while disabled")
 		return
 	}
 
-	log.Info("Scanning collection")
+	entry.Info("Scanning collection")
 
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
@@ -269,12 +274,12 @@ func (c *Collection) Scan(withTags bool) {
 
 	rootDir, err := urlstr.URLToPath(c.Location)
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
 	if _, err = os.Stat(rootDir); os.IsNotExist(err) {
-		log.Warn(err)
+		entry.Warn(err)
 		return
 	}
 
@@ -293,7 +298,7 @@ func (c *Collection) Scan(withTags bool) {
 		nTrack++
 		return nil
 	})
-	onerror.Warn(err)
+	onerror.WithEntry(entry).Warn(err)
 
 	if nTrack == 0 {
 		return
@@ -311,7 +316,7 @@ func (c *Collection) Scan(withTags bool) {
 
 		if !base.IsSupportedFile(path) {
 			if !base.IsIgnoredFile(path) {
-				log.WithFields(log.Fields{
+				entry.WithFields(log.Fields{
 					"path":      path,
 					"extension": filepath.Ext(path),
 				}).
@@ -325,38 +330,38 @@ func (c *Collection) Scan(withTags bool) {
 		iTrack++
 
 		if _, err = c.addTrackFromPath(tx, path, withTags); err != nil {
-			log.Warn(err)
+			entry.Warn(err)
 			scanErr++
 			return nil
 		}
 
 		if iTrack%100 == 0 {
 			c.Scanned = int((float32(iTrack) / float32(nTrack)) * 100)
-			onerror.Log(c.Save())
+			onerror.WithEntry(entry).Log(c.Save())
 		}
 
 		return nil
 	})
-	onerror.Warn(err)
-	log.WithFields(log.Fields{
+	onerror.WithEntry(entry).Warn(err)
+	entry = entry.WithFields(log.Fields{
 		"tracksExpected":      nTrack,
 		"tracksFound":         iTrack,
 		"unsupportedTracks":   unsupp,
 		"scanningErrorsCount": scanErr,
-	}).
-		Info("ScanCollection Summary")
+	})
+	entry.Info("ScanCollection Summary")
 
 	c.Scanned = 100
-	onerror.Log(c.Save())
+	onerror.WithEntry(entry).Log(c.Save())
 }
 
 // Verify removes tracks that do not exist in the collection anymore
 func (c *Collection) Verify() {
-	log.WithField("c", *c).
-		Info("Verifying collection")
+	entry := log.WithField("c", *c)
+	entry.Info("Verifying collection")
 
 	if c.Disabled {
-		log.Info("Cannot verify collection while disabled")
+		entry.Info("Cannot verify collection while disabled")
 		return
 	}
 
@@ -376,6 +381,8 @@ func (c *Collection) Verify() {
 
 func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string,
 	withTags bool) (t *Track, err error) {
+
+	entry := log.WithField("location", location)
 
 	doTag := false
 	newt := &Track{}
@@ -398,9 +405,9 @@ func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string,
 				err = fmt.Errorf("Track already belongs to another collection")
 				return
 			}
-			log.WithField("location", newt.Location).Infof("Track already in `%v` collection", c.Name)
+			entry.Infof("Track already in `%v` collection", c.Name)
 		} else {
-			log.WithField("location", newt.Location).Info("Reusing transient track")
+			entry.Info("Reusing transient track")
 			newt.CollectionID = c.ID
 		}
 	}
@@ -410,7 +417,7 @@ func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string,
 	if withTags || doTag {
 		err2 := t.updateTags()
 		if err2 != nil {
-			log.WithField("location", t.Location)
+			entry.Warn(err2)
 		}
 	}
 

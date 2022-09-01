@@ -64,6 +64,8 @@ func DSN() string {
 
 // Open creates the application database, if it doesn't exist
 func Open() *base.Unloader {
+	entry := log.WithField("dsn", DSN())
+
 	var err error
 
 	backupDatabase()
@@ -75,7 +77,7 @@ func Open() *base.Unloader {
 		DryRun: base.FlagDry,
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	onerror.Panic(err)
+	onerror.WithEntry(entry).Panic(err)
 
 	// TODO: connect with logrus
 
@@ -83,13 +85,12 @@ func Open() *base.Unloader {
 	m := gormigrate.New(conn, gormigrate.DefaultOptions, migrations.All())
 
 	m.InitSchema(migrations.InitSchema)
-	onerror.Panic(m.Migrate())
+	onerror.WithEntry(entry).Panic(m.Migrate())
 
 	modelsCtx, modelsCancel = context.WithCancel(context.Background())
 	go models.SetUp(modelsCtx, conn)
 
-	log.WithField("dsn", DSN()).
-		Info("Database loaded")
+	entry.Info("Database loaded")
 
 	return unloader
 }

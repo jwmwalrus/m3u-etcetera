@@ -83,8 +83,8 @@ github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqx
 github.com/joho/godotenv v1.4.0 h1:3l4+N6zfMWnkbPEXKng2o2/MR5mSwTrBih4ZEkkz1lg=
 github.com/jwmwalrus/bnp v1.11.0 h1:KDlqyF9lucKHdXyTFcAjCCeTeFdfvFBwM1UPh3n4e10=
 github.com/jwmwalrus/bnp v1.11.0/go.mod h1:kXpjWd39Gi2sHWoc7tod5ngqJAELAxf+cBHwzkAWwU4=
-github.com/jwmwalrus/onerror v0.1.1 h1:iGLOciezK4WD4cBOd22C7er/SLpphscrf3rbFNTeywI=
-github.com/jwmwalrus/onerror v0.1.1/go.mod h1:SWe4MsIW5c3zdBj78M0BvTyFIGKRrIMkn8BQLACzOc8=
+github.com/jwmwalrus/onerror v0.2.0 h1:rU4rIjhN2ebRVxdurGROV4xBduIvHeO9jUxpkY0XroA=
+github.com/jwmwalrus/onerror v0.2.0/go.mod h1:uQHnyXEDyqRbU4e9Rf7qIkvx9IDhpObM6HYL/nyJYes=
 github.com/jwmwalrus/seater v0.1.1 h1:VpeZ5XBBr3IrDsGrT4tZWfUz94WQr8NLzjI771MBSlg=
 github.com/jwmwalrus/seater v0.1.1/go.mod h1:FUU+Op0R/gGuagUjIMiZ3AUV0GfOpfArFbar0eTFxFE=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
@@ -188,8 +188,8 @@ golang.org/x/sys v0.0.0-20190826190057-c7b8b68b1456/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.0.0-20220825204002-c680a09ffe64 h1:UiNENfZ8gDvpiWw7IpOMQ27spWmThO1RwwdQVbJahJM=
-golang.org/x/sys v0.0.0-20220825204002-c680a09ffe64/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 h1:v6hYoSR9T5oet+pMXwUWkbiVqx/63mlHjefrHmxwfeY=
+golang.org/x/sys v0.0.0-20220829200755-d48e67d00261/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.2/go.mod h1:bEr9sfX3Q8Zfm5fL9x+3itogRgK3+ptLWKqgva+5dAk=

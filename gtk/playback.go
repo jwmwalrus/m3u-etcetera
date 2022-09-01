@@ -36,12 +36,12 @@ func setupPlayback(signals *map[string]interface{}) (err error) {
 }
 
 func onControlClicked(btn *gtk.ToolButton, action m3uetcpb.PlaybackAction) {
-	log.WithField("action", action.String()).
-		Info("ToolButton clicked fot playback action")
+	entry := log.WithField("action", action.String())
+	entry.Info("ToolButton clicked fot playback action")
 
 	req := &m3uetcpb.ExecutePlaybackActionRequest{Action: action}
 	if err := dialer.ExecutePlaybackAction(req); err != nil {
-		log.Error(err)
+		entry.Error(err)
 	}
 }
 

@@ -47,8 +47,8 @@ func addPerspectives(signals *map[string]interface{}) (err error) {
 
 func onPerspectiveChanged(cbt *gtk.ComboBoxText) {
 	text := cbt.GetActiveText()
-	log.WithField("activeText", text).
-		Info("Perspective changed")
+	entry := log.WithField("activeText", text)
+	entry.Info("Perspective changed")
 
 	text = strings.ToUpper(cbt.GetActiveText())
 	if idx, ok := m3uetcpb.Perspective_value[text]; ok {
@@ -59,6 +59,6 @@ func onPerspectiveChanged(cbt *gtk.ComboBoxText) {
 		req := &m3uetcpb.SetActivePerspectiveRequest{
 			Perspective: m3uetcpb.Perspective(m3uetcpb.Perspective_value[strings.ToUpper(text)]),
 		}
-		onerror.Log(dialer.SetActivePerspective(req))
+		onerror.WithEntry(entry).Log(dialer.SetActivePerspective(req))
 	}()
 }

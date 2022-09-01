@@ -80,19 +80,19 @@ func (b *Playbar) Read(id int64) error {
 
 // ActivateEntry activates the given entry in a playbar
 func (b *Playbar) ActivateEntry(pl *Playlist) {
-	log.WithField("pl", pl).
-		Info("Activating in playbar")
+	entry := log.WithField("pl", *pl)
+	entry.Info("Activating in playbar")
 
 	pl.Open = true
 	if err := pl.Save(); err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
 	pls := []Playlist{}
 	err := db.Where("playbar_id = ? and open=1", b.ID).Find(&pls).Error
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -103,32 +103,32 @@ func (b *Playbar) ActivateEntry(pl *Playlist) {
 		}
 		pls[i].Active = false
 	}
-	onerror.Log(db.Save(&pls).Error)
+	onerror.WithEntry(entry).Log(db.Save(&pls).Error)
 }
 
 // AppendToPlaylist -
 func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 	locations []string) {
 
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"pl":        *pl,
 		"trackIds":  trackIds,
 		"locations": locations,
-	}).
-		Info("Appending tracks/locations to playlist")
+	})
+	entry.Info("Appending tracks/locations to playlist")
 
 	pts := []PlaylistTrack{}
 	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
 		Find(&pts).
 		Error
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
 	s, err := pl.createTracks(trackIds, locations)
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -137,21 +137,19 @@ func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 	err = db.Session(&gorm.Session{SkipHooks: true}).
 		Save(&pts).
 		Error
-	onerror.Log(err)
+	onerror.WithEntry(entry).Log(err)
 
 	broadcastOpenPlaylist(pl.ID)
 }
 
 // ClearPlaylist -
 func (b *Playbar) ClearPlaylist(pl *Playlist) {
-	log.WithFields(log.Fields{
-		"pl": *pl,
-	}).
-		Info("Clearing tracks/locations in playlist")
+	entry := log.WithField("pl", *pl)
+	entry.Info("Clearing tracks/locations in playlist")
 
 	pts := []PlaylistTrack{}
 	if err := db.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -160,7 +158,7 @@ func (b *Playbar) ClearPlaylist(pl *Playlist) {
 			Where("id > 0").
 			Delete(&pts).
 			Error
-		onerror.Log(err)
+		onerror.WithEntry(entry).Log(err)
 
 		broadcastOpenPlaylist(pl.ID)
 	}
@@ -233,18 +231,18 @@ func (b *Playbar) DeactivateEntry(pl *Playlist) {
 
 // DeleteFromPlaylist -
 func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"pl":       *pl,
 		"position": position,
-	}).
-		Info("Deleting position in playlist")
+	})
+	entry.Info("Deleting position in playlist")
 
 	pts := []PlaylistTrack{}
 	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
 		Find(&pts).
 		Error
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 	list, pt := poser.DeleteAt(pointers.FromSlice(pts), position)
@@ -252,11 +250,11 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 
 	if pt != nil && pt.ID > 0 {
 		if err := pt.Delete(); err != nil {
-			log.Error(err)
+			entry.Error(err)
 			return
 		}
 	}
-	onerror.Log(db.Save(&pts).Error)
+	onerror.WithEntry(entry).Log(db.Save(&pts).Error)
 }
 
 // DestroyEntry deletes a playlist
@@ -423,26 +421,26 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 	trackIds []int64, locations []string) {
 
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"pl":        *pl,
 		"position":  position,
 		"trackIds":  trackIds,
 		"locations": locations,
-	}).
-		Info("Inserting tracks/locations into playlist")
+	})
+	entry.Info("Inserting tracks/locations into playlist")
 
 	pts := []PlaylistTrack{}
 	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
 		Find(&pts).
 		Error
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
 	s, err := pl.createTracks(trackIds, locations)
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
@@ -452,7 +450,7 @@ func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 	err = db.Session(&gorm.Session{SkipHooks: true}).
 		Save(&pts).
 		Error
-	onerror.Log(err)
+	onerror.WithEntry(entry).Log(err)
 
 	broadcastOpenPlaylist(pl.ID)
 }
@@ -493,25 +491,25 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 		return
 	}
 
-	log.WithFields(log.Fields{
+	entry := log.WithFields(log.Fields{
 		"pl":   *pl,
 		"to":   to,
 		"from": from,
-	}).
-		Info("Moving track in playlist")
+	})
+	entry.Info("Moving track in playlist")
 
 	pts := []PlaylistTrack{}
 	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
 		Find(&pts).
 		Error
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 
 	list := poser.MoveTo(pointers.FromSlice(pts), to, from)
 	moved := pointers.ToValues(list)
-	onerror.Log(db.Save(&moved).Error)
+	onerror.WithEntry(entry).Log(db.Save(&moved).Error)
 }
 
 // OpenEntry opens the given playbar entry

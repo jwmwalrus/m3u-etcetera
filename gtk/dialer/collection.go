@@ -31,17 +31,17 @@ func AddCollection(req *m3uetcpb.AddCollectionRequest) (
 
 // ApplyCollectionChanges applies collection changes
 func ApplyCollectionChanges(o ...store.CollectionOptions) {
-	log.WithField("collectionOptions", o).
-		Info("Applying collection changes")
+	entry := log.WithField("collectionOptions", o)
+	entry.Info("Applying collection changes")
 
 	requests, err := store.CData.GetUpdateCollectionRequests()
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 	}
 
 	cc, err := getClientConn1()
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 	defer cc.Close()
@@ -49,21 +49,21 @@ func ApplyCollectionChanges(o ...store.CollectionOptions) {
 
 	for _, req := range requests {
 		_, err := cl.UpdateCollection(context.Background(), req)
-		onerror.Log(err)
+		onerror.WithEntry(entry).Log(err)
 	}
 
 	applyCollectionActionsChanges(o...)
 }
 
 func applyCollectionActionsChanges(o ...store.CollectionOptions) {
-	log.WithField("collectionOptions", o).
-		Info("Applying collection actions changes")
+	entry := log.WithField("collectionOptions", o)
+	entry.Info("Applying collection actions changes")
 
 	toScan, toRemove := store.CData.GetCollectionActionsChanges()
 
 	cc, err := getClientConn1()
 	if err != nil {
-		log.Error(err)
+		entry.Error(err)
 		return
 	}
 	defer cc.Close()
@@ -77,7 +77,7 @@ func applyCollectionActionsChanges(o ...store.CollectionOptions) {
 	for _, id := range toRemove {
 		req := &m3uetcpb.RemoveCollectionRequest{Id: id}
 		_, err := cl.RemoveCollection(context.Background(), req)
-		onerror.Log(err)
+		onerror.WithEntry(entry).Log(err)
 	}
 
 	if opts.Discover {
@@ -85,7 +85,7 @@ func applyCollectionActionsChanges(o ...store.CollectionOptions) {
 			context.Background(),
 			&empty.Empty{},
 		)
-		onerror.Log(err)
+		onerror.WithEntry(entry).Log(err)
 	} else {
 		for _, id := range toScan {
 			if slices.Contains(toRemove, id) {
@@ -96,7 +96,7 @@ func applyCollectionActionsChanges(o ...store.CollectionOptions) {
 				UpdateTags: opts.UpdateTags,
 			}
 			_, err := cl.ScanCollection(context.Background(), req)
-			onerror.Log(err)
+			onerror.WithEntry(entry).Log(err)
 		}
 	}
 }
