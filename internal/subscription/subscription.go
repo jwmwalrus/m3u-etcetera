@@ -27,6 +27,7 @@ func (st Type) String() string {
 		"subscribed-to-none",
 		"subscribed-to-playback-event",
 		"subscribed-to-queue-store-event",
+		"subscribed-to-collection-store-event",
 		"subscribed-to-query-store-event",
 		"subscribed-to-playbar-store-event",
 		"subscribed-to-perspective-event",
