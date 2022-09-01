@@ -244,8 +244,10 @@ func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 	case m3uetcpb.Perspective_MUSIC:
 		return musicQueueModel
 	case m3uetcpb.Perspective_PODCASTS:
+		// TODO: return podcastsQueueModel
 		return musicQueueModel
 	case m3uetcpb.Perspective_AUDIOBOOKS:
+		// TODO: return audiobooksQueueModel
 		return musicQueueModel
 	default:
 		return nil
