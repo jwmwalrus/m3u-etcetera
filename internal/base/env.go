@@ -9,7 +9,7 @@ import (
 
 	"github.com/adrg/xdg"
 	"github.com/jwmwalrus/bnp/ing2"
-	"github.com/jwmwalrus/m3u-etcetera/pkg/config"
+	"github.com/jwmwalrus/m3u-etcetera/internal/config"
 	"github.com/pborman/getopt/v2"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"

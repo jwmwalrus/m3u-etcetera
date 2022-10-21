@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
+	"github.com/jwmwalrus/bnp/pointers"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )

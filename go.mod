@@ -10,7 +10,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/golang/protobuf v1.5.2
 	github.com/gotk3/gotk3 v0.6.2-0.20211226093840-cf265f40b836
-	github.com/jwmwalrus/bnp v1.11.0
+	github.com/jwmwalrus/bnp v1.12.0
 	github.com/jwmwalrus/onerror v0.2.0
 	github.com/jwmwalrus/seater v0.1.1
 	github.com/nightlyone/lockfile v1.0.0
@@ -47,6 +47,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/jwmwalrus/onerror => ../onerror
 // replace github.com/jwmwalrus/bnp => ../bnp
+// replace github.com/jwmwalrus/onerror => ../onerror
 // replace github.com/tinyzimmer/go-gst => github.com/jwmwalrus/go-gst v0.2.33-0.20220205191536-6a7b117cbaee

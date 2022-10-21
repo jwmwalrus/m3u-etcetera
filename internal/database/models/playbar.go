@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
-	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/poser"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"

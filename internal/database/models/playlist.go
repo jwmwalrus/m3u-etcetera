@@ -8,12 +8,12 @@ import (
 	"strconv"
 
 	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
-	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"

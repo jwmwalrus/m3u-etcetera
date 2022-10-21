@@ -1,8 +1,8 @@
 package models
 
 import (
+	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/jwmwalrus/m3u-etcetera/pkg/pointers"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/poser"
 	"github.com/jwmwalrus/onerror"
 	log "github.com/sirupsen/logrus"
