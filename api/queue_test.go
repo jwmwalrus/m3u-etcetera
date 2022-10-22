@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/stretchr/testify/assert"
 )
@@ -105,7 +104,7 @@ func TestExecuteQueueAction(t *testing.T) {
 				Action:    m3uetcpb.QueueAction_Q_APPEND,
 				Locations: []string{"2"},
 			},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			true,
 		},
 		{
@@ -117,7 +116,7 @@ func TestExecuteQueueAction(t *testing.T) {
 				Action: m3uetcpb.QueueAction_Q_APPEND,
 				Ids:    []int64{2},
 			},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			true,
 		},
 		{
@@ -128,7 +127,7 @@ func TestExecuteQueueAction(t *testing.T) {
 			&m3uetcpb.ExecuteQueueActionRequest{
 				Action: m3uetcpb.QueueAction_Q_CLEAR,
 			},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			false,
 		},
 	}

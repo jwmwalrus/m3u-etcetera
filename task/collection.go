@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
@@ -150,7 +149,7 @@ func collectionAction(c *cli.Context) (err error) {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewCollectionSvcClient(cc)
-	res, err := cl.GetAllCollections(context.Background(), &empty.Empty{})
+	res, err := cl.GetAllCollections(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		return
 	}
@@ -373,7 +372,7 @@ func collectionDiscoverActiion(c *cli.Context) (err error) {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewCollectionSvcClient(cc)
-	_, err = cl.DiscoverCollections(context.Background(), &empty.Empty{})
+	_, err = cl.DiscoverCollections(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		return
 	}

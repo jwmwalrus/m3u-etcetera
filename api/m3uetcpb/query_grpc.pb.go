@@ -8,7 +8,6 @@ package m3uetcpb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -26,12 +25,12 @@ type QuerySvcClient interface {
 	GetQuery(ctx context.Context, in *GetQueryRequest, opts ...grpc.CallOption) (*GetQueryResponse, error)
 	GetQueries(ctx context.Context, in *GetQueriesRequest, opts ...grpc.CallOption) (*GetQueriesResponse, error)
 	AddQuery(ctx context.Context, in *AddQueryRequest, opts ...grpc.CallOption) (*AddQueryResponse, error)
-	UpdateQuery(ctx context.Context, in *UpdateQueryRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	RemoveQuery(ctx context.Context, in *RemoveQueryRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	UpdateQuery(ctx context.Context, in *UpdateQueryRequest, opts ...grpc.CallOption) (*Empty, error)
+	RemoveQuery(ctx context.Context, in *RemoveQueryRequest, opts ...grpc.CallOption) (*Empty, error)
 	ApplyQuery(ctx context.Context, in *ApplyQueryRequest, opts ...grpc.CallOption) (*ApplyQueryResponse, error)
 	QueryBy(ctx context.Context, in *QueryByRequest, opts ...grpc.CallOption) (*QueryByResponse, error)
-	SubscribeToQueryStore(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (QuerySvc_SubscribeToQueryStoreClient, error)
-	UnsubscribeFromQueryStore(ctx context.Context, in *UnsubscribeFromQueryStoreRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	SubscribeToQueryStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (QuerySvc_SubscribeToQueryStoreClient, error)
+	UnsubscribeFromQueryStore(ctx context.Context, in *UnsubscribeFromQueryStoreRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type querySvcClient struct {
@@ -69,8 +68,8 @@ func (c *querySvcClient) AddQuery(ctx context.Context, in *AddQueryRequest, opts
 	return out, nil
 }
 
-func (c *querySvcClient) UpdateQuery(ctx context.Context, in *UpdateQueryRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *querySvcClient) UpdateQuery(ctx context.Context, in *UpdateQueryRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.QuerySvc/UpdateQuery", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -78,8 +77,8 @@ func (c *querySvcClient) UpdateQuery(ctx context.Context, in *UpdateQueryRequest
 	return out, nil
 }
 
-func (c *querySvcClient) RemoveQuery(ctx context.Context, in *RemoveQueryRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *querySvcClient) RemoveQuery(ctx context.Context, in *RemoveQueryRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.QuerySvc/RemoveQuery", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -105,7 +104,7 @@ func (c *querySvcClient) QueryBy(ctx context.Context, in *QueryByRequest, opts .
 	return out, nil
 }
 
-func (c *querySvcClient) SubscribeToQueryStore(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (QuerySvc_SubscribeToQueryStoreClient, error) {
+func (c *querySvcClient) SubscribeToQueryStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (QuerySvc_SubscribeToQueryStoreClient, error) {
 	stream, err := c.cc.NewStream(ctx, &QuerySvc_ServiceDesc.Streams[0], "/m3uetcpb.QuerySvc/SubscribeToQueryStore", opts...)
 	if err != nil {
 		return nil, err
@@ -137,8 +136,8 @@ func (x *querySvcSubscribeToQueryStoreClient) Recv() (*SubscribeToQueryStoreResp
 	return m, nil
 }
 
-func (c *querySvcClient) UnsubscribeFromQueryStore(ctx context.Context, in *UnsubscribeFromQueryStoreRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *querySvcClient) UnsubscribeFromQueryStore(ctx context.Context, in *UnsubscribeFromQueryStoreRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.QuerySvc/UnsubscribeFromQueryStore", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -153,12 +152,12 @@ type QuerySvcServer interface {
 	GetQuery(context.Context, *GetQueryRequest) (*GetQueryResponse, error)
 	GetQueries(context.Context, *GetQueriesRequest) (*GetQueriesResponse, error)
 	AddQuery(context.Context, *AddQueryRequest) (*AddQueryResponse, error)
-	UpdateQuery(context.Context, *UpdateQueryRequest) (*empty.Empty, error)
-	RemoveQuery(context.Context, *RemoveQueryRequest) (*empty.Empty, error)
+	UpdateQuery(context.Context, *UpdateQueryRequest) (*Empty, error)
+	RemoveQuery(context.Context, *RemoveQueryRequest) (*Empty, error)
 	ApplyQuery(context.Context, *ApplyQueryRequest) (*ApplyQueryResponse, error)
 	QueryBy(context.Context, *QueryByRequest) (*QueryByResponse, error)
-	SubscribeToQueryStore(*empty.Empty, QuerySvc_SubscribeToQueryStoreServer) error
-	UnsubscribeFromQueryStore(context.Context, *UnsubscribeFromQueryStoreRequest) (*empty.Empty, error)
+	SubscribeToQueryStore(*Empty, QuerySvc_SubscribeToQueryStoreServer) error
+	UnsubscribeFromQueryStore(context.Context, *UnsubscribeFromQueryStoreRequest) (*Empty, error)
 	mustEmbedUnimplementedQuerySvcServer()
 }
 
@@ -175,10 +174,10 @@ func (UnimplementedQuerySvcServer) GetQueries(context.Context, *GetQueriesReques
 func (UnimplementedQuerySvcServer) AddQuery(context.Context, *AddQueryRequest) (*AddQueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddQuery not implemented")
 }
-func (UnimplementedQuerySvcServer) UpdateQuery(context.Context, *UpdateQueryRequest) (*empty.Empty, error) {
+func (UnimplementedQuerySvcServer) UpdateQuery(context.Context, *UpdateQueryRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateQuery not implemented")
 }
-func (UnimplementedQuerySvcServer) RemoveQuery(context.Context, *RemoveQueryRequest) (*empty.Empty, error) {
+func (UnimplementedQuerySvcServer) RemoveQuery(context.Context, *RemoveQueryRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveQuery not implemented")
 }
 func (UnimplementedQuerySvcServer) ApplyQuery(context.Context, *ApplyQueryRequest) (*ApplyQueryResponse, error) {
@@ -187,10 +186,10 @@ func (UnimplementedQuerySvcServer) ApplyQuery(context.Context, *ApplyQueryReques
 func (UnimplementedQuerySvcServer) QueryBy(context.Context, *QueryByRequest) (*QueryByResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryBy not implemented")
 }
-func (UnimplementedQuerySvcServer) SubscribeToQueryStore(*empty.Empty, QuerySvc_SubscribeToQueryStoreServer) error {
+func (UnimplementedQuerySvcServer) SubscribeToQueryStore(*Empty, QuerySvc_SubscribeToQueryStoreServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToQueryStore not implemented")
 }
-func (UnimplementedQuerySvcServer) UnsubscribeFromQueryStore(context.Context, *UnsubscribeFromQueryStoreRequest) (*empty.Empty, error) {
+func (UnimplementedQuerySvcServer) UnsubscribeFromQueryStore(context.Context, *UnsubscribeFromQueryStoreRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromQueryStore not implemented")
 }
 func (UnimplementedQuerySvcServer) mustEmbedUnimplementedQuerySvcServer() {}
@@ -333,7 +332,7 @@ func _QuerySvc_QueryBy_Handler(srv interface{}, ctx context.Context, dec func(in
 }
 
 func _QuerySvc_SubscribeToQueryStore_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(empty.Empty)
+	m := new(Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}

@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
@@ -48,7 +47,7 @@ func (*QueueSvc) GetQueue(_ context.Context,
 
 // ExecuteQueueAction implements m3uetcpb.QueueSvcServer
 func (*QueueSvc) ExecuteQueueAction(_ context.Context,
-	req *m3uetcpb.ExecuteQueueActionRequest) (*empty.Empty, error) {
+	req *m3uetcpb.ExecuteQueueActionRequest) (*m3uetcpb.Empty, error) {
 
 	if slices.Contains(
 		[]m3uetcpb.QueueAction{
@@ -93,11 +92,11 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context,
 		}
 	}()
 
-	return &empty.Empty{}, nil
+	return &m3uetcpb.Empty{}, nil
 }
 
 // SubscribeToQueueStore implements m3uetcpb.QueueSvcServer
-func (*QueueSvc) SubscribeToQueueStore(_ *empty.Empty,
+func (*QueueSvc) SubscribeToQueueStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.QueueSvc_SubscribeToQueueStoreServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToQueueStoreEvent)
@@ -152,7 +151,7 @@ sLoop:
 
 // UnsubscribeFromQueueStore implements m3uetcpb.QueueSvcServer
 func (*QueueSvc) UnsubscribeFromQueueStore(_ context.Context,
-	req *m3uetcpb.UnsubscribeFromQueueStoreRequest) (*empty.Empty, error) {
+	req *m3uetcpb.UnsubscribeFromQueueStoreRequest) (*m3uetcpb.Empty, error) {
 
 	if req.SubscriptionId == "" {
 		return nil, status.Errorf(codes.InvalidArgument,
@@ -163,5 +162,5 @@ func (*QueueSvc) UnsubscribeFromQueueStore(_ context.Context,
 		subscription.Event{Data: req.SubscriptionId},
 	)
 
-	return &empty.Empty{}, nil
+	return &m3uetcpb.Empty{}, nil
 }

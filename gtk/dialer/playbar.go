@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
@@ -201,7 +200,7 @@ func subscribeToPlaybarStore() {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewPlaybarSvcClient(cc)
-	stream, err := cl.SubscribeToPlaybarStore(context.Background(), &empty.Empty{})
+	stream, err := cl.SubscribeToPlaybarStore(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		log.Errorf("Error subscribing to playbar store: %v", err)
 		return

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/stretchr/testify/assert"
 )
@@ -78,7 +77,7 @@ func TestGetAllCollections(t *testing.T) {
 			"api/collection/get-all",
 			false,
 			0,
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			&m3uetcpb.GetAllCollectionsResponse{
 				Collections: []*m3uetcpb.Collection{{
 					Id:       1,
@@ -99,7 +98,7 @@ func TestGetAllCollections(t *testing.T) {
 
 			exp := tc.res.(*m3uetcpb.GetAllCollectionsResponse)
 
-			res, err := svc.GetAllCollections(context.Background(), tc.req.(*empty.Empty))
+			res, err := svc.GetAllCollections(context.Background(), tc.req.(*m3uetcpb.Empty))
 
 			assert.Equal(t, err != nil, tc.err)
 			if tc.err {
@@ -186,7 +185,7 @@ func TestRemoveCollection(t *testing.T) {
 			false,
 			0,
 			&m3uetcpb.RemoveCollectionRequest{},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			true,
 		},
 		{
@@ -195,7 +194,7 @@ func TestRemoveCollection(t *testing.T) {
 			false,
 			0,
 			&m3uetcpb.RemoveCollectionRequest{Id: 2},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			true,
 		},
 		{
@@ -204,7 +203,7 @@ func TestRemoveCollection(t *testing.T) {
 			false,
 			0,
 			&m3uetcpb.RemoveCollectionRequest{Id: 1},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			false,
 		},
 	}
@@ -233,7 +232,7 @@ func TestScanCollection(t *testing.T) {
 			false,
 			0,
 			&m3uetcpb.ScanCollectionRequest{},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			true,
 		},
 		{
@@ -242,7 +241,7 @@ func TestScanCollection(t *testing.T) {
 			false,
 			0,
 			&m3uetcpb.ScanCollectionRequest{Id: 2},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			true,
 		},
 		{
@@ -251,7 +250,7 @@ func TestScanCollection(t *testing.T) {
 			false,
 			0,
 			&m3uetcpb.ScanCollectionRequest{Id: 1},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			false,
 		},
 	}
@@ -279,8 +278,8 @@ func TestDiscoverCollection(t *testing.T) {
 			"api/collection/discover",
 			false,
 			0,
-			&empty.Empty{},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
+			&m3uetcpb.Empty{},
 			false,
 		},
 	}
@@ -292,7 +291,7 @@ func TestDiscoverCollection(t *testing.T) {
 			setupTest(t, tc)
 			t.Cleanup(func() { teardownTest(t) })
 
-			_, err := svc.DiscoverCollections(context.Background(), tc.req.(*empty.Empty))
+			_, err := svc.DiscoverCollections(context.Background(), tc.req.(*m3uetcpb.Empty))
 
 			assert.Equal(t, err != nil, tc.err)
 		})

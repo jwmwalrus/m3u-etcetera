@@ -8,7 +8,6 @@ package m3uetcpb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,11 +22,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PlaybackSvcClient interface {
-	GetPlayback(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPlaybackResponse, error)
-	GetPlaybackList(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPlaybackListResponse, error)
-	ExecutePlaybackAction(ctx context.Context, in *ExecutePlaybackActionRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	SubscribeToPlayback(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (PlaybackSvc_SubscribeToPlaybackClient, error)
-	UnsubscribeFromPlayback(ctx context.Context, in *UnsubscribeFromPlaybackRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetPlayback(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPlaybackResponse, error)
+	GetPlaybackList(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPlaybackListResponse, error)
+	ExecutePlaybackAction(ctx context.Context, in *ExecutePlaybackActionRequest, opts ...grpc.CallOption) (*Empty, error)
+	SubscribeToPlayback(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybackSvc_SubscribeToPlaybackClient, error)
+	UnsubscribeFromPlayback(ctx context.Context, in *UnsubscribeFromPlaybackRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type playbackSvcClient struct {
@@ -38,7 +37,7 @@ func NewPlaybackSvcClient(cc grpc.ClientConnInterface) PlaybackSvcClient {
 	return &playbackSvcClient{cc}
 }
 
-func (c *playbackSvcClient) GetPlayback(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPlaybackResponse, error) {
+func (c *playbackSvcClient) GetPlayback(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPlaybackResponse, error) {
 	out := new(GetPlaybackResponse)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybackSvc/GetPlayback", in, out, opts...)
 	if err != nil {
@@ -47,7 +46,7 @@ func (c *playbackSvcClient) GetPlayback(ctx context.Context, in *empty.Empty, op
 	return out, nil
 }
 
-func (c *playbackSvcClient) GetPlaybackList(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetPlaybackListResponse, error) {
+func (c *playbackSvcClient) GetPlaybackList(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPlaybackListResponse, error) {
 	out := new(GetPlaybackListResponse)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybackSvc/GetPlaybackList", in, out, opts...)
 	if err != nil {
@@ -56,8 +55,8 @@ func (c *playbackSvcClient) GetPlaybackList(ctx context.Context, in *empty.Empty
 	return out, nil
 }
 
-func (c *playbackSvcClient) ExecutePlaybackAction(ctx context.Context, in *ExecutePlaybackActionRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *playbackSvcClient) ExecutePlaybackAction(ctx context.Context, in *ExecutePlaybackActionRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybackSvc/ExecutePlaybackAction", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -65,7 +64,7 @@ func (c *playbackSvcClient) ExecutePlaybackAction(ctx context.Context, in *Execu
 	return out, nil
 }
 
-func (c *playbackSvcClient) SubscribeToPlayback(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (PlaybackSvc_SubscribeToPlaybackClient, error) {
+func (c *playbackSvcClient) SubscribeToPlayback(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybackSvc_SubscribeToPlaybackClient, error) {
 	stream, err := c.cc.NewStream(ctx, &PlaybackSvc_ServiceDesc.Streams[0], "/m3uetcpb.PlaybackSvc/SubscribeToPlayback", opts...)
 	if err != nil {
 		return nil, err
@@ -97,8 +96,8 @@ func (x *playbackSvcSubscribeToPlaybackClient) Recv() (*SubscribeToPlaybackRespo
 	return m, nil
 }
 
-func (c *playbackSvcClient) UnsubscribeFromPlayback(ctx context.Context, in *UnsubscribeFromPlaybackRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *playbackSvcClient) UnsubscribeFromPlayback(ctx context.Context, in *UnsubscribeFromPlaybackRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybackSvc/UnsubscribeFromPlayback", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -110,11 +109,11 @@ func (c *playbackSvcClient) UnsubscribeFromPlayback(ctx context.Context, in *Uns
 // All implementations must embed UnimplementedPlaybackSvcServer
 // for forward compatibility
 type PlaybackSvcServer interface {
-	GetPlayback(context.Context, *empty.Empty) (*GetPlaybackResponse, error)
-	GetPlaybackList(context.Context, *empty.Empty) (*GetPlaybackListResponse, error)
-	ExecutePlaybackAction(context.Context, *ExecutePlaybackActionRequest) (*empty.Empty, error)
-	SubscribeToPlayback(*empty.Empty, PlaybackSvc_SubscribeToPlaybackServer) error
-	UnsubscribeFromPlayback(context.Context, *UnsubscribeFromPlaybackRequest) (*empty.Empty, error)
+	GetPlayback(context.Context, *Empty) (*GetPlaybackResponse, error)
+	GetPlaybackList(context.Context, *Empty) (*GetPlaybackListResponse, error)
+	ExecutePlaybackAction(context.Context, *ExecutePlaybackActionRequest) (*Empty, error)
+	SubscribeToPlayback(*Empty, PlaybackSvc_SubscribeToPlaybackServer) error
+	UnsubscribeFromPlayback(context.Context, *UnsubscribeFromPlaybackRequest) (*Empty, error)
 	mustEmbedUnimplementedPlaybackSvcServer()
 }
 
@@ -122,19 +121,19 @@ type PlaybackSvcServer interface {
 type UnimplementedPlaybackSvcServer struct {
 }
 
-func (UnimplementedPlaybackSvcServer) GetPlayback(context.Context, *empty.Empty) (*GetPlaybackResponse, error) {
+func (UnimplementedPlaybackSvcServer) GetPlayback(context.Context, *Empty) (*GetPlaybackResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPlayback not implemented")
 }
-func (UnimplementedPlaybackSvcServer) GetPlaybackList(context.Context, *empty.Empty) (*GetPlaybackListResponse, error) {
+func (UnimplementedPlaybackSvcServer) GetPlaybackList(context.Context, *Empty) (*GetPlaybackListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPlaybackList not implemented")
 }
-func (UnimplementedPlaybackSvcServer) ExecutePlaybackAction(context.Context, *ExecutePlaybackActionRequest) (*empty.Empty, error) {
+func (UnimplementedPlaybackSvcServer) ExecutePlaybackAction(context.Context, *ExecutePlaybackActionRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecutePlaybackAction not implemented")
 }
-func (UnimplementedPlaybackSvcServer) SubscribeToPlayback(*empty.Empty, PlaybackSvc_SubscribeToPlaybackServer) error {
+func (UnimplementedPlaybackSvcServer) SubscribeToPlayback(*Empty, PlaybackSvc_SubscribeToPlaybackServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToPlayback not implemented")
 }
-func (UnimplementedPlaybackSvcServer) UnsubscribeFromPlayback(context.Context, *UnsubscribeFromPlaybackRequest) (*empty.Empty, error) {
+func (UnimplementedPlaybackSvcServer) UnsubscribeFromPlayback(context.Context, *UnsubscribeFromPlaybackRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromPlayback not implemented")
 }
 func (UnimplementedPlaybackSvcServer) mustEmbedUnimplementedPlaybackSvcServer() {}
@@ -151,7 +150,7 @@ func RegisterPlaybackSvcServer(s grpc.ServiceRegistrar, srv PlaybackSvcServer) {
 }
 
 func _PlaybackSvc_GetPlayback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -163,13 +162,13 @@ func _PlaybackSvc_GetPlayback_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: "/m3uetcpb.PlaybackSvc/GetPlayback",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PlaybackSvcServer).GetPlayback(ctx, req.(*empty.Empty))
+		return srv.(PlaybackSvcServer).GetPlayback(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _PlaybackSvc_GetPlaybackList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -181,7 +180,7 @@ func _PlaybackSvc_GetPlaybackList_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: "/m3uetcpb.PlaybackSvc/GetPlaybackList",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PlaybackSvcServer).GetPlaybackList(ctx, req.(*empty.Empty))
+		return srv.(PlaybackSvcServer).GetPlaybackList(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -205,7 +204,7 @@ func _PlaybackSvc_ExecutePlaybackAction_Handler(srv interface{}, ctx context.Con
 }
 
 func _PlaybackSvc_SubscribeToPlayback_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(empty.Empty)
+	m := new(Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}

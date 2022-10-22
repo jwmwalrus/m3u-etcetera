@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
@@ -18,7 +17,7 @@ type PerspectiveSvc struct {
 
 // GetActivePerspective implements m3uetcpb.PerspectiveSvcServer
 func (p *PerspectiveSvc) GetActivePerspective(_ context.Context,
-	_ *empty.Empty) (*m3uetcpb.GetActivePerspectiveResponse, error) {
+	_ *m3uetcpb.Empty) (*m3uetcpb.GetActivePerspectiveResponse, error) {
 	res := &m3uetcpb.GetActivePerspectiveResponse{
 		Perspective: m3uetcpb.Perspective(models.GetActivePerspectiveIndex()),
 	}
@@ -28,7 +27,7 @@ func (p *PerspectiveSvc) GetActivePerspective(_ context.Context,
 
 // SetActivePerspective implements m3uetcpb.PerspectiveSvcServer
 func (p *PerspectiveSvc) SetActivePerspective(_ context.Context,
-	req *m3uetcpb.SetActivePerspectiveRequest) (*empty.Empty, error) {
+	req *m3uetcpb.SetActivePerspectiveRequest) (*m3uetcpb.Empty, error) {
 
 	persp := models.PerspectiveIndex(req.Perspective)
 	err := persp.Activate()
@@ -37,11 +36,11 @@ func (p *PerspectiveSvc) SetActivePerspective(_ context.Context,
 			"Error activating the %v perspective: %v", persp, err)
 	}
 
-	return &empty.Empty{}, nil
+	return &m3uetcpb.Empty{}, nil
 }
 
 // SubscribeToPerspective implements m3uetcpb.PerspectiveSvcServer
-func (p *PerspectiveSvc) SubscribeToPerspective(_ *empty.Empty,
+func (p *PerspectiveSvc) SubscribeToPerspective(_ *m3uetcpb.Empty,
 	stream m3uetcpb.PerspectiveSvc_SubscribeToPerspectiveServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToPerspectiveEvent)
@@ -78,7 +77,7 @@ sLoop:
 
 // UnsubscribeFromPerspective implements m3uetcpb.PerspectiveSvcServer
 func (p *PerspectiveSvc) UnsubscribeFromPerspective(_ context.Context,
-	req *m3uetcpb.UnsubscribeFromPerspectiveRequest) (*empty.Empty, error) {
+	req *m3uetcpb.UnsubscribeFromPerspectiveRequest) (*m3uetcpb.Empty, error) {
 
 	if req.SubscriptionId == "" {
 		return nil, status.Errorf(codes.InvalidArgument,
@@ -89,5 +88,5 @@ func (p *PerspectiveSvc) UnsubscribeFromPerspective(_ context.Context,
 		subscription.Event{Data: req.SubscriptionId},
 	)
 
-	return &empty.Empty{}, nil
+	return &m3uetcpb.Empty{}, nil
 }

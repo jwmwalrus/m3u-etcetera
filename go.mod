@@ -8,7 +8,6 @@ require (
 	github.com/go-gormigrate/gormigrate/v2 v2.0.2
 	github.com/go-testfixtures/testfixtures/v3 v3.6.1
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/golang/protobuf v1.5.2
 	github.com/gotk3/gotk3 v0.6.2-0.20211226093840-cf265f40b836
 	github.com/jwmwalrus/bnp v1.12.0
 	github.com/jwmwalrus/onerror v0.2.0
@@ -33,6 +32,7 @@ require (
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-pointer v0.0.1 // indirect

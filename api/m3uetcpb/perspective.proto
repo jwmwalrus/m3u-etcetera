@@ -4,16 +4,16 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-import 'google/protobuf/empty.proto';
+import 'api/m3uetcpb/empty.proto';
 
 service PerspectiveSvc {
-    rpc GetActivePerspective(google.protobuf.Empty) returns (GetActivePerspectiveResponse);
-    rpc SetActivePerspective(SetActivePerspectiveRequest) returns (google.protobuf.Empty);
+    rpc GetActivePerspective(Empty) returns (GetActivePerspectiveResponse);
+    rpc SetActivePerspective(SetActivePerspectiveRequest) returns (Empty);
 
-    rpc SubscribeToPerspective(google.protobuf.Empty)
+    rpc SubscribeToPerspective(Empty)
         returns (stream SubscribeToPerspectiveResponse);
     rpc UnsubscribeFromPerspective(UnsubscribeFromPerspectiveRequest)
-        returns (google.protobuf.Empty);
+        returns (Empty);
 }
 
 message GetActivePerspectiveResponse {

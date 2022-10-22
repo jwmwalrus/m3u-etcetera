@@ -8,7 +8,6 @@ package m3uetcpb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,10 +22,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PerspectiveSvcClient interface {
-	GetActivePerspective(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetActivePerspectiveResponse, error)
-	SetActivePerspective(ctx context.Context, in *SetActivePerspectiveRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	SubscribeToPerspective(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (PerspectiveSvc_SubscribeToPerspectiveClient, error)
-	UnsubscribeFromPerspective(ctx context.Context, in *UnsubscribeFromPerspectiveRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetActivePerspective(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetActivePerspectiveResponse, error)
+	SetActivePerspective(ctx context.Context, in *SetActivePerspectiveRequest, opts ...grpc.CallOption) (*Empty, error)
+	SubscribeToPerspective(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PerspectiveSvc_SubscribeToPerspectiveClient, error)
+	UnsubscribeFromPerspective(ctx context.Context, in *UnsubscribeFromPerspectiveRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type perspectiveSvcClient struct {
@@ -37,7 +36,7 @@ func NewPerspectiveSvcClient(cc grpc.ClientConnInterface) PerspectiveSvcClient {
 	return &perspectiveSvcClient{cc}
 }
 
-func (c *perspectiveSvcClient) GetActivePerspective(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetActivePerspectiveResponse, error) {
+func (c *perspectiveSvcClient) GetActivePerspective(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetActivePerspectiveResponse, error) {
 	out := new(GetActivePerspectiveResponse)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PerspectiveSvc/GetActivePerspective", in, out, opts...)
 	if err != nil {
@@ -46,8 +45,8 @@ func (c *perspectiveSvcClient) GetActivePerspective(ctx context.Context, in *emp
 	return out, nil
 }
 
-func (c *perspectiveSvcClient) SetActivePerspective(ctx context.Context, in *SetActivePerspectiveRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *perspectiveSvcClient) SetActivePerspective(ctx context.Context, in *SetActivePerspectiveRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PerspectiveSvc/SetActivePerspective", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -55,7 +54,7 @@ func (c *perspectiveSvcClient) SetActivePerspective(ctx context.Context, in *Set
 	return out, nil
 }
 
-func (c *perspectiveSvcClient) SubscribeToPerspective(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (PerspectiveSvc_SubscribeToPerspectiveClient, error) {
+func (c *perspectiveSvcClient) SubscribeToPerspective(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PerspectiveSvc_SubscribeToPerspectiveClient, error) {
 	stream, err := c.cc.NewStream(ctx, &PerspectiveSvc_ServiceDesc.Streams[0], "/m3uetcpb.PerspectiveSvc/SubscribeToPerspective", opts...)
 	if err != nil {
 		return nil, err
@@ -87,8 +86,8 @@ func (x *perspectiveSvcSubscribeToPerspectiveClient) Recv() (*SubscribeToPerspec
 	return m, nil
 }
 
-func (c *perspectiveSvcClient) UnsubscribeFromPerspective(ctx context.Context, in *UnsubscribeFromPerspectiveRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *perspectiveSvcClient) UnsubscribeFromPerspective(ctx context.Context, in *UnsubscribeFromPerspectiveRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PerspectiveSvc/UnsubscribeFromPerspective", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -100,10 +99,10 @@ func (c *perspectiveSvcClient) UnsubscribeFromPerspective(ctx context.Context, i
 // All implementations must embed UnimplementedPerspectiveSvcServer
 // for forward compatibility
 type PerspectiveSvcServer interface {
-	GetActivePerspective(context.Context, *empty.Empty) (*GetActivePerspectiveResponse, error)
-	SetActivePerspective(context.Context, *SetActivePerspectiveRequest) (*empty.Empty, error)
-	SubscribeToPerspective(*empty.Empty, PerspectiveSvc_SubscribeToPerspectiveServer) error
-	UnsubscribeFromPerspective(context.Context, *UnsubscribeFromPerspectiveRequest) (*empty.Empty, error)
+	GetActivePerspective(context.Context, *Empty) (*GetActivePerspectiveResponse, error)
+	SetActivePerspective(context.Context, *SetActivePerspectiveRequest) (*Empty, error)
+	SubscribeToPerspective(*Empty, PerspectiveSvc_SubscribeToPerspectiveServer) error
+	UnsubscribeFromPerspective(context.Context, *UnsubscribeFromPerspectiveRequest) (*Empty, error)
 	mustEmbedUnimplementedPerspectiveSvcServer()
 }
 
@@ -111,16 +110,16 @@ type PerspectiveSvcServer interface {
 type UnimplementedPerspectiveSvcServer struct {
 }
 
-func (UnimplementedPerspectiveSvcServer) GetActivePerspective(context.Context, *empty.Empty) (*GetActivePerspectiveResponse, error) {
+func (UnimplementedPerspectiveSvcServer) GetActivePerspective(context.Context, *Empty) (*GetActivePerspectiveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetActivePerspective not implemented")
 }
-func (UnimplementedPerspectiveSvcServer) SetActivePerspective(context.Context, *SetActivePerspectiveRequest) (*empty.Empty, error) {
+func (UnimplementedPerspectiveSvcServer) SetActivePerspective(context.Context, *SetActivePerspectiveRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetActivePerspective not implemented")
 }
-func (UnimplementedPerspectiveSvcServer) SubscribeToPerspective(*empty.Empty, PerspectiveSvc_SubscribeToPerspectiveServer) error {
+func (UnimplementedPerspectiveSvcServer) SubscribeToPerspective(*Empty, PerspectiveSvc_SubscribeToPerspectiveServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToPerspective not implemented")
 }
-func (UnimplementedPerspectiveSvcServer) UnsubscribeFromPerspective(context.Context, *UnsubscribeFromPerspectiveRequest) (*empty.Empty, error) {
+func (UnimplementedPerspectiveSvcServer) UnsubscribeFromPerspective(context.Context, *UnsubscribeFromPerspectiveRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromPerspective not implemented")
 }
 func (UnimplementedPerspectiveSvcServer) mustEmbedUnimplementedPerspectiveSvcServer() {}
@@ -137,7 +136,7 @@ func RegisterPerspectiveSvcServer(s grpc.ServiceRegistrar, srv PerspectiveSvcSer
 }
 
 func _PerspectiveSvc_GetActivePerspective_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -149,7 +148,7 @@ func _PerspectiveSvc_GetActivePerspective_Handler(srv interface{}, ctx context.C
 		FullMethod: "/m3uetcpb.PerspectiveSvc/GetActivePerspective",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PerspectiveSvcServer).GetActivePerspective(ctx, req.(*empty.Empty))
+		return srv.(PerspectiveSvcServer).GetActivePerspective(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -173,7 +172,7 @@ func _PerspectiveSvc_SetActivePerspective_Handler(srv interface{}, ctx context.C
 }
 
 func _PerspectiveSvc_SubscribeToPerspective_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(empty.Empty)
+	m := new(Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}

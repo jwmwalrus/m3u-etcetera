@@ -8,7 +8,6 @@ package m3uetcpb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -28,14 +27,14 @@ type PlaybarSvcClient interface {
 	GetAllPlaylists(ctx context.Context, in *GetAllPlaylistsRequest, opts ...grpc.CallOption) (*GetAllPlaylistsResponse, error)
 	GetPlaylistGroup(ctx context.Context, in *GetPlaylistGroupRequest, opts ...grpc.CallOption) (*GetPlaylistGroupResponse, error)
 	GetAllPlaylistGroups(ctx context.Context, in *GetAllPlaylistGroupsRequest, opts ...grpc.CallOption) (*GetAllPlaylistGroupsResponse, error)
-	ExecutePlaybarAction(ctx context.Context, in *ExecutePlaybarActionRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ExecutePlaybarAction(ctx context.Context, in *ExecutePlaybarActionRequest, opts ...grpc.CallOption) (*Empty, error)
 	ExecutePlaylistAction(ctx context.Context, in *ExecutePlaylistActionRequest, opts ...grpc.CallOption) (*ExecutePlaylistActionResponse, error)
 	ExecutePlaylistGroupAction(ctx context.Context, in *ExecutePlaylistGroupActionRequest, opts ...grpc.CallOption) (*ExecutePlaylistGroupActionResponse, error)
-	ExecutePlaylistTrackAction(ctx context.Context, in *ExecutePlaylistTrackActionRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ExecutePlaylistTrackAction(ctx context.Context, in *ExecutePlaylistTrackActionRequest, opts ...grpc.CallOption) (*Empty, error)
 	ImportPlaylists(ctx context.Context, in *ImportPlaylistsRequest, opts ...grpc.CallOption) (PlaybarSvc_ImportPlaylistsClient, error)
-	ExportPlaylist(ctx context.Context, in *ExportPlaylistRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	SubscribeToPlaybarStore(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (PlaybarSvc_SubscribeToPlaybarStoreClient, error)
-	UnsubscribeFromPlaybarStore(ctx context.Context, in *UnsubscribeFromPlaybarStoreRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ExportPlaylist(ctx context.Context, in *ExportPlaylistRequest, opts ...grpc.CallOption) (*Empty, error)
+	SubscribeToPlaybarStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybarSvc_SubscribeToPlaybarStoreClient, error)
+	UnsubscribeFromPlaybarStore(ctx context.Context, in *UnsubscribeFromPlaybarStoreRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type playbarSvcClient struct {
@@ -91,8 +90,8 @@ func (c *playbarSvcClient) GetAllPlaylistGroups(ctx context.Context, in *GetAllP
 	return out, nil
 }
 
-func (c *playbarSvcClient) ExecutePlaybarAction(ctx context.Context, in *ExecutePlaybarActionRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *playbarSvcClient) ExecutePlaybarAction(ctx context.Context, in *ExecutePlaybarActionRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybarSvc/ExecutePlaybarAction", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -118,8 +117,8 @@ func (c *playbarSvcClient) ExecutePlaylistGroupAction(ctx context.Context, in *E
 	return out, nil
 }
 
-func (c *playbarSvcClient) ExecutePlaylistTrackAction(ctx context.Context, in *ExecutePlaylistTrackActionRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *playbarSvcClient) ExecutePlaylistTrackAction(ctx context.Context, in *ExecutePlaylistTrackActionRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybarSvc/ExecutePlaylistTrackAction", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -159,8 +158,8 @@ func (x *playbarSvcImportPlaylistsClient) Recv() (*ImportPlaylistsResponse, erro
 	return m, nil
 }
 
-func (c *playbarSvcClient) ExportPlaylist(ctx context.Context, in *ExportPlaylistRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *playbarSvcClient) ExportPlaylist(ctx context.Context, in *ExportPlaylistRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybarSvc/ExportPlaylist", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -168,7 +167,7 @@ func (c *playbarSvcClient) ExportPlaylist(ctx context.Context, in *ExportPlaylis
 	return out, nil
 }
 
-func (c *playbarSvcClient) SubscribeToPlaybarStore(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (PlaybarSvc_SubscribeToPlaybarStoreClient, error) {
+func (c *playbarSvcClient) SubscribeToPlaybarStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (PlaybarSvc_SubscribeToPlaybarStoreClient, error) {
 	stream, err := c.cc.NewStream(ctx, &PlaybarSvc_ServiceDesc.Streams[1], "/m3uetcpb.PlaybarSvc/SubscribeToPlaybarStore", opts...)
 	if err != nil {
 		return nil, err
@@ -200,8 +199,8 @@ func (x *playbarSvcSubscribeToPlaybarStoreClient) Recv() (*SubscribeToPlaybarSto
 	return m, nil
 }
 
-func (c *playbarSvcClient) UnsubscribeFromPlaybarStore(ctx context.Context, in *UnsubscribeFromPlaybarStoreRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *playbarSvcClient) UnsubscribeFromPlaybarStore(ctx context.Context, in *UnsubscribeFromPlaybarStoreRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.PlaybarSvc/UnsubscribeFromPlaybarStore", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -218,14 +217,14 @@ type PlaybarSvcServer interface {
 	GetAllPlaylists(context.Context, *GetAllPlaylistsRequest) (*GetAllPlaylistsResponse, error)
 	GetPlaylistGroup(context.Context, *GetPlaylistGroupRequest) (*GetPlaylistGroupResponse, error)
 	GetAllPlaylistGroups(context.Context, *GetAllPlaylistGroupsRequest) (*GetAllPlaylistGroupsResponse, error)
-	ExecutePlaybarAction(context.Context, *ExecutePlaybarActionRequest) (*empty.Empty, error)
+	ExecutePlaybarAction(context.Context, *ExecutePlaybarActionRequest) (*Empty, error)
 	ExecutePlaylistAction(context.Context, *ExecutePlaylistActionRequest) (*ExecutePlaylistActionResponse, error)
 	ExecutePlaylistGroupAction(context.Context, *ExecutePlaylistGroupActionRequest) (*ExecutePlaylistGroupActionResponse, error)
-	ExecutePlaylistTrackAction(context.Context, *ExecutePlaylistTrackActionRequest) (*empty.Empty, error)
+	ExecutePlaylistTrackAction(context.Context, *ExecutePlaylistTrackActionRequest) (*Empty, error)
 	ImportPlaylists(*ImportPlaylistsRequest, PlaybarSvc_ImportPlaylistsServer) error
-	ExportPlaylist(context.Context, *ExportPlaylistRequest) (*empty.Empty, error)
-	SubscribeToPlaybarStore(*empty.Empty, PlaybarSvc_SubscribeToPlaybarStoreServer) error
-	UnsubscribeFromPlaybarStore(context.Context, *UnsubscribeFromPlaybarStoreRequest) (*empty.Empty, error)
+	ExportPlaylist(context.Context, *ExportPlaylistRequest) (*Empty, error)
+	SubscribeToPlaybarStore(*Empty, PlaybarSvc_SubscribeToPlaybarStoreServer) error
+	UnsubscribeFromPlaybarStore(context.Context, *UnsubscribeFromPlaybarStoreRequest) (*Empty, error)
 	mustEmbedUnimplementedPlaybarSvcServer()
 }
 
@@ -248,7 +247,7 @@ func (UnimplementedPlaybarSvcServer) GetPlaylistGroup(context.Context, *GetPlayl
 func (UnimplementedPlaybarSvcServer) GetAllPlaylistGroups(context.Context, *GetAllPlaylistGroupsRequest) (*GetAllPlaylistGroupsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllPlaylistGroups not implemented")
 }
-func (UnimplementedPlaybarSvcServer) ExecutePlaybarAction(context.Context, *ExecutePlaybarActionRequest) (*empty.Empty, error) {
+func (UnimplementedPlaybarSvcServer) ExecutePlaybarAction(context.Context, *ExecutePlaybarActionRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecutePlaybarAction not implemented")
 }
 func (UnimplementedPlaybarSvcServer) ExecutePlaylistAction(context.Context, *ExecutePlaylistActionRequest) (*ExecutePlaylistActionResponse, error) {
@@ -257,19 +256,19 @@ func (UnimplementedPlaybarSvcServer) ExecutePlaylistAction(context.Context, *Exe
 func (UnimplementedPlaybarSvcServer) ExecutePlaylistGroupAction(context.Context, *ExecutePlaylistGroupActionRequest) (*ExecutePlaylistGroupActionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecutePlaylistGroupAction not implemented")
 }
-func (UnimplementedPlaybarSvcServer) ExecutePlaylistTrackAction(context.Context, *ExecutePlaylistTrackActionRequest) (*empty.Empty, error) {
+func (UnimplementedPlaybarSvcServer) ExecutePlaylistTrackAction(context.Context, *ExecutePlaylistTrackActionRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecutePlaylistTrackAction not implemented")
 }
 func (UnimplementedPlaybarSvcServer) ImportPlaylists(*ImportPlaylistsRequest, PlaybarSvc_ImportPlaylistsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ImportPlaylists not implemented")
 }
-func (UnimplementedPlaybarSvcServer) ExportPlaylist(context.Context, *ExportPlaylistRequest) (*empty.Empty, error) {
+func (UnimplementedPlaybarSvcServer) ExportPlaylist(context.Context, *ExportPlaylistRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExportPlaylist not implemented")
 }
-func (UnimplementedPlaybarSvcServer) SubscribeToPlaybarStore(*empty.Empty, PlaybarSvc_SubscribeToPlaybarStoreServer) error {
+func (UnimplementedPlaybarSvcServer) SubscribeToPlaybarStore(*Empty, PlaybarSvc_SubscribeToPlaybarStoreServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToPlaybarStore not implemented")
 }
-func (UnimplementedPlaybarSvcServer) UnsubscribeFromPlaybarStore(context.Context, *UnsubscribeFromPlaybarStoreRequest) (*empty.Empty, error) {
+func (UnimplementedPlaybarSvcServer) UnsubscribeFromPlaybarStore(context.Context, *UnsubscribeFromPlaybarStoreRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromPlaybarStore not implemented")
 }
 func (UnimplementedPlaybarSvcServer) mustEmbedUnimplementedPlaybarSvcServer() {}
@@ -487,7 +486,7 @@ func _PlaybarSvc_ExportPlaylist_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _PlaybarSvc_SubscribeToPlaybarStore_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(empty.Empty)
+	m := new(Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +15,7 @@ func TestGetPlayback(t *testing.T) {
 			"api/playback/get-nopb",
 			false,
 			0,
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			&m3uetcpb.GetPlaybackResponse{},
 			false,
 		},
@@ -25,7 +24,7 @@ func TestGetPlayback(t *testing.T) {
 			"api/playback/get-notrackid",
 			true,
 			0,
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			&m3uetcpb.GetPlaybackResponse{
 				IsPlaying: true,
 				Playback: &m3uetcpb.Playback{
@@ -43,7 +42,7 @@ func TestGetPlayback(t *testing.T) {
 			"api/playback/get-trackid",
 			true,
 			0,
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			&m3uetcpb.GetPlaybackResponse{
 				IsPlaying: true,
 				Playback: &m3uetcpb.Playback{
@@ -71,7 +70,7 @@ func TestGetPlayback(t *testing.T) {
 
 			exp := tc.res.(*m3uetcpb.GetPlaybackResponse)
 
-			res, err := svc.GetPlayback(context.Background(), tc.req.(*empty.Empty))
+			res, err := svc.GetPlayback(context.Background(), tc.req.(*m3uetcpb.Empty))
 
 			assert.Equal(t, err != nil, tc.err)
 			if exp.IsPlaying {
@@ -101,7 +100,7 @@ func TestExecutePlaybackAction(t *testing.T) {
 				Action:    m3uetcpb.PlaybackAction_PB_PLAY,
 				Locations: []string{"2"},
 			},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			true,
 		},
 		{
@@ -113,7 +112,7 @@ func TestExecutePlaybackAction(t *testing.T) {
 				Action: m3uetcpb.PlaybackAction_PB_PLAY,
 				Ids:    []int64{2},
 			},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			true,
 		},
 		{
@@ -124,7 +123,7 @@ func TestExecutePlaybackAction(t *testing.T) {
 			&m3uetcpb.ExecutePlaybackActionRequest{
 				Action: m3uetcpb.PlaybackAction_PB_NEXT,
 			},
-			&empty.Empty{},
+			&m3uetcpb.Empty{},
 			false,
 		},
 	}

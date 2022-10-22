@@ -2,9 +2,7 @@ package api
 
 import (
 	"context"
-	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
@@ -81,7 +79,7 @@ func (*QuerySvc) AddQuery(_ context.Context,
 
 // UpdateQuery implements m3uetcpb.QuerySvcServer
 func (*QuerySvc) UpdateQuery(_ context.Context,
-	req *m3uetcpb.UpdateQueryRequest) (*empty.Empty, error) {
+	req *m3uetcpb.UpdateQueryRequest) (*m3uetcpb.Empty, error) {
 
 	qy := models.Query{}
 	if err := qy.Read(req.Query.Id); err != nil {
@@ -102,12 +100,12 @@ func (*QuerySvc) UpdateQuery(_ context.Context,
 			"Error saving query: %v", err)
 	}
 
-	return &empty.Empty{}, nil
+	return &m3uetcpb.Empty{}, nil
 }
 
 // RemoveQuery implements m3uetcpb.QuerySvcServer
 func (*QuerySvc) RemoveQuery(_ context.Context,
-	req *m3uetcpb.RemoveQueryRequest) (*empty.Empty, error) {
+	req *m3uetcpb.RemoveQueryRequest) (*m3uetcpb.Empty, error) {
 	qy := models.Query{}
 	if err := qy.Read(req.Id); err != nil {
 		return nil, status.Errorf(codes.NotFound, "%v", err)
@@ -117,7 +115,7 @@ func (*QuerySvc) RemoveQuery(_ context.Context,
 		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	return &empty.Empty{}, nil
+	return &m3uetcpb.Empty{}, nil
 }
 
 // ApplyQuery implements m3uetcpb.QuerySvcServer
@@ -178,14 +176,13 @@ func (*QuerySvc) QueryBy(_ context.Context,
 }
 
 // SubscribeToQueryStore implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) SubscribeToQueryStore(_ *empty.Empty,
+func (*QuerySvc) SubscribeToQueryStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.QuerySvc_SubscribeToQueryStoreServer) error {
 
 	s, id := subscription.Subscribe(subscription.ToQueryStoreEvent)
 	defer func() { s.Unsubscribe() }()
 
 	go func() {
-		time.Sleep(2 * time.Second)
 		s.Event <- subscription.Event{Idx: int(models.QueryEventInitial)}
 	}()
 
@@ -268,7 +265,7 @@ sLoop:
 
 // UnsubscribeFromQueryStore implements m3uetcpb.QuerySvcServer
 func (*QuerySvc) UnsubscribeFromQueryStore(_ context.Context,
-	req *m3uetcpb.UnsubscribeFromQueryStoreRequest) (*empty.Empty, error) {
+	req *m3uetcpb.UnsubscribeFromQueryStoreRequest) (*m3uetcpb.Empty, error) {
 	if req.SubscriptionId == "" {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"A non-empty subscription ID is required")
@@ -278,5 +275,5 @@ func (*QuerySvc) UnsubscribeFromQueryStore(_ context.Context,
 		subscription.Event{Data: req.SubscriptionId},
 	)
 
-	return &empty.Empty{}, nil
+	return &m3uetcpb.Empty{}, nil
 }

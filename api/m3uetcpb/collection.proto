@@ -4,23 +4,23 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-import 'google/protobuf/empty.proto';
+import 'api/m3uetcpb/empty.proto';
 import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/track.proto';
 
 service CollectionSvc {
     rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse);
-    rpc GetAllCollections(google.protobuf.Empty) returns (GetAllCollectionsResponse);
+    rpc GetAllCollections(Empty) returns (GetAllCollectionsResponse);
     rpc AddCollection(AddCollectionRequest) returns (AddCollectionResponse);
-    rpc RemoveCollection(RemoveCollectionRequest) returns (google.protobuf.Empty);
-    rpc UpdateCollection(UpdateCollectionRequest) returns (google.protobuf.Empty);
-    rpc ScanCollection(ScanCollectionRequest) returns (google.protobuf.Empty);
-    rpc DiscoverCollections(google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc RemoveCollection(RemoveCollectionRequest) returns (Empty);
+    rpc UpdateCollection(UpdateCollectionRequest) returns (Empty);
+    rpc ScanCollection(ScanCollectionRequest) returns (Empty);
+    rpc DiscoverCollections(Empty) returns (Empty);
 
-    rpc SubscribeToCollectionStore(google.protobuf.Empty)
+    rpc SubscribeToCollectionStore(Empty)
         returns (stream SubscribeToCollectionStoreResponse);
     rpc UnsubscribeFromCollectionStore(UnsubscribeFromCollectionStoreRequest)
-        returns (google.protobuf.Empty);
+        returns (Empty);
 }
 
 message GetCollectionRequest {

@@ -4,18 +4,18 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-import 'google/protobuf/empty.proto';
+import 'api/m3uetcpb/empty.proto';
 import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/track.proto';
 
 service QueueSvc {
     rpc GetQueue(GetQueueRequest) returns (GetQueueResponse);
-    rpc ExecuteQueueAction(ExecuteQueueActionRequest) returns (google.protobuf.Empty);
+    rpc ExecuteQueueAction(ExecuteQueueActionRequest) returns (Empty);
 
-    rpc SubscribeToQueueStore(google.protobuf.Empty)
+    rpc SubscribeToQueueStore(Empty)
         returns (stream SubscribeToQueueStoreResponse);
     rpc UnsubscribeFromQueueStore(UnsubscribeFromQueueStoreRequest)
-        returns (google.protobuf.Empty);
+        returns (Empty);
 }
 
 message GetQueueRequest {

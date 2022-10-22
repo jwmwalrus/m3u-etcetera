@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 )
@@ -32,6 +31,6 @@ func (*RootSvc) Off(_ context.Context,
 // Status implements RootSvcServer
 // Returns the status of the server
 func (*RootSvc) Status(_ context.Context,
-	_ *empty.Empty) (*m3uetcpb.StatusResponse, error) {
+	_ *m3uetcpb.Empty) (*m3uetcpb.StatusResponse, error) {
 	return &m3uetcpb.StatusResponse{Alive: true}, nil
 }

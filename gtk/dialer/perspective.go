@@ -3,7 +3,6 @@ package dialer
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/onerror"
@@ -38,7 +37,7 @@ func subscribeToPerspective() {
 	defer cc.Close()
 
 	cl := m3uetcpb.NewPerspectiveSvcClient(cc)
-	stream, err := cl.SubscribeToPerspective(context.Background(), &empty.Empty{})
+	stream, err := cl.SubscribeToPerspective(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		log.Errorf("Error subscribing to perspective: %v", err)
 		return

@@ -4,7 +4,7 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
-import 'google/protobuf/empty.proto';
+import 'api/m3uetcpb/empty.proto';
 import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/playlist.proto';
 import 'api/m3uetcpb/track.proto';
@@ -19,22 +19,22 @@ service PlaybarSvc {
     rpc GetAllPlaylistGroups(GetAllPlaylistGroupsRequest)
         returns (GetAllPlaylistGroupsResponse);
 
-    rpc ExecutePlaybarAction(ExecutePlaybarActionRequest) returns (google.protobuf.Empty);
+    rpc ExecutePlaybarAction(ExecutePlaybarActionRequest) returns (Empty);
     rpc ExecutePlaylistAction(ExecutePlaylistActionRequest)
         returns (ExecutePlaylistActionResponse);
     rpc ExecutePlaylistGroupAction(ExecutePlaylistGroupActionRequest)
         returns (ExecutePlaylistGroupActionResponse);
     rpc ExecutePlaylistTrackAction(ExecutePlaylistTrackActionRequest)
-        returns (google.protobuf.Empty);
+        returns (Empty);
 
     rpc ImportPlaylists(ImportPlaylistsRequest)
         returns (stream ImportPlaylistsResponse);
-    rpc ExportPlaylist(ExportPlaylistRequest) returns (google.protobuf.Empty);
+    rpc ExportPlaylist(ExportPlaylistRequest) returns (Empty);
 
-    rpc SubscribeToPlaybarStore(google.protobuf.Empty)
+    rpc SubscribeToPlaybarStore(Empty)
         returns (stream SubscribeToPlaybarStoreResponse);
     rpc UnsubscribeFromPlaybarStore(UnsubscribeFromPlaybarStoreRequest)
-        returns (google.protobuf.Empty);
+        returns (Empty);
 }
 
 message GetPlaybarRequest {

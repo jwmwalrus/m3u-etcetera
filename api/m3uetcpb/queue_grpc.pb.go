@@ -8,7 +8,6 @@ package m3uetcpb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -24,9 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type QueueSvcClient interface {
 	GetQueue(ctx context.Context, in *GetQueueRequest, opts ...grpc.CallOption) (*GetQueueResponse, error)
-	ExecuteQueueAction(ctx context.Context, in *ExecuteQueueActionRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	SubscribeToQueueStore(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (QueueSvc_SubscribeToQueueStoreClient, error)
-	UnsubscribeFromQueueStore(ctx context.Context, in *UnsubscribeFromQueueStoreRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ExecuteQueueAction(ctx context.Context, in *ExecuteQueueActionRequest, opts ...grpc.CallOption) (*Empty, error)
+	SubscribeToQueueStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (QueueSvc_SubscribeToQueueStoreClient, error)
+	UnsubscribeFromQueueStore(ctx context.Context, in *UnsubscribeFromQueueStoreRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type queueSvcClient struct {
@@ -46,8 +45,8 @@ func (c *queueSvcClient) GetQueue(ctx context.Context, in *GetQueueRequest, opts
 	return out, nil
 }
 
-func (c *queueSvcClient) ExecuteQueueAction(ctx context.Context, in *ExecuteQueueActionRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *queueSvcClient) ExecuteQueueAction(ctx context.Context, in *ExecuteQueueActionRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.QueueSvc/ExecuteQueueAction", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -55,7 +54,7 @@ func (c *queueSvcClient) ExecuteQueueAction(ctx context.Context, in *ExecuteQueu
 	return out, nil
 }
 
-func (c *queueSvcClient) SubscribeToQueueStore(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (QueueSvc_SubscribeToQueueStoreClient, error) {
+func (c *queueSvcClient) SubscribeToQueueStore(ctx context.Context, in *Empty, opts ...grpc.CallOption) (QueueSvc_SubscribeToQueueStoreClient, error) {
 	stream, err := c.cc.NewStream(ctx, &QueueSvc_ServiceDesc.Streams[0], "/m3uetcpb.QueueSvc/SubscribeToQueueStore", opts...)
 	if err != nil {
 		return nil, err
@@ -87,8 +86,8 @@ func (x *queueSvcSubscribeToQueueStoreClient) Recv() (*SubscribeToQueueStoreResp
 	return m, nil
 }
 
-func (c *queueSvcClient) UnsubscribeFromQueueStore(ctx context.Context, in *UnsubscribeFromQueueStoreRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *queueSvcClient) UnsubscribeFromQueueStore(ctx context.Context, in *UnsubscribeFromQueueStoreRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/m3uetcpb.QueueSvc/UnsubscribeFromQueueStore", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -101,9 +100,9 @@ func (c *queueSvcClient) UnsubscribeFromQueueStore(ctx context.Context, in *Unsu
 // for forward compatibility
 type QueueSvcServer interface {
 	GetQueue(context.Context, *GetQueueRequest) (*GetQueueResponse, error)
-	ExecuteQueueAction(context.Context, *ExecuteQueueActionRequest) (*empty.Empty, error)
-	SubscribeToQueueStore(*empty.Empty, QueueSvc_SubscribeToQueueStoreServer) error
-	UnsubscribeFromQueueStore(context.Context, *UnsubscribeFromQueueStoreRequest) (*empty.Empty, error)
+	ExecuteQueueAction(context.Context, *ExecuteQueueActionRequest) (*Empty, error)
+	SubscribeToQueueStore(*Empty, QueueSvc_SubscribeToQueueStoreServer) error
+	UnsubscribeFromQueueStore(context.Context, *UnsubscribeFromQueueStoreRequest) (*Empty, error)
 	mustEmbedUnimplementedQueueSvcServer()
 }
 
@@ -114,13 +113,13 @@ type UnimplementedQueueSvcServer struct {
 func (UnimplementedQueueSvcServer) GetQueue(context.Context, *GetQueueRequest) (*GetQueueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetQueue not implemented")
 }
-func (UnimplementedQueueSvcServer) ExecuteQueueAction(context.Context, *ExecuteQueueActionRequest) (*empty.Empty, error) {
+func (UnimplementedQueueSvcServer) ExecuteQueueAction(context.Context, *ExecuteQueueActionRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteQueueAction not implemented")
 }
-func (UnimplementedQueueSvcServer) SubscribeToQueueStore(*empty.Empty, QueueSvc_SubscribeToQueueStoreServer) error {
+func (UnimplementedQueueSvcServer) SubscribeToQueueStore(*Empty, QueueSvc_SubscribeToQueueStoreServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToQueueStore not implemented")
 }
-func (UnimplementedQueueSvcServer) UnsubscribeFromQueueStore(context.Context, *UnsubscribeFromQueueStoreRequest) (*empty.Empty, error) {
+func (UnimplementedQueueSvcServer) UnsubscribeFromQueueStore(context.Context, *UnsubscribeFromQueueStoreRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsubscribeFromQueueStore not implemented")
 }
 func (UnimplementedQueueSvcServer) mustEmbedUnimplementedQueueSvcServer() {}
@@ -173,7 +172,7 @@ func _QueueSvc_ExecuteQueueAction_Handler(srv interface{}, ctx context.Context, 
 }
 
 func _QueueSvc_SubscribeToQueueStore_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(empty.Empty)
+	m := new(Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}

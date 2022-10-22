@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,7 +20,7 @@ func TestRootOff(t *testing.T) {
 func TestRootStatus(t *testing.T) {
 	c := RootSvc{}
 
-	res, err := c.Status(context.Background(), &empty.Empty{})
+	res, err := c.Status(context.Background(), &m3uetcpb.Empty{})
 	assert.Equal(t, err != nil, false)
 	assert.Equal(t, res.GetAlive(), true)
 }
