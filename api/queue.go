@@ -99,18 +99,18 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context,
 func (*QueueSvc) SubscribeToQueueStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.QueueSvc_SubscribeToQueueStoreServer) error {
 
-	s, id := subscription.Subscribe(subscription.ToQueueStoreEvent)
-	defer func() { s.Unsubscribe() }()
+	sub, id := subscription.Subscribe(subscription.ToQueueStoreEvent)
+	defer func() { sub.Unsubscribe() }()
 
 	go func() {
-		s.Event <- subscription.Event{}
+		sub.Event <- subscription.Event{}
 	}()
 
 sLoop:
 	for {
 		select {
-		case e := <-s.Event:
-			if s.MustUnsubscribe(e) {
+		case e := <-sub.Event:
+			if sub.MustUnsubscribe(e) {
 				break sLoop
 			}
 

@@ -179,11 +179,11 @@ func (*QuerySvc) QueryBy(_ context.Context,
 func (*QuerySvc) SubscribeToQueryStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.QuerySvc_SubscribeToQueryStoreServer) error {
 
-	s, id := subscription.Subscribe(subscription.ToQueryStoreEvent)
-	defer func() { s.Unsubscribe() }()
+	sub, id := subscription.Subscribe(subscription.ToQueryStoreEvent)
+	defer func() { sub.Unsubscribe() }()
 
 	go func() {
-		s.Event <- subscription.Event{Idx: int(models.QueryEventInitial)}
+		sub.Event <- subscription.Event{Idx: int(models.QueryEventInitial)}
 	}()
 
 	sendQuery := func(e m3uetcpb.QueryEvent, qy models.ProtoOut) error {
@@ -199,8 +199,8 @@ sLoop:
 	for {
 
 		select {
-		case e := <-s.Event:
-			if s.MustUnsubscribe(e) {
+		case e := <-sub.Event:
+			if sub.MustUnsubscribe(e) {
 				break sLoop
 			}
 

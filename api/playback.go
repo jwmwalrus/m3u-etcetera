@@ -135,18 +135,18 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 func (*PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty,
 	stream m3uetcpb.PlaybackSvc_SubscribeToPlaybackServer) error {
 
-	s, id := subscription.Subscribe(subscription.ToPlaybackEvent)
-	defer func() { s.Unsubscribe() }()
+	sub, id := subscription.Subscribe(subscription.ToPlaybackEvent)
+	defer func() { sub.Unsubscribe() }()
 
 	go func() {
-		s.Event <- subscription.Event{Data: struct{}{}}
+		sub.Event <- subscription.Event{Data: struct{}{}}
 	}()
 
 sLoop:
 	for {
 		select {
-		case e := <-s.Event:
-			if s.MustUnsubscribe(e) {
+		case e := <-sub.Event:
+			if sub.MustUnsubscribe(e) {
 				break sLoop
 			}
 

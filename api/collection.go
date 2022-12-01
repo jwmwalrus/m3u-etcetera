@@ -213,11 +213,11 @@ func (*CollectionSvc) DiscoverCollections(_ context.Context,
 func (*CollectionSvc) SubscribeToCollectionStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.CollectionSvc_SubscribeToCollectionStoreServer) error {
 
-	s, id := subscription.Subscribe(subscription.ToCollectionStoreEvent)
-	defer func() { s.Unsubscribe() }()
+	sub, id := subscription.Subscribe(subscription.ToCollectionStoreEvent)
+	defer func() { sub.Unsubscribe() }()
 
 	go func() {
-		s.Event <- subscription.Event{Idx: int(models.CollectionEventInitial)}
+		sub.Event <- subscription.Event{Idx: int(models.CollectionEventInitial)}
 	}()
 
 	sendCollection := func(e m3uetcpb.CollectionEvent, c models.ProtoOut) error {
@@ -246,8 +246,8 @@ sLoop:
 	for {
 
 		select {
-		case e := <-s.Event:
-			if s.MustUnsubscribe(e) {
+		case e := <-sub.Event:
+			if sub.MustUnsubscribe(e) {
 				break sLoop
 			}
 
