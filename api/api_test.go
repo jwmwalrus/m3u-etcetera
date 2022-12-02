@@ -8,7 +8,6 @@ import (
 	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database"
-	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -18,29 +17,28 @@ const (
 )
 
 var (
-	conn        *gorm.DB
-	fixtures    *testfixtures.Loader
-	watchingDbg = false
+	conn       *gorm.DB
+	fixtures   *testfixtures.Loader
+	dbUnloader *base.Unloader
 )
 
 type testCase struct {
 	name        string
 	fixturesDir string
-	startEngine bool
-	sleep       int
 	req         proto.Message
 	res         proto.Message
-	err         bool
+	err         error
 }
 
 func closeTestDatabase() {
-	database.Close()
+	dbUnloader.Callback()
 }
 
 func openTestDatabase(fixturesDir string) (db *gorm.DB) {
 	var err error
 
-	db = database.Open()
+	dbUnloader = database.Open()
+	db = database.Instance()
 
 	sqlDB, _ := db.DB()
 	fixtures, err = testfixtures.New(
@@ -61,21 +59,12 @@ func openTestDatabase(fixturesDir string) (db *gorm.DB) {
 }
 
 func setupTest(t *testing.T, tc testCase) {
-	base.SetTestingMode()
+	base.FlagTestingMode = true
 	conn = openTestDatabase(tc.fixturesDir)
-
-	if tc.startEngine {
-		playback.SetMode(playback.TestMode)
-		playback.StartEngine()
-	}
-
 	return
 }
 
 func teardownTest(t *testing.T) {
-	watchingDbg = false
-
-	playback.Unloader.Callback()
 	closeTestDatabase()
 
 	if _, err := os.Stat(database.DSN()); !os.IsNotExist(err) {

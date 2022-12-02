@@ -13,6 +13,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var (
+	newPlaybackSvcClient = m3uetcpb.NewPlaybackSvcClient
+)
+
 // Playback playback task
 func Playback() *cli.Command {
 	return &cli.Command{
@@ -103,7 +107,7 @@ func playbackAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybackSvcClient(cc)
+	cl := newPlaybackSvcClient(cc)
 	res, err := cl.GetPlayback(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		return
@@ -187,7 +191,7 @@ func playbackPlayAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybackSvcClient(cc)
+	cl := newPlaybackSvcClient(cc)
 	_, err = cl.ExecutePlaybackAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
@@ -222,7 +226,7 @@ func playbackSeekAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybackSvcClient(cc)
+	cl := newPlaybackSvcClient(cc)
 	_, err = cl.ExecutePlaybackAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
@@ -245,7 +249,7 @@ func playbackListAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybackSvcClient(cc)
+	cl := newPlaybackSvcClient(cc)
 	res, err := cl.GetPlaybackList(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		return

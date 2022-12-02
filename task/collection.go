@@ -13,6 +13,10 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+var (
+	newCollectionSvcClient = m3uetcpb.NewCollectionSvcClient
+)
+
 // Collection defines the collection-related tasks
 func Collection() *cli.Command {
 	return &cli.Command{
@@ -148,7 +152,7 @@ func collectionAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewCollectionSvcClient(cc)
+	cl := newCollectionSvcClient(cc)
 	res, err := cl.GetAllCollections(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		return
@@ -193,7 +197,7 @@ func collectionInfoAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewCollectionSvcClient(cc)
+	cl := newCollectionSvcClient(cc)
 	res, err := cl.GetCollection(context.Background(), req)
 	if err != nil {
 		return
@@ -256,7 +260,7 @@ func collectionAddAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewCollectionSvcClient(cc)
+	cl := newCollectionSvcClient(cc)
 	res, err := cl.AddCollection(context.Background(), req)
 	if err != nil {
 		return
@@ -280,7 +284,7 @@ func collectionRemoveAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewCollectionSvcClient(cc)
+	cl := newCollectionSvcClient(cc)
 	_, err = cl.RemoveCollection(context.Background(), req)
 	if err != nil {
 		return
@@ -323,7 +327,7 @@ func collectionUpdateAction(c *cli.Context) (err error) {
 		req.MakeRemote = true
 	}
 
-	cl := m3uetcpb.NewCollectionSvcClient(cc)
+	cl := newCollectionSvcClient(cc)
 	_, err = cl.UpdateCollection(context.Background(), req)
 	if err != nil {
 		return
@@ -350,7 +354,7 @@ func collectionScanAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewCollectionSvcClient(cc)
+	cl := newCollectionSvcClient(cc)
 	_, err = cl.ScanCollection(context.Background(), req)
 	if err != nil {
 		return
@@ -371,7 +375,7 @@ func collectionDiscoverActiion(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewCollectionSvcClient(cc)
+	cl := newCollectionSvcClient(cc)
 	_, err = cl.DiscoverCollections(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		return

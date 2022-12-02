@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/godbus/dbus/v5"
-	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/mpris"
@@ -26,6 +25,8 @@ const (
 
 var (
 	quitEngineLoop chan struct{} = make(chan struct{})
+
+	broadcastToSubscribers = subscription.Broadcast
 )
 
 type playbackHint int
@@ -63,17 +64,10 @@ type engine struct {
 	mpris *Player
 
 	mainLoop *glib.MainLoop
-	mode     EngineMode
 	hint     playbackHint
 }
 
 func init() {
-	eng = &engine{
-		mode: NormalMode,
-		hint: hintNone,
-	}
-	eng.state.Store(gst.StateNull)
-	eng.lastEvent.Store(noLoopEvent)
 }
 
 func (e *engine) addPlaybackFromQueue(qt *models.QueueTrack) (pb *models.Playback) {
@@ -165,7 +159,7 @@ loop:
 		if !e.freezePlayback.Load() {
 			models.DeactivatePlaybars()
 		}
-		subscription.Broadcast(subscription.ToPlaybackEvent)
+		broadcastToSubscribers(subscription.ToPlaybackEvent)
 	}
 
 	e.lastEvent.Store(noLoopEvent)
@@ -358,16 +352,10 @@ func (e *engine) playStream(pb *models.Playback) {
 		}
 	}
 
-	subscription.Broadcast(subscription.ToPlaybackEvent)
+	broadcastToSubscribers(subscription.ToPlaybackEvent)
 	e.updateMPRIS(false)
 
-	if e.mode == TestMode {
-		// Location is relative
-		loc, _ := urlstr.PathToURL(pb.Location)
-		e.playbin.Load().Set("uri", loc)
-	} else {
-		e.playbin.Load().Set("uri", pb.Location)
-	}
+	e.playbin.Load().Set("uri", pb.Location)
 
 	bus := e.playbin.Load().GetBus()
 
@@ -421,7 +409,7 @@ func (e *engine) performQueries(ctx context.Context) {
 			}
 
 			if position > 0 {
-				subscription.Broadcast(subscription.ToPlaybackEvent)
+				broadcastToSubscribers(subscription.ToPlaybackEvent)
 				e.lastPosition.Store(position)
 			}
 
@@ -432,7 +420,7 @@ func (e *engine) performQueries(ctx context.Context) {
 					log.Warn("Could not query current duration")
 				}
 				e.duration.Store(duration)
-				subscription.Broadcast(subscription.ToPlaybackEvent)
+				broadcastToSubscribers(subscription.ToPlaybackEvent)
 			}
 
 			if !e.seekableDone.Load() {
@@ -452,7 +440,7 @@ func (e *engine) performQueries(ctx context.Context) {
 							Debug("Seeking is ENABLED")
 						go func() {
 							if e.pb.Load().Skip > 0 {
-								SeekInStream(e.pb.Load().Skip)
+								GetEventsInstance().SeekInStream(e.pb.Load().Skip)
 							}
 						}()
 					} else {

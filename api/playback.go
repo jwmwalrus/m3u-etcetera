@@ -6,7 +6,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
-	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -24,13 +23,13 @@ func (*PlaybackSvc) GetPlayback(_ context.Context,
 	_ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
 
 	res := &m3uetcpb.GetPlaybackResponse{
-		IsStreaming: playback.IsStreaming(),
-		IsPlaying:   playback.IsPlaying(),
-		IsPaused:    playback.IsPaused(),
-		IsStopped:   playback.IsStopped(),
-		IsReady:     playback.IsReady(),
+		IsStreaming: playbackEvents.IsStreaming(),
+		IsPlaying:   playbackEvents.IsPlaying(),
+		IsPaused:    playbackEvents.IsPaused(),
+		IsStopped:   playbackEvents.IsStopped(),
+		IsReady:     playbackEvents.IsReady(),
 	}
-	pb, t := playback.GetPlayback()
+	pb, t := playbackEvents.GetPlayback()
 	if pb != nil {
 		res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
 		res.Track = &m3uetcpb.Track{}
@@ -100,15 +99,15 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 
 		switch req.Action {
 		case m3uetcpb.PlaybackAction_PB_SEEK:
-			playback.SeekInStream(req.Seek)
+			playbackEvents.SeekInStream(req.Seek)
 		case m3uetcpb.PlaybackAction_PB_NEXT:
-			playback.NextStream()
+			playbackEvents.NextStream()
 		case m3uetcpb.PlaybackAction_PB_PAUSE:
-			playback.PauseStream(false)
+			playbackEvents.PauseStream(false)
 		case m3uetcpb.PlaybackAction_PB_PLAY:
 			if len(req.Locations) > 0 || len(req.Ids) > 0 {
 				if req.Force {
-					playback.PlayStreams(req.Force, req.Locations, req.Ids)
+					playbackEvents.PlayStreams(req.Force, req.Locations, req.Ids)
 				} else {
 					q, _ := models.
 						PerspectiveIndex(req.Perspective).
@@ -117,12 +116,12 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 					q.Add(req.Locations, req.Ids)
 				}
 			} else {
-				playback.PauseStream(true)
+				playbackEvents.PauseStream(true)
 			}
 		case m3uetcpb.PlaybackAction_PB_PREVIOUS:
-			playback.PreviousStream()
+			playbackEvents.PreviousStream()
 		case m3uetcpb.PlaybackAction_PB_STOP:
-			playback.StopAll()
+			playbackEvents.StopAll()
 		default:
 			return
 		}
@@ -152,14 +151,14 @@ sLoop:
 
 			res := &m3uetcpb.SubscribeToPlaybackResponse{
 				SubscriptionId: id,
-				IsStreaming:    playback.IsStreaming(),
-				IsPlaying:      playback.IsPlaying(),
-				IsPaused:       playback.IsPaused(),
-				IsStopped:      playback.IsStopped(),
-				IsReady:        playback.IsReady(),
+				IsStreaming:    playbackEvents.IsStreaming(),
+				IsPlaying:      playbackEvents.IsPlaying(),
+				IsPaused:       playbackEvents.IsPaused(),
+				IsStopped:      playbackEvents.IsStopped(),
+				IsReady:        playbackEvents.IsReady(),
 			}
 
-			pb, t := playback.GetPlayback()
+			pb, t := playbackEvents.GetPlayback()
 			if pb != nil {
 				res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
 				res.Track = &m3uetcpb.Track{}

@@ -13,7 +13,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-func getClientConn() (*grpc.ClientConn, error) {
+type iClientConn interface {
+	grpc.ClientConnInterface
+	Close() error
+}
+
+var (
+	getClientConn = getClientConnDefault
+)
+
+func getClientConnDefault() (iClientConn, error) {
 	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	return grpc.Dial(auth, opts...)

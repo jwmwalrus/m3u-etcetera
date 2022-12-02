@@ -12,6 +12,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var (
+	newPlaybarSvcClient = m3uetcpb.NewPlaybarSvcClient
+)
+
 // Playbar playbar task
 func Playbar() *cli.Command {
 	return &cli.Command{
@@ -79,7 +83,7 @@ func playbarAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 
 	req := &m3uetcpb.GetPlaybarRequest{
 		Perspective: getPerspective(c),
@@ -148,7 +152,7 @@ func playbarExecuteAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 	_, err = cl.ExecutePlaybarAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)

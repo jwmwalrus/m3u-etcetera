@@ -9,7 +9,10 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/grpc"
+)
+
+var (
+	newQuerySvcClient = m3uetcpb.NewQuerySvcClient
 )
 
 // Query defines the query-related tasks
@@ -242,7 +245,7 @@ func queryAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQuerySvcClient(cc)
+	cl := newQuerySvcClient(cc)
 	res, err := cl.GetQueries(context.Background(), req)
 	if err != nil {
 		return
@@ -287,7 +290,7 @@ func queryInfoAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQuerySvcClient(cc)
+	cl := newQuerySvcClient(cc)
 	res, err := cl.GetQuery(context.Background(), req)
 	if err != nil {
 		return
@@ -341,7 +344,7 @@ func queryAddAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQuerySvcClient(cc)
+	cl := newQuerySvcClient(cc)
 	res, err := cl.AddQuery(context.Background(), req)
 	if err != nil {
 		return
@@ -367,7 +370,7 @@ func queryRemoveAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQuerySvcClient(cc)
+	cl := newQuerySvcClient(cc)
 	_, err = cl.RemoveQuery(context.Background(), req)
 	if err != nil {
 		return
@@ -395,7 +398,7 @@ func queryUpdateAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQuerySvcClient(cc)
+	cl := newQuerySvcClient(cc)
 	res, err := cl.GetQuery(context.Background(), req0)
 	if err != nil {
 		return
@@ -471,7 +474,7 @@ func queryTracksAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQuerySvcClient(cc)
+	cl := newQuerySvcClient(cc)
 	res, err := cl.ApplyQuery(context.Background(), req)
 	if err != nil {
 		return
@@ -531,7 +534,7 @@ func queryByAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQuerySvcClient(cc)
+	cl := newQuerySvcClient(cc)
 	res, err := cl.QueryBy(context.Background(), req)
 	if err != nil {
 		return
@@ -567,7 +570,7 @@ func queryByAction(c *cli.Context) (err error) {
 	return
 }
 
-func playTracks(cc *grpc.ClientConn, ts []*m3uetcpb.Track,
+func playTracks(cc iClientConn, ts []*m3uetcpb.Track,
 	force bool) (err error) {
 
 	ids := []int64{}

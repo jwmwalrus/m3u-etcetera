@@ -142,26 +142,28 @@ func findPlaybackTrack(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case id := <-playbackTrackNeeded:
-			pb := Playback{}
-			err := pb.Read(id)
-			if err != nil {
-				log.Error(err)
-				break
-			}
-			if pb.TrackID > 0 {
-				break
-			}
+			go func(id int64) {
+				pb := Playback{}
+				err := pb.Read(id)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				if pb.TrackID > 0 {
+					return
+				}
 
-			entry := log.WithField("pb", pb)
-			entry.Info("Finding track for current playback")
+				entry := log.WithField("pb", pb)
+				entry.Info("Finding track for current playback")
 
-			t := Track{}
-			err = db.Where("location = ?", pb.Location).First(&t).Error
-			if err != nil {
-				break
-			}
-			pb.TrackID = t.ID
-			onerror.WithEntry(entry).Log(pb.Save())
+				t := Track{}
+				err = db.Where("location = ?", pb.Location).First(&t).Error
+				if err != nil {
+					return
+				}
+				pb.TrackID = t.ID
+				onerror.WithEntry(entry).Log(pb.Save())
+			}(id)
 
 		}
 	}

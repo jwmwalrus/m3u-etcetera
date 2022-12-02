@@ -160,7 +160,7 @@ func playlistAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 
 	req := &m3uetcpb.GetAllPlaylistsRequest{
 		Perspective: getPerspective(c),
@@ -246,7 +246,7 @@ func playlistExecuteAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 	res, err := cl.ExecutePlaylistAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
@@ -265,7 +265,7 @@ func showPlaylist(c *cli.Context, id int64) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 
 	req := &m3uetcpb.GetPlaylistRequest{Id: id, Limit: int32(c.Int("limit"))}
 
@@ -334,7 +334,7 @@ func playlistImportAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 	stream, err := cl.ImportPlaylists(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
@@ -403,7 +403,7 @@ func playlistExportAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 	_, err = cl.ExportPlaylist(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)

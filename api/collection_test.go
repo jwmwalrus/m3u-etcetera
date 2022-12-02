@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -13,26 +14,20 @@ func TestGetCollection(t *testing.T) {
 		{
 			"Get with ID, invalid",
 			"api/collection/get-id-invalid",
-			false,
-			0,
 			&m3uetcpb.GetCollectionRequest{},
 			&m3uetcpb.GetCollectionResponse{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Get with ID, not found",
 			"api/collection/get-id-not-found",
-			false,
-			0,
 			&m3uetcpb.GetCollectionRequest{Id: 2},
 			&m3uetcpb.GetCollectionResponse{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Get with ID, success",
 			"api/collection/get-id-success",
-			false,
-			0,
 			&m3uetcpb.GetCollectionRequest{Id: 1},
 			&m3uetcpb.GetCollectionResponse{
 				Collection: &m3uetcpb.Collection{
@@ -41,7 +36,7 @@ func TestGetCollection(t *testing.T) {
 					Location: "./data/testing/audio1/",
 				},
 			},
-			false,
+			nil,
 		},
 	}
 
@@ -56,14 +51,15 @@ func TestGetCollection(t *testing.T) {
 
 			res, err := svc.GetCollection(context.Background(), tc.req.(*m3uetcpb.GetCollectionRequest))
 
-			assert.Equal(t, err != nil, tc.err)
-			if tc.err {
-				return
+			if tc.err != nil {
+				assert.NotNil(t, err)
 			}
-
-			assert.Equal(t, res.Collection.Id, exp.Collection.Id)
-			assert.Equal(t, res.Collection.Name, exp.Collection.Name)
-			assert.Equal(t, res.Collection.Location, exp.Collection.Location)
+			if tc.err == nil {
+				assert.Nil(t, err)
+				assert.Equal(t, res.Collection.Id, exp.Collection.Id)
+				assert.Equal(t, res.Collection.Name, exp.Collection.Name)
+				assert.Equal(t, res.Collection.Location, exp.Collection.Location)
+			}
 		})
 	}
 
@@ -75,8 +71,6 @@ func TestGetAllCollections(t *testing.T) {
 		{
 			"Get all",
 			"api/collection/get-all",
-			false,
-			0,
 			&m3uetcpb.Empty{},
 			&m3uetcpb.GetAllCollectionsResponse{
 				Collections: []*m3uetcpb.Collection{{
@@ -85,7 +79,7 @@ func TestGetAllCollections(t *testing.T) {
 					Location: "./data/testing/audio1/",
 				}},
 			},
-			false,
+			nil,
 		},
 	}
 
@@ -100,15 +94,16 @@ func TestGetAllCollections(t *testing.T) {
 
 			res, err := svc.GetAllCollections(context.Background(), tc.req.(*m3uetcpb.Empty))
 
-			assert.Equal(t, err != nil, tc.err)
-			if tc.err {
-				return
+			if tc.err != nil {
+				assert.NotNil(t, err)
 			}
-
-			assert.Equal(t, len(res.Collections), len(exp.Collections))
-			assert.Equal(t, res.Collections[0].Id, exp.Collections[0].Id)
-			assert.Equal(t, res.Collections[0].Name, exp.Collections[0].Name)
-			assert.Equal(t, res.Collections[0].Location, exp.Collections[0].Location)
+			if tc.err == nil {
+				assert.Nil(t, err)
+				assert.Equal(t, len(res.Collections), len(exp.Collections))
+				assert.Equal(t, res.Collections[0].Id, exp.Collections[0].Id)
+				assert.Equal(t, res.Collections[0].Name, exp.Collections[0].Name)
+				assert.Equal(t, res.Collections[0].Location, exp.Collections[0].Location)
+			}
 		})
 	}
 
@@ -120,29 +115,23 @@ func TestAddCollection(t *testing.T) {
 		{
 			"Add with empty location",
 			"api/collection/add-no-loc",
-			false,
-			0,
 			&m3uetcpb.AddCollectionRequest{},
 			&m3uetcpb.AddCollectionResponse{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Add with existing location",
 			"api/collection/add-existing-loc",
-			false,
-			0,
 			&m3uetcpb.AddCollectionRequest{
 				Name:     "new collection",
 				Location: "./data/testing/audio1/",
 			},
 			&m3uetcpb.AddCollectionResponse{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Add collection, success",
 			"api/collection/add-success",
-			false,
-			0,
 			&m3uetcpb.AddCollectionRequest{
 				Name:     "new collection",
 				Location: "./data/testing/audio2/",
@@ -150,7 +139,7 @@ func TestAddCollection(t *testing.T) {
 			&m3uetcpb.AddCollectionResponse{
 				Id: 2,
 			},
-			false,
+			nil,
 		},
 	}
 
@@ -165,12 +154,13 @@ func TestAddCollection(t *testing.T) {
 
 			res, err := svc.AddCollection(context.Background(), tc.req.(*m3uetcpb.AddCollectionRequest))
 
-			assert.Equal(t, err != nil, tc.err)
-			if tc.err {
-				return
+			if tc.err != nil {
+				assert.NotNil(t, err)
 			}
-
-			assert.Equal(t, res.Id, exp.Id)
+			if tc.err == nil {
+				assert.Nil(t, err)
+				assert.Equal(t, res.Id, exp.Id)
+			}
 		})
 	}
 
@@ -182,29 +172,23 @@ func TestRemoveCollection(t *testing.T) {
 		{
 			"Remove with ID, invalid",
 			"api/collection/rem-id-invalid",
-			false,
-			0,
 			&m3uetcpb.RemoveCollectionRequest{},
 			&m3uetcpb.Empty{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Remove with ID, not found",
 			"api/collection/rem-id-not-found",
-			false,
-			0,
 			&m3uetcpb.RemoveCollectionRequest{Id: 2},
 			&m3uetcpb.Empty{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Remove with ID, success",
 			"api/collection/rem-id-success",
-			false,
-			0,
 			&m3uetcpb.RemoveCollectionRequest{Id: 1},
 			&m3uetcpb.Empty{},
-			false,
+			nil,
 		},
 	}
 
@@ -217,7 +201,12 @@ func TestRemoveCollection(t *testing.T) {
 
 			_, err := svc.RemoveCollection(context.Background(), tc.req.(*m3uetcpb.RemoveCollectionRequest))
 
-			assert.Equal(t, err != nil, tc.err)
+			if tc.err != nil {
+				assert.NotNil(t, err)
+			}
+			if tc.err == nil {
+				assert.Nil(t, err)
+			}
 		})
 	}
 
@@ -229,29 +218,23 @@ func TestScanCollection(t *testing.T) {
 		{
 			"Scan with ID, invalid",
 			"api/collection/scan-id-invalid",
-			false,
-			0,
 			&m3uetcpb.ScanCollectionRequest{},
 			&m3uetcpb.Empty{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Scan with ID, not found",
 			"api/collection/scan-id-not-found",
-			false,
-			0,
 			&m3uetcpb.ScanCollectionRequest{Id: 2},
 			&m3uetcpb.Empty{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Scan with ID, success",
 			"api/collection/scan-id-success",
-			false,
-			0,
 			&m3uetcpb.ScanCollectionRequest{Id: 1},
 			&m3uetcpb.Empty{},
-			false,
+			nil,
 		},
 	}
 
@@ -264,7 +247,12 @@ func TestScanCollection(t *testing.T) {
 
 			_, err := svc.ScanCollection(context.Background(), tc.req.(*m3uetcpb.ScanCollectionRequest))
 
-			assert.Equal(t, err != nil, tc.err)
+			if tc.err != nil {
+				assert.NotNil(t, err)
+			}
+			if tc.err == nil {
+				assert.Nil(t, err)
+			}
 		})
 	}
 
@@ -276,11 +264,9 @@ func TestDiscoverCollection(t *testing.T) {
 		{
 			"Discover, success",
 			"api/collection/discover",
-			false,
-			0,
 			&m3uetcpb.Empty{},
 			&m3uetcpb.Empty{},
-			false,
+			nil,
 		},
 	}
 
@@ -293,7 +279,12 @@ func TestDiscoverCollection(t *testing.T) {
 
 			_, err := svc.DiscoverCollections(context.Background(), tc.req.(*m3uetcpb.Empty))
 
-			assert.Equal(t, err != nil, tc.err)
+			if tc.err != nil {
+				assert.NotNil(t, err)
+			}
+			if tc.err == nil {
+				assert.Nil(t, err)
+			}
 		})
 	}
 

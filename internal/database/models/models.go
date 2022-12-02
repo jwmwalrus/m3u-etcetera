@@ -13,9 +13,8 @@ import (
 var (
 	db *gorm.DB
 
-	playbackTrackNeeded = make(chan int64, 1)
-
-	queueTrackNeeded = make(chan int64, 1)
+	playbackTrackNeeded chan int64
+	queueTrackNeeded    chan int64
 
 	// make sure we only do heavy collection tasks one at a time
 	storageGuard chan struct{} = make(chan struct{}, 1)
@@ -74,30 +73,7 @@ type ProtoOut interface {
 	ToProtobuf() proto.Message
 }
 
-// SetUp sets the database used by the models and starts some listeners
-func SetUp(ctx context.Context, conn *gorm.DB) {
-	db = conn
-
-	doInitialCleanup()
-
-	go findPlaybackTrack(ctx)
-	go findQueueTrack(ctx)
-}
-
-// TearDown unsets the models listeners
-func TearDown() {
-	close(playbackTrackNeeded)
-	close(queueTrackNeeded)
-}
-
-// TriggerPlaybackChange signals the PlaybackChanged channel
-func TriggerPlaybackChange() {
-	if len(PlaybackChanged) < 1 {
-		PlaybackChanged <- struct{}{}
-	}
-}
-
-func doInitialCleanup() {
+func DoInitialCleanup() {
 	tx := db.Session(&gorm.Session{SkipHooks: true})
 
 	// Clean playback
@@ -116,6 +92,30 @@ func doInitialCleanup() {
 			break
 		}
 		tx.Where("id = ?", pl.ID).Delete(&Playlist{})
+	}
+}
+
+// SetUp sets the database used by the models and starts some listeners
+func SetUp(ctx context.Context, conn *gorm.DB) {
+	db = conn
+
+	playbackTrackNeeded = make(chan int64, 1)
+	queueTrackNeeded = make(chan int64, 1)
+
+	go findPlaybackTrack(ctx)
+	go findQueueTrack(ctx)
+}
+
+// TearDown unsets the models listeners
+func TearDown() {
+	close(playbackTrackNeeded)
+	close(queueTrackNeeded)
+}
+
+// TriggerPlaybackChange signals the PlaybackChanged channel
+func TriggerPlaybackChange() {
+	if len(PlaybackChanged) < 1 {
+		PlaybackChanged <- struct{}{}
 	}
 }
 

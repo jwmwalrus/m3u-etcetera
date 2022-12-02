@@ -178,25 +178,27 @@ func findQueueTrack(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case id := <-queueTrackNeeded:
-			qt := QueueTrack{}
-			err := qt.Read(id)
-			if err != nil {
-				log.Error(err)
-				break
-			}
-			if qt.TrackID > 0 {
-				break
-			}
+			go func(id int64) {
+				qt := QueueTrack{}
+				err := qt.Read(id)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				if qt.TrackID > 0 {
+					return
+				}
 
-			entry := log.WithField("qt", qt)
-			entry.Info("Finding track for queue entry")
+				entry := log.WithField("qt", qt)
+				entry.Info("Finding track for queue entry")
 
-			t := Track{}
-			if err := db.Where("location = ?", qt.Location).First(&t).Error; err != nil {
-				break
-			}
-			qt.TrackID = t.ID
-			onerror.WithEntry(entry).Log(qt.Save())
+				t := Track{}
+				if err := db.Where("location = ?", qt.Location).First(&t).Error; err != nil {
+					return
+				}
+				qt.TrackID = t.ID
+				onerror.WithEntry(entry).Log(qt.Save())
+			}(id)
 		}
 	}
 }

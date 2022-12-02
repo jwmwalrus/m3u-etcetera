@@ -6,7 +6,6 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
-	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
 	log "github.com/sirupsen/logrus"
@@ -185,14 +184,14 @@ func (*PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 				log.Error(err)
 				return
 			}
-			playback.TryPlayingFromBar(pls[0], int(req.Position))
+			playbackEvents.TryPlayingFromBar(pls[0], int(req.Position))
 		case m3uetcpb.PlaybarAction_BAR_DEACTIVATE:
 			bar := models.Playbar{}
 			if err := bar.Read(pls[0].PlaybarID); err != nil {
 				log.Error(err)
 				return
 			}
-			playback.QuitPlayingFromBar(pls[0])
+			playbackEvents.QuitPlayingFromBar(pls[0])
 		case m3uetcpb.PlaybarAction_BAR_CLOSE:
 			for i := range pls {
 				bar := models.Playbar{}

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -13,17 +14,13 @@ func TestGetQueue(t *testing.T) {
 		{
 			"Get with empty queue",
 			"api/queue/get-empty",
-			true,
-			0,
 			&m3uetcpb.GetQueueRequest{},
 			&m3uetcpb.GetQueueResponse{},
-			false,
+			nil,
 		},
 		{
 			"Get with location",
 			"api/queue/get-location",
-			false,
-			0,
 			&m3uetcpb.GetQueueRequest{},
 			&m3uetcpb.GetQueueResponse{
 				QueueTracks: []*m3uetcpb.QueueTrack{{
@@ -32,13 +29,11 @@ func TestGetQueue(t *testing.T) {
 					Location: "./data/testing/audio1/track01.ogg",
 				}},
 			},
-			false,
+			nil,
 		},
 		{
 			"Get with track",
 			"api/queue/get-track",
-			false,
-			0,
 			&m3uetcpb.GetQueueRequest{},
 			&m3uetcpb.GetQueueResponse{
 				QueueTracks: []*m3uetcpb.QueueTrack{{
@@ -56,7 +51,7 @@ func TestGetQueue(t *testing.T) {
 					Artist:   "tracker",
 				}},
 			},
-			false,
+			nil,
 		},
 	}
 
@@ -98,37 +93,31 @@ func TestExecuteQueueAction(t *testing.T) {
 		{
 			"Execute queue invalid location",
 			"api/queue/exec-invalid-loc",
-			false,
-			0,
 			&m3uetcpb.ExecuteQueueActionRequest{
 				Action:    m3uetcpb.QueueAction_Q_APPEND,
 				Locations: []string{"2"},
 			},
 			&m3uetcpb.Empty{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Execute queue invalid ID",
 			"api/queue/exec-invalid-id",
-			false,
-			0,
 			&m3uetcpb.ExecuteQueueActionRequest{
 				Action: m3uetcpb.QueueAction_Q_APPEND,
 				Ids:    []int64{2},
 			},
 			&m3uetcpb.Empty{},
-			true,
+			fmt.Errorf("error"),
 		},
 		{
 			"Execute valid",
 			"api/queue/exec-valid",
-			false,
-			0,
 			&m3uetcpb.ExecuteQueueActionRequest{
 				Action: m3uetcpb.QueueAction_Q_CLEAR,
 			},
 			&m3uetcpb.Empty{},
-			false,
+			fmt.Errorf("error"),
 		},
 	}
 

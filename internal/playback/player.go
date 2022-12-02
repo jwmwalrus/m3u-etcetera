@@ -50,7 +50,7 @@ func (p *Player) Properties() map[string]*prop.Prop {
 
 // Next implements org.mpris.MediaPlayer2.Player interface
 func (*Player) Next() *dbus.Error {
-	err := NextStream()
+	err := GetEventsInstance().NextStream()
 	if err != nil {
 		return dbus.MakeFailedError(err)
 	}
@@ -59,13 +59,13 @@ func (*Player) Next() *dbus.Error {
 
 // Previous implements org.mpris.MediaPlayer2.Player interface
 func (*Player) Previous() *dbus.Error {
-	PreviousStream()
+	GetEventsInstance().PreviousStream()
 	return nil
 }
 
 // Pause implements org.mpris.MediaPlayer2.Player interface
 func (*Player) Pause() *dbus.Error {
-	err := PauseStream(false)
+	err := GetEventsInstance().PauseStream(false)
 	if err != nil {
 		return dbus.MakeFailedError(err)
 	}
@@ -74,9 +74,9 @@ func (*Player) Pause() *dbus.Error {
 
 // PlayPause implements org.mpris.MediaPlayer2.Player interface
 func (p *Player) PlayPause() *dbus.Error {
-	if IsPlaying() {
+	if GetEventsInstance().IsPlaying() {
 		return p.Pause()
-	} else if IsPaused() {
+	} else if GetEventsInstance().IsPaused() {
 		return p.Play()
 	}
 	return nil
@@ -84,13 +84,13 @@ func (p *Player) PlayPause() *dbus.Error {
 
 // Stop implements org.mpris.MediaPlayer2.Player interface
 func (*Player) Stop() *dbus.Error {
-	StopAll()
+	GetEventsInstance().StopAll()
 	return nil
 }
 
 // Play implements org.mpris.MediaPlayer2.Player interface
 func (*Player) Play() *dbus.Error {
-	err := PauseStream(true)
+	err := GetEventsInstance().PauseStream(true)
 	if err != nil {
 		return dbus.MakeFailedError(err)
 	}
@@ -115,10 +115,10 @@ func (*Player) OpenUri(s string) *dbus.Error {
 
 // PlaybackStatus implements org.mpris.MediaPlayer2.Player interface
 func (*Player) PlaybackStatus() string {
-	if IsPlaying() {
+	if GetEventsInstance().IsPlaying() {
 		return PlaybackStatusPlaying
 	}
-	if IsPaused() {
+	if GetEventsInstance().IsPaused() {
 		return PlaybackStatusPaused
 	}
 	return PlaybackStatusStopped
@@ -144,7 +144,7 @@ func (*Player) Shuffle(b bool) (bool, *dbus.Error) {
 
 // Metadata implements org.mpris.MediaPlayer2.Player interface
 func (*Player) Metadata() map[string]dbus.Variant {
-	pb, t := GetPlayback()
+	pb, t := GetEventsInstance().GetPlayback()
 	if t != nil {
 		return map[string]dbus.Variant{
 			"xesam:album":          dbus.MakeVariant(t.Album),
@@ -176,7 +176,7 @@ func (*Player) Volume(in float64) (float64, *dbus.Error) {
 
 // Position implements org.mpris.MediaPlayer2.Player interface
 func (*Player) Position() int64 {
-	pb, _ := GetPlayback()
+	pb, _ := GetEventsInstance().GetPlayback()
 	return pb.Skip
 }
 
@@ -192,7 +192,7 @@ func (*Player) MaximumRate() float64 {
 
 // CanGoNext implements org.mpris.MediaPlayer2.Player interface
 func (*Player) CanGoNext() bool {
-	return HasNextStream()
+	return GetEventsInstance().HasNextStream()
 }
 
 // CanGoPrevious implements org.mpris.MediaPlayer2.Player interface

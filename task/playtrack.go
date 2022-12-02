@@ -174,7 +174,7 @@ func playtrackAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 
 	req := &m3uetcpb.GetPlaybarRequest{
 		Perspective: getPerspective(c),
@@ -264,7 +264,7 @@ func playtrackExecuteAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 	_, err = cl.ExecutePlaylistTrackAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)

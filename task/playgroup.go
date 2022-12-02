@@ -102,7 +102,7 @@ func playgroupAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 
 	req := &m3uetcpb.GetAllPlaylistGroupsRequest{
 		Perspective: getPerspective(c),
@@ -144,7 +144,7 @@ func playgroupInfoAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 
 	req := &m3uetcpb.GetPlaylistGroupRequest{Id: id}
 
@@ -193,7 +193,7 @@ func playgroupExecuteAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPlaybarSvcClient(cc)
+	cl := newPlaybarSvcClient(cc)
 	res, err := cl.ExecutePlaylistGroupAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)

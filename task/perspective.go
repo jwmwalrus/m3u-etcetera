@@ -9,6 +9,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var (
+	newPerspectiveSvcClient = m3uetcpb.NewPerspectiveSvcClient
+)
+
 // Perspective perspective task
 func Perspective() *cli.Command {
 	return &cli.Command{
@@ -43,7 +47,7 @@ func perspectiveAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPerspectiveSvcClient(cc)
+	cl := newPerspectiveSvcClient(cc)
 	res, err := cl.GetActivePerspective(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		return
@@ -73,7 +77,7 @@ func perspectiveActivateAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewPerspectiveSvcClient(cc)
+	cl := newPerspectiveSvcClient(cc)
 	_, err = cl.SetActivePerspective(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)

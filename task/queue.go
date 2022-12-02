@@ -13,6 +13,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var (
+	newQueueSvcClient = m3uetcpb.NewQueueSvcClient
+)
+
 // Queue queue task
 func Queue() *cli.Command {
 	return &cli.Command{
@@ -158,7 +162,7 @@ func queueAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQueueSvcClient(cc)
+	cl := newQueueSvcClient(cc)
 	res, err := cl.GetQueue(context.Background(), req)
 	if err != nil {
 		return
@@ -245,7 +249,7 @@ func queueCreateAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQueueSvcClient(cc)
+	cl := newQueueSvcClient(cc)
 	_, err = cl.ExecuteQueueAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
@@ -284,7 +288,7 @@ func queueDestroyAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQueueSvcClient(cc)
+	cl := newQueueSvcClient(cc)
 	_, err = cl.ExecuteQueueAction(context.Background(), req)
 	if err != nil {
 		return
@@ -315,7 +319,7 @@ func queueMoveAction(c *cli.Context) (err error) {
 	}
 	defer cc.Close()
 
-	cl := m3uetcpb.NewQueueSvcClient(cc)
+	cl := newQueueSvcClient(cc)
 	_, err = cl.ExecuteQueueAction(context.Background(), req)
 	if err != nil {
 		return
