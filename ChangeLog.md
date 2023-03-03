@@ -9,6 +9,31 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.19.0] 2023-03-03
+
+Misc. changes
+
+## Fixed
+
+* Panic on subscription-related enum
+* Race conditions
+
+## Added
+
+* Resizable playlist columns
+
+## Modified
+
+* Updated protoc-gen-go version
+* Updated Go version and dependencies
+* Increased isolation of concerns
+* Improved unloader performance
+* Improved thread safety and performance
+* Cleaned up subscriptions and PlaybackChanged channel
+* Simplified Taskfile tasks
+* Improved logrus.Entry usage
+* Made init() the topmost function
+
 ## [0.18.0] 2022-07-18
 
 New and improved features
