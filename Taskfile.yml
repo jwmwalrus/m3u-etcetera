@@ -15,21 +15,26 @@ tasks:
       - task: build:server
       - task: build:task
       - task: build:gtk
-    silent: true
   build:server:
     desc: Build server for production
+    aliases:
+      - build:s
     cmds:
       - task: build:go
         vars: {SUFFIX: server}
     silent: true
   build:task:
     desc: Build task for production
+    aliases:
+      - build:t
     cmds:
       - task: build:go
         vars: {SUFFIX: task}
     silent: true
   build:gtk:
     desc: Build gtk for production
+    aliases:
+      - build:g
     deps: [copy-cmd-data]
     cmds:
       - defer: {task: remove-cmd-data}
@@ -39,22 +44,8 @@ tasks:
   build:go:
     cmds:
       - >
-        go build -v -ldflags="-s -w" -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
+        go build -ldflags='-s -w' -gcflags=-l -trimpath -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
         ./cmd/m3uetc-{{.SUFFIX}}
-    silent: true
-
-  build:s:
-    cmds:
-      - task: build:server
-    silent: true
-  build:t:
-    cmds:
-      - task: build:task
-    silent: true
-  build:g:
-    cmds:
-      - task: build:gtk
-    silent: true
 
   ## dev build commands
 
@@ -66,33 +57,33 @@ tasks:
       - task: dev:gtk
   dev:server:
     desc: Build server for development
+    aliases:
+      - dev:s
     cmds:
       - task: dev:go
         vars: {SUFFIX: server, RACE_FLAG: "{{.RACE_FLAG}}"}
+    silent: true
   dev:task:
     desc: Build task for development
+    aliases:
+      - dev:t
     cmds:
       - task: dev:go
         vars: {SUFFIX: task, RACE_FLAG: "{{.RACE_FLAG}}"}
+    silent: true
   dev:gtk:
     desc: Build gtk for development
     deps: [copy-cmd-data]
+    aliases:
+      - dev:g
     cmds:
       - defer: {task: remove-cmd-data}
       - task: dev:go
         vars: {SUFFIX: gtk, RACE_FLAG: "{{.RACE_FLAG}}"}
+    silent: true
   dev:go: >
     go build -v {{.RACE_FLAG}} -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
     ./cmd/m3uetc-{{.SUFFIX}}
-  dev:s:
-    cmds:
-      - task: dev:server
-  dev:t:
-    cmds:
-      - task: dev:task
-  dev:g:
-    cmds:
-      - task: dev:gtk
 
   ## race dev build commands
 
@@ -102,54 +93,47 @@ tasks:
       - task: race:task
       - task: race:gtk
   race:server:
+    aliases:
+      - race:s
     cmds:
       - task: dev:server
         vars: {RACE_FLAG: '-race'}
+    silent: true
   race:task:
+    aliases:
+      - race:t
     cmds:
       - task: dev:task
         vars: {RACE_FLAG: '-race'}
+    silent: true
   race:gtk:
+    aliases:
+      - race:g
     cmds:
       - task: dev:gtk
         vars: {RACE_FLAG: '-race'}
-  race:s:
-    cmds:
-      - task: race:server
-  race:t:
-    cmds:
-      - task: race:task
-  race:g:
-    cmds:
-      - task: race:gtk
+    silent: true
 
   ## semantic version commands
 
   bump:minor:
     desc: Bump minor version number
+    aliases:
+      - bump:min
     deps: [bumpy-exists]
     cmds:
       - bumpy bump --minor
-    silent: true
   bump:patch:
     desc: Bump patch version number
     deps: [bumpy-exists]
+    aliases:
+      - bump:p
     cmds:
       - bumpy bump --patch
-    silent: true
   tag:
     desc: Create tag for the current ChangeLog
     cmds:
       - bumpy tag
-    silent: true
-  bump:min:
-    cmds:
-      - task: bump:minor
-    silent: true
-  bump:p:
-    cmds:
-      - task: bump:patch
-    silent: true
 
   ## protobuf commands
 
@@ -186,11 +170,19 @@ tasks:
       - test ! -f ./m3uetc-gtk
     silent: true
   copy-cmd-data:
-    deps: [remove-cmd-data]
+    cmds:
+      - task: copy-cmd-data-gtk
+    silent: true
+  copy-cmd-data-gtk:
+    deps: [remove-cmd-data-gtk]
     cmds:
       - cp -r data/ui data/images cmd/m3uetc-gtk/ >/dev/null 2>&1
     silent: true
   remove-cmd-data:
+    cmds:
+      - task: remove-cmd-data-gtk
+    silent: true
+  remove-cmd-data-gtk:
     cmds:
       - rm -rf cmd/m3uetc-gtk/ui cmd/m3uetc-gtk/images >/dev/null 2>&1
     status:
