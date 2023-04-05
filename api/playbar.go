@@ -6,6 +6,7 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
+	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
 	log "github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ import (
 
 // PlaybarSvc defines the playbar service
 type PlaybarSvc struct {
+	PbEvents playback.IEvents
 	m3uetcpb.UnimplementedPlaybarSvcServer
 }
 
@@ -144,7 +146,7 @@ func (*PlaybarSvc) GetAllPlaylistGroups(_ context.Context,
 }
 
 // ExecutePlaybarAction implements m3uetcpb.PlaybarSvcServer
-func (*PlaybarSvc) ExecutePlaybarAction(_ context.Context,
+func (svc *PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 	req *m3uetcpb.ExecutePlaybarActionRequest) (*m3uetcpb.Empty, error) {
 
 	if len(req.Ids) < 1 {
@@ -184,14 +186,14 @@ func (*PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 				log.Error(err)
 				return
 			}
-			playbackEvents.TryPlayingFromBar(pls[0], int(req.Position))
+			svc.PbEvents.TryPlayingFromBar(pls[0], int(req.Position))
 		case m3uetcpb.PlaybarAction_BAR_DEACTIVATE:
 			bar := models.Playbar{}
 			if err := bar.Read(pls[0].PlaybarID); err != nil {
 				log.Error(err)
 				return
 			}
-			playbackEvents.QuitPlayingFromBar(pls[0])
+			svc.PbEvents.QuitPlayingFromBar(pls[0])
 		case m3uetcpb.PlaybarAction_BAR_CLOSE:
 			for i := range pls {
 				bar := models.Playbar{}

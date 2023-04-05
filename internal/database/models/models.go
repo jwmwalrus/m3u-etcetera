@@ -73,6 +73,7 @@ type ProtoOut interface {
 	ToProtobuf() proto.Message
 }
 
+// DoInitialCleanup perform initial cleanup of models tables
 func DoInitialCleanup() {
 	tx := db.Session(&gorm.Session{SkipHooks: true})
 

@@ -6,6 +6,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
+	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -15,21 +16,22 @@ import (
 
 // PlaybackSvc defines the playback service
 type PlaybackSvc struct {
+	PbEvents playback.IEvents
 	m3uetcpb.UnimplementedPlaybackSvcServer
 }
 
 // GetPlayback implements m3uetcpb.PlaybackSvcServer
-func (*PlaybackSvc) GetPlayback(_ context.Context,
+func (svc *PlaybackSvc) GetPlayback(_ context.Context,
 	_ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
 
 	res := &m3uetcpb.GetPlaybackResponse{
-		IsStreaming: playbackEvents.IsStreaming(),
-		IsPlaying:   playbackEvents.IsPlaying(),
-		IsPaused:    playbackEvents.IsPaused(),
-		IsStopped:   playbackEvents.IsStopped(),
-		IsReady:     playbackEvents.IsReady(),
+		IsStreaming: svc.PbEvents.IsStreaming(),
+		IsPlaying:   svc.PbEvents.IsPlaying(),
+		IsPaused:    svc.PbEvents.IsPaused(),
+		IsStopped:   svc.PbEvents.IsStopped(),
+		IsReady:     svc.PbEvents.IsReady(),
 	}
-	pb, t := playbackEvents.GetPlayback()
+	pb, t := svc.PbEvents.GetPlayback()
 	if pb != nil {
 		res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
 		res.Track = &m3uetcpb.Track{}
@@ -59,7 +61,7 @@ func (*PlaybackSvc) GetPlaybackList(_ context.Context,
 }
 
 // ExecutePlaybackAction implements m3uetcpb.PlaybackSvcServer
-func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
+func (svc *PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 	req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
 
 	if req.Action == m3uetcpb.PlaybackAction_PB_PLAY {
@@ -99,15 +101,15 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 
 		switch req.Action {
 		case m3uetcpb.PlaybackAction_PB_SEEK:
-			playbackEvents.SeekInStream(req.Seek)
+			svc.PbEvents.SeekInStream(req.Seek)
 		case m3uetcpb.PlaybackAction_PB_NEXT:
-			playbackEvents.NextStream()
+			svc.PbEvents.NextStream()
 		case m3uetcpb.PlaybackAction_PB_PAUSE:
-			playbackEvents.PauseStream(false)
+			svc.PbEvents.PauseStream(false)
 		case m3uetcpb.PlaybackAction_PB_PLAY:
 			if len(req.Locations) > 0 || len(req.Ids) > 0 {
 				if req.Force {
-					playbackEvents.PlayStreams(req.Force, req.Locations, req.Ids)
+					svc.PbEvents.PlayStreams(req.Force, req.Locations, req.Ids)
 				} else {
 					q, _ := models.
 						PerspectiveIndex(req.Perspective).
@@ -116,12 +118,12 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 					q.Add(req.Locations, req.Ids)
 				}
 			} else {
-				playbackEvents.PauseStream(true)
+				svc.PbEvents.PauseStream(true)
 			}
 		case m3uetcpb.PlaybackAction_PB_PREVIOUS:
-			playbackEvents.PreviousStream()
+			svc.PbEvents.PreviousStream()
 		case m3uetcpb.PlaybackAction_PB_STOP:
-			playbackEvents.StopAll()
+			svc.PbEvents.StopAll()
 		default:
 			return
 		}
@@ -131,7 +133,7 @@ func (*PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 }
 
 // SubscribeToPlayback implements m3uetcpb.PlaybackSvcServer
-func (*PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty,
+func (svc *PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty,
 	stream m3uetcpb.PlaybackSvc_SubscribeToPlaybackServer) error {
 
 	sub, id := subscription.Subscribe(subscription.ToPlaybackEvent)
@@ -151,14 +153,14 @@ sLoop:
 
 			res := &m3uetcpb.SubscribeToPlaybackResponse{
 				SubscriptionId: id,
-				IsStreaming:    playbackEvents.IsStreaming(),
-				IsPlaying:      playbackEvents.IsPlaying(),
-				IsPaused:       playbackEvents.IsPaused(),
-				IsStopped:      playbackEvents.IsStopped(),
-				IsReady:        playbackEvents.IsReady(),
+				IsStreaming:    svc.PbEvents.IsStreaming(),
+				IsPlaying:      svc.PbEvents.IsPlaying(),
+				IsPaused:       svc.PbEvents.IsPaused(),
+				IsStopped:      svc.PbEvents.IsStopped(),
+				IsReady:        svc.PbEvents.IsReady(),
 			}
 
-			pb, t := playbackEvents.GetPlayback()
+			pb, t := svc.PbEvents.GetPlayback()
 			if pb != nil {
 				res.Playback = pb.ToProtobuf().(*m3uetcpb.Playback)
 				res.Track = &m3uetcpb.Track{}

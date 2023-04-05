@@ -36,12 +36,14 @@ func main() {
 	opts := middleware.GetServerOpts()
 	s := grpc.NewServer(opts...)
 
+	pbEvents := playback.GetEventsInstance()
+
 	m3uetcpb.RegisterRootSvcServer(s, &api.RootSvc{})
-	m3uetcpb.RegisterPlaybackSvcServer(s, &api.PlaybackSvc{})
+	m3uetcpb.RegisterPlaybackSvcServer(s, &api.PlaybackSvc{PbEvents: pbEvents})
 	m3uetcpb.RegisterQueueSvcServer(s, &api.QueueSvc{})
 	m3uetcpb.RegisterCollectionSvcServer(s, &api.CollectionSvc{})
 	m3uetcpb.RegisterQuerySvcServer(s, &api.QuerySvc{})
-	m3uetcpb.RegisterPlaybarSvcServer(s, &api.PlaybarSvc{})
+	m3uetcpb.RegisterPlaybarSvcServer(s, &api.PlaybarSvc{PbEvents: pbEvents})
 	m3uetcpb.RegisterPerspectiveSvcServer(s, &api.PerspectiveSvc{})
 
 	reflection.Register(s)
