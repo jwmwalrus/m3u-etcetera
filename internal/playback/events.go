@@ -8,6 +8,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 
 	// "github.com/notedit/gst"
 	log "github.com/sirupsen/logrus"
@@ -62,7 +63,7 @@ func (ee *engineEvent) String() string {
 }
 
 var (
-	unloader = &base.Unloader{
+	unloader = &rtc.Unloader{
 		Description: "StopEngine",
 		Callback: func() error {
 			stopEngine()
@@ -457,7 +458,7 @@ func GetEventsInstance() IEvents {
 }
 
 // StartEngine starts the playback engine
-func StartEngine() *base.Unloader {
+func StartEngine() *rtc.Unloader {
 	log.Info("Starting playback engine")
 
 	gst.Init(nil)

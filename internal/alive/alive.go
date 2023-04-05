@@ -13,6 +13,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -131,7 +132,7 @@ func isServerAlive() bool {
 
 func readServerAlive() {
 	// Last alive check for server
-	info, err := os.Stat(filepath.Join(base.DataDir, serverAliveFilename))
+	info, err := os.Stat(filepath.Join(rtc.DataDir(), serverAliveFilename))
 	if !os.IsNotExist(err) {
 		LastCheck.Store(info.ModTime().Unix())
 	}
@@ -141,7 +142,7 @@ func startServer() (err error) {
 	var dir, full string
 	bin := "m3uetc-server"
 
-	if !base.FlagTestingMode {
+	if !rtc.FlagTestMode() {
 		if full, err = findBinary(bin); err != nil {
 			return
 		}
@@ -157,7 +158,7 @@ func startServer() (err error) {
 	dir = filepath.Dir(full)
 
 	args := []string{}
-	if base.FlagTestingMode {
+	if rtc.FlagTestMode() {
 		args = append(args, "--testing")
 	}
 
@@ -238,7 +239,7 @@ func stopServer(force, noWait bool) (err error) {
 // writeServerAliveFile Updates the server alive flag file
 func writeServerAliveFile() {
 	f, err := os.OpenFile(
-		filepath.Join(base.DataDir, serverAliveFilename),
+		filepath.Join(rtc.DataDir(), serverAliveFilename),
 		os.O_TRUNC|os.O_CREATE|os.O_WRONLY,
 		0666,
 	)

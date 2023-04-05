@@ -12,11 +12,12 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	appID     = "com.github.jwmwalrus." + base.AppInstance
+	appID     string
 	app       *gtk.Application
 	window    *gtk.ApplicationWindow
 	b         *gtk.Builder
@@ -30,7 +31,14 @@ var (
 func main() {
 	var err error
 
-	base.Load()
+	rtc.Load(rtc.RTCycler{
+		AppDirName: base.AppDirName,
+		AppName:    base.AppName,
+		Config:     &base.Conf,
+	})
+
+	appID = "com.github.jwmwalrus." + rtc.AppInstance()
+
 	app, err = gtk.ApplicationNew(appID, glib.APPLICATION_FLAGS_NONE)
 	if err != nil {
 		log.Fatalf("Unable to create application: %v", err)
@@ -64,7 +72,7 @@ func main() {
 
 		window.Connect("destroy", func() {
 			dialer.Unsubscribe()
-			fmt.Printf("\nBye %v from %v\n", base.OS, base.AppInstance)
+			fmt.Printf("\nBye %v from %v\n", rtc.OS(), rtc.AppInstance())
 			app.Quit()
 		})
 

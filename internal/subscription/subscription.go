@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/jwmwalrus/bnp/ing2"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	rtc "github.com/jwmwalrus/rtcycler"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,7 +63,7 @@ var (
 	unloading = false
 
 	// Unloader declares the subscription unloader
-	Unloader = &base.Unloader{
+	Unloader = &rtc.Unloader{
 		Description: "UnsubscribeAll",
 		Callback:    unloadSubscriptions,
 	}

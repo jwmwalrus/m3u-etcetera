@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	rtc "github.com/jwmwalrus/rtcycler"
 	"github.com/urfave/cli/v2"
 )
 
@@ -47,10 +47,10 @@ func TestServe(t *testing.T) {
 		},
 	}
 
-	base.Load(true)
+	rtc.Load(rtc.RTCycler{NoParseArgs: true})
 
-	base.SetTestingMode()
-	defer base.UnsetTestingMode()
+	rtc.SetTestMode()
+	defer rtc.UnsetTestMode()
 
 	app := &cli.App{
 		Commands: []*cli.Command{

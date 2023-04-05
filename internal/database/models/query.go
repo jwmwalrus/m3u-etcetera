@@ -13,6 +13,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
 	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
@@ -134,7 +135,7 @@ func (qy *Query) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (qy *Query) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -151,7 +152,7 @@ func (qy *Query) AfterCreate(tx *gorm.DB) error {
 // AfterUpdate is a GORM hook
 func (qy *Query) AfterUpdate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -168,7 +169,7 @@ func (qy *Query) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (qy *Query) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(

@@ -12,6 +12,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -179,7 +180,7 @@ func (c *Collection) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (c *Collection) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -196,7 +197,7 @@ func (c *Collection) AfterCreate(tx *gorm.DB) error {
 // AfterUpdate is a GORM hook
 func (c *Collection) AfterUpdate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -213,7 +214,7 @@ func (c *Collection) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (c *Collection) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(

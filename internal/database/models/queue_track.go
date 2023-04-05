@@ -7,6 +7,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -68,7 +69,7 @@ func (qt *QueueTrack) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if !base.FlagTestingMode &&
+		if !rtc.FlagTestMode() &&
 			!base.IsAppBusyBy(base.IdleStatusEngineLoop) {
 			TriggerPlaybackChange()
 		}

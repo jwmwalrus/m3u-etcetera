@@ -2,8 +2,8 @@ package models
 
 import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -103,7 +103,7 @@ func (pg *PlaylistGroup) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (pg *PlaylistGroup) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -120,7 +120,7 @@ func (pg *PlaylistGroup) AfterCreate(tx *gorm.DB) error {
 // AfterUpdate is a GORM hook
 func (pg *PlaylistGroup) AfterUpdate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -137,7 +137,7 @@ func (pg *PlaylistGroup) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (pg *PlaylistGroup) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(

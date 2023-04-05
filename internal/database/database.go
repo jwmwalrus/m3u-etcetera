@@ -12,6 +12,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/migrations"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
@@ -30,7 +31,7 @@ var (
 	modelsCtx    context.Context
 	modelsCancel context.CancelFunc
 
-	unloader = &base.Unloader{
+	unloader = &rtc.Unloader{
 		Description: "CloseDatabase",
 		Callback: func() error {
 			Close()
@@ -68,7 +69,7 @@ func Instance() *gorm.DB {
 }
 
 // Open creates the application database, if it doesn't exist
-func Open() *base.Unloader {
+func Open() *rtc.Unloader {
 	entry := log.WithField("dsn", DSN())
 
 	var err error
@@ -79,7 +80,7 @@ func Open() *base.Unloader {
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},
-		DryRun: base.FlagDry,
+		DryRun: rtc.FlagDry(),
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	onerror.WithEntry(entry).Panic(err)
@@ -104,7 +105,7 @@ func Open() *base.Unloader {
 }
 
 func backupDatabase() {
-	if !base.FlagTestingMode &&
+	if !rtc.FlagTestMode() &&
 		base.Conf.Server.Database.Backup {
 		path := getDatabasePath()
 		_, err := os.Stat(path)
@@ -127,7 +128,7 @@ func backupDatabase() {
 
 // getConnectionOptions returns the database directory
 func getConnectionOptions() string {
-	if !base.FlagTestingMode {
+	if !rtc.FlagTestMode() {
 		return connectionOptions
 	}
 	return "?_loc=Local"
@@ -135,8 +136,8 @@ func getConnectionOptions() string {
 
 // getDatabaseDir returns the database directory
 func getDatabaseDir() string {
-	if !base.FlagTestingMode {
-		return base.DataDir
+	if !rtc.FlagTestMode() {
+		return rtc.DataDir()
 	}
 	return os.TempDir()
 }
@@ -148,8 +149,8 @@ func getDatabasePath() string {
 
 // getDatabaseFilename returns the database filename
 func getDatabaseFilename() string {
-	if !base.FlagTestingMode {
+	if !rtc.FlagTestMode() {
 		return base.DatabaseFilename
 	}
-	return "m3uetc-test-music-" + base.InstanceSuffix + ".db"
+	return "m3uetc-test-music-" + rtc.InstanceSuffix() + ".db"
 }

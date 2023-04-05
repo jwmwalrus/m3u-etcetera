@@ -16,6 +16,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 	"github.com/tinyzimmer/go-gst/gst/pbutils"
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
@@ -122,7 +123,7 @@ func (t *Track) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (t *Track) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -139,7 +140,7 @@ func (t *Track) AfterCreate(tx *gorm.DB) error {
 // AfterUpdate is a GORM hook
 func (t *Track) AfterUpdate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -156,7 +157,7 @@ func (t *Track) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (t *Track) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -323,7 +324,7 @@ func (t *Track) savePicture(p *tag.Picture, sum string) {
 		if fn == "" {
 			fn = sum + "." + p.Ext
 		}
-		file := filepath.Join(base.CoversDir, fn)
+		file := filepath.Join(base.CoversDir(), fn)
 		err := os.WriteFile(file, p.Data, 0644)
 		if err != nil {
 			log.Error(err)

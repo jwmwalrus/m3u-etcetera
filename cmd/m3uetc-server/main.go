@@ -11,18 +11,25 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/database"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	rtc "github.com/jwmwalrus/rtcycler"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-	base.Load()
+	rtc.Load(rtc.RTCycler{
+		AppDirName:  base.AppDirName,
+		AppName:     base.AppName,
+		Config:      &base.Conf,
+		DataSubdirs: []string{base.CoversDirname},
+	})
+
 	base.StartIdler()
 
-	base.RegisterUnloader(database.Open())
+	rtc.RegisterUnloader(database.Open())
 
-	base.RegisterUnloader(playback.StartEngine())
+	rtc.RegisterUnloader(playback.StartEngine())
 
 	log.Info("Starting server...")
 
@@ -48,7 +55,7 @@ func main() {
 
 	reflection.Register(s)
 
-	base.RegisterUnloader(&base.Unloader{
+	rtc.RegisterUnloader(&rtc.Unloader{
 		Description: "StopServer",
 		Callback: func() error {
 			s.Stop()
@@ -63,11 +70,11 @@ func main() {
 		}
 	}()
 
-	base.RegisterUnloader(subscription.Unloader)
+	rtc.RegisterUnloader(subscription.Unloader)
 
 	<-base.InterruptSignal
 
-	base.Unload()
+	rtc.Unload()
 
-	fmt.Printf("\nBye %v from %v\n", base.OS, base.AppInstance)
+	fmt.Printf("\nBye %v from %v\n", rtc.OS(), rtc.AppInstance())
 }

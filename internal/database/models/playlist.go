@@ -11,10 +11,10 @@ import (
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/impexp"
 	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
@@ -128,7 +128,7 @@ func (pl *Playlist) ToProtobuf() proto.Message {
 // AfterCreate is a GORM hook
 func (pl *Playlist) AfterCreate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -145,7 +145,7 @@ func (pl *Playlist) AfterCreate(tx *gorm.DB) error {
 // AfterUpdate is a GORM hook
 func (pl *Playlist) AfterUpdate(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -163,7 +163,7 @@ func (pl *Playlist) AfterUpdate(tx *gorm.DB) error {
 // AfterDelete is a GORM hook
 func (pl *Playlist) AfterDelete(tx *gorm.DB) error {
 	go func() {
-		if base.FlagTestingMode {
+		if rtc.FlagTestMode() {
 			return
 		}
 		subscription.Broadcast(
@@ -439,7 +439,7 @@ func GetTransientNameForPlaylist() string {
 }
 
 func broadcastOpenPlaylist(id int64) {
-	if base.FlagTestingMode {
+	if rtc.FlagTestMode() {
 		return
 	}
 

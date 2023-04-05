@@ -168,7 +168,7 @@ func (pbd *playbackData) setCover() bool {
 			}
 
 			if fp == "" && trackCover != "" {
-				trackCover = filepath.Join(base.CoversDir, trackCover)
+				trackCover = filepath.Join(base.CoversDir(), trackCover)
 				if _, err := os.Stat(trackCover); !os.IsNotExist(err) {
 					fp = trackCover
 				}

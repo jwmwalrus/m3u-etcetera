@@ -5,13 +5,18 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/task"
+	rtc "github.com/jwmwalrus/rtcycler"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc/status"
 )
 
 func main() {
-	args := base.Load()
+	args := rtc.Load(rtc.RTCycler{
+		AppDirName: base.AppDirName,
+		AppName:    base.AppName,
+		Config:     &base.Conf,
+	})
 
 	cli.VersionFlag = &cli.BoolFlag{
 		Name:  "usage",
@@ -69,5 +74,5 @@ func main() {
 
 	app.Run(args)
 
-	base.Unload()
+	rtc.Unload()
 }
