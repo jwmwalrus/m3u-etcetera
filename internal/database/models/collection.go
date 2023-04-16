@@ -74,7 +74,7 @@ func (ce CollectionEvent) String() string {
 type Collection struct {
 	ID             int64       `json:"id" gorm:"primaryKey"`
 	Idx            int         `json:"idx" gorm:"not null"`
-	Name           string      `json:"name" gorm:"index:unique_idx_collection_name,not null"`
+	Name           string      `json:"name" gorm:"uniqueIndex:unique_idx_collection_name,not null"`
 	Description    string      `json:"description"`
 	Location       string      `json:"location" gorm:"uniqueIndex:unique_idx_collection_location,not null"`
 	Remotelocation string      `json:"remoteLocation"`
