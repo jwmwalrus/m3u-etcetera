@@ -118,6 +118,45 @@ tasks:
         vars: {RACE_FLAG: '-race'}
     silent: true
 
+  ## build packages
+
+  deb:build:
+    desc: Build deb package
+    deps: [clean]
+    cmds:
+      - task: build
+      - task: deb
+  deb:dev:
+    desc: Build deb package with dev flags
+    deps: [clean]
+    cmds:
+      - task: dev
+      - task: deb
+  deb:
+    internal: true
+    cmds:
+      - mkdir -p {{.DebPath}}/{DEBIAN,usr/local/{bin,share/{applications,icons}}}
+      - cp ./m3uetc-server ./m3uetc-task ./m3uetc-gtk {{.DebPath}}/usr/local/bin
+      - cp ./data/m3uetc-*.desktop {{.DebPath}}/usr/local/share/applications
+      - cp ./build/package/deb/control.tpl {{.DebPath}}/DEBIAN/control
+      - |
+        set -e
+        cd ./data/images
+        cp --parents scalable/m3u-etcetera.svg {{.DebPath}}/usr/local/share/icons
+        for f in */m3u-etcetera.png
+        do
+          cp --parents $f {{.DebPath}}/usr/local/share/icons
+        done
+      - cd {{.DebDir}} && dpkg-deb --build {{ .PkgName }}
+      - mv {{.DebDir}}/{{.PkgName}}.deb ./build
+      - rm -rf {{.DebDir}} > /dev/null 2>&1 || exit 0
+    vars:
+      PkgName: m3u-etcetera
+      DebDir:
+        sh: echo $(mktemp -d /tmp/m3uetc-build-deb-XXXXXX)
+      DebPath:
+        sh: echo {{.DebDir}}/{{.PkgName}}
+
   ## semantic version commands
 
   bump:minor:
@@ -153,7 +192,7 @@ tasks:
 
   clean:
     desc: Clean, remove output files
-    deps: [clean-server, clean-task, clean-gtk]
+    deps: [clean-server, clean-task, clean-gtk, clean-pkg]
     silent: true
   clean-server:
     internal: true
@@ -175,6 +214,11 @@ tasks:
       - rm m3uetc-gtk > /dev/null 2>&1
     status:
       - test ! -f ./m3uetc-gtk
+    silent: true
+  clean-pkg:
+    internal: true
+    cmds:
+      - rm ./build/m3u-etcetera.deb > /dev/null 2>&1 || exit 0
     silent: true
 
   convert-icons:
