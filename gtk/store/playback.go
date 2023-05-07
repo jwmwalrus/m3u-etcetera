@@ -93,7 +93,7 @@ func (pbd *playbackData) SetPlaybackUI() (err error) {
 		return
 	}
 
-	pbd.logoPixbuf, err = builder.PixbufNewFromFile("images/m3u-etcetera.png")
+	pbd.logoPixbuf, err = builder.PixbufNewFromFile("images/m3u-etcetera-logo.png")
 	if err != nil {
 		return
 	}
@@ -198,79 +198,82 @@ func (pbd *playbackData) updatePlayback() bool {
 
 	iconName := "media-playback-pause"
 
+	var oldTrackID int64
 	pbd.mu.Lock()
-	if pbd.res.IsPaused {
-		iconName = "media-playback-start"
-	}
-	pbd.playBtn.SetIconName(iconName)
+	{
+		if pbd.res.IsPaused {
+			iconName = "media-playback-start"
+		}
+		pbd.playBtn.SetIconName(iconName)
 
-	var location, title, artist, album string
-	var duration, position int64
+		var location, title, artist, album string
+		var duration, position int64
 
-	oldTrackID := pbd.trackID
-	if pbd.res.IsStreaming {
-		pbd.trackID = pbd.res.Track.Id
-		location = pbd.res.Playback.Location
+		oldTrackID = pbd.trackID
+		if pbd.res.IsStreaming {
+			pbd.trackID = pbd.res.Track.Id
+			location = pbd.res.Playback.Location
 
-		title = pbd.res.Track.Title
-		artist = pbd.res.Track.Artist
-		album = pbd.res.Track.Album
-		duration = pbd.res.Track.Duration
-		position = pbd.res.Playback.Skip
-	} else {
-		pbd.trackID = 0
-		location = ""
-		title, artist, album = "", "", ""
-	}
+			title = pbd.res.Track.Title
+			artist = pbd.res.Track.Artist
+			album = pbd.res.Track.Album
+			duration = pbd.res.Track.Duration
+			position = pbd.res.Playback.Skip
+		} else {
+			pbd.trackID = 0
+			location = ""
+			title, artist, album = "", "", ""
+		}
 
-	if duration > 0 {
-		pos := time.Duration(position) * time.Nanosecond
-		dur := time.Duration(duration) * time.Nanosecond
-		pbd.prog.SetFraction(float64(position) / float64(duration))
-		pbd.prog.SetText(
-			fmt.Sprintf(
-				"%v / %v",
-				pos.Truncate(time.Second),
-				dur.Truncate(time.Second),
-			),
-		)
-	} else {
-		pbd.prog.SetFraction(float64(0))
-		pbd.prog.SetText("Not Playing")
-	}
+		if duration > 0 {
+			pos := time.Duration(position) * time.Nanosecond
+			dur := time.Duration(duration) * time.Nanosecond
+			pbd.prog.SetFraction(float64(position) / float64(duration))
+			pbd.prog.SetText(
+				fmt.Sprintf(
+					"%v / %v",
+					pos.Truncate(time.Second),
+					dur.Truncate(time.Second),
+				),
+			)
+		} else {
+			pbd.prog.SetFraction(float64(0))
+			pbd.prog.SetText("Not Playing")
+		}
 
-	maxLen := 45
-	subtitle := ing2.TruncateText(title, maxLen)
-	if title == "" {
-		title = "Not Playing"
-	}
-	if artist != "" {
-		artist = "by " + artist
+		maxLen := 45
+		subtitle := ing2.TruncateText(title, maxLen)
+		if title == "" {
+			title = "Not Playing"
+		}
+		if artist != "" {
+			artist = "by " + artist
+			if subtitle != "" {
+				subtitle += " (" + ing2.TruncateText(artist, maxLen) + ")"
+			}
+		}
+		if album != "" {
+			location = "from " + album
+		} else {
+			path, err := urlstr.URLToPath(location)
+			if err == nil {
+				location = path
+			}
+		}
+
 		if subtitle != "" {
-			subtitle += " (" + ing2.TruncateText(artist, maxLen) + ")"
+			pbd.headerbar.SetSubtitle(subtitle)
+		} else {
+			pbd.headerbar.SetSubtitle(defaultSubtitle)
 		}
-	}
-	if album != "" {
-		location = "from " + album
-	} else {
-		path, err := urlstr.URLToPath(location)
-		if err == nil {
-			location = path
-		}
-	}
 
-	if subtitle != "" {
-		pbd.headerbar.SetSubtitle(subtitle)
-	} else {
-		pbd.headerbar.SetSubtitle(defaultSubtitle)
+		pbd.title.SetText(ing2.TruncateText(title, maxLen))
+		pbd.title.SetTooltipText(title)
+		pbd.artist.SetText(ing2.TruncateText(artist, maxLen))
+		pbd.artist.SetTooltipText(artist)
+		pbd.source.SetText(ing2.TruncateText(location, maxLen))
+		pbd.source.SetTooltipText(location)
 	}
-
-	pbd.title.SetText(ing2.TruncateText(title, maxLen))
-	pbd.title.SetTooltipText(title)
-	pbd.artist.SetText(ing2.TruncateText(artist, maxLen))
-	pbd.artist.SetTooltipText(artist)
-	pbd.source.SetText(ing2.TruncateText(location, maxLen))
-	pbd.source.SetTooltipText(location)
 	pbd.mu.Unlock()
 
 	if oldTrackID != pbd.getTrackID() {

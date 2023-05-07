@@ -61,7 +61,7 @@ func main() {
 			log.Fatalf("Unable to obtaain the application window: %v", err)
 		}
 
-		icon, err := builder.PixbufNewFromFile("images/m3u-etcetera.svg")
+		icon, err := builder.PixbufNewFromFile("images/scalable/m3u-etcetera.svg")
 		if err != nil {
 			log.Error(err)
 		} else {

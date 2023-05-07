@@ -42,6 +42,7 @@ tasks:
         vars: {SUFFIX: gtk}
     silent: true
   build:go:
+    internal: true
     cmds:
       - >
         go build -ldflags='-s -w' -gcflags=-l -trimpath -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
@@ -81,9 +82,12 @@ tasks:
       - task: dev:go
         vars: {SUFFIX: gtk, RACE_FLAG: "{{.RACE_FLAG}}"}
     silent: true
-  dev:go: >
-    go build -v {{.RACE_FLAG}} -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
-    ./cmd/m3uetc-{{.SUFFIX}}
+  dev:go:
+    internal: true
+    cmds:
+      - >
+        go build -v {{.RACE_FLAG}} -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
+        ./cmd/m3uetc-{{.SUFFIX}}
 
   ## race dev build commands
 
@@ -152,37 +156,58 @@ tasks:
     deps: [clean-server, clean-task, clean-gtk]
     silent: true
   clean-server:
+    internal: true
     cmds:
       - rm m3uetc-server > /dev/null 2>&1
     status:
       - test ! -f ./m3uetc-server
     silent: true
   clean-task:
+    internal: true
     cmds:
       - rm m3uetc-task > /dev/null 2>&1
     status:
       - test ! -f ./m3uetc-task
     silent: true
   clean-gtk:
+    internal: true
     cmds:
       - rm m3uetc-gtk > /dev/null 2>&1
     status:
       - test ! -f ./m3uetc-gtk
     silent: true
+
+  convert-icons:
+    cmds:
+      - |
+        set -e
+        cd ./data/images
+        cp scalable/m3u-etcetera.svg ./m3u-etcetera-logo.svg
+        convert 1024x1024/m3u-etcetera.png -resize 150x150 ./m3u-etcetera-logo.png
+        for s in 512x512 256x256 128x128 96x96 64x64 48x48 32x32 24x24 16x16
+        do
+          mkdir -p $s
+          convert 1024x1024/m3u-etcetera.png -resize $s $s/m3u-etcetera.png
+        done
+
   copy-cmd-data:
+    internal: true
     cmds:
       - task: copy-cmd-data-gtk
     silent: true
   copy-cmd-data-gtk:
+    internal: true
     deps: [remove-cmd-data-gtk]
     cmds:
       - cp -r data/ui data/images cmd/m3uetc-gtk/ >/dev/null 2>&1
     silent: true
   remove-cmd-data:
+    internal: true
     cmds:
       - task: remove-cmd-data-gtk
     silent: true
   remove-cmd-data-gtk:
+    internal: true
     cmds:
       - rm -rf cmd/m3uetc-gtk/ui cmd/m3uetc-gtk/images >/dev/null 2>&1
     status:
@@ -190,7 +215,9 @@ tasks:
       - test ! -d cmd/m3uetc-gtk/images
     ignore_error: true
     silent: true
+
   bumpy-exists:
+    internal: true
     cmds:
       - which bumpy
     silent: true
