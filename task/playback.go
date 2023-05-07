@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
@@ -139,17 +140,20 @@ func playbackAction(c *cli.Context) (err error) {
 		tbl.Print()
 	}
 
-	tbl := table.New("ID", "Title", "Artist", "Album", "Duration")
 	artist := res.Track.Artist
 	if artist == "" {
 		artist = res.Track.Albumartist
 	}
+
+	dur := time.Duration(res.Track.Duration) * time.Nanosecond
+
+	tbl := table.New("ID", "Title", "Artist", "Album", "Duration")
 	tbl.AddRow(
 		res.Track.Id,
 		res.Track.Title,
 		artist,
 		res.Track.Album,
-		res.Track.Duration,
+		dur.Truncate(time.Second).String(),
 	)
 	tbl.Print()
 
