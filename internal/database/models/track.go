@@ -14,10 +14,10 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/m3u-etcetera/internal/discover"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	"github.com/tinyzimmer/go-gst/gst/pbutils"
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -171,22 +171,7 @@ func (t *Track) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
-func (t *Track) createTransient(tx *gorm.DB) (err error) {
-	c, err := TransientCollection.Get()
-	if err != nil {
-		return
-	}
-	t.CollectionID = c.ID
-	if err = t.updateTags(); err != nil {
-		return
-	}
-	err = t.SaveTx(tx)
-	return
-}
-
-func (t *Track) createTransientWithRaw(tx *gorm.DB,
-	raw map[string]interface{}) (err error) {
-
+func (t *Track) createTransient(tx *gorm.DB, raw map[string]interface{}) (err error) {
 	c, err := TransientCollection.Get()
 	if err != nil {
 		return
@@ -202,20 +187,22 @@ func (t *Track) createTransientWithRaw(tx *gorm.DB,
 }
 
 func (t *Track) discoverDuration() {
-	discoverer, err := pbutils.NewDiscoverer(time.Second * 15)
-
+	log.WithField("location", t.Location).Debug("Discovering duration")
+	info, err := discover.Execute(t.Location)
 	if err != nil {
+		log.Error(err)
 		return
 	}
 
-	info, err := discoverer.DiscoverURI(t.Location)
-	if err != nil {
-		return
-	}
-	t.Duration = int64(info.GetDuration() * time.Nanosecond)
+	t.Duration = info.Duration
+	log.WithField("duration", time.Duration(t.Duration)*time.Nanosecond).Debug("discovered duration")
 }
 
 func (t *Track) fillMissingTags(raw map[string]interface{}) {
+	if raw == nil {
+		return
+	}
+
 	const unknownTxt = "[Unknown]"
 	var title, album, artist, albumArtist, genre string
 	var full, partial time.Time

@@ -380,7 +380,7 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 		err2 := db.Where("location = ?", dt.Location).First(&t).Error
 		if err2 != nil {
 			t = Track{Location: dt.Location}
-			err2 := t.createTransientWithRaw(tx, dt.ToRaw())
+			err2 := t.createTransient(tx, dt.ToRaw())
 			if err2 != nil {
 				msgs = append(
 					msgs,

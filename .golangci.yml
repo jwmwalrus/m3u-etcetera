@@ -4,6 +4,7 @@
 # https://github.com/golangci/golangci-lint/blob/master/.golangci.reference.yml
 
 run:
+  timeout: 10s
   concurrency: 4
   tests: false
   skip-dirs:
@@ -35,6 +36,10 @@ linters-settings:
   nolintlint:
     require-explanation: true
     require-specific: true
+
+  revive:
+    # severity: warning
+    confidence: 0.8
 
   staticcheck:
     checks:

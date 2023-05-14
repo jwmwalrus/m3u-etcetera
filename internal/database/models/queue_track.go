@@ -158,9 +158,7 @@ func GetQueueStore() (qs []*QueueTrack, ts []*Track, dig []*PerspectiveDigest) {
 
 	for _, idx := range PerspectiveIndexList() {
 		qsaux, tsaux := GetAllQueueTracks(idx, 0)
-		for i := range qsaux {
-			qs = append(qs, qsaux[i])
-		}
+		qs = append(qs, qsaux...)
 		pd := PerspectiveDigest{}
 		pd.Idx = idx
 		for i := range tsaux {

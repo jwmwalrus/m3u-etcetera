@@ -19,6 +19,7 @@ tasks:
     desc: Build server for production
     aliases:
       - build:s
+    deps: [build:discover]
     cmds:
       - task: build:go
         vars: {SUFFIX: server}
@@ -41,12 +42,17 @@ tasks:
       - task: build:go
         vars: {SUFFIX: gtk}
     silent: true
+  build:discover:
+    interna: true
+    cmds:
+      - task: build:go
+        vars: {SUFFIX: discover}
   build:go:
     internal: true
     cmds:
       - >
-        go build -ldflags='-s -w' -gcflags=-l -trimpath -o ./m3uetc-{{.SUFFIX}}{{exeExt}}
-        ./cmd/m3uetc-{{.SUFFIX}}
+        go build -ldflags='-s -w' -gcflags=-l -trimpath
+        -o ./m3uetc-{{.SUFFIX}}{{exeExt}} ./cmd/m3uetc-{{.SUFFIX}}
 
   ## dev build commands
 
@@ -60,6 +66,7 @@ tasks:
     desc: Build server for development
     aliases:
       - dev:s
+    deps: [dev:discover]
     cmds:
       - task: dev:go
         vars: {SUFFIX: server, RACE_FLAG: "{{.RACE_FLAG}}"}
@@ -82,6 +89,11 @@ tasks:
       - task: dev:go
         vars: {SUFFIX: gtk, RACE_FLAG: "{{.RACE_FLAG}}"}
     silent: true
+  dev:discover:
+    interna: true
+    cmds:
+      - task: dev:go
+        vars: {SUFFIX: discover}
   dev:go:
     internal: true
     cmds:
@@ -135,8 +147,9 @@ tasks:
   deb:
     internal: true
     cmds:
-      - mkdir -p {{.DebPath}}/{DEBIAN,usr/local/{bin,share/{applications,icons}}}
+      - mkdir -p {{.DebPath}}/{DEBIAN,usr/local/{bin,libexec/{{.PkgName}},share/{applications,icons}}}
       - cp ./m3uetc-server ./m3uetc-task ./m3uetc-gtk {{.DebPath}}/usr/local/bin
+      - cp ./m3uetc-discover {{.DebPath}}/usr/local/libexec/{{.PkgName}}/discover
       - cp ./data/m3uetc-*.desktop {{.DebPath}}/usr/local/share/applications
       - cp ./build/package/deb/control.tpl {{.DebPath}}/DEBIAN/control
       - |

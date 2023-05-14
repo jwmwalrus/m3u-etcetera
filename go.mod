@@ -8,7 +8,7 @@ require (
 	github.com/go-testfixtures/testfixtures/v3 v3.6.1
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gotk3/gotk3 v0.6.2-0.20211226093840-cf265f40b836
-	github.com/jwmwalrus/bnp v1.13.0
+	github.com/jwmwalrus/bnp v1.14.0
 	github.com/jwmwalrus/onerror v0.2.0
 	github.com/jwmwalrus/rtcycler v0.1.0
 	github.com/jwmwalrus/seater v0.1.1
@@ -54,3 +54,4 @@ require (
 // replace github.com/jwmwalrus/bnp => ../bnp
 // replace github.com/jwmwalrus/onerror => ../onerror
 // replace github.com/tinyzimmer/go-gst => github.com/jwmwalrus/go-gst v0.2.33-0.20220205191536-6a7b117cbaee
+// replace github.com/tinyzimmer/go-gst => ../../repos/go-gst

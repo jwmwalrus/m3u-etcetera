@@ -1,6 +1,7 @@
 /m3uetc-server
 /m3uetc-task
 /m3uetc-gtk
+/m3uetc-discover
 dump*.txt
 /*.m3u
 /*.pls

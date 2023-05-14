@@ -194,7 +194,7 @@ func (pbd *playbackData) setCover() bool {
 }
 
 func (pbd *playbackData) updatePlayback() bool {
-	log.Debug("Updating playback")
+	log.Trace("Updating playback")
 
 	iconName := "media-playback-pause"
 

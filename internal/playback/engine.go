@@ -270,7 +270,7 @@ func (e *engine) handleBusMessage(msg *gst.Message) bool {
 	case gst.MessageWarning:
 		log.Warning(msg.String())
 	case gst.MessageInfo:
-		log.Debug(msg.String())
+		log.Trace(msg.String())
 	case gst.MessageStateChanged:
 		prevState, state := msg.ParseStateChanged()
 		e.prevState.Store(prevState)

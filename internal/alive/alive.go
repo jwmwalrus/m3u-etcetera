@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jwmwalrus/bnp/env"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
@@ -76,54 +77,29 @@ func Serve(o ...ServeOptions) (err error) {
 	return
 }
 
-func findBinary(bin string) (path string, err error) {
-	path, err = filepath.Abs(filepath.Join(".", bin))
-	rel := bin
-	if err != nil {
-		return
-	}
-
-	for {
-		_, err = os.Stat(path)
-		if os.IsNotExist(err) {
-			var s os.FileInfo
-			if s, err = os.Stat(".git"); os.IsExist(err) && s.IsDir() {
-				err = fmt.Errorf("Reached .git without finding binary")
-				return
-			}
-			rel = filepath.Join("..", rel)
-			path, err = filepath.Abs(rel)
-			if err != nil {
-				return
-			}
-			if path == string(filepath.Separator) || path == "" {
-				err = fmt.Errorf("Reached root without finding binary")
-				return
-			}
-		} else {
-			break
-		}
-	}
-	return
-}
-
 func isServerAlive() bool {
+	log.Debug("Checking if server is alive")
+
 	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts...)
 	if err != nil {
 		s := status.Convert(err)
 		if s.Code() != codes.Unavailable {
-			log.Info(err)
+			log.WithError(err).
+				WithField("authority", auth).
+				Info("Failed to dial server")
 		}
 		return false
 	}
 	defer cc.Close()
 
+	log.WithField("authority", auth).Debug("Dialing was successful")
+
 	c := m3uetcpb.NewRootSvcClient(cc)
 	res, err := c.Status(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
-		log.Info(err)
+		log.Debugf("Failed to obtain server status: %v", err)
 		return false
 	}
 
@@ -131,6 +107,8 @@ func isServerAlive() bool {
 }
 
 func readServerAlive() {
+	log.Debug("Reading server status from file")
+
 	// Last alive check for server
 	info, err := os.Stat(filepath.Join(rtc.DataDir(), serverAliveFilename))
 	if !os.IsNotExist(err) {
@@ -139,17 +117,26 @@ func readServerAlive() {
 }
 
 func startServer() (err error) {
+	log.Debug("Starting server")
+
 	var dir, full string
 	bin := "m3uetc-server"
 
-	if !rtc.FlagTestMode() {
-		if full, err = findBinary(bin); err != nil {
+	if rtc.FlagTestMode() {
+		if full = env.FindExec(bin); full == "" {
+			err = fmt.Errorf("failed to find binary `%s` for server", bin)
 			return
 		}
 	} else {
-		full, err = exec.LookPath("m3uetc-server")
-		if err == nil {
-			if full, err = findBinary(bin); err != nil {
+		log.WithField("PATH", os.Getenv("PATH")).
+			Debug("Using $PATH to find binary")
+		full, err = exec.LookPath(bin)
+		if err != nil {
+			log.WithError(err).
+				WithField("bin", bin).
+				Debug("Error finding binary from path")
+			if full = env.FindExec(bin); full == "" {
+				err = fmt.Errorf("failed to find binary `%s` for server", bin)
 				return
 			}
 		}
@@ -167,6 +154,9 @@ func startServer() (err error) {
 	cmd.Stderr = nil
 	err = cmd.Start()
 	if err != nil {
+		log.WithError(err).
+			WithField("cmd", cmd.String()).
+			Debug("Error during command execution")
 		return
 	}
 
@@ -194,17 +184,30 @@ func startServer() (err error) {
 }
 
 func stopServer(force, noWait bool) (err error) {
+	log.WithFields(log.Fields{
+		"force":  force,
+		"noWait": noWait,
+	}).Debug("Stopping server")
+
 	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts...)
 	if err != nil {
+		log.WithError(err).
+			WithField("authority", auth).
+			Debug("Error while dialing server")
 		return
 	}
 	defer cc.Close()
 
+	log.WithField("authority", auth).Debug("Dialing was successful")
+
 	c := m3uetcpb.NewRootSvcClient(cc)
 	res, err := c.Off(context.Background(), &m3uetcpb.OffRequest{Force: force})
 	if err != nil {
+		log.WithError(err).
+			WithField("authority", auth).
+			Debug("Error requesting server off")
 		return
 	}
 
@@ -238,6 +241,8 @@ func stopServer(force, noWait bool) (err error) {
 
 // writeServerAliveFile Updates the server alive flag file
 func writeServerAliveFile() {
+	log.Debug("Writting server alive file")
+
 	f, err := os.OpenFile(
 		filepath.Join(rtc.DataDir(), serverAliveFilename),
 		os.O_TRUNC|os.O_CREATE|os.O_WRONLY,

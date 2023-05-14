@@ -375,7 +375,7 @@ func (pl *Playlist) createTracks(trackIds []int64,
 		err = db.Where("location = ?", loc).First(&t).Error
 		if err != nil {
 			t.Location = loc
-			if err = t.createTransient(tx); err != nil {
+			if err = t.createTransient(tx, nil); err != nil {
 				return
 			}
 		}

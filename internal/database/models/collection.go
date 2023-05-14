@@ -98,8 +98,6 @@ func (c *Collection) Create() error {
 func (c *Collection) Delete() (err error) {
 	log.Info("Deleting collection")
 
-	// TODO: broadcast scanning event
-
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
 

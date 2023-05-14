@@ -117,7 +117,6 @@ func (qd *queueData) updateQueueModels() bool {
 				count++
 			}
 
-			// model.Clear()
 			var iter *gtk.TreeIter
 			for _, qt := range qd.res.QueueTracks {
 				if qt.Perspective != idx {
@@ -150,7 +149,7 @@ func (qd *queueData) updateQueueModels() bool {
 					continue
 				}
 				for _, t := range qd.res.Tracks {
-					if qt.TrackId == t.Id {
+					if qt.Location == t.Location {
 						dur := time.Duration(t.Duration) * time.Nanosecond
 						err := model.Set(
 							iter,
@@ -186,16 +185,15 @@ func (qd *queueData) updateQueueModels() bool {
 								t.Albumartist,
 								t.Composer,
 								t.Genre,
-
 								int(t.Year),
 								int(t.Tracknumber),
+
 								int(t.Tracktotal),
 								int(t.Discnumber),
 								int(t.Disctotal),
 								t.Lyrics,
 								t.Comment,
 								int(t.Playcount),
-
 								int(t.Rating),
 								fmt.Sprint(dur.Truncate(time.Second)),
 								t.Remote,

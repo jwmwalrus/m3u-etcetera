@@ -134,16 +134,16 @@ type IEvents interface {
 }
 
 // eventsImpl implements the events
-type eventsImpl struct {
+type events struct {
 	eng *engine
 }
 
 var (
-	instance *eventsImpl
+	instance *events
 )
 
 // GetPlayback implements the IEvents interface
-func (et *eventsImpl) GetPlayback() (pb *models.Playback, t *models.Track) {
+func (et *events) GetPlayback() (pb *models.Playback, t *models.Track) {
 	if et.eng.pb.Load() == nil {
 		return
 	}
@@ -163,15 +163,19 @@ func (et *eventsImpl) GetPlayback() (pb *models.Playback, t *models.Track) {
 			}
 			et.eng.t.Store(t)
 		}
+	} else if et.eng.t.Load() != nil {
+		t = et.eng.t.Load()
 	} else {
 		var err error
 		if t, err = models.ReadTagsForLocation(pb.Location); err != nil {
 			log.Error(err)
 			return
 		}
+		et.eng.t.Store(t)
 	}
 
 	if t != nil && t.Duration == 0 {
+		log.Info("Assigning duration from playback")
 		t.Duration = et.eng.duration.Load()
 	}
 	pb.Skip = et.eng.lastPosition.Load()
@@ -179,12 +183,12 @@ func (et *eventsImpl) GetPlayback() (pb *models.Playback, t *models.Track) {
 }
 
 // GetState implements the IEvents interface
-func (et *eventsImpl) GetState() gst.State {
+func (et *events) GetState() gst.State {
 	return et.eng.state.Load()
 }
 
 // HasNextStream implements the IEvents interface
-func (et *eventsImpl) HasNextStream() bool {
+func (et *events) HasNextStream() bool {
 	pb := &models.Playback{}
 	if pb.GetNextToPlay() != nil {
 		return true
@@ -205,32 +209,32 @@ func (et *eventsImpl) HasNextStream() bool {
 }
 
 // IsPaused implements the IEvents interface
-func (et *eventsImpl) IsPaused() bool {
+func (et *events) IsPaused() bool {
 	return et.eng.playbin.Load() != nil && et.eng.state.Load() == gst.StatePaused
 }
 
 // IsPlaying implements the IEvents interface
-func (et *eventsImpl) IsPlaying() bool {
+func (et *events) IsPlaying() bool {
 	return et.eng.playbin.Load() != nil && et.eng.state.Load() == gst.StatePlaying
 }
 
 // IsReady implements the IEvents interface
-func (et *eventsImpl) IsReady() bool {
+func (et *events) IsReady() bool {
 	return et.eng.playbin.Load() != nil && et.eng.state.Load() == gst.StateReady
 }
 
 // IsStreaming implements the IEvents interface
-func (et *eventsImpl) IsStreaming() bool {
+func (et *events) IsStreaming() bool {
 	return et.IsPaused() || et.IsPlaying()
 }
 
 // IsStopped checks implements the IEvents interface
-func (et *eventsImpl) IsStopped() bool {
+func (et *events) IsStopped() bool {
 	return et.eng.lastEvent.Load() == stopAllEvent
 }
 
 // NextStream plays the next stream in playlist
-func (et *eventsImpl) NextStream() (err error) {
+func (et *events) NextStream() (err error) {
 	et.eng.lastEvent.Store(nextEvent)
 
 	if !(et.IsStreaming() || et.IsReady()) {
@@ -244,7 +248,7 @@ func (et *eventsImpl) NextStream() (err error) {
 }
 
 // PauseStream implements the IEvents interface
-func (et *eventsImpl) PauseStream(off bool) (err error) {
+func (et *events) PauseStream(off bool) (err error) {
 	if et.eng.playbin.Load() == nil {
 		if !et.IsStopped() {
 			return
@@ -275,7 +279,7 @@ func (et *eventsImpl) PauseStream(off bool) (err error) {
 }
 
 // PlayStreams implements the IEvents interface
-func (et *eventsImpl) PlayStreams(force bool, locations []string, ids []int64) {
+func (et *events) PlayStreams(force bool, locations []string, ids []int64) {
 	et.eng.lastEvent.Store(playEvent)
 
 	entry := log.WithFields(log.Fields{
@@ -303,7 +307,7 @@ func (et *eventsImpl) PlayStreams(force bool, locations []string, ids []int64) {
 }
 
 // PreviousStream implements the IEvents interface
-func (et *eventsImpl) PreviousStream() {
+func (et *events) PreviousStream() {
 	if time.Duration(et.eng.lastPosition.Load())*time.Nanosecond >=
 		time.Duration(base.PlaybackPlayedThreshold)*time.Second {
 		et.SeekInStream(0)
@@ -330,7 +334,7 @@ func (et *eventsImpl) PreviousStream() {
 }
 
 // QuitPlayingFromBar implements the IEvents interface
-func (et *eventsImpl) QuitPlayingFromBar(pl *models.Playlist) {
+func (et *events) QuitPlayingFromBar(pl *models.Playlist) {
 	et.eng.lastEvent.Store(stopPlaybarEvent)
 	log.WithField("pl", *pl).
 		Infof("Quit playing from bar")
@@ -345,7 +349,7 @@ func (et *eventsImpl) QuitPlayingFromBar(pl *models.Playlist) {
 }
 
 // SeekInStream implements the IEvents interface
-func (et *eventsImpl) SeekInStream(pos int64) {
+func (et *events) SeekInStream(pos int64) {
 	et.eng.lastEvent.Store(seekEvent)
 
 	if !et.IsPlaying() {
@@ -370,7 +374,7 @@ func (et *eventsImpl) SeekInStream(pos int64) {
 }
 
 // StopAll implements the IEvents interface
-func (et *eventsImpl) StopAll() {
+func (et *events) StopAll() {
 	et.eng.lastEvent.Store(stopAllEvent)
 	et.StopStream()
 
@@ -378,7 +382,7 @@ func (et *eventsImpl) StopAll() {
 }
 
 // StopStream stops the current stream
-func (et *eventsImpl) StopStream() {
+func (et *events) StopStream() {
 	log.Info("Stopping current playback")
 
 	if et.eng.lastEvent.Load() != stopAllEvent {
@@ -401,7 +405,7 @@ func (et *eventsImpl) StopStream() {
 }
 
 // TryPlayingFromBar implements the IEvents interface
-func (et *eventsImpl) TryPlayingFromBar(pl *models.Playlist, position int) {
+func (et *events) TryPlayingFromBar(pl *models.Playlist, position int) {
 	et.eng.lastEvent.Store(playbarEvent)
 
 	entry := log.WithField("pl", pl)
@@ -417,7 +421,7 @@ func (et *eventsImpl) TryPlayingFromBar(pl *models.Playlist, position int) {
 	et.tryPlayingFromList(pl, position)
 }
 
-func (et *eventsImpl) quitPlayingFromList() {
+func (et *events) quitPlayingFromList() {
 	et.eng.lastEvent.Store(stopPlaylistEvent)
 
 	et.eng.setPlaybackHint(hintStopPlaylist)
@@ -427,7 +431,7 @@ func (et *eventsImpl) quitPlayingFromList() {
 	et.eng.updateMPRIS(true)
 }
 
-func (et *eventsImpl) tryPlayingFromList(pl *models.Playlist, position int) {
+func (et *events) tryPlayingFromList(pl *models.Playlist, position int) {
 	et.eng.lastEvent.Store(playlistEvent)
 
 	pt, err := pl.GetTrackAt(position)
@@ -446,7 +450,7 @@ func (et *eventsImpl) tryPlayingFromList(pl *models.Playlist, position int) {
 // GetEventsInstance returns the events instance/object
 func GetEventsInstance() IEvents {
 	if instance == nil {
-		instance = &eventsImpl{
+		instance = &events{
 			&engine{
 				hint: hintNone,
 			},
