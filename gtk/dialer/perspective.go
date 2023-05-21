@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// SetActivePerspective sets a new active perspective
+// SetActivePerspective sets a new active perspective.
 func SetActivePerspective(req *m3uetcpb.SetActivePerspectiveRequest) (err error) {
 	cc, err := getClientConn1()
 	if err != nil {

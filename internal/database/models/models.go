@@ -19,61 +19,61 @@ var (
 	// make sure we only do heavy collection tasks one at a time
 	storageGuard chan struct{} = make(chan struct{}, 1)
 
-	// PlaybackChanged is the AfterCreate-hook channel for QueueTrack and Playback
+	// PlaybackChanged is the AfterCreate-hook channel for QueueTrack and Playback.
 	PlaybackChanged chan struct{} = make(chan struct{}, 1)
 )
 
-// DataCreator defines a DML interface of CRUD to create
+// DataCreator defines a DML interface of CRUD to create.
 type DataCreator interface {
 	Create() error
 }
 
-// DataCreatorTx defines a DML interface of CRUD to create, with transactions
+// DataCreatorTx defines a DML interface of CRUD to create, with transactions.
 type DataCreatorTx interface {
 	CreateTx(*gorm.DB) error
 }
 
-// DataDeleter defines a DML interface of CRUD to delete
+// DataDeleter defines a DML interface of CRUD to delete.
 type DataDeleter interface {
 	Delete() error
 }
 
-// DataDeleterTx defines a DML interface of CRUD to delete, with transactions
+// DataDeleterTx defines a DML interface of CRUD to delete, with transactions.
 type DataDeleterTx interface {
 	DeleteTx(*gorm.DB) error
 }
 
-// DataReader defines a DML interface of CRUD for reading
+// DataReader defines a DML interface of CRUD for reading.
 type DataReader interface {
 	Read(int64) error
 }
 
-// DataReaderTx defines a DML interface of CRUD for reading, with transactions
+// DataReaderTx defines a DML interface of CRUD for reading, with transactions.
 type DataReaderTx interface {
 	ReadTx(*gorm.DB, int64) error
 }
 
-// DataUpdater defines a DML interface of CRUD to update
+// DataUpdater defines a DML interface of CRUD to update.
 type DataUpdater interface {
 	Save() error
 }
 
-// DataUpdaterTx defines a DML interface of CRUD to update, with transactions
+// DataUpdaterTx defines a DML interface of CRUD to update, with transactions.
 type DataUpdaterTx interface {
 	SaveTx(*gorm.DB) error
 }
 
-// ProtoIn defines an interface to convert from protocol buffers
+// ProtoIn defines an interface to convert from protocol buffers.
 type ProtoIn interface {
 	FromProtobuf(proto.Message)
 }
 
-// ProtoOut defines an interface to convert to protocol buffers
+// ProtoOut defines an interface to convert to protocol buffers.
 type ProtoOut interface {
 	ToProtobuf() proto.Message
 }
 
-// DoInitialCleanup perform initial cleanup of models tables
+// DoInitialCleanup perform initial cleanup of models tables.
 func DoInitialCleanup() {
 	tx := db.Session(&gorm.Session{SkipHooks: true})
 
@@ -96,7 +96,7 @@ func DoInitialCleanup() {
 	}
 }
 
-// SetUp sets the database used by the models and starts some listeners
+// SetUp sets the database used by the models and starts some listeners.
 func SetUp(ctx context.Context, conn *gorm.DB) {
 	db = conn
 
@@ -107,13 +107,13 @@ func SetUp(ctx context.Context, conn *gorm.DB) {
 	go findQueueTrack(ctx)
 }
 
-// TearDown unsets the models listeners
+// TearDown unsets the models listeners.
 func TearDown() {
 	close(playbackTrackNeeded)
 	close(queueTrackNeeded)
 }
 
-// TriggerPlaybackChange signals the PlaybackChanged channel
+// TriggerPlaybackChange signals the PlaybackChanged channel.
 func TriggerPlaybackChange() {
 	if len(PlaybackChanged) < 1 {
 		PlaybackChanged <- struct{}{}

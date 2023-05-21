@@ -18,14 +18,14 @@ import (
 	"gorm.io/gorm"
 )
 
-// CollectionIndex defines indexes for collections
+// CollectionIndex defines indexes for collections.
 type CollectionIndex int
 
 const (
-	// DefaultCollection for the default collection
+	// DefaultCollection for the default collection.
 	DefaultCollection CollectionIndex = iota + 1
 
-	// TransientCollection for the transient collection
+	// TransientCollection for the transient collection.
 	TransientCollection
 )
 
@@ -33,17 +33,17 @@ func (idx CollectionIndex) String() string {
 	return [...]string{"", "\t", "\t\t"}[idx]
 }
 
-// Get returns the collection associated to the index
+// Get returns the collection associated to the index.
 func (idx CollectionIndex) Get() (c *Collection, err error) {
 	c = &Collection{}
 	err = db.Where("idx = ?", int(idx)).First(c).Error
 	return
 }
 
-// CollectionEvent defines a collection event
+// CollectionEvent defines a collection event.
 type CollectionEvent int
 
-// CollectionEvent enum
+// CollectionEvent enum.
 const (
 	CollectionEventNone CollectionEvent = iota
 	CollectionEventInitial
@@ -70,7 +70,7 @@ func (ce CollectionEvent) String() string {
 	}[ce]
 }
 
-// Collection defines a collection row
+// Collection defines a collection row.
 type Collection struct {
 	ID             int64       `json:"id" gorm:"primaryKey"`
 	Idx            int         `json:"idx" gorm:"not null"`
@@ -89,12 +89,12 @@ type Collection struct {
 	UpdatedAt      int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
-// Create implements DataCreator interface
+// Create implements DataCreator interface.
 func (c *Collection) Create() error {
 	return db.Create(c).Error
 }
 
-// Delete implements DataDeleter interface
+// Delete implements DataDeleter interface.
 func (c *Collection) Delete() (err error) {
 	log.Info("Deleting collection")
 
@@ -144,19 +144,19 @@ func (c *Collection) Delete() (err error) {
 	return
 }
 
-// Read implements DataReader interface
+// Read implements DataReader interface.
 func (c *Collection) Read(id int64) error {
 	return db.Joins("Perspective").
 		First(c, id).
 		Error
 }
 
-// Save implements DataUpdater interface
+// Save implements DataUpdater interface.
 func (c *Collection) Save() error {
 	return db.Save(c).Error
 }
 
-// ToProtobuf implements ProtoOut interface
+// ToProtobuf implements ProtoOut interface.
 func (c *Collection) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(c)
 	if err != nil {
@@ -175,7 +175,7 @@ func (c *Collection) ToProtobuf() proto.Message {
 	return out
 }
 
-// AfterCreate is a GORM hook
+// AfterCreate is a GORM hook.
 func (c *Collection) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -192,7 +192,7 @@ func (c *Collection) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterUpdate is a GORM hook
+// AfterUpdate is a GORM hook.
 func (c *Collection) AfterUpdate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -209,7 +209,7 @@ func (c *Collection) AfterUpdate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterDelete is a GORM hook
+// AfterDelete is a GORM hook.
 func (c *Collection) AfterDelete(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -226,7 +226,7 @@ func (c *Collection) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
-// CountTracks counts tracks that belong to the collection
+// CountTracks counts tracks that belong to the collection.
 func (c *Collection) CountTracks() {
 	if c.Scanned != 100 {
 		return
@@ -245,7 +245,7 @@ func (c *Collection) CountTracks() {
 	c.Tracks = tracks
 }
 
-// Scan adds tracks to collection
+// Scan adds tracks to collection.
 func (c *Collection) Scan(withTags bool) {
 	entry := log.WithFields(log.Fields{
 		"c":        *c,
@@ -354,7 +354,7 @@ func (c *Collection) Scan(withTags bool) {
 	onerror.WithEntry(entry).Log(c.Save())
 }
 
-// Verify removes tracks that do not exist in the collection anymore
+// Verify removes tracks that do not exist in the collection anymore.
 func (c *Collection) Verify() {
 	entry := log.WithField("c", *c)
 	entry.Info("Verifying collection")
@@ -436,7 +436,7 @@ func (c *Collection) addTrackFromPath(tx *gorm.DB, path string,
 	return
 }
 
-// GetAllCollections returns all valid collections
+// GetAllCollections returns all valid collections.
 func GetAllCollections() []*Collection {
 	s := []Collection{}
 	err := db.Where("hidden = 0").Find(&s).Error
@@ -447,7 +447,7 @@ func GetAllCollections() []*Collection {
 	return pointers.FromSlice(s)
 }
 
-// GetCollectionStore returns all valid collection tracks
+// GetCollectionStore returns all valid collection tracks.
 func GetCollectionStore() ([]*Collection, []*Track) {
 	cs := []Collection{}
 	ts := []Track{}

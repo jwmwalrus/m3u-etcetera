@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Playgroup playgroup task
+// Playgroup playgroup task.
 func Playgroup() *cli.Command {
 	return &cli.Command{
 		Name:        "playgroup",

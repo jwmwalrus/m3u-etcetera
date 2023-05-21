@@ -2,14 +2,14 @@ package alive
 
 import "strconv"
 
-// ServerAlreadyRunning returned when requested to start a server that is already running
+// ServerAlreadyRunning returned when requested to start a server that is already running.
 type ServerAlreadyRunning struct{}
 
 func (*ServerAlreadyRunning) Error() string {
 	return "Server already running!"
 }
 
-// ServerNotRunning returned when requested to stop a server that is not running
+// ServerNotRunning returned when requested to stop a server that is not running.
 type ServerNotRunning struct{}
 
 func (*ServerNotRunning) Error() string {

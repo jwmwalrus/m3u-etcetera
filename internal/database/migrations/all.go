@@ -2,7 +2,7 @@ package migrations
 
 import "github.com/go-gormigrate/gormigrate/v2"
 
-// All -
+// All -.
 func All() []*gormigrate.Migration {
 	return []*gormigrate.Migration{
 		// you migrations here

@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// QParam defines a query parameter
+// QParam defines a query parameter.
 // A QParam is sort of an SQL where condition, with proper wildcards.
 //
 // A query will be something like
@@ -21,7 +21,7 @@ import (
 // ```sql
 // genre=pop,rock,punk
 // genre=pop or genre=rock or genre=punk
-// ```
+// ```.
 type QParam struct {
 	Or  bool
 	Not bool
@@ -29,7 +29,7 @@ type QParam struct {
 	Val string
 }
 
-// ParseParams parse a params string and return an equivalent slice
+// ParseParams parse a params string and return an equivalent slice.
 func ParseParams(params string) (qp []*QParam, err error) {
 	qp = []*QParam{}
 
@@ -116,8 +116,8 @@ func ParseParams(params string) (qp []*QParam, err error) {
 	return
 }
 
-// ToFuzzy converts the given value into a fuzzy one
-// * Numbers and proper wildcards are never converted
+// ToFuzzy converts the given value into a fuzzy one.
+// * Numbers and proper wildcards are never converted.
 func (qp *QParam) ToFuzzy() *QParam {
 	out := *qp
 	if strings.ContainsAny(out.Val, "*?[]") {
@@ -137,7 +137,7 @@ func (qp *QParam) ToFuzzy() *QParam {
 	return &out
 }
 
-// ToSQL converts the given wildcards to SQL
+// ToSQL converts the given wildcards to SQL.
 func (qp *QParam) ToSQL() (out QParam) {
 	out = *qp
 	var sb strings.Builder

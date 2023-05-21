@@ -61,7 +61,7 @@ func main() {
 	os.Exit(errcount)
 }
 
-// run invokes pbutils.DiscoverURI for the given location
+// run invokes pbutils.DiscoverURI for the given location.
 func run(location string) (*discover.Info, error) {
 	discoverer, err := pbutils.NewDiscoverer(time.Second * 15)
 	if err != nil {

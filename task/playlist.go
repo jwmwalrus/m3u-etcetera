@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Playlist playlist task
+// Playlist playlist task.
 func Playlist() *cli.Command {
 	return &cli.Command{
 		Name:        "playlist",
@@ -35,7 +35,7 @@ func Playlist() *cli.Command {
 					},
 					&cli.IntFlag{
 						Name:  "limit",
-						Usage: "Limit the number of playlists shown",
+						Usage: "Limit the number of tracks shown",
 					},
 				},
 				Usage:       "playlist info ID",

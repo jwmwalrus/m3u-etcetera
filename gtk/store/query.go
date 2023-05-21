@@ -20,7 +20,7 @@ type queryData struct {
 }
 
 var (
-	// QYData query store
+	// QYData query store.
 	QYData = &queryData{}
 
 	queryResultsModel *gtk.ListStore
@@ -28,7 +28,7 @@ var (
 	queryTree queryTreeModel
 )
 
-// GetQuery returns the query for the gven id
+// GetQuery returns the query for the gven id.
 func (qyd *queryData) GetQuery(id int64) *m3uetcpb.Query {
 	qyd.mu.RLock()
 	defer qyd.mu.RUnlock()
@@ -213,7 +213,7 @@ func (qyd *queryData) updateQueryResults() bool {
 	return false
 }
 
-// ClearQueryResults -
+// ClearQueryResults -.
 func ClearQueryResults() {
 	model := queryResultsModel
 
@@ -223,7 +223,7 @@ func ClearQueryResults() {
 	}
 }
 
-// CreateQueryResultsModel creates a query model
+// CreateQueryResultsModel creates a query model.
 func CreateQueryResultsModel() (model *gtk.ListStore, err error) {
 	log.Info("Creating query model")
 
@@ -236,7 +236,7 @@ func CreateQueryResultsModel() (model *gtk.ListStore, err error) {
 	return
 }
 
-// GetQueryResultsSelections returns the list of selected query results
+// GetQueryResultsSelections returns the list of selected query results.
 func GetQueryResultsSelections() (ids []int64, err error) {
 	model := queryResultsModel
 	if model == nil {
@@ -268,7 +268,7 @@ func GetQueryResultsSelections() (ids []int64, err error) {
 	return
 }
 
-// ToggleQueryResultsSelection inverts the query results selection
+// ToggleQueryResultsSelection inverts the query results selection.
 func ToggleQueryResultsSelection() {
 	log.Info("Toggling query results selection")
 

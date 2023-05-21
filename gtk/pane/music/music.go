@@ -14,7 +14,7 @@ var (
 	musicQueueSignals *playlists.OnQueue
 )
 
-// Setup sets the music pane
+// Setup sets the music pane.
 func Setup(signals *map[string]interface{}) (err error) {
 	log.Info("Setting up music")
 

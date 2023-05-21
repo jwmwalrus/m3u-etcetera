@@ -11,7 +11,7 @@ import (
 	"github.com/godbus/dbus/v5/prop"
 )
 
-// MPRIs interfaces
+// MPRIs interfaces.
 const (
 	RootPath            = "/org/mpris/MediaPlayer2"
 	RootInterface       = "org.mpris.MediaPlayer2"
@@ -22,7 +22,7 @@ const (
 	serverName = RootInterface + "." + name
 )
 
-// New returns a new dbus instance implementing MPRIS
+// New returns a new dbus instance implementing MPRIS.
 func New() *Instance {
 	ins := &Instance{Name: serverName}
 	conn, err := dbus.ConnectSessionBus()
@@ -32,7 +32,7 @@ func New() *Instance {
 	return ins
 }
 
-// Instance -
+// Instance -.
 type Instance struct {
 	Name string
 	Conn atomic.Pointer[dbus.Conn]
@@ -44,7 +44,7 @@ func (*Instance) introspectInterface() introspect.Interface {
 	return introspect.IntrospectData
 }
 
-// Delete closes the instance connection
+// Delete closes the instance connection.
 func (i *Instance) Delete() error {
 
 	i.Conn.Load().ReleaseName(serverName)
@@ -52,7 +52,7 @@ func (i *Instance) Delete() error {
 	return nil
 }
 
-// Setup sets the player
+// Setup sets the player.
 func (i *Instance) Setup(p Player) (err error) {
 	mp2 := &MediaPlayer2{i}
 	err = i.Conn.Load().Export(mp2, RootPath, RootInterface)

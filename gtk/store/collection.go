@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// CollectionOptions for the collections dialog
+// CollectionOptions for the collections dialog.
 type CollectionOptions struct {
 	Discover   bool
 	UpdateTags bool
@@ -36,7 +36,7 @@ func init() {
 	}
 }
 
-// SetDefaults -
+// SetDefaults -.
 func (co *CollectionOptions) SetDefaults() {}
 
 type collectionData struct {
@@ -48,7 +48,7 @@ type collectionData struct {
 }
 
 var (
-	// CData collection store
+	// CData collection store.
 	CData = &collectionData{}
 
 	cTree = &collectionTree{}
@@ -61,7 +61,7 @@ var (
 )
 
 // CollectionAlreadyExists returns true if the location and the name are not
-// already in use by another collection
+// already in use by another collection.
 func (cd *collectionData) CollectionAlreadyExists(location, name string) bool {
 	cd.mu.RLock()
 	defer cd.mu.RUnlock()
@@ -444,7 +444,7 @@ func (cd *collectionData) updateScanningProgress() bool {
 	return false
 }
 
-// CreateCollectionModel creates a collection model
+// CreateCollectionModel creates a collection model.
 func CreateCollectionModel() (model *gtk.ListStore, err error) {
 	log.Info("Creating collection model")
 
@@ -457,7 +457,7 @@ func CreateCollectionModel() (model *gtk.ListStore, err error) {
 	return
 }
 
-// CreateCollectionTreeModel creates a collection model
+// CreateCollectionTreeModel creates a collection model.
 func CreateCollectionTreeModel(h collectionTreeHierarchy) (
 	model *gtk.TreeStore, err error) {
 
@@ -482,19 +482,19 @@ func CreateCollectionTreeModel(h collectionTreeHierarchy) (
 	return
 }
 
-// FilterCollectionTreeBy filters the collection tree by the given value
+// FilterCollectionTreeBy filters the collection tree by the given value.
 func FilterCollectionTreeBy(val string) {
 	cTree.
 		setFilterVal(val).
 		rebuild()
 }
 
-// GetCollectionModel returns the current collection model
+// GetCollectionModel returns the current collection model.
 func GetCollectionModel() *gtk.ListStore {
 	return collectionModel
 }
 
-// GetCollectionTreeModel returns the current collection tree model
+// GetCollectionTreeModel returns the current collection tree model.
 func GetCollectionTreeModel() *gtk.TreeStore {
 	return cTree.getModel()
 }

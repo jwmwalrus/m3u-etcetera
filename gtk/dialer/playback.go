@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ExecutePlaybackAction -
+// ExecutePlaybackAction -.
 func ExecutePlaybackAction(req *m3uetcpb.ExecutePlaybackActionRequest) (err error) {
 	cc, err := getClientConn1()
 	if err != nil {

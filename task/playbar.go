@@ -16,7 +16,7 @@ var (
 	newPlaybarSvcClient = m3uetcpb.NewPlaybarSvcClient
 )
 
-// Playbar playbar task
+// Playbar playbar task.
 func Playbar() *cli.Command {
 	return &cli.Command{
 		Name:        "playbar",

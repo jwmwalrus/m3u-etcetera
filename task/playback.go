@@ -18,7 +18,7 @@ var (
 	newPlaybackSvcClient = m3uetcpb.NewPlaybackSvcClient
 )
 
-// Playback playback task
+// Playback playback task.
 func Playback() *cli.Command {
 	return &cli.Command{
 		Name:        "playback",

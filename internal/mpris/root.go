@@ -7,7 +7,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 )
 
-// MediaPlayer2 implements the org.mpris.MediaPlayer2 root interface
+// MediaPlayer2 implements the org.mpris.MediaPlayer2 root interface.
 type MediaPlayer2 struct {
 	*Instance
 }
@@ -47,59 +47,58 @@ func (mp2 *MediaPlayer2) properties() map[string]*prop.Prop {
 	}
 }
 
-// Quit implements the org.mpris.MediaPlayer2 root interface
+// Quit implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) Quit() *dbus.Error {
 	// TODO: implement
 	return nil
 }
 
-// Raise implements the org.mpris.MediaPlayer2 root interface
+// Raise implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) Raise() *dbus.Error {
 	return nil
 }
 
-// CanQuit implements the org.mpris.MediaPlayer2 root interface
+// CanQuit implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) CanQuit() bool {
 	return true
 }
 
-// Fullscreen implements the org.mpris.MediaPlayer2 root interface
+// Fullscreen implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) Fullscreen(b bool) (bool, *dbus.Error) {
 	return false, nil
 }
 
-// CanSetFullscreen implements the org.mpris.MediaPlayer2 root interface
+// CanSetFullscreen implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) CanSetFullscreen() bool {
 	return false
 }
 
-// CanRaise implements the org.mpris.MediaPlayer2 root interface
+// CanRaise implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) CanRaise() bool {
 	return false
 }
 
-// HasTrackList implements the org.mpris.MediaPlayer2 root interface
+// HasTrackList implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) HasTrackList() bool {
 	return false
 }
 
-// Identity implements the org.mpris.MediaPlayer2 root interface
+// Identity implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) Identity() string {
 	return base.AppName
 }
 
-// DesktopEntry implements the org.mpris.MediaPlayer2 root interface
+// DesktopEntry implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) DesktopEntry() string {
 	return "m3uetc-server"
 }
 
-// SupportedUriSchemes implements the org.mpris.MediaPlayer2 root interface
-// nolint: revive // Implements interface
+// SupportedUriSchemes implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) SupportedUriSchemes() []string {
 	return base.SupportedURISchemes
 }
 
-// SupportedMimeTypes implements the org.mpris.MediaPlayer2 root interface
+// SupportedMimeTypes implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) SupportedMimeTypes() []string {
 	return base.SupportedMIMETypes
 }

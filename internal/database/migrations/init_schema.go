@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// InitSchema initializes schema
+// InitSchema initializes schema.
 func InitSchema(db *gorm.DB) (err error) {
 	err = db.AutoMigrate(
 		// no foreign keys

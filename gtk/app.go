@@ -30,7 +30,7 @@ func init() {
 	}
 }
 
-// Setup sets the whole GTK UI
+// Setup sets the whole GTK UI.
 func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error) {
 	settingsMenuSignals.window = w
 

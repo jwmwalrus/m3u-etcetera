@@ -7,7 +7,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// Playlist extensions
+// Playlist extensions.
 const (
 	SupportedFileExtensionMP3  = ".mp3"
 	SupportedFileExtensionM4A  = ".m4a"
@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	// SupportedFileExtensions -
+	// SupportedFileExtensions -.
 	SupportedFileExtensions = []string{
 		SupportedFileExtensionMP3,
 		SupportedFileExtensionM4A,
@@ -31,20 +31,20 @@ var (
 		SupportedFileExtensionFLAC,
 	}
 
-	// SupportedPlaylistExtensions -
+	// SupportedPlaylistExtensions -.
 	SupportedPlaylistExtensions = []string{
 		SupportedPlaylistExtensionM3U,
 		SupportedPlaylistExtensionM3U8,
 		SupportedPlaylistExtensionPLS,
 	}
 
-	// SupportedURISchemes -
+	// SupportedURISchemes -.
 	SupportedURISchemes = []string{
 		SupportedURISchemeFile,
 		SupportedURISchemeHTTP,
 	}
 
-	// SupportedMIMETypes -
+	// SupportedMIMETypes -.
 	SupportedMIMETypes = []string{
 		"audio/x-mp3",
 		"application/x-id3",
@@ -69,7 +69,7 @@ var (
 		"audio/flac",
 	}
 
-	// IgnoredFileExtensions -
+	// IgnoredFileExtensions -.
 	IgnoredFileExtensions = []string{
 		".bmp",
 		".db",
@@ -80,7 +80,7 @@ var (
 	}
 )
 
-// CheckUnsupportedFiles Returns the unsupported files from a given list
+// CheckUnsupportedFiles Returns the unsupported files from a given list.
 func CheckUnsupportedFiles(files []string) (unsupp []string) {
 	for _, f := range files {
 		if !IsSupportedFile(f) {
@@ -90,7 +90,7 @@ func CheckUnsupportedFiles(files []string) (unsupp []string) {
 	return
 }
 
-// IsSupportedURL returns true if the path is supported
+// IsSupportedURL returns true if the path is supported.
 func IsSupportedURL(s string) bool {
 	path, err := urlstr.URLToPath(s)
 	if err != nil {
@@ -100,12 +100,12 @@ func IsSupportedURL(s string) bool {
 	return IsSupportedFile(path)
 }
 
-// IsSupportedFile returns true if the path is supported
+// IsSupportedFile returns true if the path is supported.
 func IsSupportedFile(path string) bool {
 	return slices.Contains(SupportedFileExtensions, filepath.Ext(path))
 }
 
-// IsSupportedPlaylistURL returns true if the path is supported
+// IsSupportedPlaylistURL returns true if the path is supported.
 func IsSupportedPlaylistURL(s string) bool {
 	path, err := urlstr.URLToPath(s)
 	if err != nil {
@@ -115,12 +115,12 @@ func IsSupportedPlaylistURL(s string) bool {
 	return IsSupportedPlaylist(path)
 }
 
-// IsSupportedPlaylist returns true if the path is supported
+// IsSupportedPlaylist returns true if the path is supported.
 func IsSupportedPlaylist(path string) bool {
 	return slices.Contains(SupportedPlaylistExtensions, filepath.Ext(path))
 }
 
-// IsIgnoredFile returns true if the path should be ignored
+// IsIgnoredFile returns true if the path should be ignored.
 func IsIgnoredFile(path string) bool {
 	return slices.Contains(IgnoredFileExtensions, filepath.Ext(path))
 }

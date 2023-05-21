@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ApplyPlaylistGroupChanges applies collection changes
+// ApplyPlaylistGroupChanges applies collection changes.
 func ApplyPlaylistGroupChanges() {
 	log.Info("Applying playlist-group changes")
 
@@ -37,7 +37,7 @@ func ApplyPlaylistGroupChanges() {
 	applyplaylistgroupactionschanges()
 }
 
-// ExecutePlaybarAction -
+// ExecutePlaybarAction -.
 func ExecutePlaybarAction(req *m3uetcpb.ExecutePlaybarActionRequest) (err error) {
 	cc, err := getClientConn1()
 	if err != nil {
@@ -54,7 +54,7 @@ func ExecutePlaybarAction(req *m3uetcpb.ExecutePlaybarActionRequest) (err error)
 	return
 }
 
-// ExecutePlaylistAction -
+// ExecutePlaylistAction -.
 func ExecutePlaylistAction(req *m3uetcpb.ExecutePlaylistActionRequest) (
 	*m3uetcpb.ExecutePlaylistActionResponse, error) {
 
@@ -73,7 +73,7 @@ func ExecutePlaylistAction(req *m3uetcpb.ExecutePlaylistActionRequest) (
 	return res, nil
 }
 
-// ExecutePlaylistGroupAction -
+// ExecutePlaylistGroupAction -.
 func ExecutePlaylistGroupAction(req *m3uetcpb.ExecutePlaylistGroupActionRequest) (
 	*m3uetcpb.ExecutePlaylistGroupActionResponse, error) {
 
@@ -93,7 +93,7 @@ func ExecutePlaylistGroupAction(req *m3uetcpb.ExecutePlaylistGroupActionRequest)
 	return res, nil
 }
 
-// ExecutePlaylistTrackAction -
+// ExecutePlaylistTrackAction -.
 func ExecutePlaylistTrackAction(req *m3uetcpb.ExecutePlaylistTrackActionRequest) (err error) {
 	cc, err := getClientConn1()
 	if err != nil {
@@ -110,7 +110,7 @@ func ExecutePlaylistTrackAction(req *m3uetcpb.ExecutePlaylistTrackActionRequest)
 	return
 }
 
-// ExportPlaylist -
+// ExportPlaylist -.
 func ExportPlaylist(req *m3uetcpb.ExportPlaylistRequest) (err error) {
 	cc, err := getClientConn1()
 	if err != nil {
@@ -128,7 +128,7 @@ func ExportPlaylist(req *m3uetcpb.ExportPlaylistRequest) (err error) {
 	return
 }
 
-// ImportPlaylists -
+// ImportPlaylists -.
 func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (
 	msgList []string, err error) {
 

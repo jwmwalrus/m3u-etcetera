@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// IDListToString converts an ID list to a comma-separaterd string
+// IDListToString converts an ID list to a comma-separaterd string.
 func IDListToString(ids []int64) (s string) {
 	if len(ids) < 1 {
 		return
@@ -17,7 +17,7 @@ func IDListToString(ids []int64) (s string) {
 	return
 }
 
-// StringToIDList parses the IDList column
+// StringToIDList parses the IDList column.
 func StringToIDList(s string) (ids []int64, err error) {
 	if len(s) == 0 {
 		return

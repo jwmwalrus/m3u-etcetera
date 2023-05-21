@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// CollectionQuery Defines a collection query
+// CollectionQuery Defines a collection query.
 type CollectionQuery struct {
 	ID           int64      `json:"id" gorm:"primaryKey"`
 	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime:nano"`
@@ -17,17 +17,17 @@ type CollectionQuery struct {
 	Query        Query      `json:"query" gorm:"foreignKey:QueryID"`
 }
 
-// Save implements the DataUpdater interface
+// Save implements the DataUpdater interface.
 func (cq *CollectionQuery) Save() error {
 	return db.Save(cq).Error
 }
 
-// DeleteTx implements QueryBoundaryTx interface
+// DeleteTx implements QueryBoundaryTx interface.
 func (cq *CollectionQuery) DeleteTx(tx *gorm.DB) error {
 	return tx.Delete(cq).Error
 }
 
-// FindTracksTx implements QueryBoundaryTx interface
+// FindTracksTx implements QueryBoundaryTx interface.
 func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) []*Track {
 	ts := []Track{}
 
@@ -45,17 +45,17 @@ func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) []*Track {
 	return pointers.FromSlice(ts)
 }
 
-// GetQueryID implements QueryBoundaryID interface
+// GetQueryID implements QueryBoundaryID interface.
 func (cq *CollectionQuery) GetQueryID() int64 {
 	return cq.QueryID
 }
 
-// SaveTx implements QueryBoundaryTx interface
+// SaveTx implements QueryBoundaryTx interface.
 func (cq *CollectionQuery) SaveTx(tx *gorm.DB) error {
 	return tx.Save(cq).Error
 }
 
-// CollectionsToBoundaries adds forward support for CollectionQuery
+// CollectionsToBoundaries adds forward support for CollectionQuery.
 func CollectionsToBoundaries(cts []*CollectionQuery) (qbs []QueryBoundaryTx) {
 	for i := range cts {
 		var x interface{} = cts[i]
@@ -64,7 +64,7 @@ func CollectionsToBoundaries(cts []*CollectionQuery) (qbs []QueryBoundaryTx) {
 	return
 }
 
-// CreateCollectionQueries -
+// CreateCollectionQueries -.
 func CreateCollectionQueries(ids []int64) (cqs []*CollectionQuery) {
 	cqs = []*CollectionQuery{}
 	for _, id := range ids {
@@ -75,7 +75,7 @@ func CreateCollectionQueries(ids []int64) (cqs []*CollectionQuery) {
 }
 
 // DeleteCollectionQueries deletes all the collection queries associated
-// to the given query
+// to the given query.
 func DeleteCollectionQueries(queryID int64) (err error) {
 	cqs := []CollectionQuery{}
 	if err = db.Where("query_id = ?", queryID).Find(&cqs).Error; err != nil {
@@ -88,7 +88,7 @@ func DeleteCollectionQueries(queryID int64) (err error) {
 	return
 }
 
-// FilterCollectionQueryBoundaries -
+// FilterCollectionQueryBoundaries -.
 func FilterCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryID) {
 	cqs := []CollectionQuery{}
 	if err := db.Where("collection_id in ?", ids).Find(&cqs).Error; err != nil {
@@ -103,7 +103,7 @@ func FilterCollectionQueryBoundaries(ids []int64) (qbs []QueryBoundaryID) {
 }
 
 // GetApplicableCollectionQueries returns all the collections that can be
-// applied to the given query
+// applied to the given query.
 func GetApplicableCollectionQueries(qy *Query, ids ...int64) []*CollectionQuery {
 	cqs := []CollectionQuery{}
 	var err error

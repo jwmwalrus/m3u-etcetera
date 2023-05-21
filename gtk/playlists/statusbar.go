@@ -29,7 +29,7 @@ func setupStatusbar() (err error) {
 	return
 }
 
-// UpdateStatusBar updates the status bar with a message suitable to the given context
+// UpdateStatusBar updates the status bar with a message suitable to the given context.
 func UpdateStatusBar(context uint) {
 	time.Sleep(1 * time.Second)
 	switch context {

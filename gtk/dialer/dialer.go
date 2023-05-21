@@ -23,12 +23,12 @@ var (
 	forceExit     bool
 )
 
-// SetForceExit sets forceExit to true
+// SetForceExit sets forceExit to true.
 func SetForceExit() {
 	forceExit = true
 }
 
-// Subscribe start subscriptions to the server
+// Subscribe start subscriptions to the server.
 func Subscribe() {
 	onerror.Panic(store.PbData.SetPlaybackUI())
 	onerror.Panic(store.PerspData.SetPerspectiveUI())
@@ -61,7 +61,7 @@ func Subscribe() {
 	log.Info("Done subscribing")
 }
 
-// Unsubscribe finish all subscriptions to the server
+// Unsubscribe finish all subscriptions to the server.
 func Unsubscribe() {
 	sanityCheck()
 

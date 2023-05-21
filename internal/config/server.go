@@ -3,26 +3,26 @@ package config
 import "strconv"
 
 const (
-	// DefaultServerScheme -
+	// DefaultServerScheme -.
 	DefaultServerScheme = "http"
 
-	// DefaultServerHost -
+	// DefaultServerHost -.
 	DefaultServerHost = "localhost"
 
-	// DefaultServerPort -
+	// DefaultServerPort -.
 	DefaultServerPort = 50099
 
-	// DefaultServerAPIVersion -
+	// DefaultServerAPIVersion -.
 	DefaultServerAPIVersion = "/api/v1"
 
-	// DefaultQueryLimit -
+	// DefaultQueryLimit -.
 	DefaultQueryLimit = 0
 
-	// DefaultQueryMaxLimit -
+	// DefaultQueryMaxLimit -.
 	DefaultQueryMaxLimit = 1023
 )
 
-// Server server-related config
+// Server server-related config.
 type Server struct {
 	Scheme     string `json:"scheme"`
 	Host       string `json:"host"`
@@ -47,7 +47,7 @@ type Server struct {
 	} `json:"collection"`
 }
 
-// SetDefaults provides default settings
+// SetDefaults provides default settings.
 func (s *Server) SetDefaults() {
 	if s.Scheme == "" {
 		s.Scheme = DefaultServerScheme
@@ -72,12 +72,12 @@ func (s *Server) SetDefaults() {
 	}
 }
 
-// GetAuthority returns the authority portion of the playback URI
+// GetAuthority returns the authority portion of the playback URI.
 func (s *Server) GetAuthority() string {
 	return s.Host + ":" + strconv.Itoa(s.Port)
 }
 
-// GetURI returns the playback URI
+// GetURI returns the playback URI.
 func (s *Server) GetURI() string {
 	return s.Scheme + "://" + s.GetAuthority()
 }

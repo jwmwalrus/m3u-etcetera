@@ -13,12 +13,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// QuerySvc defines the query service
+// QuerySvc defines the query service.
 type QuerySvc struct {
 	m3uetcpb.UnimplementedQuerySvcServer
 }
 
-// GetQuery implements m3uetcpb.QuerySvcServer
+// GetQuery implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) GetQuery(_ context.Context,
 	req *m3uetcpb.GetQueryRequest) (*m3uetcpb.GetQueryResponse, error) {
 
@@ -36,7 +36,7 @@ func (*QuerySvc) GetQuery(_ context.Context,
 	return &m3uetcpb.GetQueryResponse{Query: out}, nil
 }
 
-// GetQueries implements m3uetcpb.QuerySvcServer
+// GetQueries implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) GetQueries(_ context.Context,
 	req *m3uetcpb.GetQueriesRequest) (*m3uetcpb.GetQueriesResponse, error) {
 
@@ -52,7 +52,7 @@ func (*QuerySvc) GetQueries(_ context.Context,
 	return &m3uetcpb.GetQueriesResponse{Queries: out}, nil
 }
 
-// AddQuery implements m3uetcpb.QuerySvcServer
+// AddQuery implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) AddQuery(_ context.Context,
 	req *m3uetcpb.AddQueryRequest) (*m3uetcpb.AddQueryResponse, error) {
 
@@ -77,7 +77,7 @@ func (*QuerySvc) AddQuery(_ context.Context,
 	return &m3uetcpb.AddQueryResponse{Id: qy.ID}, nil
 }
 
-// UpdateQuery implements m3uetcpb.QuerySvcServer
+// UpdateQuery implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) UpdateQuery(_ context.Context,
 	req *m3uetcpb.UpdateQueryRequest) (*m3uetcpb.Empty, error) {
 
@@ -103,7 +103,7 @@ func (*QuerySvc) UpdateQuery(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// RemoveQuery implements m3uetcpb.QuerySvcServer
+// RemoveQuery implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) RemoveQuery(_ context.Context,
 	req *m3uetcpb.RemoveQueryRequest) (*m3uetcpb.Empty, error) {
 	qy := models.Query{}
@@ -263,7 +263,7 @@ sLoop:
 
 }
 
-// UnsubscribeFromQueryStore implements m3uetcpb.QuerySvcServer
+// UnsubscribeFromQueryStore implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) UnsubscribeFromQueryStore(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromQueryStoreRequest) (*m3uetcpb.Empty, error) {
 	if req.SubscriptionId == "" {

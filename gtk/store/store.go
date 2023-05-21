@@ -40,10 +40,10 @@ type columnDef struct {
 	activatable bool
 }
 
-// ModelColumn defines a tree model column ID
+// ModelColumn defines a tree model column ID.
 type ModelColumn int
 
-// CCol* column definition
+// CCol* column definition.
 const (
 	CColCollectionID ModelColumn = iota
 	CColName
@@ -62,14 +62,14 @@ const (
 	CColsN
 )
 
-// CColTree* column definition
+// CColTree* column definition.
 const (
 	CColTree ModelColumn = iota
 	CColTreeIDList
 	CColTreeKeywords
 )
 
-// TCol* column  definition
+// TCol* column  definition.
 const (
 	TColTrackID ModelColumn = iota
 	TColCollectionID
@@ -107,7 +107,7 @@ const (
 	TColsN
 )
 
-// QCol*: queue-track/track column
+// QCol*: queue-track/track column.
 const (
 	QColQueueTrackID ModelColumn = iota
 	QColPosition
@@ -144,7 +144,7 @@ const (
 	QColsN
 )
 
-// QYCol*: query column
+// QYCol*: query column.
 const (
 	QYColQueryID ModelColumn = iota
 	QYColName
@@ -160,14 +160,14 @@ const (
 	QYColsN
 )
 
-// QYColTree*: query tree column
+// QYColTree*: query tree column.
 const (
 	QYColTree ModelColumn = iota
 	QYColTreeIDList
 	QYColTreeKeywords
 )
 
-// PLColTree*: query tree column
+// PLColTree*: query tree column.
 const (
 	PLColTree ModelColumn = iota
 	PLColTreeIDList
@@ -175,7 +175,7 @@ const (
 	PLColTreeIsGroup
 )
 
-// PGCol* column definition
+// PGCol* column definition.
 const (
 	PGColPlaylistGroupID ModelColumn = iota
 	PGColName
@@ -187,28 +187,28 @@ const (
 )
 
 var (
-	// CColumns collection columns
+	// CColumns collection columns.
 	CColumns storeColumns
 
-	// TColumns tracks columns
+	// TColumns tracks columns.
 	TColumns storeColumns
 
-	// QColumns queue columns
+	// QColumns queue columns.
 	QColumns storeColumns
 
-	// QYColumns query columns
+	// QYColumns query columns.
 	QYColumns storeColumns
 
-	// PGColumns query columns
+	// PGColumns query columns.
 	PGColumns storeColumns
 
-	// CTreeColumn collection tree column
+	// CTreeColumn collection tree column.
 	CTreeColumn storeColumns
 
-	// QYTreeColumn query tree column
+	// QYTreeColumn query tree column.
 	QYTreeColumn storeColumns
 
-	// PLTreeColumn playlist tree column
+	// PLTreeColumn playlist tree column.
 	PLTreeColumn storeColumns
 )
 

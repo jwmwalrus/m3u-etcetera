@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetActivePerspective returns the active perspective
+// GetActivePerspective returns the active perspective.
 func GetActivePerspective() m3uetcpb.Perspective {
 	// TODO: implement
 	return m3uetcpb.Perspective_MUSIC
@@ -27,7 +27,7 @@ type perspectiveData struct {
 }
 
 var (
-	// PerspData perspective data
+	// PerspData perspective data.
 	PerspData = &perspectiveData{}
 )
 
@@ -58,7 +58,7 @@ func (pd *perspectiveData) updateActivePerspective() bool {
 
 	id := strings.ToLower(active.String()) + "_perspective"
 	if !pd.combo.SetActiveID(id) {
-		log.Error("Error setting active perspectie")
+		log.Error("Error setting active perspective")
 	}
 
 	return false

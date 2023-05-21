@@ -5,7 +5,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// Serve serve task
+// Serve serve task.
 func Serve() *cli.Command {
 	return &cli.Command{
 		Name:        "serve",

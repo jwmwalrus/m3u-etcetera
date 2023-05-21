@@ -8,10 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Type defines the subscription type
+// Type defines the subscription type.
 type Type int
 
-// Subscription type events
+// Subscription type events.
 const (
 	ToNone = iota
 	ToPlaybackEvent
@@ -34,7 +34,7 @@ func (st Type) String() string {
 	}[st]
 }
 
-// Subscriber defines the subscriber type
+// Subscriber defines the subscriber type.
 type Subscriber struct {
 	st          Type
 	id          string
@@ -42,11 +42,12 @@ type Subscriber struct {
 	Unsubscribe func()
 }
 
-// Event defines the event type
+// Event defines the event type.
 type Event struct {
-	// Type custom even index/type, shall be a non-negative enum
+	// Idx custom even index/type, shall be a non-negative enum.
 	Idx int
-	// Data event data
+
+	// Data event data.
 	Data interface{}
 }
 
@@ -62,14 +63,14 @@ var (
 	}
 	unloading = false
 
-	// Unloader declares the subscription unloader
+	// Unloader declares the subscription unloader.
 	Unloader = &rtc.Unloader{
 		Description: "UnsubscribeAll",
 		Callback:    unloadSubscriptions,
 	}
 )
 
-// Subscribe subscribes a client to the given event|store|model
+// Subscribe subscribes a client to the given event|store|model.
 func Subscribe(st Type) (*Subscriber, string) {
 	log.WithField("st", st).
 		Info("Subscribing")
@@ -91,7 +92,7 @@ func Subscribe(st Type) (*Subscriber, string) {
 	return &s, s.id
 }
 
-// Broadcast sends data to all subscribers
+// Broadcast sends data to all subscribers.
 func Broadcast(st Type, es ...Event) {
 	log.WithFields(log.Fields{
 		"st": st,
@@ -139,7 +140,7 @@ func Broadcast(st Type, es ...Event) {
 	}
 }
 
-// MustUnsubscribe checks if the event means unsubscribing
+// MustUnsubscribe checks if the event means unsubscribing.
 func (s *Subscriber) MustUnsubscribe(e Event) bool {
 	log.WithField("e", e).
 		Trace("Checking if must unsubscribe")

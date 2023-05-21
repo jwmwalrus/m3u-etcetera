@@ -111,7 +111,7 @@ func (qyt *queryTreeModel) update() bool {
 	return false
 }
 
-// CreateQueryTreeModel creates a query model
+// CreateQueryTreeModel creates a query model.
 func CreateQueryTreeModel() (model *gtk.TreeStore, err error) {
 	log.Info("Creating query model")
 
@@ -124,13 +124,13 @@ func CreateQueryTreeModel() (model *gtk.TreeStore, err error) {
 	return
 }
 
-// FilterQueryTreeBy filters the queryTree by the given value
+// FilterQueryTreeBy filters the queryTree by the given value.
 func FilterQueryTreeBy(val string) {
 	queryTree.filterVal = val
 	queryTree.update()
 }
 
-// GetQueryTreeModel returns the current query model
+// GetQueryTreeModel returns the current query model.
 func GetQueryTreeModel() *gtk.TreeStore {
 	return queryTree.model
 }

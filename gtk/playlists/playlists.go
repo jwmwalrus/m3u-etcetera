@@ -30,7 +30,7 @@ func init() {
 	}
 }
 
-// Setup kickstarts playlists
+// Setup kickstarts playlists.
 func Setup(signals *map[string]interface{}) (err error) {
 	store.SetUpdatePlaybarViewFn(updatePlaybarView)
 
@@ -59,7 +59,7 @@ func Setup(signals *map[string]interface{}) (err error) {
 }
 
 // GetFocused returns the ID of the focused playlist
-// for the given perspective
+// for the given perspective.
 func GetFocused(p m3uetcpb.Perspective) int64 {
 	nb, err := builder.GetNotebook(perspToNotebook[p])
 	if err != nil {
@@ -79,7 +79,7 @@ func GetFocused(p m3uetcpb.Perspective) int64 {
 }
 
 // RequestFocus registers a focus request for the given playlist ID on the
-// given perspective
+// given perspective.
 func RequestFocus(p m3uetcpb.Perspective, id int64) {
 	focusRequest.p = p
 	focusRequest.id = id

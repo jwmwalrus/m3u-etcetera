@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Execute invokes m3uetc-discover for the given location
+// Execute invokes m3uetc-discover for the given location.
 func Execute(location string) (*Info, error) {
 	log.WithField("location", location).Info("Executing discover")
 

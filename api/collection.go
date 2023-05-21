@@ -12,12 +12,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// CollectionSvc defines the collection service
+// CollectionSvc implements the collection service.
 type CollectionSvc struct {
 	m3uetcpb.UnimplementedCollectionSvcServer
 }
 
-// GetCollection implements m3uetcpb.CollectionSvcServer
+// GetCollection implements m3uetcpb.CollectionSvcServer.
 func (*CollectionSvc) GetCollection(_ context.Context,
 	req *m3uetcpb.GetCollectionRequest) (*m3uetcpb.GetCollectionResponse, error) {
 
@@ -40,7 +40,7 @@ func (*CollectionSvc) GetCollection(_ context.Context,
 		nil
 }
 
-// GetAllCollections implements m3uetcpb.CollectionSvcServer
+// GetAllCollections implements m3uetcpb.CollectionSvcServer.
 func (*CollectionSvc) GetAllCollections(_ context.Context,
 	_ *m3uetcpb.Empty) (*m3uetcpb.GetAllCollectionsResponse, error) {
 
@@ -55,7 +55,7 @@ func (*CollectionSvc) GetAllCollections(_ context.Context,
 	return &m3uetcpb.GetAllCollectionsResponse{Collections: all}, nil
 }
 
-// AddCollection implements m3uetcpb.CollectionSvcServer
+// AddCollection implements m3uetcpb.CollectionSvcServer.
 func (*CollectionSvc) AddCollection(_ context.Context,
 	req *m3uetcpb.AddCollectionRequest) (*m3uetcpb.AddCollectionResponse, error) {
 
@@ -92,7 +92,7 @@ func (*CollectionSvc) AddCollection(_ context.Context,
 	return &m3uetcpb.AddCollectionResponse{Id: coll.ID}, nil
 }
 
-// RemoveCollection implements m3uetcpb.CollectionSvcServer
+// RemoveCollection implements m3uetcpb.CollectionSvcServer.
 func (*CollectionSvc) RemoveCollection(_ context.Context,
 	req *m3uetcpb.RemoveCollectionRequest) (*m3uetcpb.Empty, error) {
 	if req.Id < 1 {
@@ -112,7 +112,7 @@ func (*CollectionSvc) RemoveCollection(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// UpdateCollection implements m3uetcpb.CollectionSvcServer
+// UpdateCollection implements m3uetcpb.CollectionSvcServer.
 func (*CollectionSvc) UpdateCollection(_ context.Context,
 	req *m3uetcpb.UpdateCollectionRequest) (*m3uetcpb.Empty, error) {
 
@@ -170,7 +170,7 @@ func (*CollectionSvc) UpdateCollection(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// ScanCollection implements m3uetcpb.CollectionSvcServer
+// ScanCollection implements m3uetcpb.CollectionSvcServer.
 func (*CollectionSvc) ScanCollection(_ context.Context,
 	req *m3uetcpb.ScanCollectionRequest) (*m3uetcpb.Empty, error) {
 
@@ -193,7 +193,7 @@ func (*CollectionSvc) ScanCollection(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// DiscoverCollections implements m3uetcpb.CollectionSvcServer
+// DiscoverCollections implements m3uetcpb.CollectionSvcServer.
 func (*CollectionSvc) DiscoverCollections(_ context.Context,
 	_ *m3uetcpb.Empty) (*m3uetcpb.Empty, error) {
 
@@ -209,7 +209,7 @@ func (*CollectionSvc) DiscoverCollections(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// SubscribeToCollectionStore implements m3uetcpb.CollectionSvcServer
+// SubscribeToCollectionStore implements m3uetcpb.CollectionSvcServer.
 func (*CollectionSvc) SubscribeToCollectionStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.CollectionSvc_SubscribeToCollectionStoreServer) error {
 
@@ -361,7 +361,7 @@ sLoop:
 
 }
 
-// UnsubscribeFromCollectionStore implements m3uetcpb.CollectionSvcServer
+// UnsubscribeFromCollectionStore implements m3uetcpb.CollectionSvcServer.
 func (*CollectionSvc) UnsubscribeFromCollectionStore(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromCollectionStoreRequest) (*m3uetcpb.Empty, error) {
 	if req.SubscriptionId == "" {

@@ -14,23 +14,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// collectionTree defines the collection-tree hierarchy
+// collectionTree defines the collection-tree hierarchy.
 type collectionTreeHierarchy int
 
 const (
-	// ArtistYearAlbumTree - Artist > Year - Album > Title
+	// ArtistYearAlbumTree - Artist > Year - Album > Title.
 	ArtistYearAlbumTree collectionTreeHierarchy = iota
 
-	// ArtistAlbumTree := Artist > Album > Title
+	// ArtistAlbumTree := Artist > Album > Title.
 	ArtistAlbumTree
 
-	// AlbumTree := Album > Title
+	// AlbumTree := Album > Title.
 	AlbumTree
 
-	// GenreArtistAlbumTree := Genre > Artist > Album > Title
+	// GenreArtistAlbumTree := Genre > Artist > Album > Title.
 	GenreArtistAlbumTree
 
-	// YearArtistAlbumTree := Year > Artist > Album > Title
+	// YearArtistAlbumTree := Year > Artist > Album > Title.
 	YearArtistAlbumTree
 )
 

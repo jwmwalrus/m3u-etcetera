@@ -20,6 +20,24 @@ linters-settings:
     check-type-assertions: false
     check-blank: false
 
+  godot:
+    exclude:
+      # Exclude commented imports
+      - "^ \""
+
+      # Exclude todo-like comments.
+      - "^ BUG:"
+      - "^ CHANGED:"
+      - "^ FIXME:"
+      - "^ HACK:"
+      - "^ IDEA:"
+      - "^ INFO:"
+      - "^ NOTE:"
+      - "^ REVIEW:"
+      - "^ TRICKY:"
+      - "^ TODO:"
+      - "^ XXX:"
+
   gosimple:
     checks:
       - all
@@ -38,6 +56,9 @@ linters-settings:
     require-specific: true
 
   revive:
+    rules:
+      - name: package-comments
+        disabled: true
     # severity: warning
     confidence: 0.8
 
@@ -46,31 +67,30 @@ linters-settings:
       - all
       # - '-SA1019' # deprecations
 
-  varcheck:
-    exported-fields: false
-
-
 linters:
   disable-all: true
   enable:
     ## enabled by default
-    - deadcode
     # - errcheck # too annoying, ignores settings above
     - gosimple
     - govet
-    # - ineffassign # many false positives
+    - ineffassign
     - staticcheck
-    # - structcheck # not for go v1.18
     - typecheck
     - unused
-    - varcheck
 
     ## disabled by default
+    - bodyclose
     # - cyclop
+    - godot
+    - misspell
     - nolintlint
     - revive
     - unconvert
 
-
 issues:
   exclude-use-default: false
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - bodyclose

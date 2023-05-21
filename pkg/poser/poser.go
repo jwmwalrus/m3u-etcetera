@@ -1,6 +1,6 @@
 package poser
 
-// Poser defines the interface for an element in a slice
+// Poser defines the interface for an element in a slice.
 type Poser interface {
 	GetPosition() int
 	SetPosition(pos int)
@@ -8,13 +8,13 @@ type Poser interface {
 	SetIgnore(ignore bool)
 }
 
-// AppendTo appends the given elements to the slice
+// AppendTo appends the given elements to the slice.
 func AppendTo[S []E, E Poser](s S, e ...E) S {
 	s = append(s, e...)
 	return reassignPositions(s)
 }
 
-// DeleteAt removes the element from the slice at the given position
+// DeleteAt removes the element from the slice at the given position.
 func DeleteAt[S []E, E Poser](s S, pos int) (S, E) {
 	var out S
 	var e E
@@ -30,7 +30,7 @@ func DeleteAt[S []E, E Poser](s S, pos int) (S, E) {
 	return reassignPositions(out), e
 }
 
-// InsertInto inserts elements into a slice at the given position
+// InsertInto inserts elements into a slice at the given position.
 func InsertInto[S []E, E Poser](s S, pos int, e ...E) S {
 	if pos <= 1 {
 		aux := s
@@ -49,7 +49,7 @@ func InsertInto[S []E, E Poser](s S, pos int, e ...E) S {
 	return reassignPositions(s)
 }
 
-// MoveTo moves an element from one position to another
+// MoveTo moves an element from one position to another.
 func MoveTo[S []E, E Poser](s S, to, from int) S {
 	if from == to || from < 1 || len(s) == 0 || from > len(s) {
 		return s
@@ -83,12 +83,12 @@ func MoveTo[S []E, E Poser](s S, to, from int) S {
 	return reassignPositions(moved)
 }
 
-// Pop removes the element at position 1 from the slice and returns it
+// Pop removes the element at position 1 from the slice and returns it.
 func Pop[S []E, E Poser](s S) (S, E) {
 	return DeleteAt(s, 1)
 }
 
-// PrependItem inserts elements into the slice at position 1
+// PrependItem inserts elements into the slice at position 1.
 func PrependItem[S []E, E Poser](s S, e ...E) S {
 	return InsertInto(s, 1, e...)
 }

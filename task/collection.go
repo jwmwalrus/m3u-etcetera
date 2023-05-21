@@ -17,7 +17,7 @@ var (
 	newCollectionSvcClient = m3uetcpb.NewCollectionSvcClient
 )
 
-// Collection defines the collection-related tasks
+// Collection defines the collection-related tasks.
 func Collection() *cli.Command {
 	return &cli.Command{
 		Name:        "collection",

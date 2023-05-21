@@ -13,12 +13,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// OnQueue handles queue signals
+// OnQueue handles queue signals.
 type OnQueue struct {
 	*onContext
 }
 
-// CreateQueue returns a queue signals handler
+// CreateQueue returns a queue signals handler.
 func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 	oq *OnQueue, err error) {
 
@@ -96,7 +96,7 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 	return
 }
 
-// DblClicked handles double-click
+// DblClicked handles double-click.
 func (oq *OnQueue) DblClicked(tv *gtk.TreeView,
 	path *gtk.TreePath, col *gtk.TreeViewColumn) {
 

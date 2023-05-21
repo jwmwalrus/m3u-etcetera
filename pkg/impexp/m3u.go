@@ -11,12 +11,12 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 )
 
-// M3U implementation
+// M3U implementation.
 type M3U struct {
 	*playlist
 }
 
-// Format implements the PlaylistDef interface
+// Format implements the PlaylistDef interface.
 func (mi *M3U) Format(w io.StringWriter) (n int, err error) {
 	out := strings.Builder{}
 	_, err = out.WriteString("#EXTM3U\n")
@@ -68,7 +68,7 @@ func (mi *M3U) Format(w io.StringWriter) (n int, err error) {
 	return
 }
 
-// Parse implements the PlaylistDef interface
+// Parse implements the PlaylistDef interface.
 func (mi *M3U) Parse(f io.Reader) (err error) {
 	bv, err := io.ReadAll(f)
 	if err != nil {
@@ -192,7 +192,7 @@ func (mi *M3U) Parse(f io.Reader) (err error) {
 	return
 }
 
-// Type implements the PlaylistDef interface
+// Type implements the PlaylistDef interface.
 func (*M3U) Type() string {
 	return M3UPlaylist.String()
 }

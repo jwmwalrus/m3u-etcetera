@@ -22,24 +22,24 @@ import (
 )
 
 const (
-	// ServerCheckInterval Amount of seconds between checks
+	// ServerCheckInterval Amount of seconds between checks.
 	ServerCheckInterval = 180
 )
 
 var (
 	serverAliveFilename = "server-alive"
 
-	// LastCheck UTC timestamp for last check
-	LastCheck atomic.Int64
-
 	lastStatus error
+
+	// LastCheck UTC timestamp for last check.
+	LastCheck atomic.Int64
 )
 
 func init() {
 	readServerAlive()
 }
 
-// CheckServerStatus If ServerCheckInterval is up, starts the server
+// CheckServerStatus If ServerCheckInterval is up, starts the server.
 func CheckServerStatus() error {
 	if lastStatus == nil || (time.Now().Unix()-LastCheck.Load() > ServerCheckInterval) {
 		lastStatus = Serve()
@@ -48,7 +48,7 @@ func CheckServerStatus() error {
 	return lastStatus
 }
 
-// Serve starts or stops the server
+// Serve starts or stops the server.
 func Serve(o ...ServeOptions) (err error) {
 	options := ServeOptions{}
 	if len(o) > 0 {
@@ -239,9 +239,9 @@ func stopServer(force, noWait bool) (err error) {
 	return
 }
 
-// writeServerAliveFile Updates the server alive flag file
+// writeServerAliveFile updates the server alive flag file.
 func writeServerAliveFile() {
-	log.Debug("Writting server alive file")
+	log.Debug("Writing server alive file")
 
 	f, err := os.OpenFile(
 		filepath.Join(rtc.DataDir(), serverAliveFilename),

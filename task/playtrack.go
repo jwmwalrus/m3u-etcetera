@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Playtrack playtrack task
+// Playtrack playtrack task.
 func Playtrack() *cli.Command {
 	return &cli.Command{
 		Name:        "playtrack",

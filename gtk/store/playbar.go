@@ -40,10 +40,10 @@ type playbarData struct {
 }
 
 var (
-	// BData playbar store
+	// BData playbar store.
 	BData = &playbarData{}
 
-	// PerspectiveToPlaylists -
+	// PerspectiveToPlaylists -.
 	PerspectiveToPlaylists map[m3uetcpb.Perspective][]*m3uetcpb.Playlist
 
 	playlistTrackToTrack    map[int64]*m3uetcpb.Track
@@ -95,7 +95,7 @@ func (bd *playbarData) GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 	return nil
 }
 
-// GetOpenPlaylists returns the list of open playlists
+// GetOpenPlaylists returns the list of open playlists.
 func (bd *playbarData) GetOpenPlaylists() []*m3uetcpb.Playlist {
 	log.Info("Returning open playlists")
 
@@ -138,7 +138,7 @@ func (bd *playbarData) GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
 }
 
 // GetPlaylistGroupActionsChanges returns the list of playlist group actions
-// to be applied
+// to be applied.
 func (bd *playbarData) GetPlaylistGroupActionsChanges() (toRemove []int64) {
 	model := playlistGroupsModel
 
@@ -257,7 +257,7 @@ func (bd *playbarData) GetUpdatePlaylistGroupRequests() (
 }
 
 // PlaylistAlreadyExists returns true if a playlist with the given
-// name already exists
+// name already exists.
 func (bd *playbarData) PlaylistAlreadyExists(name string) bool {
 	bd.mu.RLock()
 	defer bd.mu.RUnlock()
@@ -271,7 +271,7 @@ func (bd *playbarData) PlaylistAlreadyExists(name string) bool {
 }
 
 // PlaylistGroupAlreadyExists returns true if a playlist group with the
-// given name already exists
+// given name already exists.
 func (bd *playbarData) PlaylistGroupAlreadyExists(name string) bool {
 	bd.mu.RLock()
 	defer bd.mu.RUnlock()
@@ -864,7 +864,7 @@ func (bd *playbarData) updatePlaylistGroupModel() bool {
 	return false
 }
 
-// CreatePlaylistModel creates a playlist model
+// CreatePlaylistModel creates a playlist model.
 func CreatePlaylistModel(id int64) (model *gtk.ListStore, err error) {
 	log.Info("Creating a playlist model")
 
@@ -872,7 +872,7 @@ func CreatePlaylistModel(id int64) (model *gtk.ListStore, err error) {
 	return
 }
 
-// CreatePlaylistGroupsModel creates a playlist model
+// CreatePlaylistGroupsModel creates a playlist model.
 func CreatePlaylistGroupsModel() (model *gtk.ListStore, err error) {
 	log.Info("Creating a playlist model")
 
@@ -885,7 +885,7 @@ func CreatePlaylistGroupsModel() (model *gtk.ListStore, err error) {
 	return
 }
 
-// CreatePlaylistsTreeModel creates a playlist model
+// CreatePlaylistsTreeModel creates a playlist model.
 func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (
 	model *gtk.TreeStore, err error) {
 
@@ -900,7 +900,7 @@ func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (
 	return
 }
 
-// DestroyPlaylistModel destroy a playlist model
+// DestroyPlaylistModel destroy a playlist model.
 func DestroyPlaylistModel(id int64) (err error) {
 	log.Info("Destroying a playlist model")
 
@@ -916,7 +916,7 @@ func DestroyPlaylistModel(id int64) (err error) {
 	return
 }
 
-// FilterPlaylistTreeBy filters the playlist tree by the given value
+// FilterPlaylistTreeBy filters the playlist tree by the given value.
 func FilterPlaylistTreeBy(p m3uetcpb.Perspective, val string) {
 	v := barTree.getPlaylistTree(p)
 	v.filterVal = val
@@ -924,7 +924,7 @@ func FilterPlaylistTreeBy(p m3uetcpb.Perspective, val string) {
 	barTree.update()
 }
 
-// GetPlaylistModel returns the playlist model for the given ID
+// GetPlaylistModel returns the playlist model for the given ID.
 func GetPlaylistModel(id int64) *gtk.ListStore {
 	log.Info("Returning playlist model")
 
@@ -932,13 +932,13 @@ func GetPlaylistModel(id int64) *gtk.ListStore {
 	return model
 }
 
-// GetPlaylistsTreeModel returns the current playlist tree model
+// GetPlaylistsTreeModel returns the current playlist tree model.
 func GetPlaylistsTreeModel(p m3uetcpb.Perspective) *gtk.TreeStore {
 	v := barTree.pplt[p]
 	return v.model
 }
 
-// SetUpdatePlaybarViewFn sets the update-playbar-view function
+// SetUpdatePlaybarViewFn sets the update-playbar-view function.
 func SetUpdatePlaybarViewFn(fn func()) {
 	updatePlaybarView = fn
 }

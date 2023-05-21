@@ -8,24 +8,20 @@ type playlist struct {
 	tracks   []TrackInfo
 }
 
-// Add implements the PlaylistData interface
 func (pl *playlist) Add(ti []TrackInfo) {
 	pl.tracks = append(pl.tracks, ti...)
 }
 
-// Name implements the PlaylistData interface
 func (pl *playlist) Name() string {
 	return pl.name
 }
 
-// Reset implements the PlaylistData interface
 func (pl *playlist) Reset() {
 	pl.name = ""
 	pl.encoding = ""
 	pl.tracks = []TrackInfo{}
 }
 
-// Tracks implements the PlaylistData interface
 func (pl *playlist) Tracks() []TrackInfo {
 	return pl.tracks
 }
@@ -41,10 +37,10 @@ func (pl *playlist) setProps(props []PlaylistProp) {
 	}
 }
 
-// PlaylistPropKey playlist property key type
+// PlaylistPropKey playlist property key type.
 type PlaylistPropKey int
 
-// PlaylistPropKey enum
+// PlaylistPropKey enum.
 const (
 	NamePropKey PlaylistPropKey = iota
 	EncodingPropKey
@@ -54,13 +50,13 @@ func (ppk PlaylistPropKey) String() string {
 	return []string{"name", "encoding"}[ppk]
 }
 
-// PlaylistProp plsylist property
+// PlaylistProp plsylist property.
 type PlaylistProp struct {
 	Key PlaylistPropKey
 	Val string
 }
 
-// TrackInfo track information
+// TrackInfo track information.
 type TrackInfo struct {
 	Location    string
 	Title       string
@@ -73,7 +69,7 @@ type TrackInfo struct {
 	Year        int
 }
 
-// ToRaw converts returns the raw (i.e., frame) information about the track
+// ToRaw converts returns the raw (i.e., frame) information about the track.
 func (ti *TrackInfo) ToRaw() (raw map[string]interface{}) {
 	raw = map[string]interface{}{}
 

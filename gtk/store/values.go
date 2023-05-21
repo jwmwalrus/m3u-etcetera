@@ -8,7 +8,7 @@ import (
 )
 
 // GetMultipleTreeSelectionValues returns the values of the tree selection for the
-// given columns
+// given columns.
 func GetMultipleTreeSelectionValues(sel *gtk.TreeSelection, tv *gtk.TreeView, cols []ModelColumn) (
 	values []map[ModelColumn]interface{}, paths []*gtk.TreePath, err error) {
 
@@ -48,7 +48,7 @@ func GetMultipleTreeSelectionValues(sel *gtk.TreeSelection, tv *gtk.TreeView, co
 }
 
 // GetSingleTreeSelectionValue returns the value of the tree selection for the given
-// column
+// column.
 func GetSingleTreeSelectionValue(sel *gtk.TreeSelection, col ModelColumn) (
 	value interface{}, err error) {
 
@@ -60,7 +60,7 @@ func GetSingleTreeSelectionValue(sel *gtk.TreeSelection, col ModelColumn) (
 }
 
 // GetSingleTreeSelectionValues returns the values of the tree selection for the
-// given columns
+// given columns.
 func GetSingleTreeSelectionValues(sel *gtk.TreeSelection, cols []ModelColumn) (
 	values map[ModelColumn]interface{}, err error) {
 
@@ -71,7 +71,7 @@ func GetSingleTreeSelectionValues(sel *gtk.TreeSelection, cols []ModelColumn) (
 	return
 }
 
-// GetTreeModel given a gtk.ITreeModel returns the *gtk.TreeModel
+// GetTreeModel given a gtk.ITreeModel returns the *gtk.TreeModel.
 func GetTreeModel(imodel gtk.ITreeModel) *gtk.TreeModel {
 	model, ok := imodel.(*gtk.TreeModel)
 	if ok {
@@ -89,7 +89,7 @@ func GetTreeModel(imodel gtk.ITreeModel) *gtk.TreeModel {
 }
 
 // GetTreeModelValue returns the value of the tree model for the given
-// column at the given tree-iter
+// column at the given tree-iter.
 func GetTreeModelValue(model *gtk.TreeModel, iter *gtk.TreeIter,
 	col ModelColumn) (value interface{}, err error) {
 
@@ -111,7 +111,7 @@ func GetTreeModelValue(model *gtk.TreeModel, iter *gtk.TreeIter,
 }
 
 // GetTreeModelValues returns the values of the list store for the given
-// columns at the given tree-iter
+// columns at the given tree-iter.
 func GetTreeModelValues(model *gtk.TreeModel, iter *gtk.TreeIter,
 	cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
 
@@ -129,7 +129,7 @@ func GetTreeModelValues(model *gtk.TreeModel, iter *gtk.TreeIter,
 }
 
 // GetTreeViewTreePathValue returns the value of the list view for the given column at
-// the given tree-path
+// the given tree-path.
 func GetTreeViewTreePathValue(tv *gtk.TreeView, path *gtk.TreePath,
 	col ModelColumn) (value interface{}, err error) {
 
@@ -155,7 +155,7 @@ func GetTreeViewTreePathValue(tv *gtk.TreeView, path *gtk.TreePath,
 }
 
 // GetTreeViewTreePathValues returns the values of the list view for the given columns
-// at the given tree-path
+// at the given tree-path.
 func GetTreeViewTreePathValues(tv *gtk.TreeView, path *gtk.TreePath,
 	cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
 

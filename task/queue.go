@@ -17,7 +17,7 @@ var (
 	newQueueSvcClient = m3uetcpb.NewQueueSvcClient
 )
 
-// Queue queue task
+// Queue queue task.
 func Queue() *cli.Command {
 	return &cli.Command{
 		Name:        "queue",

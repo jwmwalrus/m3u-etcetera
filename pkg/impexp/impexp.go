@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 )
 
-// PlaylistType definition
+// PlaylistType definition.
 type PlaylistType int
 
-// PlaylistType enum
+// PlaylistType enum.
 const (
 	M3UPlaylist PlaylistType = iota
 	PLSPlaylist
@@ -22,7 +22,7 @@ func (plt PlaylistType) String() string {
 	}[plt]
 }
 
-// PlaylistData -
+// PlaylistData -.
 type PlaylistData interface {
 	Add(ti []TrackInfo)
 	Name() string
@@ -30,7 +30,7 @@ type PlaylistData interface {
 	Tracks() []TrackInfo
 }
 
-// PlaylistDef -
+// PlaylistDef -.
 type PlaylistDef interface {
 	PlaylistData
 	Type() string
@@ -46,7 +46,7 @@ var (
 	}
 )
 
-// New creates a new playlist definition
+// New creates a new playlist definition.
 func New(plt PlaylistType, props ...PlaylistProp) (PlaylistDef, error) {
 	pl := &playlist{}
 	pl.setProps(props)
@@ -61,7 +61,7 @@ func New(plt PlaylistType, props ...PlaylistProp) (PlaylistDef, error) {
 	}
 }
 
-// NewFromPath creates a new playlist definition using the given path as a hint
+// NewFromPath creates a new playlist definition using the given path as a hint.
 func NewFromPath(path string, props ...PlaylistProp) (PlaylistDef, error) {
 	plt, ok := extToType[filepath.Ext(path)]
 	if !ok {

@@ -6,7 +6,7 @@ import (
 	"github.com/godbus/dbus/v5/prop"
 )
 
-// Player -
+// Player -.
 type Player interface {
 	IntrospectInterface() introspect.Interface
 	Properties() map[string]*prop.Prop
@@ -40,7 +40,7 @@ type Player interface {
 	CanControl() bool
 }
 
-// PlayerIntrospectInterface returns the instrospection for the player
+// PlayerIntrospectInterface returns the instrospection for the player.
 func PlayerIntrospectInterface() introspect.Interface {
 	return introspect.Interface{
 		Name: "org.mpris.MediaPlayer2.Player",

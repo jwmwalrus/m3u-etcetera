@@ -52,7 +52,7 @@ func init() {
 	}
 }
 
-// Add adds pane to notebook
+// Add adds pane to notebook.
 func Add(idx m3uetcpb.Perspective, nb *gtk.Notebook,
 	signals *map[string]interface{}) (err error) {
 

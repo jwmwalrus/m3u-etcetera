@@ -10,7 +10,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// AddCollection adds a collection
+// AddCollection adds a collection.
 func AddCollection(req *m3uetcpb.AddCollectionRequest) (
 	res *m3uetcpb.AddCollectionResponse, err error) {
 
@@ -28,7 +28,7 @@ func AddCollection(req *m3uetcpb.AddCollectionRequest) (
 	return
 }
 
-// ApplyCollectionChanges applies collection changes
+// ApplyCollectionChanges applies collection changes.
 func ApplyCollectionChanges(o ...store.CollectionOptions) {
 	entry := log.WithField("collectionOptions", o)
 	entry.Info("Applying collection changes")

@@ -13,7 +13,7 @@ var (
 	newPerspectiveSvcClient = m3uetcpb.NewPerspectiveSvcClient
 )
 
-// Perspective perspective task
+// Perspective perspective task.
 func Perspective() *cli.Command {
 	return &cli.Command{
 		Name:        "perspective",

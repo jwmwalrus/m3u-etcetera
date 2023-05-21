@@ -14,30 +14,30 @@ import (
 )
 
 const (
-	// ServerIdleTimeout Amount of idle seconds before server exits
+	// ServerIdleTimeout Amount of idle seconds before server exits.
 	ServerIdleTimeout = 300
 )
 
-// IdleStatus defines the idle status type
+// IdleStatus defines the idle status type.
 type IdleStatus int
 
 const (
-	// IdleStatusIdle Server is idle
+	// IdleStatusIdle Server is idle.
 	IdleStatusIdle IdleStatus = iota
 
-	// IdleStatusEngineLoop The engine loop is working
+	// IdleStatusEngineLoop The engine loop is working.
 	IdleStatusEngineLoop
 
-	// IdleStatusRequest A client's request is being processed
+	// IdleStatusRequest A client's request is being processed.
 	IdleStatusRequest
 
-	// IdleStatusSubscription A client subscription is active
+	// IdleStatusSubscription A client subscription is active.
 	IdleStatusSubscription
 
-	// IdleStatusDbOperations A DB-related operation is in progress
+	// IdleStatusDbOperations A DB-related operation is in progress.
 	IdleStatusDbOperations
 
-	// IdleStatusFileOperations A file-related operation is in progress
+	// IdleStatusFileOperations A file-related operation is in progress.
 	IdleStatusFileOperations
 )
 
@@ -69,11 +69,11 @@ var (
 		mu sync.RWMutex
 	}
 
-	// InterruptSignal -
+	// InterruptSignal -.
 	InterruptSignal chan os.Signal = make(chan os.Signal, 1)
 )
 
-// DoTerminate forces immediate termination of the application
+// DoTerminate forces immediate termination of the application.
 func DoTerminate(force bool) {
 	forceExit.Store(force || IsAppIdling())
 
@@ -84,7 +84,7 @@ func DoTerminate(force bool) {
 		Debug("Immediate termination status")
 }
 
-// GetBusy registers a process as busy, to prevent idle timeout
+// GetBusy registers a process as busy, to prevent idle timeout.
 func GetBusy(is IdleStatus) {
 	if is == IdleStatusIdle {
 		return
@@ -102,7 +102,7 @@ func GetBusy(is IdleStatus) {
 	}
 }
 
-// GetFree registers a process as less busy
+// GetFree registers a process as less busy.
 func GetFree(is IdleStatus) {
 	entry := log.WithField("is", is)
 
@@ -135,7 +135,7 @@ func GetFree(is IdleStatus) {
 }
 
 // Idle exits the server if it has been idle for a while and no long-term
-// processes are pending
+// processes are pending.
 func Idle(ctx context.Context) {
 	idleStatusStack.mu.RLock()
 	entry := log.WithFields(log.Fields{
@@ -185,7 +185,7 @@ func Idle(ctx context.Context) {
 	InterruptSignal <- os.Interrupt
 }
 
-// IsAppBusy returns true if some process has registered as busy
+// IsAppBusy returns true if some process has registered as busy.
 func IsAppBusy() bool {
 	idleStatusStack.mu.RLock()
 	defer idleStatusStack.mu.RUnlock()
@@ -193,7 +193,7 @@ func IsAppBusy() bool {
 	return len(idleStatusStack.s) > 1
 }
 
-// IsAppBusyBy returns true if some process has registered as busy
+// IsAppBusyBy returns true if some process has registered as busy.
 func IsAppBusyBy(is IdleStatus) bool {
 	idleStatusStack.mu.RLock()
 	defer idleStatusStack.mu.RUnlock()
@@ -201,7 +201,7 @@ func IsAppBusyBy(is IdleStatus) bool {
 	return slices.Contains(idleStatusStack.s, is)
 }
 
-// IsAppIdling returns true if the Idle method is active
+// IsAppIdling returns true if the Idle method is active.
 func IsAppIdling() bool {
 	idleStatusStack.mu.RLock()
 	defer idleStatusStack.mu.RUnlock()
@@ -209,7 +209,7 @@ func IsAppIdling() bool {
 	return idleGotCalled.Load() || len(idleStatusStack.s) == 1
 }
 
-// StartIdler -
+// StartIdler -.
 func StartIdler() {
 	GetFree(IdleStatusIdle)
 }

@@ -11,12 +11,12 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 )
 
-// PLS implementation
+// PLS implementation.
 type PLS struct {
 	*playlist
 }
 
-// Format implements the PlaylistDef interface
+// Format implements the PlaylistDef interface.
 func (pi *PLS) Format(w io.StringWriter) (n int, err error) {
 	out := strings.Builder{}
 	_, err = out.WriteString("[playlist]\n\n")
@@ -64,7 +64,7 @@ func (pi *PLS) Format(w io.StringWriter) (n int, err error) {
 	return
 }
 
-// Parse implements the PlaylistDef interface
+// Parse implements the PlaylistDef interface.
 func (pi *PLS) Parse(f io.Reader) (err error) {
 	bv, err := io.ReadAll(f)
 	if err != nil {
@@ -176,7 +176,7 @@ func (pi *PLS) Parse(f io.Reader) (err error) {
 	return
 }
 
-// Type implements the PlaylistDef interface
+// Type implements the PlaylistDef interface.
 func (*PLS) Type() string {
 	return PLSPlaylist.String()
 }

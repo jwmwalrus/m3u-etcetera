@@ -210,7 +210,7 @@ func (qd *queueData) updateQueueModels() bool {
 	return false
 }
 
-// CreateQueueModel -
+// CreateQueueModel -.
 func CreateQueueModel(idx m3uetcpb.Perspective) (
 	model *gtk.ListStore, err error) {
 
@@ -233,7 +233,7 @@ func CreateQueueModel(idx m3uetcpb.Perspective) (
 	return
 }
 
-// GetQueueModel returns the queue model for the given perspective
+// GetQueueModel returns the queue model for the given perspective.
 func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
 	log.WithField("idx", idx).
 		Debug("Returning queue model")

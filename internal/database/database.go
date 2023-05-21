@@ -40,7 +40,7 @@ var (
 	}
 )
 
-// Close closes the application database
+// Close closes the application database.
 func Close() {
 	if conn == nil {
 		return
@@ -58,17 +58,17 @@ func Close() {
 	sqlDB.Close()
 }
 
-// DSN returns the application's DSN
+// DSN returns the application's DSN.
 func DSN() string {
 	return getDatabasePath() + getConnectionOptions()
 }
 
-// Instance returns the database instance
+// Instance returns the database instance.
 func Instance() *gorm.DB {
 	return conn
 }
 
-// Open creates the application database, if it doesn't exist
+// Open creates the application database, if it doesn't exist.
 func Open() *rtc.Unloader {
 	entry := log.WithField("dsn", DSN())
 

@@ -11,7 +11,7 @@ import (
 	"github.com/jwmwalrus/onerror"
 )
 
-// EditPlaylist edits a playlist properties
+// EditPlaylist edits a playlist properties.
 func EditPlaylist(id int64) (err error) {
 	pl := store.BData.GetPlaylist(id)
 	nameIn := ""

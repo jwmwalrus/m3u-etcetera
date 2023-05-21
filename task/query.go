@@ -15,7 +15,7 @@ var (
 	newQuerySvcClient = m3uetcpb.NewQuerySvcClient
 )
 
-// Query defines the query-related tasks
+// Query defines the query-related tasks.
 func Query() *cli.Command {
 	return &cli.Command{
 		Name:        "query",

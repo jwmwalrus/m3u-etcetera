@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ExecuteQueueAction sends an ExecuteQueueAction request
+// ExecuteQueueAction sends an ExecuteQueueAction request.
 func ExecuteQueueAction(req *m3uetcpb.ExecuteQueueActionRequest) (err error) {
 	cc, err := getClientConn1()
 	if err != nil {

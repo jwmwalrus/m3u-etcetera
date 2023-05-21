@@ -7,27 +7,27 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// PerspectiveIndex defines the perpective index
+// PerspectiveIndex defines the perpective index.
 type PerspectiveIndex int
 
 const (
-	// MusicPerspective -
+	// MusicPerspective -.
 	MusicPerspective PerspectiveIndex = iota
 
-	// RadioPerspective -
+	// RadioPerspective -.
 	RadioPerspective
 
-	// PodcastsPerspective -
+	// PodcastsPerspective -.
 	PodcastsPerspective
 
-	// AudiobooksPerspective -
+	// AudiobooksPerspective -.
 	AudiobooksPerspective
 )
 
-// DefaultPerspective declares the default perspective
+// DefaultPerspective declares the default perspective.
 const DefaultPerspective = MusicPerspective
 
-// PerspectiveIndexList returns the list of perspectives
+// PerspectiveIndexList returns the list of perspectives.
 func PerspectiveIndexList() []PerspectiveIndex {
 	return []PerspectiveIndex{
 		MusicPerspective,
@@ -37,7 +37,7 @@ func PerspectiveIndexList() []PerspectiveIndex {
 	}
 }
 
-// PerspectiveIndexStrings Returns the string list of perspectives
+// PerspectiveIndexStrings Returns the string list of perspectives.
 func PerspectiveIndexStrings() []string {
 	return []string{"Music", "Radio", "Podcasts", "Audiobooks"}
 }
@@ -46,7 +46,7 @@ func (idx PerspectiveIndex) String() string {
 	return PerspectiveIndexStrings()[idx]
 }
 
-// Activate sets the given perspective as active
+// Activate sets the given perspective as active.
 func (idx PerspectiveIndex) Activate() (err error) {
 	log.WithField("idx", idx).
 		Info("Activating perspective")
@@ -73,13 +73,13 @@ func (idx PerspectiveIndex) Activate() (err error) {
 
 }
 
-// Get returns the database row for the given index
+// Get returns the database row for the given index.
 func (idx PerspectiveIndex) Get() (p Perspective) {
 	db.Where("idx = ?", int(idx)).First(&p)
 	return
 }
 
-// Perspective defines a perspective
+// Perspective defines a perspective.
 type Perspective struct {
 	ID          int64  `json:"id" gorm:"primaryKey"`
 	Idx         int    `json:"idx" gorm:"uniqueIndex:unique_idx_perspective_idx,not null"`
@@ -89,14 +89,14 @@ type Perspective struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
-// Read implements the DataReader interface
+// Read implements the DataReader interface.
 func (p *Perspective) Read(id int64) (err error) {
 	return db.
 		First(p, id).
 		Error
 }
 
-// GetActivePerspectiveIndex returns the index for the active perspective
+// GetActivePerspectiveIndex returns the index for the active perspective.
 func GetActivePerspectiveIndex() (idx PerspectiveIndex) {
 	var err error
 	p := Perspective{}
@@ -109,18 +109,18 @@ func GetActivePerspectiveIndex() (idx PerspectiveIndex) {
 	return
 }
 
-// GetActivePerspectiveName -
+// GetActivePerspectiveName -.
 func GetActivePerspectiveName() string {
 	return GetActivePerspectiveIndex().String()
 }
 
-// PerspectiveDigest defines the perspective digest/summary
+// PerspectiveDigest defines the perspective digest/summary.
 type PerspectiveDigest struct {
 	Idx      PerspectiveIndex
 	Duration int64
 }
 
-// ToProtobuf implements the ProtoOut interface
+// ToProtobuf implements the ProtoOut interface.
 func (pd *PerspectiveDigest) ToProtobuf() proto.Message {
 	return &m3uetcpb.PerspectiveDigest{
 		Perspective: m3uetcpb.Perspective(pd.Idx),
