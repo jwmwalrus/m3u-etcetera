@@ -60,7 +60,7 @@ func Close() {
 
 // DSN returns the application's DSN.
 func DSN() string {
-	return getDatabasePath() + getConnectionOptions()
+	return Path() + ConnectionOptions()
 }
 
 // Instance returns the database instance.
@@ -104,10 +104,39 @@ func Open() *rtc.Unloader {
 	return unloader
 }
 
+// ConnectionOptions returns the database directory.
+func ConnectionOptions() string {
+	if !rtc.FlagTestMode() {
+		return connectionOptions
+	}
+	return "?_loc=Local"
+}
+
+// Dir returns the database directory.
+func Dir() string {
+	if !rtc.FlagTestMode() {
+		return rtc.DataDir()
+	}
+	return os.TempDir()
+}
+
+// Path returns the full path to the database {.
+func Path() string {
+	return filepath.Join(Dir(), Filename())
+}
+
+// Filename returns the database filename.
+func Filename() string {
+	if !rtc.FlagTestMode() {
+		return base.DatabaseFilename
+	}
+	return "m3uetc-test-music-" + rtc.InstanceSuffix() + ".db"
+}
+
 func backupDatabase() {
 	if !rtc.FlagTestMode() &&
 		base.Conf.Server.Database.Backup {
-		path := getDatabasePath()
+		path := Path()
 		_, err := os.Stat(path)
 		if !os.IsNotExist(err) {
 			if _, err := exec.LookPath("sqlite3"); err != nil {
@@ -124,33 +153,4 @@ func backupDatabase() {
 			}
 		}
 	}
-}
-
-// getConnectionOptions returns the database directory
-func getConnectionOptions() string {
-	if !rtc.FlagTestMode() {
-		return connectionOptions
-	}
-	return "?_loc=Local"
-}
-
-// getDatabaseDir returns the database directory
-func getDatabaseDir() string {
-	if !rtc.FlagTestMode() {
-		return rtc.DataDir()
-	}
-	return os.TempDir()
-}
-
-// getDatabasePath returns the full path to the database {
-func getDatabasePath() string {
-	return filepath.Join(getDatabaseDir(), getDatabaseFilename())
-}
-
-// getDatabaseFilename returns the database filename
-func getDatabaseFilename() string {
-	if !rtc.FlagTestMode() {
-		return base.DatabaseFilename
-	}
-	return "m3uetc-test-music-" + rtc.InstanceSuffix() + ".db"
 }

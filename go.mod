@@ -7,30 +7,30 @@ require (
 	github.com/go-gormigrate/gormigrate/v2 v2.0.2
 	github.com/go-testfixtures/testfixtures/v3 v3.6.1
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/gotk3/gotk3 v0.6.2-0.20211226093840-cf265f40b836
+	github.com/gotk3/gotk3 v0.6.2
 	github.com/jwmwalrus/bnp v1.14.0
 	github.com/jwmwalrus/onerror v0.2.0
-	github.com/jwmwalrus/rtcycler v0.1.0
+	github.com/jwmwalrus/rtcycler v0.2.0
 	github.com/jwmwalrus/seater v0.1.1
 	github.com/rodaine/table v1.1.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.7.2
 	github.com/tinyzimmer/go-glib v0.0.25
 	github.com/tinyzimmer/go-gst v0.2.33
-	github.com/urfave/cli/v2 v2.24.4
-	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2
-	golang.org/x/text v0.7.0
-	google.golang.org/grpc v1.53.0
-	google.golang.org/protobuf v1.28.1
-	gorm.io/driver/sqlite v1.4.4
-	gorm.io/gorm v1.24.6
+	github.com/urfave/cli/v2 v2.25.3
+	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
+	golang.org/x/text v0.9.0
+	google.golang.org/grpc v1.55.0
+	google.golang.org/protobuf v1.30.0
+	gorm.io/driver/sqlite v1.5.0
+	gorm.io/gorm v1.25.1
 )
 
 require (
 	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-pointer v0.0.1 // indirect
@@ -41,9 +41,9 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
-	google.golang.org/genproto v0.0.0-20230301171018-9ab4bdc49ad5 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -29,58 +29,8 @@ func AddQuery(req *m3uetcpb.AddQueryRequest) (err error) {
 	return
 }
 
-// ApplyQuery apply the query defined by the request and add the results
-// to the given target
-func ApplyQuery(req *m3uetcpb.ApplyQueryRequest, targetID int64) (err error) {
-	cc, err := getClientConn1()
-	if err != nil {
-		return
-	}
-	defer cc.Close()
-
-	cl := m3uetcpb.NewQuerySvcClient(cc)
-	res, err := cl.ApplyQuery(context.Background(), req)
-	if err != nil {
-		s := status.Convert(err)
-		err = fmt.Errorf(s.Message())
-		return
-	}
-
-	var ids []int64
-	for i := range res.Tracks {
-		ids = append(ids, res.Tracks[i].Id)
-	}
-
-	if targetID > 0 {
-		reqpl := &m3uetcpb.ExecutePlaylistTrackActionRequest{
-			PlaylistId: targetID,
-			Action:     m3uetcpb.PlaylistTrackAction_PT_APPEND,
-			TrackIds:   ids,
-		}
-
-		err = ExecutePlaylistTrackAction(reqpl)
-		if err != nil {
-			s := status.Convert(err)
-			err = fmt.Errorf(s.Message())
-		}
-		return
-	}
-
-	reqpb := &m3uetcpb.ExecutePlaybackActionRequest{
-		Action: m3uetcpb.PlaybackAction_PB_PLAY,
-		Ids:    ids,
-	}
-
-	err = ExecutePlaybackAction(reqpb)
-	if err != nil {
-		s := status.Convert(err)
-		err = fmt.Errorf(s.Message())
-	}
-	return
-}
-
 // QueryBy performs the query defined by the request and displays
-// the results
+// the results.
 func QueryBy(req *m3uetcpb.QueryByRequest) (count int, err error) {
 	cc, err := getClientConn1()
 	if err != nil {
@@ -97,6 +47,46 @@ func QueryBy(req *m3uetcpb.QueryByRequest) (count int, err error) {
 	}
 
 	count = store.QYData.UpdateQueryByResults(res)
+	return
+}
+
+// QueryInPlaylist apply the query defined by the request and add the results
+// to the given target.
+func QueryInPlaylist(req *m3uetcpb.QueryInPlaylistRequest) (playlistID int64, err error) {
+	cc, err := getClientConn1()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewQuerySvcClient(cc)
+	res, err := cl.QueryInPlaylist(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		err = fmt.Errorf(s.Message())
+		return
+	}
+
+	playlistID = res.PlaylistId
+	return
+}
+
+// QueryInQueue apply the query defined by the request and add the results
+// to the given target.
+func QueryInQueue(req *m3uetcpb.QueryInQueueRequest) (err error) {
+	cc, err := getClientConn1()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := m3uetcpb.NewQuerySvcClient(cc)
+	_, err = cl.QueryInQueue(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		err = fmt.Errorf(s.Message())
+		return
+	}
 	return
 }
 

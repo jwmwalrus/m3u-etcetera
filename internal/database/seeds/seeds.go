@@ -6,32 +6,36 @@ import (
 	"gorm.io/gorm"
 )
 
-// All seeds all initial data
+// All seeds all initial data.
 func All(db *gorm.DB) {
 	h := seater.SeedHandlerNew(db)
 	h.Add(seater.Seed{
 		Name: "perspective",
-		Run:  seedPerspective,
+		Run:  SeedPerspective,
+	})
+	h.Add(seater.Seed{
+		Name: "query",
+		Run:  SeedQuery,
 	})
 	h.AddSome([]seater.Seed{
 		{
 			Name:     "collection",
-			Run:      seedCollection,
+			Run:      SeedCollection,
 			Requires: []string{"perspective"},
 		},
 		{
 			Name:     "playlist",
-			Run:      seedPlaylist,
+			Run:      SeedPlaylist,
 			Requires: []string{"perspective"},
 		},
 		{
 			Name:     "playbar",
-			Run:      seedPlaybar,
+			Run:      SeedPlaybar,
 			Requires: []string{"perspective"},
 		},
 		{
 			Name:     "queue",
-			Run:      seedQueue,
+			Run:      SeedQueue,
 			Requires: []string{"perspective"},
 		},
 	})

@@ -5,14 +5,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func seedPlaybar(db *gorm.DB) (err error) {
+func SeedPlaybar(tx *gorm.DB) (err error) {
 	create := func(idx models.PerspectiveIndex) error {
 		p := models.Perspective{}
-		if err := db.Where("idx = ?", int(idx)).First(&p).Error; err != nil {
+		if err := tx.Where("idx = ?", int(idx)).First(&p).Error; err != nil {
 			return err
 		}
 		bar := models.Playbar{PerspectiveID: p.ID}
-		if err := db.Create(&bar).Error; err != nil {
+		if err := tx.Where(&bar).FirstOrCreate(&models.Playbar{}).Error; err != nil {
 			return err
 		}
 

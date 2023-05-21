@@ -5,17 +5,20 @@ import (
 	"gorm.io/gorm"
 )
 
-func seedCollection(db *gorm.DB) (err error) {
+func SeedCollection(tx *gorm.DB) (err error) {
 	create := func(idx models.CollectionIndex) error {
 		coll := models.Collection{
-			Idx:           int(idx),
-			Name:          idx.String(),
-			Location:      idx.String(),
-			Hidden:        true,
-			Scanned:       100,
+			Idx:      int(idx),
+			Name:     idx.String(),
+			Location: idx.String(),
+			Hidden:   true,
+			// Scanned:       100,
 			PerspectiveID: 1,
 		}
-		if err := db.Create(&coll).Error; err != nil {
+
+		err := tx.Where(&coll).FirstOrCreate(&models.Collection{}).
+			Error
+		if err != nil {
 			return err
 		}
 		return nil

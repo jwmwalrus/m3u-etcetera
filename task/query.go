@@ -139,24 +139,44 @@ func Query() *cli.Command {
 				Action: queryUpdateAction,
 			},
 			{
-				Name:    "tracks",
-				Aliases: []string{"t"},
+				Name:    "inplaylist",
+				Aliases: []string{"inpl"},
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:    "json",
 						Aliases: []string{"j"},
 						Usage:   "Output JSON",
 					},
+					&cli.IntFlag{
+						Name:  "limit",
+						Usage: "Limit the number of tracks shown",
+					},
 					&cli.BoolFlag{
 						Name:  "play",
-						Usage: "Add tracks to playback instead of listing them",
+						Usage: "Add all playlist tracks to playback instead of listing them",
 					},
 					&cli.BoolFlag{
 						Name:  "force",
 						Usage: "Force playback",
 					},
+					&cli.IntFlag{
+						Name:  "pl",
+						Usage: "Playlist ID",
+					},
 				},
-				Action: queryTracksAction,
+				Action: queryInPlaylistAction,
+			},
+			{
+				Name:    "inqueue",
+				Aliases: []string{"inq"},
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "json",
+						Aliases: []string{"j"},
+						Usage:   "Output JSON",
+					},
+				},
+				Action: queryInQueueAction,
 			},
 			{
 				Name: "by",
@@ -458,59 +478,6 @@ func queryUpdateAction(c *cli.Context) (err error) {
 	return
 }
 
-func queryTracksAction(c *cli.Context) (err error) {
-	var id int64
-	if id, err = mustParseSingleID(c); err != nil {
-		return
-	}
-
-	req := &m3uetcpb.ApplyQueryRequest{
-		Id: id,
-	}
-
-	cc, err := getClientConn()
-	if err != nil {
-		return
-	}
-	defer cc.Close()
-
-	cl := newQuerySvcClient(cc)
-	res, err := cl.ApplyQuery(context.Background(), req)
-	if err != nil {
-		return
-	}
-
-	if c.Bool("play") {
-		if err = playTracks(cc, res.Tracks, c.Bool("force")); err != nil {
-			return
-		}
-		fmt.Printf("Tracks added to playback!\n")
-		return
-	}
-
-	if c.Bool("json") {
-		var bv []byte
-		bv, err = json.MarshalIndent(res, "", "  ")
-		if err != nil {
-			return
-		}
-		fmt.Printf("\n%v\n", string(bv))
-		return
-	}
-
-	tbl := table.New("#", "ID", "Title", "Artist", "Album")
-	for i, t := range res.Tracks {
-		artist := t.Artist
-		if artist == "" {
-			artist = t.Albumartist
-		}
-		tbl.AddRow(i+1, t.Id, t.Title, artist, t.Album)
-	}
-	tbl.Print()
-
-	return
-}
-
 func queryByAction(c *cli.Context) (err error) {
 	rest := c.Args().Slice()
 
@@ -570,9 +537,71 @@ func queryByAction(c *cli.Context) (err error) {
 	return
 }
 
-func playTracks(cc iClientConn, ts []*m3uetcpb.Track,
-	force bool) (err error) {
+func queryInPlaylistAction(c *cli.Context) (err error) {
+	var id int64
+	if id, err = mustParseSingleID(c); err != nil {
+		return
+	}
 
+	playlistID := c.Int("pl")
+
+	req := &m3uetcpb.QueryInPlaylistRequest{
+		Id:         id,
+		PlaylistId: int64(playlistID),
+	}
+
+	cc, err := getClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := newQuerySvcClient(cc)
+	res, err := cl.QueryInPlaylist(context.Background(), req)
+	if err != nil {
+		return
+	}
+
+	if c.Bool("play") {
+		err = playTracksFromPlaylist(cc, res.PlaylistId, c.Bool("force"), c.Int("limit"))
+		if err != nil {
+			return
+		}
+		fmt.Printf("Tracks added to playback!\n")
+		return
+	}
+
+	showPlaylist(c, res.PlaylistId)
+	return
+}
+
+func queryInQueueAction(c *cli.Context) (err error) {
+	var id int64
+	if id, err = mustParseSingleID(c); err != nil {
+		return
+	}
+
+	req := &m3uetcpb.QueryInQueueRequest{
+		Id: id,
+	}
+
+	cc, err := getClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := newQuerySvcClient(cc)
+	_, err = cl.QueryInQueue(context.Background(), req)
+	if err != nil {
+		return
+	}
+
+	fmt.Printf("OK\n")
+	return
+}
+
+func playTracks(cc iClientConn, ts []*m3uetcpb.Track, force bool) (err error) {
 	ids := []int64{}
 	for _, v := range ts {
 		ids = append(ids, v.Id)
@@ -586,5 +615,19 @@ func playTracks(cc iClientConn, ts []*m3uetcpb.Track,
 
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
 	_, err = cl.ExecutePlaybackAction(context.Background(), req)
+	return
+}
+
+func playTracksFromPlaylist(cc iClientConn, playlistID int64, force bool, limit int) (err error) {
+	cl := newPlaybarSvcClient(cc)
+
+	req := &m3uetcpb.GetPlaylistRequest{Id: playlistID, Limit: int32(limit)}
+
+	res, err := cl.GetPlaylist(context.Background(), req)
+	if err != nil {
+		return
+	}
+
+	err = playTracks(cc, res.Tracks, force)
 	return
 }

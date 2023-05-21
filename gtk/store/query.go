@@ -200,7 +200,7 @@ func (qyd *queryData) updateQueryResults() bool {
 				int(t.Rating),
 				fmt.Sprint(dur.Truncate(time.Second)),
 				t.Remote,
-				t.Lastplayed,
+				time.Unix(0, t.Lastplayed).Format(lastPlayedLayout),
 				i + 1,
 				false,
 			},

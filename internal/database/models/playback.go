@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Playback defines a playback row
+// Playback defines a playback row.
 type Playback struct { // too transient
 	ID        int64  `json:"id" gorm:"primaryKey"`
 	Location  string `json:"location" gorm:"not null"`
@@ -26,22 +26,22 @@ type Playback struct { // too transient
 	TrackID   int64  `json:"trackId"`
 }
 
-// Create implements the DataCreator interface
+// Create implements the DataCreator interface.
 func (pb *Playback) Create() error {
 	return db.Create(pb).Error
 }
 
-// Read implements the DataReader interface
+// Read implements the DataReader interface.
 func (pb *Playback) Read(id int64) error {
 	return db.First(pb, id).Error
 }
 
-// Save implements the DataUpdater interface
+// Save implements the DataUpdater interface.
 func (pb *Playback) Save() error {
 	return db.Save(pb).Error
 }
 
-// ToProtobuf implments ProtoOut interface
+// ToProtobuf implments ProtoOut interface.
 func (pb *Playback) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pb)
 	if err != nil {
@@ -50,17 +50,13 @@ func (pb *Playback) ToProtobuf() proto.Message {
 	}
 
 	out := &m3uetcpb.Playback{}
-	err = json.Unmarshal(bv, out)
+	err = jsonUnmarshaler.Unmarshal(bv, out)
 	onerror.Log(err)
 
-	// Unmatched
-	out.TrackId = pb.TrackID
-	out.CreatedAt = pb.CreatedAt
-	out.UpdatedAt = pb.UpdatedAt
 	return out
 }
 
-// AfterCreate is a GORM hook
+// AfterCreate is a GORM hook.
 func (pb *Playback) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if !rtc.FlagTestMode() &&
@@ -71,7 +67,19 @@ func (pb *Playback) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// ClearPending removes all pending playback entries
+func (pb *Playback) Blacklist() {
+	err := db.Model(&Playback{}).
+		Where("played = 0 AND id = ?", pb.ID).
+		Update("played", 1).
+		Error
+	onerror.Warn(err)
+
+	if pb.TrackID > 0 {
+		DeleteLocalTrackIfDangling(pb.TrackID, pb.Location)
+	}
+}
+
+// ClearPending removes all pending playback entries.
 func (pb *Playback) ClearPending() {
 	err := db.Model(&Playback{}).
 		Where("played = 0 AND id <> ?", pb.ID).
@@ -80,7 +88,7 @@ func (pb *Playback) ClearPending() {
 	onerror.Warn(err)
 }
 
-// GetNextToPlay returns the next playback entry to play
+// GetNextToPlay returns the next playback entry to play.
 func (pb *Playback) GetNextToPlay() (err error) {
 	err = db.Where("played = 0").First(pb).Error
 	if err == nil && pb.ID == 0 {
@@ -89,14 +97,14 @@ func (pb *Playback) GetNextToPlay() (err error) {
 	return
 }
 
-// GetTrack returns the track for the given playback
+// GetTrack returns the track for the given playback.
 func (pb *Playback) GetTrack() (t *Track, err error) {
 	t = &Track{}
 	err = db.First(t, pb.TrackID).Error
 	return
 }
 
-// AddPlaybackLocation adds a playback entry by location
+// AddPlaybackLocation adds a playback entry by location.
 func AddPlaybackLocation(location string) (pb *Playback) {
 	entry := log.WithField("location", location)
 	entry.Info("Adding playback entry by location")
@@ -112,7 +120,7 @@ func AddPlaybackLocation(location string) (pb *Playback) {
 	return
 }
 
-// AddPlaybackTrack adds a playback entry by track
+// AddPlaybackTrack adds a playback entry by track.
 func AddPlaybackTrack(t *Track) (pb *Playback) {
 	entry := log.WithField("t", t)
 	entry.Info("Adding playback entry by track")
@@ -122,7 +130,7 @@ func AddPlaybackTrack(t *Track) (pb *Playback) {
 	return
 }
 
-// GetAllPlayback returns all the playback entries
+// GetAllPlayback returns all the playback entries.
 func GetAllPlayback() []*Playback {
 	log.Info("Obtaining all playback")
 
@@ -136,7 +144,6 @@ func GetAllPlayback() []*Playback {
 	return pointers.FromSlice(pbs)
 }
 
-// findPlaybackTrack attempts to find track from location
 func findPlaybackTrack(ctx context.Context) {
 	for {
 		select {

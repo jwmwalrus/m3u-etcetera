@@ -85,16 +85,15 @@ message UnsubscribeFromCollectionStoreRequest {
 
 message Collection {
     int64 id = 1;
-    int32 idx = 2;
-    string name = 3;
-    string description = 4;
-    string location = 5;
-    string remote_location = 6;
-    bool disabled = 7;
-    bool remote = 8;
-    int32 scanned = 9;
-    int64 tracks = 10;
-    Perspective perspective = 11;
+    string name = 2;
+    string description = 3;
+    string location = 4;
+    string remote_location = 5;
+    bool disabled = 6;
+    bool remote = 7;
+    int32 scanned = 8;
+    int64 tracks = 9;
+    Perspective perspective = 10;
     int64 created_at = 101;
     int64 updated_at = 102;
 }

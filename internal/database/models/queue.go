@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetPerspectiveQueue returns the queue associated to the perspective index
+// GetPerspectiveQueue returns the queue associated to the perspective index.
 func (idx PerspectiveIndex) GetPerspectiveQueue() (q *Queue, err error) {
 	q = &Queue{}
 	err = db.Preload("Perspective").
@@ -22,7 +22,7 @@ func (idx PerspectiveIndex) GetPerspectiveQueue() (q *Queue, err error) {
 
 }
 
-// Queue defines a queue
+// Queue defines a queue.
 type Queue struct { // too transient
 	ID            int64       `json:"id" gorm:"primaryKey"`
 	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
@@ -31,7 +31,7 @@ type Queue struct { // too transient
 	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Read implements the DataReader interface
+// Read implements the DataReader interface.
 func (q *Queue) Read(id int64) (err error) {
 	err = db.Joins("Perspective").
 		// Joins("JOIN perspective ON queue.perspective_id = perspective.id").
@@ -39,7 +39,7 @@ func (q *Queue) Read(id int64) (err error) {
 	return
 }
 
-// Add adds the given locations/IDs to the end of the queue
+// Add adds the given locations/IDs to the end of the queue.
 func (q *Queue) Add(locations []string, ids []int64) {
 	entry := log.WithFields(log.Fields{
 		"locations": locations,
@@ -71,7 +71,7 @@ func (q *Queue) Add(locations []string, ids []int64) {
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
-// Clear removes all entries from the queue
+// Clear removes all entries from the queue.
 func (q *Queue) Clear() {
 	entry := log.WithField("q", *q)
 	entry.Info("Clearing queue")
@@ -94,7 +94,7 @@ func (q *Queue) Clear() {
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
-// DeleteAt deletes the given position from the queue
+// DeleteAt deletes the given position from the queue.
 func (q *Queue) DeleteAt(position int) {
 	entry := log.WithFields(log.Fields{
 		"q":        *q,
@@ -128,7 +128,7 @@ func (q *Queue) DeleteAt(position int) {
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
-// InsertAt inserts the given locations and IDs into the queue
+// InsertAt inserts the given locations and IDs into the queue.
 func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 	entry := log.WithFields(log.Fields{
 		"q":         q,
@@ -156,14 +156,14 @@ func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
-// IsEmpty returns true if there are no tracks in the queue
+// IsEmpty returns true if there are no tracks in the queue.
 func (q *Queue) IsEmpty() bool {
 	s := []QueueTrack{}
 	db.Where("queue_id = ? AND played = 0", q.ID).Order("position").Find(&s)
 	return len(s) == 0
 }
 
-// MoveTo moves one queue track from one position to another
+// MoveTo moves one queue track from one position to another.
 func (q *Queue) MoveTo(to, from int) {
 	if from == to || from < 1 {
 		return
@@ -197,7 +197,7 @@ func (q *Queue) MoveTo(to, from int) {
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 }
 
-// Pop returns the next entry to be played from the queue
+// Pop returns the next entry to be played from the queue.
 func (q *Queue) Pop() (qt *QueueTrack) {
 	entry := log.WithField("q", *q)
 	entry.Debug("Popping from queue")
@@ -226,6 +226,24 @@ func (q *Queue) Pop() (qt *QueueTrack) {
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 	return
+}
+
+func (q *Queue) QueryIn(qy *Query, qybs []QueryBoundaryTx) {
+	log.WithFields(log.Fields{
+		"q":         *q,
+		"qy":        *qy,
+		"len(qybs)": len(qybs),
+	}).
+		Info("Appending query result tracks to queue")
+
+	ts := qy.FindTracks(qybs)
+
+	var ids []int64
+	for _, t := range ts {
+		ids = append(ids, t.ID)
+	}
+
+	q.Add([]string{}, ids)
 }
 
 func (q *Queue) appendTo(qt *QueueTrack) (err error) {

@@ -19,7 +19,7 @@ type queueData struct {
 }
 
 var (
-	// QData queue store
+	// QData queue store.
 	QData = &queueData{}
 
 	perspectiveQueuesList []m3uetcpb.Perspective
@@ -197,7 +197,7 @@ func (qd *queueData) updateQueueModels() bool {
 								int(t.Rating),
 								fmt.Sprint(dur.Truncate(time.Second)),
 								t.Remote,
-								t.Lastplayed,
+								time.Unix(0, t.Lastplayed).Format(lastPlayedLayout),
 							},
 						)
 						onerror.Log(err)

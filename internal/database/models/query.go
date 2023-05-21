@@ -20,10 +20,36 @@ import (
 	"gorm.io/gorm"
 )
 
-// QueryEvent defines a query event
+// QueryIndex defines indexes for collections.
+type QueryIndex int
+
+const (
+	// HistoryQuery for the playback history.
+	HistoryQuery QueryIndex = iota + 1
+
+	// TopTracksQuery for the top 100 tracks in playback history.
+	TopTracksQuery
+)
+
+func (idx QueryIndex) String() string {
+	return [...]string{"", "\t", "\t\t"}[idx]
+}
+
+func (idx QueryIndex) Description() string {
+	return [...]string{"", "Playback History", "Playback Top Tracks"}[idx]
+}
+
+// Get returns the query associated to the index.
+func (idx QueryIndex) Get() (qy *Query, err error) {
+	qy = &Query{}
+	err = db.Where("idx = ?", int(idx)).First(qy).Error
+	return
+}
+
+// QueryEvent defines a query event.
 type QueryEvent int
 
-// QueryEvent enum
+// QueryEvent enum.
 const (
 	QueryEventNone QueryEvent = iota
 	QueryEventInitial
@@ -46,14 +72,14 @@ func (qye QueryEvent) String() string {
 	}[qye]
 }
 
-// QueryBoundaryTx defines the transactional query boundary interface
+// QueryBoundaryTx defines the transactional query boundary interface.
 type QueryBoundaryTx interface {
 	FindTracksTx(*gorm.DB) []*Track
 	DataDeleterTx
 	DataUpdaterTx
 }
 
-// QueryBoundaryID defines the query boundary ID interface
+// QueryBoundaryID defines the query boundary ID interface.
 type QueryBoundaryID interface {
 	GetQueryID() int64
 }
@@ -64,10 +90,14 @@ var supportedParams = []string{
 	"artist",
 	"album",
 	"albumartist",
+	"composer",
 	"genre",
+	"year",
+	"date",
+	"rating",
 }
 
-// CountSupportedParams returns the count of supported parameters in a slice
+// CountSupportedParams returns the count of supported parameters in a slice.
 func CountSupportedParams(qp []qparams.QParam) (n int) {
 	for _, x := range qp {
 		if !slices.Contains(supportedParams, x.Key) {
@@ -78,9 +108,10 @@ func CountSupportedParams(qp []qparams.QParam) (n int) {
 	return
 }
 
-// Query Defines a query
+// Query Defines a query.
 type Query struct {
 	ID          int64  `json:"id" gorm:"primaryKey"`
+	Idx         int    `json:"idx" gorm:"not null,default:0"`
 	Name        string `json:"name"`        // query name
 	Description string `json:"description"` // query description
 	Random      bool   `json:"random"`      // query allows random results
@@ -93,23 +124,23 @@ type Query struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
-// Read implements DataReader interface
+// Read implements DataReader interface.
 func (qy *Query) Read(id int64) error {
 	return db.First(qy, id).Error
 }
 
-// Save implements DataSaver interface
+// Save implements DataSaver interface.
 func (qy *Query) Save() error {
 	qy.ProvideName()
 	return db.Save(qy).Error
 }
 
-// FromProtobuf implements ProtoIn interface
+// FromProtobuf implements ProtoIn interface.
 func (qy *Query) FromProtobuf(in proto.Message) {
 	protobufToQuery(in.(*m3uetcpb.Query), qy)
 }
 
-// ToProtobuf implements ProtoOut interface
+// ToProtobuf implements ProtoOut interface.
 func (qy *Query) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(qy)
 	if err != nil {
@@ -118,21 +149,21 @@ func (qy *Query) ToProtobuf() proto.Message {
 	}
 
 	out := &m3uetcpb.Query{}
-	err = json.Unmarshal(bv, out)
+	err = jsonUnmarshaler.Unmarshal(bv, out)
 	onerror.Log(err)
 
 	// Unmatched
-	out.CreatedAt = qy.CreatedAt
-	out.UpdatedAt = qy.UpdatedAt
+	out.ReadOnly = qy.IsReadOnly()
 
 	cqs := qy.GetCollections()
 	for _, x := range cqs {
 		out.CollectionIds = append(out.CollectionIds, x.CollectionID)
 	}
+
 	return out
 }
 
-// AfterCreate is a GORM hook
+// AfterCreate is a GORM hook.
 func (qy *Query) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -149,7 +180,7 @@ func (qy *Query) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterUpdate is a GORM hook
+// AfterUpdate is a GORM hook.
 func (qy *Query) AfterUpdate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -166,7 +197,7 @@ func (qy *Query) AfterUpdate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterDelete is a GORM hook
+// AfterDelete is a GORM hook.
 func (qy *Query) AfterDelete(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -183,7 +214,7 @@ func (qy *Query) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
-// Delete deletes a query from the DB
+// Delete deletes a query from the DB.
 func (qy *Query) Delete(qybs ...QueryBoundaryTx) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		for _, b := range qybs {
@@ -198,13 +229,21 @@ func (qy *Query) Delete(qybs ...QueryBoundaryTx) error {
 	})
 }
 
-// FindTracks return the list of tracks that match the query
+// FindTracks return the list of tracks that match the query.
 func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
 	entry := log.WithFields(log.Fields{
 		"qy":        qy,
 		"len(qybs)": len(qybs),
 	})
 	entry.Info("Finding tracks")
+
+	switch QueryIndex(qy.Idx) {
+	case HistoryQuery:
+		return findUniqueHistoryTracks()
+	case TopTracksQuery:
+		return findTopTracks()
+	default:
+	}
 
 	limit := config.DefaultQueryMaxLimit
 	if base.Conf.Server.Query.Limit > 0 {
@@ -283,8 +322,8 @@ func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
 	return
 }
 
-// GetCollections returns all the collections associated to the given query
-// This adds forward support for CollectionQuery, required for ToProtobuf
+// GetCollections returns all the collections associated to the given query.
+// This adds forward support for CollectionQuery, required for ToProtobuf.
 func (qy *Query) GetCollections() []*CollectionQuery {
 	cqs := []CollectionQuery{}
 
@@ -296,7 +335,12 @@ func (qy *Query) GetCollections() []*CollectionQuery {
 	return pointers.FromSlice(cqs)
 }
 
-// ProvideName provides a name before saving a query
+// IsReadOnly returns true if the query is read-only.
+func (qy *Query) IsReadOnly() bool {
+	return qy.Idx > 0
+}
+
+// ProvideName provides a name before saving a query.
 func (qy *Query) ProvideName() bool {
 	if qy.Name == "" {
 		qy.Name = "Query from " + time.Now().Format(time.RFC3339)
@@ -305,7 +349,7 @@ func (qy *Query) ProvideName() bool {
 	return false
 }
 
-// SaveBound persists a query in the DB and bounds it to a list of collections
+// SaveBound persists a query in the DB and bounds it to a list of collections.
 func (qy *Query) SaveBound(qybs []QueryBoundaryTx) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		wasSet := qy.ProvideName()
@@ -325,14 +369,14 @@ func (qy *Query) SaveBound(qybs []QueryBoundaryTx) error {
 	})
 }
 
-// FromProtobuf returns a Query type populated from the given m3uetcpb.Query
+// FromProtobuf returns a Query type populated from the given m3uetcpb.Query.
 func FromProtobuf(in *m3uetcpb.Query) (qy *Query) {
 	qy = &Query{}
 	protobufToQuery(in, qy)
 	return
 }
 
-// GetAllQueries returns all queries, constrained by a limit and collections
+// GetAllQueries returns all queries, constrained by a limit and collections.
 func GetAllQueries(limit int, qybs ...QueryBoundaryID) (s []*Query) {
 	entry := log.WithFields(log.Fields{
 		"limit":     limit,
@@ -369,9 +413,98 @@ func GetAllQueries(limit int, qybs ...QueryBoundaryID) (s []*Query) {
 	return
 }
 
-// SupportedParams returns the list of supported string parameters
+// SupportedParams returns the list of supported string parameters.
 func SupportedParams() []string {
 	return supportedParams
+}
+
+func findHistoryTracks() (ts []*Track, lpf []int64) {
+	log.Info("Finding history tracks")
+
+	limit := config.DefaultQueryMaxLimit
+	if base.Conf.Server.Query.Limit > 0 {
+		limit = base.Conf.Server.Query.Limit
+	}
+
+	tx := db.Session(&gorm.Session{SkipHooks: true})
+	tx = tx.Limit(limit)
+
+	ts = []*Track{}
+	list := []PlaybackHistory{}
+
+	err := tx.Order("created_at DESC").
+		Find(&list).
+		Error
+	onerror.Log(err)
+
+	for _, h := range list {
+		var err error
+		t := &Track{}
+		if h.TrackID > 0 {
+			if err = t.Read(h.TrackID); err != nil {
+				log.Error(err)
+				continue
+			}
+		} else {
+			tx := db.Session(&gorm.Session{SkipHooks: true})
+			err = tx.Where("location = ?", h.Location).First(t).Error
+			if err != nil {
+				t, err = ReadTagsForLocation(h.Location)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				t.Lastplayed = h.CreatedAt
+				err = t.createTransient(tx, nil)
+				if err != nil {
+					log.Warn(err)
+					continue
+				}
+			}
+		}
+		lpf = append(lpf, h.Duration)
+		ts = append(ts, t)
+	}
+
+	return
+}
+
+func findTopTracks() (ts []*Track) {
+	log.Info("Finding top tracks")
+
+	tx := db.Session(&gorm.Session{SkipHooks: true})
+	tx = tx.Limit(100)
+
+	list := []Track{}
+
+	err := tx.Where("playcount > 0").
+		Order("playcount DESC, updated_at DESC").
+		Find(&list).
+		Error
+	onerror.Log(err)
+
+	ts = pointers.FromSlice(list)
+	return
+
+}
+
+func findUniqueHistoryTracks() (ts []*Track) {
+	list, _ := findHistoryTracks()
+
+	unique := make(map[int64]*Track)
+	for i := range list {
+		_, ok := unique[list[i].ID]
+		if ok {
+			continue
+		}
+		unique[list[i].ID] = list[i]
+	}
+
+	ts = []*Track{}
+	for i := range unique {
+		ts = append(ts, unique[i])
+	}
+	return
 }
 
 func protobufToQuery(in *m3uetcpb.Query, out *Query) {

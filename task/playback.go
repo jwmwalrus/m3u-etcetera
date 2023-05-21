@@ -207,26 +207,27 @@ func playbackPlayAction(c *cli.Context) (err error) {
 	return
 }
 
-func playbackSeekAction(c *cli.Context) (err error) {
+func playbackSeekAction(c *cli.Context) error {
 	rest := c.Args().Slice()
 	if len(rest) < 1 {
-		err = fmt.Errorf("I need one POSITION to seek")
+		return fmt.Errorf("I need one POSITION to seek")
 	}
 	if len(rest) > 1 {
-		err = fmt.Errorf("Too many values in command")
+		return fmt.Errorf("Too many values in command")
 	}
 
 	req := &m3uetcpb.ExecutePlaybackActionRequest{
 		Action: m3uetcpb.PlaybackAction_PB_SEEK,
 	}
 
+	var err error
 	if req.Seek, err = parseSeconds(rest[0]); err != nil {
-		return
+		return err
 	}
 
 	cc, err := getClientConn()
 	if err != nil {
-		return
+		return err
 	}
 	defer cc.Close()
 
@@ -234,12 +235,11 @@ func playbackSeekAction(c *cli.Context) (err error) {
 	_, err = cl.ExecutePlaybackAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		err = fmt.Errorf(s.Message())
-		return
+		return fmt.Errorf(s.Message())
 	}
 
 	fmt.Printf("OK\n")
-	return
+	return nil
 }
 
 func playbackListAction(c *cli.Context) (err error) {

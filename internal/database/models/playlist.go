@@ -22,11 +22,11 @@ import (
 )
 
 const (
-	// MaxOpenTransientPlaylists -
+	// MaxOpenTransientPlaylists -.
 	MaxOpenTransientPlaylists = 2047
 )
 
-// Playlist defines a playlist
+// Playlist defines a playlist.
 type Playlist struct {
 	ID              int64         `json:"id" gorm:"primaryKey"`
 	Name            string        `json:"name" gorm:"uniqueIndex:unique_idx_playlist_name,not null"`
@@ -34,26 +34,27 @@ type Playlist struct {
 	Open            bool          `json:"open"`
 	Active          bool          `json:"active"`
 	Transient       bool          `json:"transient"`
-	CreatedAt       int64         `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt       int64         `json:"updatedAt" gorm:"autoUpdateTime"`
+	QueryID         int64         `json:"queryId"`
+	CreatedAt       int64         `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt       int64         `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	PlaylistGroupID int64         `json:"playlistGroupId" gorm:"index:idx_playlist_playlist_group_id,not null"`
 	PlaybarID       int64         `json:"playbarId" gorm:"index:idx_playlist_playbar_id,not null"`
-	PlaylistGroup   PlaylistGroup `json:"playlistgroup" gorm:"foreignKey:PlaylistGroupID"`
+	PlaylistGroup   PlaylistGroup `json:"playlistGroup" gorm:"foreignKey:PlaylistGroupID"`
 	Playbar         Playbar       `json:"playbar" gorm:"foreignKey:PlaybarID"`
 }
 
-// Create implements the DataCreator interface
+// Create implements the DataCreator interface.
 func (pl *Playlist) Create() (err error) {
 	err = db.Create(pl).Error
 	return
 }
 
-// Delete implements the DataDeleter interface
+// Delete implements the DataDeleter interface.
 func (pl *Playlist) Delete() (err error) {
 	return pl.DeleteTx(db)
 }
 
-// DeleteTx implements the DataDeleterTx interface
+// DeleteTx implements the DataDeleterTx interface.
 func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
 	entry := log.WithField("pl", pl)
 	entry.Info("Deleting playlist")
@@ -89,19 +90,19 @@ func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
 	return
 }
 
-// Read implements the DataReader interface
+// Read implements the DataReader interface.
 func (pl *Playlist) Read(id int64) error {
 	return db.Joins("Playbar").
 		First(pl, id).
 		Error
 }
 
-// Save implements the DataUpdater interface
+// Save implements the DataUpdater interface.
 func (pl *Playlist) Save() error {
 	return db.Save(pl).Error
 }
 
-// ToProtobuf implments ProtoOut interface
+// ToProtobuf implments ProtoOut interface.
 func (pl *Playlist) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pl)
 	if err != nil {
@@ -110,22 +111,18 @@ func (pl *Playlist) ToProtobuf() proto.Message {
 	}
 
 	out := &m3uetcpb.Playlist{}
-	err = json.Unmarshal(bv, out)
+	err = jsonUnmarshaler.Unmarshal(bv, out)
 	onerror.Log(err)
 
 	// Unmatched
-	out.PlaylistGroupId = pl.PlaylistGroupID
 	bar := Playbar{}
 	bar.Read(pl.PlaybarID)
 	out.Perspective = m3uetcpb.Perspective(bar.getPerspectiveIndex())
-	out.Transient = pl.Transient
 	out.Duration = pl.Duration()
-	out.CreatedAt = pl.CreatedAt
-	out.UpdatedAt = pl.UpdatedAt
 	return out
 }
 
-// AfterCreate is a GORM hook
+// AfterCreate is a GORM hook.
 func (pl *Playlist) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -142,7 +139,7 @@ func (pl *Playlist) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterUpdate is a GORM hook
+// AfterUpdate is a GORM hook.
 func (pl *Playlist) AfterUpdate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -160,7 +157,7 @@ func (pl *Playlist) AfterUpdate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterDelete is a GORM hook
+// AfterDelete is a GORM hook.
 func (pl *Playlist) AfterDelete(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -177,7 +174,7 @@ func (pl *Playlist) AfterDelete(tx *gorm.DB) error {
 	return nil
 }
 
-// Count returns the number of tracks in a playlist
+// Count returns the number of tracks in a playlist.
 func (pl *Playlist) Count() (count int64) {
 	err := db.
 		Model(&PlaylistTrack{}).
@@ -188,7 +185,7 @@ func (pl *Playlist) Count() (count int64) {
 	return
 }
 
-// DeleteDynamicTracks removes a dynamic track from the database
+// DeleteDynamicTracks removes a dynamic track from the database.
 func (pl *Playlist) DeleteDynamicTracks(tx *gorm.DB) {
 	pts := []PlaylistTrack{}
 	err := tx.Where("dynamic = 1 AND playlist_id = ?", pl.ID).
@@ -204,7 +201,7 @@ func (pl *Playlist) DeleteDynamicTracks(tx *gorm.DB) {
 	}
 }
 
-// Duration returns the duration of the playlist
+// Duration returns the duration of the playlist.
 func (pl *Playlist) Duration() int64 {
 	var d sql.NullInt64
 	err := db.Raw("SELECT sum(t.duration) FROM track t JOIN playlist_track pt ON pt.track_id = t.id WHERE pt.playlist_id = ?", pl.ID).
@@ -214,7 +211,7 @@ func (pl *Playlist) Duration() int64 {
 	return d.Int64
 }
 
-// Export exports a playlist with the given format to the given location
+// Export exports a playlist with the given format to the given location.
 func (pl *Playlist) Export(format impexp.PlaylistType, location string) (err error) {
 	path, err := urlstr.URLToPath(location)
 	if err != nil {
@@ -263,7 +260,7 @@ func (pl *Playlist) Export(format impexp.PlaylistType, location string) (err err
 	return
 }
 
-// GetQueries returns all queries bound by the given playlist
+// GetQueries returns all queries bound by the given playlist.
 func (pl *Playlist) GetQueries() []*PlaylistQuery {
 	pqs := []PlaylistQuery{}
 	err := db.Joins("Query").
@@ -279,7 +276,7 @@ func (pl *Playlist) GetQueries() []*PlaylistQuery {
 }
 
 // GetTrackAfter returns the next playing track, if any, after the given position.
-// Alternatively, return the previous one instead
+// Alternatively, return the previous one instead.
 func (pl *Playlist) GetTrackAfter(curr PlaylistTrack,
 	previous bool) (pt *PlaylistTrack, err error) {
 
@@ -315,7 +312,7 @@ func (pl *Playlist) GetTrackAfter(curr PlaylistTrack,
 	return
 }
 
-// GetTrackAt returns the track at the given position
+// GetTrackAt returns the track at the given position.
 func (pl *Playlist) GetTrackAt(position int) (pt *PlaylistTrack, err error) {
 	at := &PlaylistTrack{}
 	err = db.Where("playlist_id = ? AND position = ?", pl.ID, position).
@@ -333,7 +330,7 @@ func (pl *Playlist) GetTrackAt(position int) (pt *PlaylistTrack, err error) {
 	return
 }
 
-// GetTracks returns all tracks in the playlist
+// GetTracks returns all tracks in the playlist.
 func (pl *Playlist) GetTracks(limit int) ([]*PlaylistTrack, []*Track) {
 	pts := []PlaylistTrack{}
 
@@ -372,7 +369,7 @@ func (pl *Playlist) createTracks(trackIds []int64,
 	tx := db.Session(&gorm.Session{SkipHooks: true})
 	for _, loc := range locations {
 		t := Track{}
-		err = db.Where("location = ?", loc).First(&t).Error
+		err = tx.Where("location = ?", loc).First(&t).Error
 		if err != nil {
 			t.Location = loc
 			if err = t.createTransient(tx, nil); err != nil {
@@ -384,7 +381,7 @@ func (pl *Playlist) createTracks(trackIds []int64,
 	return
 }
 
-// FindPlaylistsIn returns the tracks for the given IDs
+// FindPlaylistsIn returns the playlists for the given IDs.
 func FindPlaylistsIn(ids []int64) (pls []*Playlist, notFound []int64) {
 	pls = []*Playlist{}
 	if len(ids) < 1 {
@@ -414,8 +411,8 @@ func FindPlaylistsIn(ids []int64) (pls []*Playlist, notFound []int64) {
 	return
 }
 
-// GetTransientNameForPlaylist returns the next string
-func GetTransientNameForPlaylist() string {
+// GetTransientNameForPlaylist returns the next string.
+func GetTransientNameForPlaylist(queryID int64) string {
 	pls := []Playlist{}
 	err := db.Find(&pls).Error
 	if err != nil {
@@ -427,8 +424,21 @@ func GetTransientNameForPlaylist() string {
 		names = append(names, pls[i].Name)
 	}
 
+	prefix := "Playlist "
+	if queryID > 0 {
+		qy := Query{}
+		err = qy.Read(queryID)
+		onerror.Log(err)
+		if err == nil {
+			descr := QueryIndex(qy.Idx).Description()
+			if descr != "" {
+				prefix = descr + " "
+			}
+		}
+	}
+
 	for i := 1; i <= MaxOpenTransientPlaylists; i++ {
-		name := "Playlist " + strconv.Itoa(i)
+		name := prefix + strconv.Itoa(i)
 		if slices.Contains(names, name) {
 			continue
 		}

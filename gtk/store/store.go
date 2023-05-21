@@ -4,6 +4,10 @@ import (
 	"github.com/gotk3/gotk3/glib"
 )
 
+const (
+	lastPlayedLayout = "02 Jan 2006 03:04 PM"
+)
+
 type storeColumns []columnDef
 
 func (sc storeColumns) getTypes() (s []glib.Type) {
@@ -87,21 +91,26 @@ const (
 	TColYear
 	TColTracknumber
 	TColTracktotal
+	TColTrackNumberOverTotal
 	TColDiscnumber
 	TColDisctotal
+	TColDiscNumberOverTotal
 	TColLyrics
 	TColComment
 	TColPlaycount
 
 	TColRating
 	TColDuration
+	TColPlayedOverDuration
 	TColRemote
 	TColLastplayed
+	TColPosition
+	TColDynamic
+
+	// NOTE: these should never be visible
+	TColLastPosition
 	TColNumber
 	TColToggleSelect
-	TColPosition
-	TColLastPosition
-	TColDynamic
 	TColFontWeight
 
 	TColsN
@@ -165,6 +174,7 @@ const (
 	QYColTree ModelColumn = iota
 	QYColTreeIDList
 	QYColTreeKeywords
+	QYColTreeSort
 )
 
 // PLColTree*: query tree column.
@@ -252,16 +262,19 @@ func init() {
 	TColumns[TColYear] = columnDef{Name: "Year", colType: glib.TYPE_INT}
 	TColumns[TColTracknumber] = columnDef{Name: "Track Number", colType: glib.TYPE_INT}
 	TColumns[TColTracktotal] = columnDef{Name: "Track Total", colType: glib.TYPE_INT}
+	TColumns[TColTrackNumberOverTotal] = columnDef{Name: "Track # / Total", colType: glib.TYPE_STRING}
 	TColumns[TColDiscnumber] = columnDef{Name: "Disc Number", colType: glib.TYPE_INT}
 	TColumns[TColDisctotal] = columnDef{Name: "Disc Total", colType: glib.TYPE_INT}
+	TColumns[TColDiscNumberOverTotal] = columnDef{Name: "Disc # / Total", colType: glib.TYPE_STRING}
 	TColumns[TColLyrics] = columnDef{Name: "Lyrics", colType: glib.TYPE_STRING}
 	TColumns[TColComment] = columnDef{Name: "Comment", colType: glib.TYPE_STRING}
 	TColumns[TColPlaycount] = columnDef{Name: "Play Count", colType: glib.TYPE_INT}
 
 	TColumns[TColRating] = columnDef{Name: "Rating", colType: glib.TYPE_INT}
 	TColumns[TColDuration] = columnDef{Name: "Duration", colType: glib.TYPE_STRING}
+	TColumns[TColPlayedOverDuration] = columnDef{Name: "(Played / ) Duration", colType: glib.TYPE_STRING}
 	TColumns[TColRemote] = columnDef{Name: "Remote (T)", colType: glib.TYPE_BOOLEAN}
-	TColumns[TColLastplayed] = columnDef{Name: "Last Played", colType: glib.TYPE_INT64}
+	TColumns[TColLastplayed] = columnDef{Name: "Last Played", colType: glib.TYPE_STRING}
 	TColumns[TColNumber] = columnDef{Name: "#", colType: glib.TYPE_INT}
 	TColumns[TColToggleSelect] = columnDef{Name: "Select", colType: glib.TYPE_BOOLEAN, activatable: true}
 	TColumns[TColPosition] = columnDef{Name: "#", colType: glib.TYPE_INT}
@@ -306,9 +319,10 @@ func init() {
 		columnDef{Name: "Tree", colType: glib.TYPE_STRING},
 		columnDef{Name: "ID List", colType: glib.TYPE_STRING},
 		columnDef{Name: "Keywords", colType: glib.TYPE_STRING},
+		columnDef{Name: "Sort", colType: glib.TYPE_INT},
 	}
 
-	// NOTE: Will I ever use this?
+	// NOTE: Will I ever use this?.
 	QYColumns = make(storeColumns, QYColsN)
 	QYColumns[QYColQueryID] = columnDef{Name: "ID", colType: glib.TYPE_INT64}
 	QYColumns[QYColName] = columnDef{Name: "Name", colType: glib.TYPE_STRING}

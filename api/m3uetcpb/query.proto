@@ -5,6 +5,7 @@ package m3uetcpb;
 option go_package = './m3uetcpb';
 
 import 'api/m3uetcpb/empty.proto';
+import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/track.proto';
 
 service QuerySvc {
@@ -14,8 +15,9 @@ service QuerySvc {
     rpc UpdateQuery(UpdateQueryRequest) returns (Empty);
     rpc RemoveQuery(RemoveQueryRequest) returns (Empty);
 
-    rpc ApplyQuery(ApplyQueryRequest) returns (ApplyQueryResponse);
     rpc QueryBy(QueryByRequest) returns (QueryByResponse);
+    rpc QueryInPlaylist(QueryInPlaylistRequest) returns (QueryInPlaylistResponse);
+    rpc QueryInQueue(QueryInQueueRequest) returns (Empty);
 
     rpc SubscribeToQueryStore(Empty)
         returns (stream SubscribeToQueryStoreResponse);
@@ -55,19 +57,26 @@ message RemoveQueryRequest {
     int64 id = 1;
 }
 
-message ApplyQueryRequest {
-    int64 id = 1;
-}
-message ApplyQueryResponse {
-    repeated Track tracks = 1;
-}
-
 message QueryByRequest {
     Query query = 1;
 }
 
 message QueryByResponse {
     repeated Track tracks = 1;
+}
+
+message QueryInPlaylistRequest {
+    int64 id = 1;
+    int64 playlist_id = 2;
+}
+
+message QueryInPlaylistResponse {
+    int64 playlist_id = 1;
+}
+
+message QueryInQueueRequest {
+    Perspective perspective = 1;
+    int64 id = 2;
 }
 
 message SubscribeToQueryStoreResponse {
@@ -90,7 +99,8 @@ message Query {
     string params = 7;
     int64 from = 8;
     int64 to = 9;
-    repeated int64 collection_ids = 10;
+    bool read_only = 10;
+    repeated int64 collection_ids = 11;
     int64 created_at = 101;
     int64 updated_at = 102;
 }

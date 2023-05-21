@@ -5,15 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func seedPlaylist(db *gorm.DB) (err error) {
-	p := models.Perspective{}
-	err = db.Where("idx = ?", int(models.DefaultPerspective)).
-		First(&p).
-		Error
-	if err != nil {
-		return
-	}
-
+func SeedPlaylist(tx *gorm.DB) (err error) {
 	create := func(idx models.PlaylistGroupIndex, p models.PerspectiveIndex) error {
 		plg := models.PlaylistGroup{
 			Idx:           int(idx),
@@ -21,7 +13,7 @@ func seedPlaylist(db *gorm.DB) (err error) {
 			Hidden:        true,
 			PerspectiveID: p.Get().ID,
 		}
-		if err := db.Create(&plg).Error; err != nil {
+		if err := tx.Where(&plg).FirstOrCreate(&models.PlaylistGroup{}).Error; err != nil {
 			return err
 		}
 		return nil

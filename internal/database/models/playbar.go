@@ -18,7 +18,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetPlaybar returns the playbar associated to the given perspective
+// GetPlaybar returns the playbar associated to the given perspective.
 func (idx PerspectiveIndex) GetPlaybar() (bar *Playbar, err error) {
 	bar = &Playbar{}
 	err = db.
@@ -32,10 +32,10 @@ func (idx PerspectiveIndex) GetPlaybar() (bar *Playbar, err error) {
 
 }
 
-// PlaybarEvent defines a collection event
+// PlaybarEvent defines a collection event.
 type PlaybarEvent int
 
-// PlaybarEvent enum
+// PlaybarEvent enum.
 const (
 	PlaybarEventNone PlaybarEvent = iota
 	PlaybarEventInitial
@@ -64,21 +64,21 @@ func (ce PlaybarEvent) String() string {
 	}[ce]
 }
 
-// Playbar defines the playlist bar for each perspective
+// Playbar defines the playlist bar for each perspective.
 type Playbar struct {
 	ID            int64       `json:"id" gorm:"primaryKey"`
-	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	PerspectiveID int64       `json:"perspectiveId" gorm:"uniqueIndex:unique_idx_playbar_perspective_id,not null"`
 	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Read implements the DataReader interface
+// Read implements the DataReader interface.
 func (b *Playbar) Read(id int64) error {
-	return db.First(b, id).Error
+	return db.Joins("Perspective").First(b, id).Error
 }
 
-// ActivateEntry activates the given entry in a playbar
+// ActivateEntry activates the given entry in a playbar.
 func (b *Playbar) ActivateEntry(pl *Playlist) {
 	entry := log.WithField("pl", *pl)
 	entry.Info("Activating in playbar")
@@ -106,7 +106,7 @@ func (b *Playbar) ActivateEntry(pl *Playlist) {
 	onerror.WithEntry(entry).Log(db.Save(&pls).Error)
 }
 
-// AppendToPlaylist -
+// AppendToPlaylist -.
 func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 	locations []string) {
 
@@ -117,8 +117,10 @@ func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 	})
 	entry.Info("Appending tracks/locations to playlist")
 
+	tx := db.Session(&gorm.Session{SkipHooks: true})
+
 	pts := []PlaylistTrack{}
-	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
+	err := tx.Where("playlist_id = ?", pl.ID).Order("position ASC").
 		Find(&pts).
 		Error
 	if err != nil {
@@ -134,15 +136,15 @@ func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 
 	list := poser.AppendTo(pointers.FromSlice(pts), pointers.FromSlice(s)...)
 	pts = pointers.ToValues(list)
-	err = db.Session(&gorm.Session{SkipHooks: true}).
-		Save(&pts).
-		Error
+	err = tx.Save(&pts).Error
 	onerror.WithEntry(entry).Log(err)
 
-	broadcastOpenPlaylist(pl.ID)
+	if pl.Open {
+		broadcastOpenPlaylist(pl.ID)
+	}
 }
 
-// ClearPlaylist -
+// ClearPlaylist -.
 func (b *Playbar) ClearPlaylist(pl *Playlist) {
 	entry := log.WithField("pl", *pl)
 	entry.Info("Clearing tracks/locations in playlist")
@@ -164,7 +166,7 @@ func (b *Playbar) ClearPlaylist(pl *Playlist) {
 	}
 }
 
-// CloseEntry closes the given playbar entry
+// CloseEntry closes the given playbar entry.
 func (b *Playbar) CloseEntry(pl *Playlist) {
 	if !pl.Transient {
 		pl.DeleteDynamicTracks(db)
@@ -175,8 +177,8 @@ func (b *Playbar) CloseEntry(pl *Playlist) {
 	onerror.Log(pl.Save())
 }
 
-// CreateEntry creates a playlist
-func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error) {
+// CreateEntry creates a playlist.
+func (b *Playbar) CreateEntry(name, description string, queryID int64) (pl *Playlist, err error) {
 	pg := &PlaylistGroup{}
 	err = pg.ReadDefaultForPerspective(b.PerspectiveID)
 	if err != nil {
@@ -190,7 +192,7 @@ func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error
 		plname = name
 	} else {
 		isTransient = true
-		plname = GetTransientNameForPlaylist()
+		plname = GetTransientNameForPlaylist(queryID)
 	}
 
 	pl = &Playlist{
@@ -199,6 +201,7 @@ func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error
 		PlaybarID:       b.ID,
 		PlaylistGroupID: pg.ID,
 		Transient:       isTransient,
+		QueryID:         queryID,
 	}
 	err = pl.Create()
 	if err != nil {
@@ -212,7 +215,7 @@ func (b *Playbar) CreateEntry(name, description string) (pl *Playlist, err error
 	return
 }
 
-// CreateGroup creates a playlist
+// CreateGroup creates a playlist.
 func (b *Playbar) CreateGroup(name, description string) (pg *PlaylistGroup, err error) {
 	pg = &PlaylistGroup{
 		Name:          name,
@@ -223,13 +226,13 @@ func (b *Playbar) CreateGroup(name, description string) (pg *PlaylistGroup, err 
 	return
 }
 
-// DeactivateEntry -
+// DeactivateEntry -.
 func (b *Playbar) DeactivateEntry(pl *Playlist) {
 	pl.Active = false
 	onerror.Log(pl.Save())
 }
 
-// DeleteFromPlaylist -
+// DeleteFromPlaylist -.
 func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 	entry := log.WithFields(log.Fields{
 		"pl":       *pl,
@@ -257,17 +260,17 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 	onerror.WithEntry(entry).Log(db.Save(&pts).Error)
 }
 
-// DestroyEntry deletes a playlist
+// DestroyEntry deletes a playlist.
 func (b *Playbar) DestroyEntry(pl *Playlist) error {
 	return pl.Delete()
 }
 
-// DestroyGroup deletes a playlist
+// DestroyGroup deletes a playlist.
 func (b *Playbar) DestroyGroup(pg *PlaylistGroup) error {
 	return pg.Delete()
 }
 
-// GetAllEntries -
+// GetAllEntries -.
 func (b *Playbar) GetAllEntries(limit int) []*Playlist {
 	pls := []Playlist{}
 
@@ -284,7 +287,7 @@ func (b *Playbar) GetAllEntries(limit int) []*Playlist {
 	return pointers.FromSlice(pls)
 }
 
-// GetAllGroups -
+// GetAllGroups -.
 func (b *Playbar) GetAllGroups(limit int) []*PlaylistGroup {
 	pgs := []PlaylistGroup{}
 
@@ -302,7 +305,7 @@ func (b *Playbar) GetAllGroups(limit int) []*PlaylistGroup {
 	return pointers.FromSlice(pgs)
 }
 
-// GetAllOpenEntries -
+// GetAllOpenEntries -.
 func (b *Playbar) GetAllOpenEntries() []*Playlist {
 	pls := []Playlist{}
 	err := db.Joins("Playbar").
@@ -316,7 +319,7 @@ func (b *Playbar) GetAllOpenEntries() []*Playlist {
 	return pointers.FromSlice(pls)
 }
 
-// ImportPlaylist creates a playlist from the given location, if supported
+// ImportPlaylist creates a playlist from the given location, if supported.
 func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, err error) {
 	path, err := urlstr.URLToPath(location)
 	if err != nil {
@@ -417,7 +420,7 @@ func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, 
 	return
 }
 
-// InsertIntoPlaylist -
+// InsertIntoPlaylist -.
 func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 	trackIds []int64, locations []string) {
 
@@ -455,7 +458,7 @@ func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 	broadcastOpenPlaylist(pl.ID)
 }
 
-// MergePlaylists -
+// MergePlaylists -.
 func (b *Playbar) MergePlaylists(pl1, pl2 *Playlist) (err error) {
 	pts1, _ := pl1.GetTracks(0)
 	pts2, _ := pl2.GetTracks(0)
@@ -485,7 +488,7 @@ func (b *Playbar) MergePlaylists(pl1, pl2 *Playlist) (err error) {
 	return
 }
 
-// MovePlaylistTrack -
+// MovePlaylistTrack -.
 func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 	if from == to || from < 1 {
 		return
@@ -512,7 +515,7 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 	onerror.WithEntry(entry).Log(db.Save(&moved).Error)
 }
 
-// OpenEntry opens the given playbar entry
+// OpenEntry opens the given playbar entry.
 func (b *Playbar) OpenEntry(pl *Playlist) {
 	if pl.Transient && !pl.Open {
 		log.Warn("Ignoring attempt to reopen transient playlist marked for deletiion")
@@ -522,22 +525,76 @@ func (b *Playbar) OpenEntry(pl *Playlist) {
 	onerror.Log(pl.Save())
 }
 
-// PrependToPlaylist -
+// PrependToPlaylist -.
 func (b *Playbar) PrependToPlaylist(pl *Playlist, trackIds []int64,
 	locations []string) {
 	b.InsertIntoPlaylist(pl, 0, trackIds, locations)
 }
 
-// UpdateEntry updates a playlist
+// QueryInPlaylist -.
+func (bar *Playbar) QueryInPlaylist(qy *Query, qybs []QueryBoundaryTx, pl *Playlist) {
+	entry := log.WithFields(log.Fields{
+		"pl":        *pl,
+		"qy":        *qy,
+		"len(qybs)": len(qybs),
+	})
+	entry.Info("Appending query result tracks to playlist")
+
+	var lpf []int64
+	var ts []*Track
+
+	switch QueryIndex(qy.Idx) {
+	case HistoryQuery:
+		if pl.QueryID == qy.ID {
+			ts, lpf = findHistoryTracks()
+		} else {
+			ts = findUniqueHistoryTracks()
+			lpf = make([]int64, len(ts))
+		}
+	case TopTracksQuery:
+		ts = findTopTracks()
+		lpf = make([]int64, len(ts))
+	default:
+		ts = qy.FindTracks(qybs)
+		lpf = make([]int64, len(ts))
+	}
+
+	tx := db.Session(&gorm.Session{SkipHooks: true})
+
+	var pts, s []PlaylistTrack
+
+	err := tx.Where("playlist_id = ?", pl.ID).Find(&pts).Error
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for i, t := range ts {
+		s = append(s, PlaylistTrack{PlaylistID: pl.ID, TrackID: t.ID, Lastplayedfor: lpf[i]})
+	}
+
+	list := poser.AppendTo(pointers.FromSlice(pts), pointers.FromSlice(s)...)
+	pts = pointers.ToValues(list)
+	err = tx.Save(&pts).Error
+	onerror.WithEntry(entry).Log(err)
+
+	if pl.Open {
+		broadcastOpenPlaylist(pl.ID)
+	}
+}
+
+// UpdateEntry updates a playlist.
 func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64,
 	resetDescr bool) (err error) {
 
 	isTransient := pl.Transient
+	queryID := pl.QueryID
 
 	newName := pl.Name
 	if name != "" {
 		newName = name
 		isTransient = false
+		queryID = 0
 	}
 
 	newDescr := pl.Description
@@ -576,12 +633,13 @@ func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64,
 	pl.Name = newName
 	pl.Description = newDescr
 	pl.Transient = isTransient
+	pl.QueryID = queryID
 	pl.PlaylistGroupID = newGroupID
 	err = pl.Save()
 	return
 }
 
-// UpdateGroup updates a playlist
+// UpdateGroup updates a playlist.
 func (b *Playbar) UpdateGroup(pg *PlaylistGroup, name, descr string,
 	resetDescr bool) (err error) {
 
@@ -613,7 +671,7 @@ func (b *Playbar) getPerspectiveIndex() (idx PerspectiveIndex) {
 	return
 }
 
-// DeactivatePlaybars deactivates all playbars
+// DeactivatePlaybars deactivates all playbars.
 func DeactivatePlaybars() {
 	pls := []Playlist{}
 	err := db.Where("active = 1").
@@ -635,14 +693,14 @@ func DeactivatePlaybars() {
 	onerror.Log(db.Save(&pls).Error)
 }
 
-// GetActiveEntry returns the active playlist
+// GetActiveEntry returns the active playlist.
 func GetActiveEntry() *Playlist {
 	pl := Playlist{}
 	db.Where("active = 1").First(&pl)
 	return &pl
 }
 
-// GetOpenEntries returns the list of open entries
+// GetOpenEntries returns the list of open entries.
 func GetOpenEntries() (pls []*Playlist, pts []*PlaylistTrack, ts []*Track) {
 	pls = []*Playlist{}
 	pts = []*PlaylistTrack{}
@@ -678,7 +736,7 @@ func GetOpenEntries() (pls []*Playlist, pts []*PlaylistTrack, ts []*Track) {
 	return
 }
 
-// GetPlaybarStore returns the initial status of the playbar store
+// GetPlaybarStore returns the initial status of the playbar store.
 func GetPlaybarStore() (
 	pgs []*PlaylistGroup,
 	pls []*Playlist,

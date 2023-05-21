@@ -1,17 +1,21 @@
 package models
 
 import (
+	"encoding/json"
+
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
+	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
 
-// PlaylistGroupIndex -
+// PlaylistGroupIndex -.
 type PlaylistGroupIndex int
 
-// Defines the default playlist groups
+// Defines the default playlist groups.
 const (
 	MusicPlaylistGroup PlaylistGroupIndex = iota + 1
 	RadioPlaylistGroup
@@ -23,33 +27,33 @@ func (idx PlaylistGroupIndex) String() string {
 	return [...]string{"", "\t", "\t\t", "\t\t\t", "\t\t\t\t"}[idx]
 }
 
-// Get returns the playlist group for the given index
+// Get returns the playlist group for the given index.
 func (idx PlaylistGroupIndex) Get() (plg *PlaylistGroup, err error) {
 	plg = &PlaylistGroup{}
 	err = db.Where("idx = ?", int(idx)).First(plg).Error
 	return
 }
 
-// PlaylistGroup defines a playlist group
+// PlaylistGroup defines a playlist group.
 type PlaylistGroup struct {
 	ID            int64       `json:"id" gorm:"primaryKey"`
 	Idx           int         `json:"idx" gorm:"not null"`
 	Name          string      `json:"name" gorm:"uniqueIndex:unique_idx_playlist_group_name,not null"`
 	Description   string      `json:"description"`
 	Hidden        bool        `json:"hidden"`
-	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime"`
+	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	PerspectiveID int64       `json:"perspectiveId" gorm:"index:idx_playlist_group_perspective_id,not null"`
-	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
+	Perspective   Perspective `json:"-" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Create implements the DataCreator interface
+// Create implements the DataCreator interface.
 func (pg *PlaylistGroup) Create() (err error) {
 	err = db.Create(pg).Error
 	return
 }
 
-// Delete implements the DataDeleter interface
+// Delete implements the DataDeleter interface.
 func (pg *PlaylistGroup) Delete() (err error) {
 	pls := []Playlist{}
 	err = db.Where("playlist_group_id = ?", pg.ID).Find(&pls).Error
@@ -75,32 +79,37 @@ func (pg *PlaylistGroup) Delete() (err error) {
 	return
 }
 
-// Read implements the DataReader interface
+// Read implements the DataReader interface.
 func (pg *PlaylistGroup) Read(id int64) (err error) {
 	return db.Joins("Perspective").
 		First(pg, id).
 		Error
 }
 
-// Save implements the DataUpdater interface
+// Save implements the DataUpdater interface.
 func (pg *PlaylistGroup) Save() error {
 	return db.Save(pg).Error
 }
 
-// ToProtobuf implments ProtoOut interface
+// ToProtobuf implments ProtoOut interface.
 func (pg *PlaylistGroup) ToProtobuf() proto.Message {
-	out := &m3uetcpb.PlaylistGroup{}
+	bv, err := json.Marshal(pg)
+	if err != nil {
+		log.Error(err)
+		return &m3uetcpb.PlaylistGroup{}
+	}
 
-	out.Id = pg.ID
-	out.Name = pg.Name
-	out.Description = pg.Description
+	out := &m3uetcpb.PlaylistGroup{}
+	err = jsonUnmarshaler.Unmarshal(bv, out)
+	onerror.Log(err)
+
+	// Unmatched
 	out.Perspective = m3uetcpb.Perspective(pg.Perspective.Idx)
-	out.CreatedAt = pg.CreatedAt
-	out.UpdatedAt = pg.UpdatedAt
+
 	return out
 }
 
-// AfterCreate is a GORM hook
+// AfterCreate is a GORM hook.
 func (pg *PlaylistGroup) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -117,7 +126,7 @@ func (pg *PlaylistGroup) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterUpdate is a GORM hook
+// AfterUpdate is a GORM hook.
 func (pg *PlaylistGroup) AfterUpdate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -134,7 +143,7 @@ func (pg *PlaylistGroup) AfterUpdate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterDelete is a GORM hook
+// AfterDelete is a GORM hook.
 func (pg *PlaylistGroup) AfterDelete(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -152,7 +161,7 @@ func (pg *PlaylistGroup) AfterDelete(tx *gorm.DB) error {
 }
 
 // ReadDefaultForPerspective returns the default playlist group for
-// the given perspective
+// the given perspective.
 func (pg *PlaylistGroup) ReadDefaultForPerspective(id int64) error {
 	return db.Joins("Perspective").
 		Where("perspective_id = ? and playlist_group.idx > 0", id).

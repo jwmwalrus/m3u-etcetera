@@ -40,6 +40,7 @@ func (qyt *queryTreeModel) update() bool {
 		name       string
 		kw         string
 		hasCBounds bool
+		sort       int
 	}
 
 	_, ok := model.GetIterFirst()
@@ -71,7 +72,7 @@ func (qyt *queryTreeModel) update() bool {
 	all := []queryInfo{}
 
 	QYData.mu.RLock()
-	for _, qy := range QYData.Query {
+	for i, qy := range QYData.Query {
 		if qyt.filterVal != "" {
 			kw := getKeywords(qy)
 			match := false
@@ -86,7 +87,14 @@ func (qyt *queryTreeModel) update() bool {
 			}
 		}
 
-		qi := queryInfo{id: qy.Id, name: qy.Name, kw: getKeywords(qy)}
+		name := qy.Name
+		sortVal := i
+		if qy.ReadOnly {
+			name = qy.Description
+			sortVal -= 1000
+		}
+
+		qi := queryInfo{id: qy.Id, name: name, kw: getKeywords(qy), sort: sortVal}
 		if len(qy.CollectionIds) > 0 {
 			qi.hasCBounds = true
 		}
@@ -104,10 +112,14 @@ func (qyt *queryTreeModel) update() bool {
 		if qi.hasCBounds {
 			name += " (C)"
 		}
-		model.SetValue(iter, int(QYColTree), qi.name)
+		model.SetValue(iter, int(QYColTree), name)
 		model.SetValue(iter, int(QYColTreeIDList), strconv.FormatInt(qi.id, 10))
 		model.SetValue(iter, int(QYColTreeKeywords), qi.kw)
+		model.SetValue(iter, int(QYColTreeSort), qi.sort)
 	}
+
+	model.SetSortColumnId(int(QYColTreeSort), gtk.SORT_ASCENDING)
+
 	return false
 }
 

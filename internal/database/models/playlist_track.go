@@ -11,30 +11,31 @@ import (
 	"gorm.io/gorm"
 )
 
-// PlaylistTrack defines a track in a playlist
+// PlaylistTrack defines a track in a playlist.
 type PlaylistTrack struct {
-	ID         int64    `json:"id" gorm:"primaryKey"`
-	Position   int      `json:"position"`
-	Dynamic    bool     `json:"dynamic"` // playlist is populated dynamically
-	CreatedAt  int64    `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt  int64    `json:"updatedAt" gorm:"autoUpdateTime"`
-	PlaylistID int64    `json:"playlistId" gorm:"index:idx_playlist_track_playlist_id,not null"`
-	TrackID    int64    `json:"trackId" gorm:"index:idx_playlist_track_track_id,not null"`
-	Playlist   Playlist `json:"playlist" gorm:"foreignKey:PlaylistID"`
-	Track      Track    `json:"track" gorm:"foreignKey:TrackID"`
+	ID            int64    `json:"id" gorm:"primaryKey"`
+	Position      int      `json:"position"`
+	Dynamic       bool     `json:"dynamic"` // playlist is populated dynamically
+	Lastplayedfor int64    `json:"lastplayedfor"`
+	CreatedAt     int64    `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt     int64    `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+	PlaylistID    int64    `json:"playlistId" gorm:"index:idx_playlist_track_playlist_id,not null"`
+	TrackID       int64    `json:"trackId" gorm:"index:idx_playlist_track_track_id,not null"`
+	Playlist      Playlist `json:"playlist" gorm:"foreignKey:PlaylistID"`
+	Track         Track    `json:"track" gorm:"foreignKey:TrackID"`
 }
 
-// Create implements the DataCreator interface
+// Create implements the DataCreator interface.
 func (pt *PlaylistTrack) Create() error {
 	return db.Create(pt).Error
 }
 
-// Delete implements the DataDeleter interface
+// Delete implements the DataDeleter interface.
 func (pt *PlaylistTrack) Delete() (err error) {
 	return pt.DeleteTx(db)
 }
 
-// DeleteTx implements the DataDeleterTx interface
+// DeleteTx implements the DataDeleterTx interface.
 func (pt *PlaylistTrack) DeleteTx(tx *gorm.DB) (err error) {
 	defer DeleteTrackIfTransient(pt.TrackID)
 
@@ -42,7 +43,7 @@ func (pt *PlaylistTrack) DeleteTx(tx *gorm.DB) (err error) {
 	return
 }
 
-// Read implements the DataReader interface
+// Read implements the DataReader interface.
 func (pt *PlaylistTrack) Read(id int64) (err error) {
 	return db.Joins("Playlist").
 		Joins("Track").
@@ -50,7 +51,12 @@ func (pt *PlaylistTrack) Read(id int64) (err error) {
 		Error
 }
 
-// ToProtobuf implments ProtoOut interface
+// Save implements the DataUpdater interface.
+func (pt *PlaylistTrack) Save() error {
+	return db.Save(pt).Error
+}
+
+// ToProtobuf implments ProtoOut interface.
 func (pt *PlaylistTrack) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pt)
 	if err != nil {
@@ -59,54 +65,49 @@ func (pt *PlaylistTrack) ToProtobuf() proto.Message {
 	}
 
 	out := &m3uetcpb.PlaylistTrack{}
-	err = json.Unmarshal(bv, out)
+	err = jsonUnmarshaler.Unmarshal(bv, out)
 	onerror.Log(err)
 
-	// Unmatched
-	out.PlaylistId = pt.PlaylistID
-	out.TrackId = pt.TrackID
-	out.CreatedAt = pt.CreatedAt
-	out.UpdatedAt = pt.UpdatedAt
 	return out
 }
 
-// AfterCreate is a GORM hook
+// AfterCreate is a GORM hook.
 func (pt *PlaylistTrack) AfterCreate(tx *gorm.DB) error {
 	go broadcastOpenPlaylist(pt.PlaylistID)
 	return nil
 }
 
-// AfterUpdate is a GORM hook
+// AfterUpdate is a GORM hook.
 func (pt *PlaylistTrack) AfterUpdate(tx *gorm.DB) error {
 	go broadcastOpenPlaylist(pt.PlaylistID)
 	return nil
 }
 
-// AfterDelete is a GORM hook
+// AfterDelete is a GORM hook.
 func (pt *PlaylistTrack) AfterDelete(tx *gorm.DB) error {
 	go broadcastOpenPlaylist(pt.PlaylistID)
 	return nil
 }
 
-// GetPosition implements the Poser interface
+// GetPosition implements the Poser interface.
 func (pt *PlaylistTrack) GetPosition() int {
 	return pt.Position
 }
 
-// SetPosition implements the Poser interface
+// SetPosition implements the Poser interface.
 func (pt *PlaylistTrack) SetPosition(pos int) {
 	pt.Position = pos
 }
 
-// GetIgnore implements the Poser interface
+// GetIgnore implements the Poser interface.
 func (pt *PlaylistTrack) GetIgnore() bool {
 	return false
 }
 
-// SetIgnore implements the Poser interface
+// SetIgnore implements the Poser interface.
 func (pt *PlaylistTrack) SetIgnore(_ bool) {}
 
-// GetTrackAfter returns the track after the current one
+// GetTrackAfter returns the track after the current one.
 func (pt *PlaylistTrack) GetTrackAfter(goingBack bool) (*PlaylistTrack, error) {
 	pl := pt.Playlist
 	if pl.ID == 0 {
@@ -116,7 +117,7 @@ func (pt *PlaylistTrack) GetTrackAfter(goingBack bool) (*PlaylistTrack, error) {
 	return pl.GetTrackAfter(*pt, goingBack)
 }
 
-// GetActivePlaylistTrack deletes a playlist
+// GetActivePlaylistTrack deletes a playlist.
 func GetActivePlaylistTrack() (pt *PlaylistTrack) {
 	pb := Playback{}
 	err := pb.GetNextToPlay()

@@ -5,37 +5,29 @@ import (
 	"gorm.io/gorm"
 )
 
-func seedPerspective(db *gorm.DB) (err error) {
-	music := models.Perspective{
-		Idx:         int(models.MusicPerspective),
-		Description: "The Music Perspective",
-		Active:      true,
-	}
-	if err = db.Create(&music).Error; err != nil {
-		return
-	}
-
-	radio := models.Perspective{
-		Idx:         int(models.RadioPerspective),
-		Description: "The Radio Perspective",
-	}
-	if err = db.Create(&radio).Error; err != nil {
-		return
+func SeedPerspective(tx *gorm.DB) (err error) {
+	create := func(idx models.PerspectiveIndex) error {
+		persp := models.Perspective{
+			Idx:         int(idx),
+			Description: idx.Description(),
+		}
+		err := tx.Where(&persp).FirstOrCreate(&models.Perspective{}).Error
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
-	pod := models.Perspective{
-		Idx:         int(models.PodcastsPerspective),
-		Description: "The Podcasts Perspective",
-	}
-	if err = db.Create(&pod).Error; err != nil {
+	if err = create(models.MusicPerspective); err != nil {
 		return
 	}
-
-	ab := models.Perspective{
-		Idx:         int(models.AudiobooksPerspective),
-		Description: "The Audiobooks Perspective",
+	if err = create(models.RadioPerspective); err != nil {
+		return
 	}
-	if err = db.Create(&ab).Error; err != nil {
+	if err = create(models.PodcastsPerspective); err != nil {
+		return
+	}
+	if err = create(models.AudiobooksPerspective); err != nil {
 		return
 	}
 

@@ -8,10 +8,9 @@ import 'api/m3uetcpb/perspective.proto';
 
 message PlaylistGroup {
     int64 id = 1;
-    int32 idx = 2;
-    string name = 3;
-    string description = 4;
-    Perspective perspective = 6;
+    string name = 2;
+    string description = 3;
+    Perspective perspective = 4;
     int64 created_at = 101;
     int64 updated_at = 102;
 }
@@ -23,9 +22,10 @@ message Playlist {
     bool open = 4;
     bool active = 5;
     bool transient = 6;
-    int64 playlist_group_id = 7;
-    int64 duration = 8;
-    Perspective perspective = 9;
+    int64 query_id = 7;
+    int64 playlist_group_id = 8;
+    int64 duration = 9;
+    Perspective perspective = 10;
     int64 created_at = 101;
     int64 updated_at = 102;
 }
@@ -34,8 +34,9 @@ message PlaylistTrack {
     int64 id = 1;
     int32 position = 2;
     bool dynamic = 3;
-    int64 playlist_id = 4;
-    int64 track_id = 5;
+    int64 lastplayedfor = 4;
+    int64 playlist_id = 5;
+    int64 track_id = 6;
     int64 created_at = 101;
     int64 updated_at = 102;
 }

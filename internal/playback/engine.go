@@ -362,6 +362,7 @@ func (e *engine) playStream(pb *models.Playback) {
 	e.state.Store(gst.StatePlaying)
 	if err := e.playbin.Load().SetState(e.state.Load()); err != nil {
 		entry.Errorf("Unable to start playback: %v", err)
+		pb.Blacklist()
 		return
 	}
 	entry.Debugf("State changed: %d\n", gst.StatePlaying)

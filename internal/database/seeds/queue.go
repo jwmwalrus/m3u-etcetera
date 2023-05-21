@@ -5,14 +5,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func seedQueue(db *gorm.DB) (err error) {
+func SeedQueue(tx *gorm.DB) (err error) {
 	create := func(idx models.PerspectiveIndex) error {
 		p := models.Perspective{}
-		if err := db.Where("idx = ?", int(idx)).First(&p).Error; err != nil {
+		if err := tx.Where("idx = ?", int(idx)).First(&p).Error; err != nil {
 			return err
 		}
 		q := models.Queue{PerspectiveID: p.ID}
-		if err := db.Create(&q).Error; err != nil {
+		if err := tx.Where(&q).FirstOrCreate(&models.Queue{}).Error; err != nil {
 			return err
 		}
 

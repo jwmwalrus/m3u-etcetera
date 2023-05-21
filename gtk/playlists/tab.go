@@ -401,22 +401,39 @@ func (ot *onTab) setTreeView() (err error) {
 		return
 	}
 
-	cols := []int{
-		int(store.TColPosition),
-		int(store.TColTitle),
-		int(store.TColArtist),
-		int(store.TColAlbum),
-		int(store.TColDuration),
-		int(store.TColTrackID),
+	isQuery := store.BData.GetPlaylist(ot.id).QueryId > 0
+	hasLastPlayedFor := store.BData.HasLastPlayedFor(ot.id)
+
+	cols := []struct {
+		colID   store.ModelColumn
+		visible bool
+	}{
+		{store.TColPosition, true},
+		{store.TColTitle, true},
+		{store.TColArtist, true},
+		{store.TColAlbum, true},
+		{store.TColAlbumartist, false},
+		{store.TColComposer, false},
+		{store.TColGenre, false},
+		{store.TColYear, false},
+		{store.TColTrackNumberOverTotal, false},
+		{store.TColDiscNumberOverTotal, false},
+		{store.TColPlaycount, isQuery},
+		{store.TColRating, false},
+		{store.TColLastplayed, isQuery},
+		{store.TColDuration, !hasLastPlayedFor},
+		{store.TColPlayedOverDuration, hasLastPlayedFor},
+		{store.TColTrackID, true},
+		{store.TColLocation, true},
 	}
 
 	for _, c := range cols {
 		var col *gtk.TreeViewColumn
 		col, err = gtk.TreeViewColumnNewWithAttribute(
-			store.TColumns[c].Name,
+			store.TColumns[c.colID].Name,
 			renderer,
 			"text",
-			c,
+			int(c.colID),
 		)
 		if err != nil {
 			return
@@ -424,6 +441,7 @@ func (ot *onTab) setTreeView() (err error) {
 		col.AddAttribute(renderer, "weight", int(store.TColFontWeight))
 		col.SetSizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
 		col.SetResizable(true)
+		col.SetVisible(c.visible)
 		ot.view.InsertColumn(col, -1)
 	}
 

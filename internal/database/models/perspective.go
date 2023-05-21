@@ -46,6 +46,14 @@ func (idx PerspectiveIndex) String() string {
 	return PerspectiveIndexStrings()[idx]
 }
 
+func (idx PerspectiveIndex) Description() string {
+	return []string{"The Music Perspective",
+		"The Radio Perspective",
+		"The Podcasts Perspective",
+		"The Audiobooks Perspective",
+	}[idx]
+}
+
 // Activate sets the given perspective as active.
 func (idx PerspectiveIndex) Activate() (err error) {
 	log.WithField("idx", idx).

@@ -25,7 +25,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Track defines a track row
+// Track defines a track row.
 type Track struct {
 	ID          int64  `json:"id" gorm:"primaryKey"`
 	Location    string `json:"location" gorm:"uniqueIndex:unique_idx_track_location,not null"`
@@ -34,7 +34,7 @@ type Track struct {
 	Title       string `json:"title" gorm:"index:idx_track_title"`
 	Album       string `json:"album" gorm:"index:idx_track_album"`
 	Artist      string `json:"artist" gorm:"index:idx_track_artist"`
-	Albumartist string `json:"albumArtist" gorm:"index:idx_track_album_artist"`
+	Albumartist string `json:"albumartist" gorm:"index:idx_track_album_artist"`
 	Composer    string `json:"composer" gorm:"index:idx_track_composer"`
 	Genre       string `json:"genre" gorm:"index:idx_track_genre"`
 
@@ -42,51 +42,51 @@ type Track struct {
 	Lyrics      string `json:"lyrics"`
 	Cover       string `json:"cover"`
 	Year        int    `json:"year" gorm:"index:idx_track_year"`
-	Tracknumber int    `json:"trackNumber"`
-	Tracktotal  int    `json:"trackTotal"`
-	Discnumber  int    `json:"discNumber"`
-	Disctotal   int    `json:"discTotal"`
+	Tracknumber int    `json:"tracknumber"`
+	Tracktotal  int    `json:"tracktotal"`
+	Discnumber  int    `json:"discnumber"`
+	Disctotal   int    `json:"disctotal"`
 	Date        int64  `json:"date" gorm:"index:idx_track_date"`
 	Duration    int64  `json:"duration"`
 
 	Rating       int        `json:"rating" gorm:"index:idx_track_rating"`
-	Playcount    int        `json:"playCount"`
+	Playcount    int        `json:"playcount,"`
 	Remote       bool       `json:"remote"` // if track is remote but not in a remote collection
-	Lastplayed   int64      `json:"lastPlayed"`
+	Lastplayed   int64      `json:"lastplayed"`
 	Tags         string     `json:"tags"`
-	CollectionID int64      `json:"collectionId" gorm:"index:idx_track_collection_id,not null"`
-	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`
 	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime:nano"`
 	UpdatedAt    int64      `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+	CollectionID int64      `json:"collectionId" gorm:"index:idx_track_collection_id,not null"`
+	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`
 }
 
-// Create implements the DataCreator interface
+// Create implements the DataCreator interface.
 func (t *Track) Create() (err error) {
 	err = db.Create(t).Error
 	return
 }
 
-// Delete implements the DataDeleter interface
+// Delete implements the DataDeleter interface.
 func (t *Track) Delete() error {
 	return db.Delete(t).Error
 }
 
-// Read implements the DataReader interface
+// Read implements the DataReader interface.
 func (t *Track) Read(id int64) error {
 	return db.First(t, id).Error
 }
 
-// Save implements the DataUpdater interface
+// Save implements the DataUpdater interface.
 func (t *Track) Save() error {
 	return db.Save(t).Error
 }
 
-// SaveTx implements the DataUpdaterTx interface
+// SaveTx implements the DataUpdaterTx interface.
 func (t *Track) SaveTx(tx *gorm.DB) error {
 	return tx.Save(t).Error
 }
 
-// ToProtobuf implements the ProtoOut interface
+// ToProtobuf implements the ProtoOut interface.
 func (t *Track) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(t)
 	if err != nil {
@@ -95,7 +95,7 @@ func (t *Track) ToProtobuf() proto.Message {
 	}
 
 	out := &m3uetcpb.Track{}
-	err = json.Unmarshal(bv, out)
+	err = jsonUnmarshaler.Unmarshal(bv, out)
 	onerror.Log(err)
 
 	// Unmatched
@@ -107,20 +107,11 @@ func (t *Track) ToProtobuf() proto.Message {
 			}
 		}
 	}
-	out.Albumartist = t.Albumartist
-	out.Tracknumber = int32(t.Tracknumber)
-	out.Tracktotal = int32(t.Tracktotal)
-	out.Discnumber = int32(t.Discnumber)
-	out.Disctotal = int32(t.Disctotal)
-	out.Playcount = int32(t.Playcount)
-	out.CollectionId = t.CollectionID
-	out.Lastplayed = t.Lastplayed
-	out.CreatedAt = t.CreatedAt
-	out.UpdatedAt = t.UpdatedAt
+
 	return out
 }
 
-// AfterCreate is a GORM hook
+// AfterCreate is a GORM hook.
 func (t *Track) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -137,7 +128,7 @@ func (t *Track) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterUpdate is a GORM hook
+// AfterUpdate is a GORM hook.
 func (t *Track) AfterUpdate(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -154,7 +145,7 @@ func (t *Track) AfterUpdate(tx *gorm.DB) error {
 	return nil
 }
 
-// AfterDelete is a GORM hook
+// AfterDelete is a GORM hook.
 func (t *Track) AfterDelete(tx *gorm.DB) error {
 	go func() {
 		if rtc.FlagTestMode() {
@@ -321,6 +312,7 @@ func (t *Track) savePicture(p *tag.Picture, sum string) {
 		t.Cover = fn
 	}
 }
+
 func (t *Track) updateTags() (err error) {
 	base.GetBusy(base.IdleStatusFileOperations)
 	defer base.GetFree(base.IdleStatusFileOperations)
@@ -376,7 +368,7 @@ func (t *Track) updateTags() (err error) {
 	return
 }
 
-// DeleteDanglingTrack removes a (presumably) non-existent track from collection
+// DeleteDanglingTrack removes a (presumably) non-existent track from collection.
 func DeleteDanglingTrack(t *Track, c *Collection, withRemote bool) (err error) {
 	if !withRemote && (c.Remote || t.Remote) {
 		return
@@ -400,7 +392,7 @@ func DeleteDanglingTrack(t *Track, c *Collection, withRemote bool) (err error) {
 	return
 }
 
-// DeleteDanglingTrackByID removes a (presumably) non-existent track from collection
+// DeleteDanglingTrackByID removes a (presumably) non-existent track from collection.
 func DeleteDanglingTrackByID(id int64, withRemote bool) error {
 	t := &Track{}
 	err := t.Read(id)
@@ -417,8 +409,24 @@ func DeleteDanglingTrackByID(id int64, withRemote bool) error {
 	return DeleteDanglingTrack(t, c, withRemote)
 }
 
+// DeleteLocalTrackIfDangling deletes the track identified by id if the given
+// location does not exist.
+func DeleteLocalTrackIfDangling(id int64, location string) {
+	path, err := urlstr.URLToPath(location)
+	if err != nil {
+		log.Warn(err)
+		return
+	}
+
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		return
+	}
+
+	onerror.Warn(DeleteDanglingTrackByID(id, false))
+}
+
 // DeleteTrackIfTransient removes a track only if it belongs
-// to the transient collection and is not being used anywhere else
+// to the transient collection and is not being used anywhere else.
 func DeleteTrackIfTransient(id int64) {
 	t := Track{}
 	err := t.Read(id)
@@ -443,7 +451,7 @@ func DeleteTrackIfTransient(id int64) {
 	}
 }
 
-// FindTracksIn returns the tracks for the given IDs
+// FindTracksIn returns the tracks for the given IDs.
 func FindTracksIn(ids []int64) (ts []*Track, notFound []int64) {
 	ts = []*Track{}
 	if len(ids) < 1 {
@@ -472,7 +480,7 @@ func FindTracksIn(ids []int64) (ts []*Track, notFound []int64) {
 }
 
 // ReadTagsForLocation returns a track containing the tags read
-// for the given location
+// for the given location.
 func ReadTagsForLocation(location string) (t *Track, err error) {
 	t = &Track{Location: location}
 	err = t.updateTags()

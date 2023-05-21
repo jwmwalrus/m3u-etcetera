@@ -83,10 +83,10 @@ type Collection struct {
 	Remote         bool        `json:"remote"`
 	Scanned        int         `json:"scanned"`
 	Tracks         int64       `json:"tracks" gorm:"-"`
-	PerspectiveID  int64       `json:"perspectiveId" gorm:"index:idx_collection_perspective_id,not null"`
-	Perspective    Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
 	CreatedAt      int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
 	UpdatedAt      int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+	PerspectiveID  int64       `json:"perspectiveId" gorm:"index:idx_collection_perspective_id,not null"`
+	Perspective    Perspective `json:"-" gorm:"foreignKey:PerspectiveID"`
 }
 
 // Create implements DataCreator interface.
@@ -165,13 +165,12 @@ func (c *Collection) ToProtobuf() proto.Message {
 	}
 
 	out := &m3uetcpb.Collection{}
-	json.Unmarshal(bv, out)
+	err = jsonUnmarshaler.Unmarshal(bv, out)
+	onerror.Log(err)
 
 	// Unmatched
-	out.RemoteLocation = c.Remotelocation
 	out.Perspective = m3uetcpb.Perspective(c.Perspective.Idx)
-	out.CreatedAt = c.CreatedAt
-	out.UpdatedAt = c.UpdatedAt
+
 	return out
 }
 

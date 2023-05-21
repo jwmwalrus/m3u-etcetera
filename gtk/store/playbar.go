@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -254,6 +255,20 @@ func (bd *playbarData) GetUpdatePlaylistGroupRequests() (
 		ok = model.IterNext(iter)
 	}
 	return requests, nil
+}
+
+func (bd *playbarData) HasLastPlayedFor(id int64) bool {
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
+
+	var lpf int64
+	for _, opt := range bd.openPlaylistTrack {
+		if opt.PlaylistId == id {
+			lpf += opt.Lastplayedfor
+		}
+	}
+
+	return lpf > 0
 }
 
 // PlaylistAlreadyExists returns true if a playlist with the given
@@ -600,6 +615,15 @@ func (bd *playbarData) updatePlaybarModel() bool {
 
 	playbackTrackID := PbData.getTrackID()
 
+	lastPlayedForOverDuration := func(lpf, d int64, dur time.Duration) string {
+		diff := math.Abs(float64(lpf)/1e9 - float64(d)/1e9)
+		if diff <= 3 {
+			return fmt.Sprintf("%v", dur.Truncate(time.Second))
+		}
+		lpfdur := time.Duration(lpf) * time.Nanosecond
+		return fmt.Sprintf("%v / %v", lpfdur.Truncate(time.Second), dur.Truncate(time.Second))
+	}
+
 	bd.mu.Lock()
 	for _, pl := range bd.openPlaylist {
 		model, rows := getPlaylistModel(pl.Id)
@@ -716,6 +740,7 @@ func (bd *playbarData) updatePlaybarModel() bool {
 				[]int{
 					int(TColTrackID),
 					int(TColCollectionID),
+
 					int(TColLocation),
 					int(TColFormat),
 					int(TColType),
@@ -729,24 +754,29 @@ func (bd *playbarData) updatePlaybarModel() bool {
 					int(TColYear),
 					int(TColTracknumber),
 					int(TColTracktotal),
+					int(TColTrackNumberOverTotal),
 					int(TColDiscnumber),
 					int(TColDisctotal),
+					int(TColDiscNumberOverTotal),
 					int(TColLyrics),
 					int(TColComment),
 					int(TColPlaycount),
 
 					int(TColRating),
 					int(TColDuration),
+					int(TColPlayedOverDuration),
 					int(TColRemote),
 					int(TColLastplayed),
 					int(TColPosition),
-					int(TColLastPosition),
 					int(TColDynamic),
+
+					int(TColLastPosition),
 					int(TColFontWeight),
 				},
 				[]interface{}{
 					t.Id,
 					t.CollectionId,
+
 					t.Location,
 					t.Format,
 					t.Type,
@@ -760,19 +790,22 @@ func (bd *playbarData) updatePlaybarModel() bool {
 					int(t.Year),
 					int(t.Tracknumber),
 					int(t.Tracktotal),
+					fmt.Sprintf("%d / %d", t.Tracknumber, t.Tracktotal),
 					int(t.Discnumber),
 					int(t.Disctotal),
+					fmt.Sprintf("%d / %d", t.Discnumber, t.Disctotal),
 					t.Lyrics,
 					t.Comment,
 					int(t.Playcount),
-
 					int(t.Rating),
 					fmt.Sprint(dur.Truncate(time.Second)),
+					lastPlayedForOverDuration(pt.Lastplayedfor, t.Duration, dur),
 					t.Remote,
-					t.Lastplayed,
+					time.Unix(0, t.Lastplayed).Format(lastPlayedLayout),
 					int(pt.Position),
-					nTracks,
 					pt.Dynamic,
+
+					nTracks,
 					weight,
 				},
 			)

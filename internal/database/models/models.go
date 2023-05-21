@@ -6,6 +6,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -16,7 +17,9 @@ var (
 	playbackTrackNeeded chan int64
 	queueTrackNeeded    chan int64
 
-	// make sure we only do heavy collection tasks one at a time
+	jsonUnmarshaler = protojson.UnmarshalOptions{DiscardUnknown: true}
+
+	// storageGuard make sure we only do heavy collection tasks one at a time.
 	storageGuard chan struct{} = make(chan struct{}, 1)
 
 	// PlaybackChanged is the AfterCreate-hook channel for QueueTrack and Playback.
@@ -81,9 +84,9 @@ func DoInitialCleanup() {
 	tx.Where("played = 1").Delete(&Playback{})
 
 	// Clean queue
-	tx.Where("played = 1").Delete(&Queue{})
+	tx.Where("played = 1").Delete(&QueueTrack{})
 
-	// Clean playlists
+	// Clean deleted playlists
 	pls := []Playlist{}
 	tx.Where("open = 0 and transient = 1").Find(&pls)
 	for _, pl := range pls {
@@ -94,6 +97,12 @@ func DoInitialCleanup() {
 		}
 		tx.Where("id = ?", pl.ID).Delete(&Playlist{})
 	}
+
+	// Activate default perspective
+	tx.Model(&Perspective{}).Where("idx = ?", int(DefaultPerspective)).Update("active", true)
+
+	// Set collections' scanned to 100
+	tx.Model(&Collection{}).Where("id > 0").Update("scanned", 100)
 }
 
 // SetUp sets the database used by the models and starts some listeners.

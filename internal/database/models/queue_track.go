@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// QueueTrack defines a track in the queue
+// QueueTrack defines a track in the queue.
 type QueueTrack struct { // too transient
 	ID        int64  `json:"id" gorm:"primaryKey"`
 	Position  int    `json:"position"`
@@ -26,24 +26,24 @@ type QueueTrack struct { // too transient
 	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`
 }
 
-// Create implements the DataCreator interface
+// Create implements the DataCreator interface.
 func (qt *QueueTrack) Create() (err error) {
 	err = db.Create(qt).Error
 	return
 }
 
-// Read implements the DataReader interface
+// Read implements the DataReader interface.
 func (qt *QueueTrack) Read(id int64) error {
 	return db.First(qt, id).Error
 }
 
-// Save implements the DataUpdater interface
+// Save implements the DataUpdater interface.
 func (qt *QueueTrack) Save() (err error) {
 	err = db.Save(qt).Error
 	return
 }
 
-// ToProtobuf implements the ProtoOut interface
+// ToProtobuf implements the ProtoOut interface.
 func (qt *QueueTrack) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(qt)
 	if err != nil {
@@ -52,21 +52,18 @@ func (qt *QueueTrack) ToProtobuf() proto.Message {
 	}
 
 	out := &m3uetcpb.QueueTrack{}
-	err = json.Unmarshal(bv, out)
+	err = jsonUnmarshaler.Unmarshal(bv, out)
 	onerror.Log(err)
 
 	// Unmatched
 	q := Queue{}
 	onerror.Log(q.Read(qt.QueueID))
-
 	out.Perspective = m3uetcpb.Perspective(q.Perspective.Idx)
-	out.TrackId = qt.TrackID
-	out.CreatedAt = qt.CreatedAt
-	out.UpdatedAt = qt.UpdatedAt
+
 	return out
 }
 
-// AfterCreate is a GORM hook
+// AfterCreate is a GORM hook.
 func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if !rtc.FlagTestMode() &&
@@ -77,28 +74,28 @@ func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// GetPosition implements the Poser interface
+// GetPosition implements the Poser interface.
 func (qt *QueueTrack) GetPosition() int {
 	return qt.Position
 }
 
-// SetPosition implements the Poser interface
+// SetPosition implements the Poser interface.
 func (qt *QueueTrack) SetPosition(pos int) {
 	qt.Position = pos
 }
 
-// GetIgnore implements the Poser interface
+// GetIgnore implements the Poser interface.
 func (qt *QueueTrack) GetIgnore() bool {
 	return qt.Played
 }
 
-// SetIgnore implements the Poser interface
+// SetIgnore implements the Poser interface.
 func (qt *QueueTrack) SetIgnore(ignore bool) {
 	qt.Played = ignore
 }
 
 // GetAllQueueTracks returns all queue tracks for the given perspective,
-// constrained by a limit
+// constrained by a limit.
 func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts []*Track) {
 	entry := log.WithFields(log.Fields{
 		"idx":   idx,
@@ -150,7 +147,7 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts [
 	return
 }
 
-// GetQueueStore returns all queue tracks for all perspectives
+// GetQueueStore returns all queue tracks for all perspectives.
 func GetQueueStore() (qs []*QueueTrack, ts []*Track, dig []*PerspectiveDigest) {
 	log.Info("Getting queue store")
 
@@ -170,7 +167,6 @@ func GetQueueStore() (qs []*QueueTrack, ts []*Track, dig []*PerspectiveDigest) {
 	return
 }
 
-// findQueueTrack attempts to find track from location
 func findQueueTrack(ctx context.Context) {
 	for {
 		select {

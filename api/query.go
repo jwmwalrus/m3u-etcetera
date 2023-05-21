@@ -85,6 +85,10 @@ func (*QuerySvc) UpdateQuery(_ context.Context,
 	if err := qy.Read(req.Query.Id); err != nil {
 		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
+	if qy.IsReadOnly() {
+		return nil, status.Errorf(codes.InvalidArgument, "Query is read-only")
+	}
+
 	qy.FromProtobuf(req.Query)
 
 	if err := models.DeleteCollectionQueries(qy.ID); err != nil {
@@ -110,6 +114,9 @@ func (*QuerySvc) RemoveQuery(_ context.Context,
 	if err := qy.Read(req.Id); err != nil {
 		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
+	if qy.IsReadOnly() {
+		return nil, status.Errorf(codes.InvalidArgument, "Query is read-only")
+	}
 
 	if err := qy.Delete(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -118,35 +125,7 @@ func (*QuerySvc) RemoveQuery(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// ApplyQuery implements m3uetcpb.QuerySvcServer
-func (*QuerySvc) ApplyQuery(_ context.Context,
-	req *m3uetcpb.ApplyQueryRequest) (*m3uetcpb.ApplyQueryResponse, error) {
-
-	if req.Id < 1 {
-		return nil, status.Errorf(codes.InvalidArgument,
-			"Query id must be greater than zero")
-	}
-
-	qy := models.Query{}
-	if err := qy.Read(req.Id); err != nil {
-		return nil, status.Errorf(codes.NotFound, "%v", err)
-	}
-
-	qybs := models.CollectionsToBoundaries(
-		models.GetApplicableCollectionQueries(&qy),
-	)
-	ts := qy.FindTracks(qybs)
-
-	out := []*m3uetcpb.Track{}
-	for _, x := range ts {
-		aux := x.ToProtobuf().(*m3uetcpb.Track)
-		out = append(out, aux)
-	}
-
-	return &m3uetcpb.ApplyQueryResponse{Tracks: out}, nil
-}
-
-// QueryBy implements m3uetcpb.QuerySvcServer
+// QueryBy implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) QueryBy(_ context.Context,
 	req *m3uetcpb.QueryByRequest) (*m3uetcpb.QueryByResponse, error) {
 	qy := models.FromProtobuf(req.Query)
@@ -175,7 +154,75 @@ func (*QuerySvc) QueryBy(_ context.Context,
 	return &m3uetcpb.QueryByResponse{Tracks: out}, nil
 }
 
-// SubscribeToQueryStore implements m3uetcpb.QuerySvcServer
+// QueryInPlaylist implements m3uetcpb.QuerySvcServer.
+func (*QuerySvc) QueryInPlaylist(_ context.Context,
+	req *m3uetcpb.QueryInPlaylistRequest) (*m3uetcpb.QueryInPlaylistResponse, error) {
+
+	if req.Id < 1 {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"Query id must be greater than zero")
+	}
+
+	qy := &models.Query{}
+	if err := qy.Read(req.Id); err != nil {
+		return nil, status.Errorf(codes.NotFound, "%v", err)
+	}
+
+	qybs := models.CollectionsToBoundaries(
+		models.GetApplicableCollectionQueries(qy),
+	)
+
+	var bar *models.Playbar
+	pl := &models.Playlist{}
+	if req.PlaylistId > 0 {
+		pl.Read(req.PlaylistId)
+		bar = &pl.Playbar
+	} else {
+		var err error
+		bar, err = models.DefaultPerspective.GetPlaybar()
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "%v", err)
+		}
+		pl, err = bar.CreateEntry("", "", req.Id)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "%v", err)
+		}
+	}
+
+	go bar.QueryInPlaylist(qy, qybs, pl)
+
+	return &m3uetcpb.QueryInPlaylistResponse{PlaylistId: pl.ID}, nil
+}
+
+// QueryInQueue implements m3uetcpb.QuerySvcServer.
+func (*QuerySvc) QueryInQueue(_ context.Context,
+	req *m3uetcpb.QueryInQueueRequest) (*m3uetcpb.Empty, error) {
+
+	if req.Id < 1 {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"Query id must be greater than zero")
+	}
+
+	qy := &models.Query{}
+	if err := qy.Read(req.Id); err != nil {
+		return nil, status.Errorf(codes.NotFound, "%v", err)
+	}
+
+	qybs := models.CollectionsToBoundaries(
+		models.GetApplicableCollectionQueries(qy),
+	)
+
+	q, err := models.PerspectiveIndex(req.Perspective).GetPerspectiveQueue()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+
+	go q.QueryIn(qy, qybs)
+
+	return &m3uetcpb.Empty{}, nil
+}
+
+// SubscribeToQueryStore implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) SubscribeToQueryStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.QuerySvc_SubscribeToQueryStoreServer) error {
 

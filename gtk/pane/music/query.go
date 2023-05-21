@@ -88,14 +88,30 @@ func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
 		log.Error(err)
 		return
 	}
-	mi, err := builder.GetMenuItem("queries_view_context_to_playlist")
+
+	qy := store.QYData.GetQuery(ids[0])
+
+	miEdit, err := builder.GetMenuItem("queries_view_context_edit")
 	if err != nil {
 		log.Error(err)
 		return
 	}
+	miEdit.SetSensitive(!qy.ReadOnly)
 
+	miDelete, err := builder.GetMenuItem("queries_view_context_delete")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	miDelete.SetSensitive(!qy.ReadOnly)
+
+	miToPl, err := builder.GetMenuItem("queries_view_context_to_playlist")
+	if err != nil {
+		log.Error(err)
+		return
+	}
 	id := playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
-	mi.SetSensitive(id > 0)
+	miToPl.SetSensitive(id > 0)
 
 	menu.PopupAtPointer(event)
 }
@@ -108,16 +124,23 @@ func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
 	}
 
 	label := mi.GetLabel()
-	var targetID int64
 	if strings.Contains(label, "playlist") {
-		targetID = playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
+		req := &m3uetcpb.QueryInPlaylistRequest{
+			Id:         ids[0],
+			PlaylistId: playlists.GetFocused(m3uetcpb.Perspective_MUSIC),
+		}
+
+		if _, err := dialer.QueryInPlaylist(req); err != nil {
+			log.Error(err)
+		}
+		return
 	}
 
-	req := &m3uetcpb.ApplyQueryRequest{
+	req := &m3uetcpb.QueryInQueueRequest{
 		Id: ids[0],
 	}
 
-	if err := dialer.ApplyQuery(req, targetID); err != nil {
+	if err := dialer.QueryInQueue(req); err != nil {
 		log.Error(err)
 	}
 }
@@ -489,37 +512,30 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 	return
 }
 
-func (omqy *onMusicQuery) newPlaylist(id int64) (err error) {
-	reqpl := &m3uetcpb.ExecutePlaylistActionRequest{
-		Action:      m3uetcpb.PlaylistAction_PL_CREATE,
-		Perspective: m3uetcpb.Perspective_MUSIC,
-	}
-	respl, err := dialer.ExecutePlaylistAction(reqpl)
-	if err != nil {
-		return
-	}
-
-	reqqy := &m3uetcpb.ApplyQueryRequest{
+func (omqy *onMusicQuery) newPlaylist(id int64) error {
+	req := &m3uetcpb.QueryInPlaylistRequest{
 		Id: id,
 	}
 
-	if err = dialer.ApplyQuery(reqqy, respl.Id); err != nil {
+	var playlistID int64
+	var err error
+	if playlistID, err = dialer.QueryInPlaylist(req); err != nil {
 		log.Error(err)
-		err = nil
 
 		reqbar := &m3uetcpb.ExecutePlaybarActionRequest{
 			Action: m3uetcpb.PlaybarAction_BAR_CLOSE,
-			Ids:    []int64{reqpl.Id},
+			Ids:    []int64{playlistID},
 		}
 
 		if err = dialer.ExecutePlaybarAction(reqbar); err != nil {
-			return
+			return err
 		}
-		return
+
+		return nil
 	}
 
-	playlists.RequestFocus(m3uetcpb.Perspective_MUSIC, respl.Id)
-	return
+	playlists.RequestFocus(m3uetcpb.Perspective_MUSIC, playlistID)
+	return nil
 }
 
 func (omqy *onMusicQuery) resetDialog() error {

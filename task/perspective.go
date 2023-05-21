@@ -58,13 +58,13 @@ func perspectiveAction(c *cli.Context) (err error) {
 	return
 }
 
-func perspectiveActivateAction(c *cli.Context) (err error) {
+func perspectiveActivateAction(c *cli.Context) error {
 	rest := c.Args().Slice()
 	if len(rest) < 1 {
-		err = fmt.Errorf("I need one PERSPECTIVE to activate")
+		return fmt.Errorf("I need one PERSPECTIVE to activate")
 	}
 	if len(rest) > 1 {
-		err = fmt.Errorf("Too many values in command")
+		return fmt.Errorf("Too many values in command")
 	}
 
 	req := &m3uetcpb.SetActivePerspectiveRequest{
@@ -73,7 +73,7 @@ func perspectiveActivateAction(c *cli.Context) (err error) {
 
 	cc, err := getClientConn()
 	if err != nil {
-		return
+		return nil
 	}
 	defer cc.Close()
 
@@ -81,10 +81,9 @@ func perspectiveActivateAction(c *cli.Context) (err error) {
 	_, err = cl.SetActivePerspective(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		err = fmt.Errorf(s.Message())
-		return
+		return fmt.Errorf(s.Message())
 	}
 
 	fmt.Printf("OK\n")
-	return
+	return nil
 }
