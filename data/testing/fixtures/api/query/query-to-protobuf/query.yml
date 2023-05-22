@@ -1,0 +1,12 @@
+---
+- id: 1
+  idx: 1
+  name: "some read-only query"
+  description: "some description"
+  random: true
+  rating: 30
+  limit: 100
+  from: 1652576170763671878
+  to: 1684112170763671878
+  created_at: 1684112170763671878
+  updated_at: 1684112170763671878

@@ -46,11 +46,10 @@ func (mi *M3U) Format(w io.StringWriter) (n int, err error) {
 		}
 
 		dur := time.Duration(t.Duration) * time.Nanosecond
-		dur = dur.Truncate(time.Second)
 		_, err = out.WriteString(
 			fmt.Sprintf(
 				"#EXTINF:%v,%v\n",
-				dur.Seconds(),
+				dur.Truncate(time.Second).Seconds(),
 				t.ArtistTitle,
 			),
 		)
@@ -78,9 +77,9 @@ func (mi *M3U) Parse(f io.Reader) (err error) {
 	s := strings.ReplaceAll(string(bv), "\r", "")
 	lines := strings.Split(s, "\n")
 
-	directre := regexp.MustCompile(`^(#EXT\\w{3}\\b|#PLAYLIST\\b|#EXTGENRE\\b)`)
-	extinf := regexp.MustCompile(`^(\\d+),\\s*([^,]*)(,.*)?`)
-	extalb := regexp.MustCompile(`^(.+)\\s*([(]\\d{4}[)])?\\s*$`)
+	directre := regexp.MustCompile(`^(#EXT\w{3}\b|#PLAYLIST\b|#EXTGENRE\b)`)
+	extinf := regexp.MustCompile(`^(\d+),\s*([^,]*)(,.*)?`)
+	extalb := regexp.MustCompile(`^(.+)\s*([(]\d{4}[)])?\s*$`)
 
 	var encoding, name string
 	ti := []TrackInfo{{}}
@@ -97,7 +96,6 @@ func (mi *M3U) Parse(f io.Reader) (err error) {
 		}
 
 		lines[i] = strings.TrimSpace(lines[i])
-
 		if match := directre.FindStringSubmatch(lines[i]); len(match) > 1 {
 			lines[i] = strings.TrimPrefix(lines[i], match[1])
 			lines[i] = strings.TrimPrefix(lines[i], ":")

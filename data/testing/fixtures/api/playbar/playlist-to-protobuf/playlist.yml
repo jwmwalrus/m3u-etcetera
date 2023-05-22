@@ -1,0 +1,11 @@
+---
+- id: 1
+  name: "some playlist"
+  description: "some description"
+  open: true
+  active: true
+  transient: true
+  created_at: 1684112170763671878
+  updated_at: 1684112170763671878
+  playlist_group_id: 1
+  playbar_id: 1

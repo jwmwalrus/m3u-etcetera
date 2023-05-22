@@ -3,8 +3,10 @@ package task
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"github.com/urfave/cli/v2"
 )
@@ -21,21 +23,21 @@ func TestServe(t *testing.T) {
 			"Start non-running",
 			[]string{"", "serve"},
 			&alive.ServerStarted{},
-			func() { alive.Serve(alive.ServeOptions{TurnOff: true}) },
-			func() { alive.Serve(alive.ServeOptions{TurnOff: true}) },
+			func() { alive.Serve(alive.WithForceOff()) },
+			func() { alive.Serve(alive.WithForceOff()) },
 		},
 		{
 			"Start already running",
 			[]string{"", "serve"},
 			&alive.ServerAlreadyRunning{},
 			func() { alive.Serve() },
-			func() { alive.Serve(alive.ServeOptions{TurnOff: true}) },
+			func() { alive.Serve(alive.WithForceOff()) },
 		},
 		{
 			"Stop non-running",
 			[]string{"", "serve", "off"},
 			&alive.ServerNotRunning{},
-			func() { alive.Serve(alive.ServeOptions{TurnOff: true}) },
+			func() { alive.Serve(alive.WithForceOff()) },
 			nil,
 		},
 		{
@@ -47,7 +49,12 @@ func TestServe(t *testing.T) {
 		},
 	}
 
-	rtc.Load(rtc.RTCycler{NoParseArgs: true})
+	rtc.Load(rtc.RTCycler{
+		NoParseArgs: true,
+		AppDirName:  base.AppDirName,
+		AppName:     base.AppName,
+		Config:      &base.Conf,
+	})
 
 	rtc.SetTestMode()
 	defer rtc.UnsetTestMode()
@@ -62,13 +69,14 @@ func TestServe(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup()
+				time.Sleep(5 * time.Second)
+			}
+			if tc.teardown != nil {
+				t.Cleanup(tc.teardown)
 			}
 			err := app.Run(tc.command)
 			if reflect.TypeOf(err) != reflect.TypeOf(tc.expected) {
 				t.Errorf("Expected type %T but got %T", tc.expected, err)
-			}
-			if tc.teardown != nil {
-				tc.teardown()
 			}
 		})
 	}

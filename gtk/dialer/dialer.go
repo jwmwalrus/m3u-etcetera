@@ -81,11 +81,9 @@ func Unsubscribe() {
 	wgperspective.Wait()
 
 	alive.Serve(
-		alive.ServeOptions{
-			TurnOff: true,
-			NoWait:  !forceExit,
-			Force:   forceExit,
-		},
+		alive.WithTurnOff(),
+		alive.WithForceOff(forceExit),
+		alive.WithNoWait(!forceExit),
 	)
 
 	log.Info("Done unsubscribing")

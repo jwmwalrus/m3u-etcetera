@@ -1,0 +1,9 @@
+---
+- id: 1
+  position: 1
+  played: true
+  location: "file://some-location"
+  created_at: 1684112170763671878
+  updated_at: 1684112170763671878
+  track_id: 0
+  queue_id: 1
