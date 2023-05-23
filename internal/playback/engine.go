@@ -256,8 +256,6 @@ func (e *engine) getPrevInHistory() (pb *models.Playback, err error) {
 }
 
 func (e *engine) handleBusMessage(msg *gst.Message) bool {
-	log.Debug(msg.String())
-
 	switch msg.Type() {
 	case gst.MessageEOS:
 		log.Debugf("End of stream: %v", e.pb.Load().Location)
@@ -293,6 +291,7 @@ func (e *engine) handleBusMessage(msg *gst.Message) bool {
 		}
 		onerror.Log(e.playbin.Load().SetState(e.state.Load()))
 	default:
+		log.Trace(msg.String())
 	}
 
 	return true

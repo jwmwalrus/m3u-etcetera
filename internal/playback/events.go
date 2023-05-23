@@ -375,9 +375,9 @@ func (et *events) SeekInStream(pos int64) {
 // StopAll implements the IEvents interface.
 func (et *events) StopAll() {
 	et.eng.lastEvent.Store(stopAllEvent)
-	et.StopStream()
 
 	et.eng.updateMPRIS(true)
+	et.StopStream()
 }
 
 // StopStream stops the current stream.

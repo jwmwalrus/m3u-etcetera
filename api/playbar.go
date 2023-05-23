@@ -214,47 +214,38 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 	req *m3uetcpb.ExecutePlaylistActionRequest) (
 	*m3uetcpb.ExecutePlaylistActionResponse, error) {
 
-	if (req.Action == m3uetcpb.PlaylistAction_PL_UPDATE ||
-		req.Action == m3uetcpb.PlaylistAction_PL_DESTROY) &&
-		req.Id < 1 {
-		return nil,
-			status.Errorf(codes.InvalidArgument, "Invalid playlist ID: %v", req.Id)
-	}
-
-	if (req.Action == m3uetcpb.PlaylistAction_PL_MERGE) &&
-		req.Id < 1 && req.Id2 < 1 {
-		return nil,
-			status.Errorf(codes.InvalidArgument,
-				"Invalid playlist IDs, ID1=%v, ID2=%v", req.Id, req.Id2)
-	}
-
 	pl := &models.Playlist{}
 	pl2 := &models.Playlist{}
-	if req.Action != m3uetcpb.PlaylistAction_PL_CREATE {
-		if err := pl.Read(req.Id); err != nil {
-			return nil,
-				status.Errorf(codes.NotFound,
-					"Playlist with ID=%v does not exist: %v", req.Id, err)
+
+	checkPlaylistID := func() error {
+		if req.Id < 1 {
+			return status.Errorf(codes.InvalidArgument, "invalid playlist ID: %v", req.Id)
 		}
+		if err := pl.Read(req.Id); err != nil {
+			return status.Errorf(codes.NotFound,
+				"playlist with ID=%v does not exist: %v", req.Id, err)
+		}
+		return nil
 	}
-	if req.Action == m3uetcpb.PlaylistAction_PL_MERGE {
-		if err := pl2.Read(req.Id2); err != nil {
-			return nil,
-				status.Errorf(codes.NotFound,
-					"Playlist with ID=%v does not exist: %v", req.Id2, err)
+
+	checkPlaylistID2 := func() error {
+		if err := checkPlaylistID(); err != nil {
+			return err
+		}
+		if req.Id2 < 1 || req.Id == req.Id2 {
+			return status.Errorf(codes.InvalidArgument,
+				"invalid playlist IDs, ID1=%v, ID2=%v", req.Id, req.Id2)
+		}
+		if err := pl.Read(req.Id2); err != nil {
+			return status.Errorf(codes.NotFound,
+				"playlist with ID=%v does not exist: %v", req.Id2, err)
 		}
 
 		if pl.PlaybarID != pl2.PlaybarID {
-			return nil,
-				status.Errorf(codes.NotFound,
-					"Playlists do not belong to the same playbar: ID1=%v, ID2=%v", req.Id, req.Id2)
+			return status.Errorf(codes.NotFound,
+				"playlists do not belong to the same playbar: ID1=%v, ID2=%v", req.Id, req.Id2)
 		}
-	}
-
-	if req.Action == m3uetcpb.PlaylistAction_PL_DESTROY && pl.Open {
-		return nil,
-			status.Errorf(codes.InvalidArgument,
-				"A playlist cannot be deleted while open")
+		return nil
 	}
 
 	switch req.Action {
@@ -263,16 +254,20 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 		if err != nil {
 			return nil,
 				status.Errorf(codes.Internal,
-					"Error obtaining perspective: %v", err)
+					"failed to obtain perspective: %v", err)
 		}
 
 		pl, err = bar.CreateEntry(req.Name, req.Description, req.QueryId)
 		if err != nil {
 			return nil,
 				status.Errorf(codes.Internal,
-					"Error creating playlist: %v", err)
+					"failed to create playlist: %v", err)
 		}
 	case m3uetcpb.PlaylistAction_PL_UPDATE:
+		if err := checkPlaylistID(); err != nil {
+			return nil, err
+		}
+
 		bar := pl.Playbar
 		err := bar.UpdateEntry(
 			pl,
@@ -284,23 +279,35 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 		if err != nil {
 			return nil,
 				status.Errorf(codes.Internal,
-					"Error updating playlist: %v", err)
+					"failed to update playlist: %v", err)
 		}
 	case m3uetcpb.PlaylistAction_PL_DESTROY:
+		if err := checkPlaylistID(); err != nil {
+			return nil, err
+		}
+		if pl.Open {
+			return nil,
+				status.Errorf(codes.InvalidArgument,
+					"a playlist cannot be deleted while open")
+		}
+
 		bar := pl.Playbar
 		err := bar.DestroyEntry(pl)
 		if err != nil {
 			return nil,
 				status.Errorf(codes.Internal,
-					"Error deleting playlist: %v", err)
+					"failed to delete playlist: %v", err)
 		}
 	case m3uetcpb.PlaylistAction_PL_MERGE:
+		if err := checkPlaylistID2(); err != nil {
+			return nil, err
+		}
 		bar := pl.Playbar
 		err := bar.MergePlaylists(pl, pl2)
 		if err != nil {
 			return nil,
 				status.Errorf(codes.Internal,
-					"Error merging playlists: %v", err)
+					"failed to merge playlists: %v", err)
 		}
 	}
 

@@ -39,6 +39,9 @@ func (h *PlaybackHistory) ReadLast() (err error) {
 
 // AddPlaybackToHistory adds unplayed playback to history and marks it as played.
 func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
+	storageGuard <- struct{}{}
+	defer func() { <-storageGuard }()
+
 	entry := log.WithFields(log.Fields{
 		"position": position,
 		"duration": duration,

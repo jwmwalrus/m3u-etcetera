@@ -6,6 +6,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -93,8 +94,10 @@ func DoInitialCleanup() {
 		err := tx.Where("playlist_id = ?", pl.ID).Delete(&PlaylistTrack{}).Error
 		if err != nil {
 			log.Error(err)
-			break
+			continue
 		}
+
+		log.Debugf("Removing delete playlist, ID=%d", pl.ID)
 		tx.Where("id = ?", pl.ID).Delete(&Playlist{})
 	}
 
@@ -103,6 +106,49 @@ func DoInitialCleanup() {
 
 	// Set collections' scanned to 100
 	tx.Model(&Collection{}).Where("id > 0").Update("scanned", 100)
+
+	// Remove unused transient tracks
+	trc, _ := TransientCollection.Get()
+	if trc != nil {
+		func() {
+			var ts []struct{ ID int64 }
+			tx.Model(&Track{}).Where("collection_id = ?", trc.ID).Find(&ts)
+			if len(ts) == 0 {
+				return
+			}
+
+			var tset []int64
+			for _, t := range ts {
+				tset = append(tset, t.ID)
+			}
+
+			var pts []struct{ TrackID int64 }
+			tx.Model(&PlaylistTrack{}).Where("track_id IN (?)", tset).Find(&pts)
+
+			var ptset []int64
+			for _, pt := range pts {
+				ptset = append(ptset, pt.TrackID)
+			}
+			ptset = slices.Compact(ptset)
+
+			var diff []int64
+			for _, id := range tset {
+				if slices.Contains(ptset, id) {
+					continue
+				}
+				diff = append(diff, id)
+			}
+
+			log.Debugf("Number of transient tracks: %d", len(tset))
+			log.Debugf("Number of transient tracks in use: %d", len(ptset))
+			log.Debugf("Number of unused transient tracks: %d", len(diff))
+			if len(diff) == 0 {
+				return
+			}
+
+			tx.Where("id IN (?)", diff).Delete(&Track{})
+		}()
+	}
 }
 
 // SetUp sets the database used by the models and starts some listeners.
@@ -118,6 +164,9 @@ func SetUp(ctx context.Context, conn *gorm.DB) {
 
 // TearDown unsets the models listeners.
 func TearDown() {
+	storageGuard <- struct{}{}
+	defer func() { <-storageGuard }()
+
 	close(playbackTrackNeeded)
 	close(queueTrackNeeded)
 }
