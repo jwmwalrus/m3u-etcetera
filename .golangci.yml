@@ -74,7 +74,7 @@ linters:
     # - errcheck # too annoying, ignores settings above
     - gosimple
     - govet
-    - ineffassign
+    # - ineffassign # many false positives
     - staticcheck
     - typecheck
     - unused
