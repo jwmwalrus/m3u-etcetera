@@ -26,13 +26,13 @@ func (pl *playlist) Tracks() []TrackInfo {
 	return pl.tracks
 }
 
-func (pl *playlist) setProps(props []PlaylistProp) {
-	for _, pp := range props {
-		switch pp.Key {
+func (pl *playlist) setProps(props PlaylistProps) {
+	for k, v := range props {
+		switch k {
 		case NamePropKey:
-			pl.name = pp.Val
+			pl.name = v
 		case EncodingPropKey:
-			pl.name = pp.Val
+			pl.name = v
 		}
 	}
 }
@@ -50,11 +50,8 @@ func (ppk PlaylistPropKey) String() string {
 	return []string{"name", "encoding"}[ppk]
 }
 
-// PlaylistProp plsylist property.
-type PlaylistProp struct {
-	Key PlaylistPropKey
-	Val string
-}
+// PlaylistProp playlist property.
+type PlaylistProps map[PlaylistPropKey]string
 
 // TrackInfo track information.
 type TrackInfo struct {

@@ -45,7 +45,12 @@ type Playlist struct {
 
 // Create implements the DataCreator interface.
 func (pl *Playlist) Create() (err error) {
-	err = db.Create(pl).Error
+	return pl.CreateTx(db)
+}
+
+// CreateTx implements the DataCreatorTx interface.
+func (pl *Playlist) CreateTx(tx *gorm.DB) (err error) {
+	err = tx.Create(pl).Error
 	return
 }
 
@@ -224,8 +229,8 @@ func (pl *Playlist) Export(format impexp.PlaylistType, location string) (err err
 	}
 	defer f.Close()
 
-	prop := impexp.PlaylistProp{Key: impexp.NamePropKey, Val: pl.Name}
-	m3u, err := impexp.New(format, prop)
+	props := impexp.PlaylistProps{impexp.NamePropKey: pl.Name}
+	m3u, err := impexp.New(format, props)
 	if err != nil {
 		return
 	}

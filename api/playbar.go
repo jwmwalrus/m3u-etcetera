@@ -412,7 +412,7 @@ func (*PlaybarSvc) ExecutePlaylistTrackAction(_ context.Context,
 }
 
 // ImportPlaylists implements m3uetcpb.PlaybarSvcServer.
-func (*PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest,
+func (svc *PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest,
 	stream m3uetcpb.PlaybarSvc_ImportPlaylistsServer) error {
 
 	bar, err := models.PerspectiveIndex(req.Perspective).GetPlaybar()
@@ -426,8 +426,9 @@ func (*PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest,
 			"At least one playlist location is required")
 	}
 
+	var firstPlaylist *models.Playlist
 	for _, l := range req.Locations {
-		pl, msgs, err := bar.ImportPlaylist(l)
+		pl, msgs, err := bar.ImportPlaylist(l, req.AsTransient)
 		if err != nil {
 			un, err2 := urlstr.URLToPath(l)
 			if err2 != nil {
@@ -436,12 +437,21 @@ func (*PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest,
 			return status.Errorf(codes.InvalidArgument,
 				"Error importing playlist at `%v`: %v", un, err)
 		}
-		req := &m3uetcpb.ImportPlaylistsResponse{Id: pl.ID, ImportErrors: msgs}
-		err = stream.Send(req)
+
+		if firstPlaylist == nil {
+			firstPlaylist = pl
+		}
+
+		res := &m3uetcpb.ImportPlaylistsResponse{Id: pl.ID, ImportErrors: msgs}
+		err = stream.Send(res)
 		if err != nil {
 			return status.Errorf(codes.Internal,
 				"Error sending stream: %v", err)
 		}
+	}
+
+	if req.AsTransient && firstPlaylist != nil {
+		svc.PbEvents.TryPlayingFromBar(firstPlaylist, 1)
 	}
 
 	return nil

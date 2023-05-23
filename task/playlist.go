@@ -127,6 +127,19 @@ func Playlist() *cli.Command {
 				Description: "Exports a playlist to a supported file format (e.g., M3U)",
 				Action:      playlistExportAction,
 			},
+			{
+				Name: "open",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "persp",
+						Usage: "Applies to `PERSPECTIVE`",
+						Value: "music",
+					},
+				},
+				Usage:       "playlist open [<flags> ...] locations ...",
+				Description: "Opens the playlist at the given location",
+				Action:      playlistOpenFromLocationsAction,
+			},
 		},
 		Before: checkServerStatus,
 		Action: playlistAction,
@@ -312,59 +325,22 @@ func showPlaylist(c *cli.Context, id int64) (err error) {
 	return
 }
 
-func playlistImportAction(c *cli.Context) (err error) {
-
+func playlistImportAction(c *cli.Context) error {
 	rest := c.Args().Slice()
 	if len(rest) < 1 {
-		err = fmt.Errorf("I need a list of locations to playlists")
-		return
+		return fmt.Errorf("I need a list of locations to playlists")
 	}
 
 	req := &m3uetcpb.ImportPlaylistsRequest{
 		Perspective: getPerspective(c),
 	}
 
+	var err error
 	if req.Locations, err = parseLocations(rest); err != nil {
-		return
+		return err
 	}
 
-	cc, err := getClientConn()
-	if err != nil {
-		return
-	}
-	defer cc.Close()
-
-	cl := newPlaybarSvcClient(cc)
-	stream, err := cl.ImportPlaylists(context.Background(), req)
-	if err != nil {
-		s := status.Convert(err)
-		err = fmt.Errorf(s.Message())
-		return
-	}
-
-	for {
-		var res *m3uetcpb.ImportPlaylistsResponse
-		res, err = stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				err = nil
-				break
-			}
-			return
-		}
-
-		fmt.Printf("ID: %d\n", res.Id)
-		if len(res.ImportErrors) > 0 {
-			fmt.Printf("\tThere were errors during import:\n")
-			for _, ie := range res.ImportErrors {
-				fmt.Printf("\t\t%s\n", ie)
-			}
-			fmt.Printf("\n")
-		}
-
-	}
-
-	return
+	return istImportPlaylists(req)
 }
 
 func playlistExportAction(c *cli.Context) (err error) {
@@ -412,5 +388,64 @@ func playlistExportAction(c *cli.Context) (err error) {
 	}
 
 	fmt.Printf("OK\n")
+	return
+}
+
+func playlistOpenFromLocationsAction(c *cli.Context) error {
+	rest := c.Args().Slice()
+	if len(rest) < 1 {
+		return fmt.Errorf("I need a list of locations to playlists")
+	}
+
+	req := &m3uetcpb.ImportPlaylistsRequest{
+		Perspective: getPerspective(c),
+		AsTransient: true,
+	}
+
+	var err error
+	if req.Locations, err = parseLocations(rest); err != nil {
+		return err
+	}
+
+	return istImportPlaylists(req)
+}
+
+func istImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (err error) {
+	cc, err := getClientConn()
+	if err != nil {
+		return
+	}
+	defer cc.Close()
+
+	cl := newPlaybarSvcClient(cc)
+	stream, err := cl.ImportPlaylists(context.Background(), req)
+	if err != nil {
+		s := status.Convert(err)
+		err = fmt.Errorf(s.Message())
+		return
+	}
+
+	for {
+		var res *m3uetcpb.ImportPlaylistsResponse
+		res, err = stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+				break
+			}
+			return
+		}
+
+		fmt.Printf("ID: %d\n", res.Id)
+		if len(res.ImportErrors) > 0 {
+			fmt.Printf("\tThere were errors during import:\n")
+			for _, ie := range res.ImportErrors {
+				fmt.Printf("\t\t%s\n", ie)
+			}
+			fmt.Printf("\n")
+		}
+
+	}
+
 	return
 }

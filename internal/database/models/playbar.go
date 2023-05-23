@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -320,102 +321,65 @@ func (b *Playbar) GetAllOpenEntries() []*Playlist {
 }
 
 // ImportPlaylist creates a playlist from the given location, if supported.
-func (b *Playbar) ImportPlaylist(location string) (pl *Playlist, msgs []string, err error) {
-	path, err := urlstr.URLToPath(location)
+func (b *Playbar) ImportPlaylist(location string, asTransient bool) (pl *Playlist, msgs []string, err error) {
+	def, err := importPlaylist(location)
 	if err != nil {
 		return
 	}
 
-	if !base.IsSupportedPlaylist(path) {
-		err = fmt.Errorf("Unsupported playlist format: %v", location)
-		return
-	}
-
-	def, err := impexp.NewFromPath(path)
-	if err != nil {
-		return
-	}
-
-	f, err := os.Open(path)
-	if err != nil {
-		return
-	}
-
-	err = def.Parse(f)
+	pl, msgs, err = b.newPlaylistFromImported(def)
 	if err != nil {
 		return
 	}
 
 	name := def.Name()
+	description := ""
 
 	if name == "" {
-		rl, _ := ing2.GetRandomLetters(8)
-		name = strings.Join([]string{
-			strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
-			rl,
-			def.Type(),
-		}, "-")
+		var path string
+		path, err = urlstr.URLToPath(location)
+		if err != nil {
+			return
+		}
+
+		if !asTransient {
+			rl, _ := ing2.GetRandomLetters(8)
+			name = strings.Join([]string{
+				strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
+				rl,
+				def.Type(),
+			}, "-")
+			description = "Imported from " + filepath.Base(path) +
+				" on " + time.Now().Format(time.RFC3339)
+		} else {
+			name = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+		}
 	}
 
-	pg := PlaylistGroup{}
-	err = pg.ReadDefaultForPerspective(b.PerspectiveID)
-	if err != nil {
-		return
-	}
-
-	pl = &Playlist{
-		Name: name,
-		Description: "Imported from " + filepath.Base(path) +
-			" on " + time.Now().Format(time.RFC3339),
-		PlaylistGroupID: pg.ID,
-		PlaybarID:       b.ID,
-	}
-
-	err = pl.Create()
-	if err != nil {
-		return
-	}
-
-	tx := db.Session(&gorm.Session{SkipHooks: true})
-	pts := []PlaylistTrack{}
-	for _, dt := range def.Tracks() {
-		t := Track{}
-		err2 := db.Where("location = ?", dt.Location).First(&t).Error
-		if err2 != nil {
-			t = Track{Location: dt.Location}
-			err2 := t.createTransient(tx, dt.ToRaw())
-			if err2 != nil {
-				msgs = append(
-					msgs,
-					fmt.Sprintf(
-						"Error creating track at `%v`: %v",
-						dt.Location,
-						err2,
-					),
-				)
-				continue
+	err = db.Where("name = ?", name).First(&Playlist{}).Error
+	if err == nil {
+		var found bool
+		for i := 1; i <= MaxOpenTransientPlaylists; i++ {
+			tmpname := name + " " + strconv.Itoa(i)
+			err := db.Where("name = ?", tmpname).First(&Playlist{}).Error
+			if err != nil {
+				name = tmpname
+				found = true
+				break
 			}
 		}
-
-		pts = append(pts, PlaylistTrack{PlaylistID: pl.ID, TrackID: t.ID})
-	}
-
-	pts = reasignPlaylistTrackPositions(pts)
-	for i := range pts {
-		err2 := tx.Save(&pts[i]).Error
-		if err2 != nil {
-			t := Track{}
-			t.Read(pts[i].TrackID)
-			msgs = append(
-				msgs,
-				fmt.Sprintf(
-					"Error saving playlist track at `%v`: %v",
-					t.Location,
-					err2,
-				),
-			)
+		if !found {
+			err = fmt.Errorf("Unable to find new name for playlist location")
+			return
 		}
+		err = nil
 	}
+
+	pl.Name = name
+	pl.Description = description
+	pl.Transient = asTransient
+	pl.Open = asTransient
+	err = pl.Save()
 
 	return
 }
@@ -671,6 +635,69 @@ func (b *Playbar) getPerspectiveIndex() (idx PerspectiveIndex) {
 	return
 }
 
+func (b *Playbar) newPlaylistFromImported(def impexp.Playlist) (pl *Playlist, msgs []string, err error) {
+	pg := PlaylistGroup{}
+	err = pg.ReadDefaultForPerspective(b.PerspectiveID)
+	if err != nil {
+		return
+	}
+
+	pl = &Playlist{
+		Name:            GetTransientNameForPlaylist(0),
+		PlaylistGroupID: pg.ID,
+		PlaybarID:       b.ID,
+	}
+
+	tx := db.Session(&gorm.Session{SkipHooks: true})
+
+	err = pl.CreateTx(tx)
+	if err != nil {
+		return
+	}
+
+	pts := []PlaylistTrack{}
+	for _, dt := range def.Tracks() {
+		t := Track{}
+		err2 := db.Where("location = ?", dt.Location).First(&t).Error
+		if err2 != nil {
+			t = Track{Location: dt.Location}
+			err2 := t.createTransient(tx, dt.ToRaw())
+			if err2 != nil {
+				msgs = append(
+					msgs,
+					fmt.Sprintf(
+						"Error creating track at `%v`: %v",
+						dt.Location,
+						err2,
+					),
+				)
+				continue
+			}
+		}
+
+		pts = append(pts, PlaylistTrack{PlaylistID: pl.ID, TrackID: t.ID})
+	}
+
+	pts = reasignPlaylistTrackPositions(pts)
+	for i := range pts {
+		err2 := tx.Save(&pts[i]).Error
+		if err2 != nil {
+			t := Track{}
+			t.Read(pts[i].TrackID)
+			msgs = append(
+				msgs,
+				fmt.Sprintf(
+					"Error saving playlist track at `%v`: %v",
+					t.Location,
+					err2,
+				),
+			)
+		}
+	}
+
+	return
+}
+
 // DeactivatePlaybars deactivates all playbars.
 func DeactivatePlaybars() {
 	pls := []Playlist{}
@@ -776,4 +803,33 @@ func GetPlaybarStore() (
 	opls, opts, ots = GetOpenEntries()
 
 	return
+}
+
+func importPlaylist(location string) (impexp.Playlist, error) {
+	path, err := urlstr.URLToPath(location)
+	if err != nil {
+		return nil, err
+	}
+
+	if !base.IsSupportedPlaylist(path) {
+		err = fmt.Errorf("Unsupported playlist format: %v", location)
+		return nil, err
+	}
+
+	def, err := impexp.NewFromPath(path)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	err = def.Parse(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return def, nil
 }

@@ -574,9 +574,13 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 	}
 	filter.SetName("Music files")
 
-	for _, v := range base.SupportedFileExtensions {
+	fileExts := base.SupportedFileExtensions
+	fileExts = append(fileExts, base.SupportedPlaylistExtensions...)
+
+	for _, v := range fileExts {
 		filter.AddPattern("*" + v)
 	}
+
 	dlg.SetSelectMultiple(true)
 	dlg.AddFilter(filter)
 	dlg.ShowAll()
@@ -590,27 +594,55 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 			return
 		}
 
-		plID := playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
+		var mmLocs, plLocs []string
+		for i := range locs {
+			if base.IsSupportedPlaylistURL(locs[i]) {
+				plLocs = append(plLocs, locs[i])
+				continue
+			}
+			mmLocs = append(mmLocs, locs[i])
+		}
 
-		if plID > 0 {
-			action := m3uetcpb.PlaylistTrackAction_PT_APPEND
-			req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
-				PlaylistId: plID,
-				Action:     action,
-				Locations:  locs,
+		if len(mmLocs) > 0 {
+			plID := playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
+
+			if plID > 0 {
+				action := m3uetcpb.PlaylistTrackAction_PT_APPEND
+				req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
+					PlaylistId: plID,
+					Action:     action,
+					Locations:  mmLocs,
+				}
+
+				err := dialer.ExecutePlaylistTrackAction(req)
+				onerror.Log(err)
+			} else {
+				action := m3uetcpb.QueueAction_Q_APPEND
+				req := &m3uetcpb.ExecuteQueueActionRequest{
+					Action:    action,
+					Locations: mmLocs,
+				}
+
+				err := dialer.ExecuteQueueAction(req)
+				onerror.Log(err)
+			}
+		}
+
+		if len(plLocs) > 0 {
+			req := &m3uetcpb.ImportPlaylistsRequest{
+				Locations:   plLocs,
+				AsTransient: true,
 			}
 
-			err := dialer.ExecutePlaylistTrackAction(req)
-			onerror.Log(err)
-		} else {
-			action := m3uetcpb.QueueAction_Q_APPEND
-			req := &m3uetcpb.ExecuteQueueActionRequest{
-				Action:    action,
-				Locations: locs,
+			msgList, err := dialer.ImportPlaylists(req)
+			if err != nil {
+				log.Error(err)
+				return
 			}
 
-			err := dialer.ExecuteQueueAction(req)
-			onerror.Log(err)
+			for _, msg := range msgList {
+				log.Error(msg)
+			}
 		}
 	case gtk.RESPONSE_CANCEL:
 	default:

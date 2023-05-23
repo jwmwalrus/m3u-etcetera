@@ -129,7 +129,8 @@ message ExecutePlaylistTrackActionRequest {
 message ImportPlaylistsRequest {
     Perspective perspective = 1;
     bool detect_perspective = 2;
-    repeated string locations = 3;
+    bool as_transient = 3;
+    repeated string locations = 4;
 }
 
 message ImportPlaylistsResponse {

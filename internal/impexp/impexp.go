@@ -30,8 +30,8 @@ type PlaylistData interface {
 	Tracks() []TrackInfo
 }
 
-// PlaylistDef -.
-type PlaylistDef interface {
+// Playlist -.
+type Playlist interface {
 	PlaylistData
 	Type() string
 	Parse(io.Reader) error
@@ -47,9 +47,11 @@ var (
 )
 
 // New creates a new playlist definition.
-func New(plt PlaylistType, props ...PlaylistProp) (PlaylistDef, error) {
+func New(plt PlaylistType, props ...PlaylistProps) (Playlist, error) {
 	pl := &playlist{}
-	pl.setProps(props)
+	if len(props) > 0 {
+		pl.setProps(props[0])
+	}
 
 	switch plt {
 	case M3UPlaylist:
@@ -62,7 +64,7 @@ func New(plt PlaylistType, props ...PlaylistProp) (PlaylistDef, error) {
 }
 
 // NewFromPath creates a new playlist definition using the given path as a hint.
-func NewFromPath(path string, props ...PlaylistProp) (PlaylistDef, error) {
+func NewFromPath(path string, props ...PlaylistProps) (Playlist, error) {
 	plt, ok := extToType[filepath.Ext(path)]
 	if !ok {
 		return nil, fmt.Errorf("Unsupported playlist type")
