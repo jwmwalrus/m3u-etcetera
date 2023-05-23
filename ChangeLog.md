@@ -9,6 +9,31 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.20.0] 2023-05-22
+
+Twenty percent
+
+### Fixed
+
+* Fix segfaults
+
+### Added
+
+* Opening supported playlist files
+* Read-only queries
+* Task to generate deb package
+* Handling images generation
+
+### Modified
+
+* Display proper duration from cli
+* Collecion name's index must be unique
+* Use rtcycler
+* Inject playback events into services
+* Refactoring, misc. tweaks
+    * Rearrange some packages and fix tests
+    * Update .golanci.yml and fix new issues
+
 ## [0.19.0] 2023-03-03
 
 Misc. changes
