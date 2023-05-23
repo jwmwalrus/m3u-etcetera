@@ -313,7 +313,7 @@ func init() {
 	QColumns[QColRating] = columnDef{Name: "Rating", colType: glib.TYPE_INT}
 	QColumns[QColDuration] = columnDef{Name: "Duration", colType: glib.TYPE_STRING}
 	QColumns[QColRemote] = columnDef{Name: "Remote (T)", colType: glib.TYPE_BOOLEAN}
-	QColumns[QColLastplayed] = columnDef{Name: "Last Played", colType: glib.TYPE_INT64}
+	QColumns[QColLastplayed] = columnDef{Name: "Last Played", colType: glib.TYPE_STRING}
 
 	QYTreeColumn = storeColumns{
 		columnDef{Name: "Tree", colType: glib.TYPE_STRING},
