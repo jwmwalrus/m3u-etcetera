@@ -3,10 +3,13 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"path"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	rtc "github.com/jwmwalrus/rtcycler"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -17,56 +20,98 @@ var (
 	loggerKey = &loggerMarker{}
 )
 
-type loggerType int
-
-const (
-	unaryLogger loggerType = iota
-	streamLogger
-)
-
-func (lt loggerType) String() string {
-	return []string{
-		"unary",
-		"streaming",
-	}[lt]
+type LoggerInterceptor struct {
+	loggerType InterceptorType
+	debug      bool
 }
 
-func logBefore(ctx context.Context, lt loggerType, fullMethod string,
-	start time.Time) context.Context {
+func NewLoggerInterceptor(lt InterceptorType, debug bool) *LoggerInterceptor {
+	rtc.With(
+		"type", lt,
+		"debug", debug,
+	).Trace("Creating Logger Interceptor")
 
-	fields := log.Fields{
-		"loggerType":   lt,
-		"start":        start,
-		"grpc.service": path.Dir(fullMethod)[1:],
-		"grpc.method":  path.Base(fullMethod),
+	return &LoggerInterceptor{lt, debug}
+}
+
+func (li *LoggerInterceptor) Unary() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{},
+		info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+
+		if path.Base(info.FullMethod) != "Off" {
+			base.GetBusy(base.IdleStatusRequest)
+			defer func() { base.GetFree(base.IdleStatusRequest) }()
+		}
+
+		newCtx := li.Before(ctx, info.FullMethod)
+		res, err := handler(newCtx, req)
+		li.After(newCtx, err)
+		return res, err
+	}
+}
+
+func (li *LoggerInterceptor) Stream() grpc.StreamServerInterceptor {
+	return func(req interface{}, stream grpc.ServerStream,
+		info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+
+		base.GetBusy(base.IdleStatusRequest)
+		defer func() { base.GetFree(base.IdleStatusRequest) }()
+
+		newCtx := li.Before(stream.Context(), info.FullMethod)
+		wrapped := newWrappedServerStream(newCtx, stream, li)
+		wrapped.wrappedContext = newCtx
+		err := handler(req, wrapped)
+		li.After(newCtx, err)
+
+		return err
+	}
+}
+
+func (li *LoggerInterceptor) Before(ctx context.Context, fullMethod string) context.Context {
+
+	start := time.Now()
+	attrs := []slog.Attr{
+		slog.Any("logger_type", li.loggerType),
+		slog.Time("start", start),
+		slog.String("grpc.service", path.Dir(fullMethod)[1:]),
+		slog.String("grpc.method", path.Base(fullMethod)),
 	}
 	if d, ok := ctx.Deadline(); ok {
-		fields["grpc.request.deadline"] = d.Format(time.RFC3339)
+		attrs = append(attrs, slog.String("grpc.request.deadline", d.Format(time.RFC3339)))
 	}
 
-	newCtx := context.WithValue(ctx, loggerKey, fields)
+	newCtx := context.WithValue(ctx, loggerKey, attrs)
 	return newCtx
 }
 
-func logAfter(ctx context.Context, err error, finish time.Time, debug bool) {
-	lf := ctx.Value(loggerKey).(log.Fields)
+func (li *LoggerInterceptor) After(ctx context.Context, err error) {
+	finish := time.Now()
+	bAttrs := ctx.Value(loggerKey).([]slog.Attr)
 	s := status.Convert(err)
 	code := s.Code()
-	diff := finish.Sub(lf["start"].(time.Time))
-	fields := log.Fields{
-		"grpc.code":       code.String(),
-		"grpc.start_time": lf["start"].(time.Time).Format(time.RFC3339),
-		"grpc.service":    lf["grpc.service"],
-		"grpc.method":     lf["grpc.method"],
-		"grpc.time_ms":    float32(diff.Nanoseconds()/1000) / 1000,
+	attrs := []slog.Attr{
+		slog.Any("grpc.code", code),
 	}
+
+	var start time.Time
+	for i := range bAttrs {
+		switch bAttrs[i].Key {
+		case "start":
+			start = bAttrs[i].Value.Time()
+			attrs = append(attrs, slog.String("grpc.start_time", start.Format(time.RFC3339)))
+		default:
+			attrs = append(attrs, bAttrs[i])
+		}
+	}
+	diff := finish.Sub(start)
+	attrs = append(attrs, slog.Float64("grpc.time_ms", float64(diff.Nanoseconds()/1000)/1000))
 	if err != nil {
-		fields[log.ErrorKey] = err
+		attrs = append(attrs, slog.Any("error", err))
 	}
-	entry := log.WithContext(ctx).WithFields(fields)
+	logw := slog.Default()
 	msg := fmt.Sprintf(
 		"Finished %v call with code %v",
-		lf["loggerType"].(loggerType),
+		li.loggerType,
 		code.String(),
 	)
 
@@ -77,10 +122,10 @@ func logAfter(ctx context.Context, err error, finish time.Time, debug bool) {
 		codes.NotFound,
 		codes.AlreadyExists,
 		codes.Unauthenticated:
-		if debug {
-			entry.Debug(msg)
+		if li.debug {
+			logw.LogAttrs(ctx, slog.LevelDebug, msg, attrs...)
 		} else {
-			entry.Info(msg)
+			logw.LogAttrs(ctx, slog.LevelInfo, msg, attrs...)
 		}
 	case codes.DeadlineExceeded,
 		codes.PermissionDenied,
@@ -89,42 +134,13 @@ func logAfter(ctx context.Context, err error, finish time.Time, debug bool) {
 		codes.Aborted,
 		codes.OutOfRange,
 		codes.Unavailable:
-		entry.Warn(msg)
+		logw.LogAttrs(ctx, slog.LevelWarn, msg, attrs...)
 	case codes.Unknown,
 		codes.Unimplemented,
 		codes.Internal,
 		codes.DataLoss:
-		entry.Error(msg)
+		logw.LogAttrs(ctx, slog.LevelError, msg, attrs...)
 	default:
-		entry.Error(msg)
+		logw.LogAttrs(ctx, slog.LevelError, msg, attrs...)
 	}
 }
-
-/*
-func codeToLevel(code codes.Code) log.Level {
-	switch code {
-	case codes.OK,
-		codes.Canceled,
-		codes.InvalidArgument,
-		codes.NotFound,
-		codes.AlreadyExists,
-		codes.Unauthenticated:
-		return log.InfoLevel
-	case codes.DeadlineExceeded,
-		codes.PermissionDenied,
-		codes.ResourceExhausted,
-		codes.FailedPrecondition,
-		codes.Aborted,
-		codes.OutOfRange,
-		codes.Unavailable:
-		return log.WarnLevel
-	case codes.Unknown,
-		codes.Unimplemented,
-		codes.Internal,
-		codes.DataLoss:
-		return log.ErrorLevel
-	default:
-		return log.ErrorLevel
-	}
-}
-*/
