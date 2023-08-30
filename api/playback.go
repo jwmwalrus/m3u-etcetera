@@ -2,14 +2,14 @@ package api
 
 import (
 	"context"
+	"log/slog"
+	"slices"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -92,10 +92,10 @@ func (svc *PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 			(len(req.Locations) > 0 || len(req.Ids) > 0) {
 
 			for _, v := range req.Locations {
-				log.Warnf("Ignoring given location: %v", v)
+				slog.Warn("Ignoring given location", "location", v)
 			}
 			for _, v := range req.Ids {
-				log.Warnf("Ignoring given ID: %v", v)
+				slog.Warn("Ignoring given ID", "ID", v)
 			}
 		}
 
@@ -169,7 +169,7 @@ sLoop:
 				}
 				err := stream.Send(res)
 				if err != nil {
-					log.Warn(err)
+					slog.Warn("Failed to send stream", "error", err)
 					return status.Errorf(codes.Internal,
 						"Error sending playback: %v", err)
 				}

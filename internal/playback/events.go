@@ -1,17 +1,15 @@
 package playback
 
 import (
+	"log/slog"
 	"sync/atomic"
 	"time"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-
-	// "github.com/notedit/gst"
-	log "github.com/sirupsen/logrus"
 	"github.com/tinyzimmer/go-gst/gst"
 )
 
@@ -39,7 +37,7 @@ const (
 
 func (ee *engineEvent) Store(val int32) {
 	ee.Int32.Store(val)
-	log.Infof("Firing the %v event", ee.String())
+	slog.Info("Firing event", "event", ee)
 }
 
 func (ee *engineEvent) String() string {
@@ -147,7 +145,7 @@ func (et *events) GetPlayback() (pb *models.Playback, t *models.Track) {
 		return
 	}
 
-	log.Debug("Obtaining current playback")
+	slog.Debug("Obtaining current playback")
 
 	pbcopy := *et.eng.pb.Load()
 	pb = &pbcopy
@@ -157,7 +155,7 @@ func (et *events) GetPlayback() (pb *models.Playback, t *models.Track) {
 			t = et.eng.t.Load()
 		} else {
 			if err := t.Read(pb.TrackID); err != nil {
-				log.Error(err)
+				slog.Error("Failed to read track", "error", err)
 				return
 			}
 			et.eng.t.Store(t)
@@ -167,14 +165,17 @@ func (et *events) GetPlayback() (pb *models.Playback, t *models.Track) {
 	} else {
 		var err error
 		if t, err = models.ReadTagsForLocation(pb.Location); err != nil {
-			log.Error(err)
+			slog.With(
+				"location", pb.Location,
+				"error", err,
+			).Error("Failed to read tags for location")
 			return
 		}
 		et.eng.t.Store(t)
 	}
 
 	if t != nil && t.Duration == 0 {
-		log.Info("Assigning duration from playback")
+		slog.Info("Assigning duration from playback")
 		t.Duration = et.eng.duration.Load()
 	}
 	pb.Skip = et.eng.lastPosition.Load()
@@ -281,11 +282,11 @@ func (et *events) PauseStream(off bool) (err error) {
 func (et *events) PlayStreams(force bool, locations []string, ids []int64) {
 	et.eng.lastEvent.Store(playEvent)
 
-	entry := log.WithFields(log.Fields{
-		"locations": locations,
-		"ids":       ids,
-	})
-	entry.Infof("Playing streams")
+	logw := slog.With(
+		"locations", locations,
+		"ids", ids,
+	)
+	logw.Info("Playing streams")
 
 	for _, v := range locations {
 		models.AddPlaybackLocation(v)
@@ -294,7 +295,10 @@ func (et *events) PlayStreams(force bool, locations []string, ids []int64) {
 		t := &models.Track{}
 		err := t.Read(v)
 		if err != nil {
-			entry.Error(err)
+			logw.With(
+				"track_id", v,
+				"error", err,
+			).Error("Failed to read track")
 			continue
 		}
 		models.AddPlaybackTrack(t)
@@ -335,8 +339,7 @@ func (et *events) PreviousStream() {
 // QuitPlayingFromBar implements the IEvents interface.
 func (et *events) QuitPlayingFromBar(pl *models.Playlist) {
 	et.eng.lastEvent.Store(stopPlaybarEvent)
-	log.WithField("pl", *pl).
-		Infof("Quit playing from bar")
+	slog.Info("Quit playing from bar", "pl", *pl)
 
 	if !(pl.Open && pl.Active) {
 		return
@@ -367,7 +370,7 @@ func (et *events) SeekInStream(pos int64) {
 		)
 
 		if !et.eng.playbin.Load().SendEvent(seek) {
-			log.Errorf("Error sending playback event: %v", gst.EventTypeSeek)
+			slog.Error("Failed to send playback event", "event", gst.EventTypeSeek)
 		}
 	}
 }
@@ -382,7 +385,7 @@ func (et *events) StopAll() {
 
 // StopStream stops the current stream.
 func (et *events) StopStream() {
-	log.Info("Stopping current playback")
+	slog.Info("Stopping current playback")
 
 	if et.eng.lastEvent.Load() != stopAllEvent {
 		et.eng.lastEvent.Store(stopStreamEvent)
@@ -407,12 +410,15 @@ func (et *events) StopStream() {
 func (et *events) TryPlayingFromBar(pl *models.Playlist, position int) {
 	et.eng.lastEvent.Store(playbarEvent)
 
-	entry := log.WithField("pl", pl)
-	entry.Infof("Try playing from bar")
+	logw := slog.With("pl", pl)
+	logw.Info("Try playing from bar")
 
 	bar := models.Playbar{}
 	if err := bar.Read(pl.PlaybarID); err != nil {
-		entry.Error(err)
+		logw.With(
+			"playbar_id", pl.PlaybarID,
+			"error", err,
+		).Error("Failed to read playbar")
 		return
 	}
 
@@ -435,7 +441,10 @@ func (et *events) tryPlayingFromList(pl *models.Playlist, position int) {
 
 	pt, err := pl.GetTrackAt(position)
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"position", position,
+			"error", err,
+		).Error("Failed to get track at position")
 		return
 	}
 
@@ -462,7 +471,7 @@ func GetEventsInstance() IEvents {
 
 // StartEngine starts the playback engine.
 func StartEngine() *rtc.Unloader {
-	log.Info("Starting playback engine")
+	slog.Info("Starting playback engine")
 
 	gst.Init(nil)
 
@@ -479,7 +488,7 @@ func stopEngine() {
 	if instance.eng.lastEvent.Load() == noLoopEvent {
 		return
 	}
-	log.Info("Stopping engine")
+	slog.Info("Stopping engine")
 
 	instance.eng.freezePlayback.Store(true)
 	instance.StopAll()

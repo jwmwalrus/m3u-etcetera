@@ -3,6 +3,7 @@ package alive
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,7 +43,7 @@ func (a *aliveSrv) serve() (err error) {
 }
 
 func (a *aliveSrv) startServer() (err error) {
-	log.Debug("Starting server")
+	slog.Debug("Starting server")
 
 	var dir, full string
 	bin := "m3uetc-server"
@@ -54,13 +54,13 @@ func (a *aliveSrv) startServer() (err error) {
 			return
 		}
 	} else {
-		log.WithField("PATH", os.Getenv("PATH")).
-			Debug("Using $PATH to find binary")
+		slog.Debug("Using $PATH to find binary", "PATH", os.Getenv("PATH"))
 		full, err = exec.LookPath(bin)
 		if err != nil {
-			log.WithError(err).
-				WithField("bin", bin).
-				Debug("Error finding binary from path")
+			slog.With(
+				"bin", bin,
+				"error", err,
+			).Debug("Error finding binary from path")
 			if full = env.FindExec(bin); full == "" {
 				err = fmt.Errorf("failed to find binary `%s` for server", bin)
 				return
@@ -80,9 +80,10 @@ func (a *aliveSrv) startServer() (err error) {
 	cmd.Stderr = nil
 	err = cmd.Start()
 	if err != nil {
-		log.WithError(err).
-			WithField("cmd", cmd.String()).
-			Debug("Error during command execution")
+		slog.With(
+			"cmd", cmd,
+			"error", err,
+		).Debug("Command exited with an error status")
 		return
 	}
 
@@ -116,30 +117,32 @@ func (a *aliveSrv) startServer() (err error) {
 }
 
 func (a *aliveSrv) stopServer() (err error) {
-	log.WithFields(log.Fields{
-		"forceOff": a.forceOff,
-		"noWait":   a.noWait,
-	}).Debug("Stopping server")
+	slog.With(
+		"forceOff", a.forceOff,
+		"noWait", a.noWait,
+	).Debug("Stopping server")
 
 	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
 	cc, err := grpc.Dial(auth, opts...)
 	if err != nil {
-		log.WithError(err).
-			WithField("authority", auth).
-			Debug("Error while dialing server")
+		slog.With(
+			"authority", auth,
+			"error", err,
+		).Debug("Error while dialing server")
 		return
 	}
 	defer cc.Close()
 
-	log.WithField("authority", auth).Debug("Dialing was successful")
+	slog.Debug("Dialing was successful", "authority", auth)
 
 	c := m3uetcpb.NewRootSvcClient(cc)
 	res, err := c.Off(context.Background(), &m3uetcpb.OffRequest{Force: a.forceOff})
 	if err != nil {
-		log.WithError(err).
-			WithField("authority", auth).
-			Debug("Error requesting server off")
+		slog.With(
+			"authority", auth,
+			"error", err,
+		).Debug("Error requesting server off")
 		return
 	}
 
@@ -172,7 +175,7 @@ func (a *aliveSrv) stopServer() (err error) {
 }
 
 func isServerAlive() bool {
-	log.Debug("Checking if server is alive")
+	slog.Debug("Checking if server is alive")
 
 	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()
@@ -180,20 +183,21 @@ func isServerAlive() bool {
 	if err != nil {
 		s := status.Convert(err)
 		if s.Code() != codes.Unavailable {
-			log.WithError(err).
-				WithField("authority", auth).
-				Info("Failed to dial server")
+			slog.With(
+				"error", err,
+				"authority", auth,
+			).Info("Failed to dial server")
 		}
 		return false
 	}
 	defer cc.Close()
 
-	log.WithField("authority", auth).Debug("Dialing was successful")
+	slog.With("authority", auth).Debug("Dialing was successful")
 
 	c := m3uetcpb.NewRootSvcClient(cc)
 	res, err := c.Status(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
-		log.Debugf("Failed to obtain server status: %v", err)
+		slog.Debug("Failed to obtain server status", "error", err)
 		return false
 	}
 

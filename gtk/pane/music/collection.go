@@ -1,6 +1,7 @@
 package musicpane
 
 import (
+	"log/slog"
 	"strings"
 
 	"github.com/gotk3/gotk3/gdk"
@@ -11,7 +12,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
-	log "github.com/sirupsen/logrus"
 )
 
 type onMusicCollections struct {
@@ -22,7 +22,7 @@ type onMusicCollections struct {
 }
 
 func createMusicCollections() (omc *onMusicCollections, err error) {
-	log.Info("Creating music collections view and model")
+	slog.Info("Creating music collections view and model")
 
 	omc = &onMusicCollections{
 		onContext: &onContext{ct: collectionContext},
@@ -80,7 +80,10 @@ func (omc *onMusicCollections) context(tv *gtk.TreeView, event *gdk.Event) {
 	if btn.Button() == gdk.BUTTON_SECONDARY {
 		menu, err := builder.GetMenu("collections_view_context")
 		if err != nil {
-			log.Error(err)
+			slog.With(
+				"menu", "collections_view_context",
+				"error", err,
+			).Error("Failed to get menu from builder")
 			return
 		}
 		menu.PopupAtPointer(event)
@@ -107,7 +110,7 @@ func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
 		}
 
 		if err := dialer.ExecutePlaylistTrackAction(req); err != nil {
-			log.Error(err)
+			slog.Error("Failed to execute playlist track action", "error", err)
 			return
 		}
 	} else {
@@ -121,7 +124,7 @@ func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
 		}
 
 		if err := dialer.ExecuteQueueAction(req); err != nil {
-			log.Error(err)
+			slog.Error("Failed to execute queue action", "error", err)
 			return
 		}
 	}
@@ -140,7 +143,7 @@ func (omc *onMusicCollections) contextPlayNow(mi *gtk.MenuItem) {
 	}
 
 	if err := dialer.ExecutePlaybackAction(req); err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute playback action", "error", err)
 		return
 	}
 }
@@ -154,14 +157,14 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
 		[]store.ModelColumn{store.CColTree, store.CColTreeIDList},
 	)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get tree-view's tree-path values", "error", err)
 		return
 	}
-	log.Debugf("Doouble-clicked column value: %v", values[store.CColTree])
+	slog.Debug("Doouble-clicked column value", "value", values[store.CColTree])
 
 	ids, err := util.StringToIDList(values[store.CColTreeIDList].(string))
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to convert string to ID list", "error", err)
 		return
 	}
 
@@ -175,7 +178,7 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
 		}
 
 		if err := dialer.ExecutePlaylistTrackAction(req); err != nil {
-			log.Error(err)
+			slog.Error("Failed to execute playlist track action", "error", err)
 			return
 		}
 	} else {
@@ -185,7 +188,7 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
 		}
 
 		if err := dialer.ExecuteQueueAction(req); err != nil {
-			log.Error(err)
+			slog.Error("Failed to execute queue action", "error", err)
 			return
 		}
 	}
@@ -194,7 +197,7 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
 func (omc *onMusicCollections) filtered(se *gtk.SearchEntry) {
 	text, err := se.GetText()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get search entry text", "error", err)
 		return
 	}
 	store.FilterCollectionTreeBy(text)
@@ -202,7 +205,7 @@ func (omc *onMusicCollections) filtered(se *gtk.SearchEntry) {
 
 func (omc *onMusicCollections) hierarchyChanged(cbt *gtk.ComboBoxText) {
 	id := cbt.GetActiveID()
-	log.WithField("activeText", id).
+	slog.With("activeText", id).
 		Info("Collection hierarchy changed")
 
 	grouped := omc.hierarchyGrouped.GetActive()
@@ -214,7 +217,7 @@ func (omc *onMusicCollections) hierarchyChanged(cbt *gtk.ComboBoxText) {
 
 func (omc *onMusicCollections) hierarchyGroupToggled(cb *gtk.ToggleButton) {
 	grouped := cb.GetActive()
-	log.WithField("grouped", grouped).
+	slog.With("grouped", grouped).
 		Info("Collection hierarchy group toggled")
 
 	id := omc.hierarchy.GetActiveID()

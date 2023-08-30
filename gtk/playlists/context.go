@@ -1,17 +1,17 @@
 package playlists
 
 import (
+	"log/slog"
 	"sort"
 	"strings"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 )
 
 type onContext struct {
@@ -128,7 +128,7 @@ func (oc *onContext) ContextEnqueue(mi *gtk.MenuItem) {
 	}
 
 	if err := dialer.ExecuteQueueAction(req); err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute queue action", "error", err)
 		return
 	}
 }
@@ -171,7 +171,7 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 			return
 		}
 	} else {
-		log.Error("Invalid playlist/queue move")
+		slog.Error("Invalid playlist/queue move")
 		return
 	}
 
@@ -230,7 +230,7 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 	}
 
 	if err := dialer.ExecutePlaybackAction(reqbar); err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute playback action", "error", err)
 		return
 	}
 
@@ -307,7 +307,7 @@ func (oc *onContext) Key(tv *gtk.TreeView, event *gdk.Event) {
 
 func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {
 	if oc.selection.keep {
-		log.Info("Ignoring selection change")
+		slog.Info("Ignoring selection change")
 		return
 	}
 	var err error
@@ -328,11 +328,11 @@ func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {
 
 	oc.selection.values, oc.selection.paths, err = store.GetMultipleTreeSelectionValues(sel, oc.view, cols)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get tree selection values", "error", err)
 		return
 	}
 
-	log.Debugf("Selected context entres: %v", oc.selection)
+	slog.Debug("Selected context entres", "entries", oc.selection)
 }
 
 func (oc *onContext) getSelection(keep ...bool) (
@@ -341,7 +341,7 @@ func (oc *onContext) getSelection(keep ...bool) (
 	if oc.selection.values == nil {
 		sel, err := oc.view.GetSelection()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get selection", "error", err)
 			return
 		}
 		oc.SelChanged(sel)
@@ -349,7 +349,7 @@ func (oc *onContext) getSelection(keep ...bool) (
 
 	values, ok := oc.selection.values.([]map[store.ModelColumn]interface{})
 	if !ok {
-		log.Debug("There is no selection available for context")
+		slog.Debug("There is no selection available for context")
 		values = []map[store.ModelColumn]interface{}{}
 		return
 	}

@@ -2,20 +2,20 @@ package models
 
 import (
 	"encoding/json"
+	"log/slog"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/config"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -75,8 +75,8 @@ func (qye QueryEvent) String() string {
 // QueryBoundaryTx defines the transactional query boundary interface.
 type QueryBoundaryTx interface {
 	FindTracksTx(*gorm.DB) []*Track
-	DataDeleterTx
-	DataUpdaterTx
+	Deleter
+	Saver
 }
 
 // QueryBoundaryID defines the query boundary ID interface.
@@ -124,15 +124,25 @@ type Query struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
-// Read implements DataReader interface.
+// Read implements Reader interface.
 func (qy *Query) Read(id int64) error {
-	return db.First(qy, id).Error
+	return qy.ReadTx(db, id)
 }
 
-// Save implements DataSaver interface.
+// ReadTx implements Reader interface.
+func (qy *Query) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.First(qy, id).Error
+}
+
+// Save implements Saver interface.
 func (qy *Query) Save() error {
+	return qy.SaveTx(db)
+}
+
+// SaveTx implements Saver interface.
+func (qy *Query) SaveTx(tx *gorm.DB) error {
 	qy.ProvideName()
-	return db.Save(qy).Error
+	return tx.Save(qy).Error
 }
 
 // FromProtobuf implements ProtoIn interface.
@@ -144,7 +154,7 @@ func (qy *Query) FromProtobuf(in proto.Message) {
 func (qy *Query) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(qy)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to marshal query", "error", err)
 		return &m3uetcpb.Query{}
 	}
 
@@ -231,11 +241,11 @@ func (qy *Query) Delete(qybs ...QueryBoundaryTx) error {
 
 // FindTracks return the list of tracks that match the query.
 func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
-	entry := log.WithFields(log.Fields{
-		"qy":        qy,
-		"len(qybs)": len(qybs),
-	})
-	entry.Info("Finding tracks")
+	logw := slog.With(
+		"qy", qy,
+		"len(qybs)", len(qybs),
+	)
+	logw.Info("Finding tracks")
 
 	switch QueryIndex(qy.Idx) {
 	case HistoryQuery:
@@ -260,13 +270,16 @@ func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
 			parsed, _ := qparams.ParseParams(qy.Params)
 			for _, x := range parsed {
 				if !slices.Contains(supportedParams, strings.ToLower(x.Key)) {
-					entry.Warnf("Ignored query paranmeter: %v", x.Key)
+					logw.Warn("Ignored query paranmeter", "qparam", x.Key)
 					continue
 				}
 				comp := " LIKE ?"
 				if x.Key == "id" {
 					if _, err := strconv.ParseInt(x.Val, 10, 64); err != nil {
-						entry.Warnf("Ignoring `id` value due to parsing error:%v", x.Val)
+						logw.With(
+							"value", x.Val,
+							"error", err,
+						).Warn("Ignoring `id` value due to parsing error")
 						continue
 					}
 					comp = " = ?"
@@ -329,7 +342,10 @@ func (qy *Query) GetCollections() []*CollectionQuery {
 
 	err := db.Where("query_id = ?", qy.ID).Find(&cqs).Error
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"query_id", qy.ID,
+			"error", err,
+		).Error("Failed to find collection queries in database")
 		return []*CollectionQuery{}
 	}
 	return pointers.FromSlice(cqs)
@@ -378,17 +394,17 @@ func FromProtobuf(in *m3uetcpb.Query) (qy *Query) {
 
 // GetAllQueries returns all queries, constrained by a limit and collections.
 func GetAllQueries(limit int, qybs ...QueryBoundaryID) (s []*Query) {
-	entry := log.WithFields(log.Fields{
-		"limit":     limit,
-		"len(qybs)": len(qybs),
-	})
-	entry.Info("Getting all queries")
+	logw := slog.With(
+		"limit", limit,
+		"len(qybs)", len(qybs),
+	)
+	logw.Info("Getting all queries")
 
 	s = []*Query{}
 
 	qys := []Query{}
 	if err := db.Find(&qys).Error; err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find queries in database", "error", err)
 		return
 	}
 
@@ -419,7 +435,7 @@ func SupportedParams() []string {
 }
 
 func findHistoryTracks() (ts []*Track, lpf []int64) {
-	log.Info("Finding history tracks")
+	slog.Info("Finding history tracks")
 
 	limit := config.DefaultQueryMaxLimit
 	if base.Conf.Server.Query.Limit > 0 {
@@ -442,7 +458,10 @@ func findHistoryTracks() (ts []*Track, lpf []int64) {
 		t := &Track{}
 		if h.TrackID > 0 {
 			if err = t.Read(h.TrackID); err != nil {
-				log.Error(err)
+				slog.With(
+					"id", h.TrackID,
+					"error", err,
+				).Error("Faild to read track")
 				continue
 			}
 		} else {
@@ -451,13 +470,16 @@ func findHistoryTracks() (ts []*Track, lpf []int64) {
 			if err != nil {
 				t, err = ReadTagsForLocation(h.Location)
 				if err != nil {
-					log.Error(err)
+					slog.With(
+						"location", h.Location,
+						"error", err,
+					).Error("Failed to read tags for location")
 					continue
 				}
 				t.Lastplayed = h.CreatedAt
 				err = t.createTransient(tx, nil)
 				if err != nil {
-					log.Warn(err)
+					slog.Warn("Failed to create transient track", "error", err)
 					continue
 				}
 			}
@@ -470,7 +492,7 @@ func findHistoryTracks() (ts []*Track, lpf []int64) {
 }
 
 func findTopTracks() (ts []*Track) {
-	log.Info("Finding top tracks")
+	slog.Info("Finding top tracks")
 
 	tx := db.Session(&gorm.Session{SkipHooks: true})
 	tx = tx.Limit(100)

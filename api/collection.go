@@ -2,12 +2,12 @@ package api
 
 import (
 	"context"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -335,7 +335,7 @@ sLoop:
 			case models.CollectionEventItemRemoved:
 				eout = m3uetcpb.CollectionEvent_CE_ITEM_REMOVED
 			default:
-				log.Errorf("Ignoring unsupported collection event: %v", e.Idx)
+				slog.Error("Ignoring unsupported collection event", "event", e.Idx)
 				continue sLoop
 
 			}
@@ -346,7 +346,10 @@ sLoop:
 			case *models.Track:
 				fn = sendTrack
 			default:
-				log.Errorf("Ignoring unsupported data for %v: %+v", e.Idx, e.Data)
+				slog.With(
+					"event", e.Idx,
+					"data", e.Data,
+				).Error("Ignoring unsupported data")
 				continue sLoop
 			}
 

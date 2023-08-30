@@ -1,8 +1,9 @@
 package models
 
 import (
+	"log/slog"
+
 	"github.com/jwmwalrus/bnp/pointers"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -17,12 +18,22 @@ type CollectionQuery struct {
 	Query        Query      `json:"query" gorm:"foreignKey:QueryID"`
 }
 
-// Save implements the DataUpdater interface.
+// Save implements the Saver interface.
 func (cq *CollectionQuery) Save() error {
-	return db.Save(cq).Error
+	return cq.SaveTx(db)
 }
 
-// DeleteTx implements QueryBoundaryTx interface.
+// SaveTx implements the Saver interface.
+func (cq *CollectionQuery) SaveTx(tx *gorm.DB) error {
+	return tx.Save(cq).Error
+}
+
+// Delete implements the Deleter interface.
+func (cq *CollectionQuery) Delete() error {
+	return cq.DeleteTx(db)
+}
+
+// DeleteTx implements the Deleter interface.
 func (cq *CollectionQuery) DeleteTx(tx *gorm.DB) error {
 	return tx.Delete(cq).Error
 }
@@ -39,7 +50,10 @@ func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) []*Track {
 		Find(&ts).
 		Error
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"collection_id", cq.CollectionID,
+			"error", err,
+		).Error("Failed to find collection tracks in database")
 		return []*Track{}
 	}
 	return pointers.FromSlice(ts)
@@ -48,11 +62,6 @@ func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) []*Track {
 // GetQueryID implements QueryBoundaryID interface.
 func (cq *CollectionQuery) GetQueryID() int64 {
 	return cq.QueryID
-}
-
-// SaveTx implements QueryBoundaryTx interface.
-func (cq *CollectionQuery) SaveTx(tx *gorm.DB) error {
-	return tx.Save(cq).Error
 }
 
 // CollectionsToBoundaries adds forward support for CollectionQuery.
@@ -155,7 +164,7 @@ func GetApplicableCollectionQueries(qy *Query, ids ...int64) []*CollectionQuery 
 		}
 	}
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get applicable collection queries", "error", err)
 		return []*CollectionQuery{}
 	}
 

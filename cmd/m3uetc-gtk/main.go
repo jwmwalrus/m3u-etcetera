@@ -3,17 +3,17 @@ package main
 import (
 	"embed"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	gtkui "github.com/jwmwalrus/m3u-etcetera/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -41,7 +41,7 @@ func main() {
 
 	app, err = gtk.ApplicationNew(appID, glib.APPLICATION_FLAGS_NONE)
 	if err != nil {
-		log.Fatalf("Unable to create application: %v", err)
+		rtc.Fatal("Unable to create application", "error", err)
 	}
 
 	app.Connect("activate", func() {
@@ -50,20 +50,20 @@ func main() {
 			return
 		}
 
-		log.Infof("Activating primary instance: %v", appID)
+		slog.Info("Activating primary instance", "instance", appID)
 
 		activated = true
 		if b, err = builder.Setup(&data); err != nil {
-			log.Fatalf("Unable to create builder: %v", err)
+			rtc.Fatal("Unable to create builder", "error", err)
 		}
 
 		if window, err = builder.GetApplicationWindow(); err != nil {
-			log.Fatalf("Unable to obtaain the application window: %v", err)
+			rtc.Fatal("Unable to obtaain the application window", "error", err)
 		}
 
 		icon, err := builder.PixbufNewFromFile("images/scalable/m3u-etcetera.svg")
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to load application pixbuf", "error", err)
 		} else {
 			window.SetIcon(icon)
 		}
@@ -79,7 +79,7 @@ func main() {
 		signals := make(map[string]interface{})
 
 		err = gtkui.Setup(window, &signals)
-		onerror.Panic(err)
+		onerror.Fatal(err)
 
 		builder.ConnectSignals(signals)
 

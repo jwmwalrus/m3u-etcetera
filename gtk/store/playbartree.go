@@ -1,6 +1,7 @@
 package store
 
 import (
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
-	log "github.com/sirupsen/logrus"
 )
 
 type playlistEntryType int
@@ -149,7 +149,7 @@ func (bt *playbarTree) getPlaylistTree(p m3uetcpb.Perspective) playlistTree {
 
 	pt, ok := bt.pplt[p]
 	if !ok {
-		log.Warningf("There is no playlist tree for perspective %v", p)
+		slog.Warn("There is no playlist tree for perspective", "perspective", p)
 	}
 	return pt
 }
@@ -186,7 +186,7 @@ func (bt *playbarTree) update() bool {
 		return false
 	}
 
-	log.Info("Updating playlist models")
+	slog.Info("Updating playlist models")
 
 	for _, p := range perspectivesList {
 		tree := bt.pplt[p]
@@ -273,7 +273,7 @@ func (bt *playbarTree) update() bool {
 				root[i].child[j].appendNode(tree.model, nil)
 			}
 		}
-		log.Infof("Tree built in %v", time.Since(start))
+		slog.Info("Tree built", "took", time.Since(start))
 	}
 
 	return false

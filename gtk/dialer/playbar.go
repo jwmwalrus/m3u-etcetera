@@ -4,26 +4,26 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 )
 
 // ApplyPlaylistGroupChanges applies collection changes.
 func ApplyPlaylistGroupChanges() {
-	log.Info("Applying playlist-group changes")
+	slog.Info("Applying playlist-group changes")
 
 	requests, err := store.BData.GetUpdatePlaylistGroupRequests()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get update-playlist-group requests", "error", err)
 	}
 
 	cc, err := getClientConn1()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -48,7 +48,7 @@ func ExecutePlaybarAction(req *m3uetcpb.ExecutePlaybarActionRequest) (err error)
 	_, err = cl.ExecutePlaybarAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		log.Error(s.Message())
+		slog.Error(s.Message())
 		return
 	}
 	return
@@ -104,7 +104,7 @@ func ExecutePlaylistTrackAction(req *m3uetcpb.ExecutePlaylistTrackActionRequest)
 	_, err = cl.ExecutePlaylistTrackAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		log.Error(s.Message())
+		slog.Error(s.Message())
 		return
 	}
 	return
@@ -142,7 +142,7 @@ func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (
 	stream, err := cl.ImportPlaylists(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		log.Error(s.Message())
+		slog.Error(s.Message())
 		return
 	}
 
@@ -163,13 +163,13 @@ func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (
 }
 
 func applyplaylistgroupactionschanges() {
-	log.Info("Applying playlist group actions changes")
+	slog.Info("Applying playlist group actions changes")
 
 	toRemove := store.BData.GetPlaylistGroupActionsChanges()
 
 	cc, err := getClientConn1()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -186,7 +186,7 @@ func applyplaylistgroupactionschanges() {
 }
 
 func subscribeToPlaybarStore() {
-	log.Info("Subscribing to playbar store")
+	slog.Info("Subscribing to playbar store")
 
 	defer wgplaybar.Done()
 
@@ -194,7 +194,7 @@ func subscribeToPlaybarStore() {
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
+		slog.Error("Failed to obtain client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -202,14 +202,14 @@ func subscribeToPlaybarStore() {
 	cl := m3uetcpb.NewPlaybarSvcClient(cc)
 	stream, err := cl.SubscribeToPlaybarStore(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
-		log.Errorf("Error subscribing to playbar store: %v", err)
+		slog.Error("Failed to subscribe to playbar store", "error", err)
 		return
 	}
 
 	for {
 		res, err := stream.Recv()
 		if err != nil {
-			log.Infof("Subscription closed by server: %v", err)
+			slog.Info("Subscription closed by server", "error", err)
 			break
 		}
 
@@ -224,13 +224,13 @@ func subscribeToPlaybarStore() {
 }
 
 func unsubscribeFromPlaybarStore() {
-	log.Info("Unsubscribing from playbar store")
+	slog.Info("Unsubscribing from playbar store")
 
 	id := store.BData.GetSubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
+		slog.Error("Failed to obtain client connection", "error", err)
 		return
 	}
 	defer cc.Close()

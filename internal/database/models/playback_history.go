@@ -1,11 +1,12 @@
 package models
 
 import (
+	"log/slog"
 	"time"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // PlaybackHistory defines a playback_history row.
@@ -18,10 +19,14 @@ type PlaybackHistory struct {
 	TrackID   int64  `json:"trackId" gorm:"index:idx_playback_history_track_id"`
 }
 
-// Create implements the DataCreator interface.
-func (h *PlaybackHistory) Create() (err error) {
-	err = db.Create(h).Error
-	return
+// Create implements the Creator interface.
+func (h *PlaybackHistory) Create() error {
+	return h.CreateTx(db)
+}
+
+// CreateTx implements the Creator interface.
+func (h *PlaybackHistory) CreateTx(tx *gorm.DB) error {
+	return tx.Create(h).Error
 }
 
 // FindLastBy returns the newest entry in the playback history,
@@ -42,21 +47,22 @@ func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
 
-	entry := log.WithFields(log.Fields{
-		"position": position,
-		"duration": duration,
-	})
+	logw := slog.With(
+		"position", position,
+		"duration", duration,
+	)
+
 	pb := Playback{}
 	if err := pb.Read(id); err != nil {
-		entry.Errorf("Error adding playback to history: %v", err)
+		logw.Error("Failed add playback to history: failed to read playback", "error", err)
 		return
 	}
 
-	entry = entry.WithFields(log.Fields{
-		"location": pb.Location,
-		"trackId":  pb.TrackID,
-	})
-	entry.Info("Adding playback to history")
+	logw = logw.With(
+		"location", pb.Location,
+		"track_id", pb.TrackID,
+	)
+	logw.Info("Adding playback to history")
 
 	if !freeze {
 		pb.Played = true
@@ -69,11 +75,14 @@ func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
 		TrackID:  pb.TrackID,
 		Duration: position,
 	}
-	onerror.WithEntry(entry).Log(h.Create())
+
+	onerrorw := onerror.NewRecorder(logw)
+
+	onerrorw.Log(h.Create())
 	if pb.TrackID > 0 {
 		t, err := pb.GetTrack()
 		if err != nil {
-			entry.Error(err)
+			logw.Error("Failed to get playback track", "error", err)
 			return
 		}
 
@@ -86,6 +95,6 @@ func AddPlaybackToHistory(id, position, duration int64, freeze bool) {
 		if t.Duration == 0 {
 			t.Duration = duration
 		}
-		onerror.WithEntry(entry).Warn(t.Save())
+		onerrorw.Warn(t.Save())
 	}
 }

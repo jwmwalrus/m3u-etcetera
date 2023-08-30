@@ -2,16 +2,16 @@ package playlists
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -26,7 +26,7 @@ type onTab struct {
 }
 
 func updatePlaybarView() {
-	log.Info("Updating playbar view")
+	slog.Info("Updating playbar view")
 
 	keep := []onTab{}
 	remove := []onTab{}
@@ -45,14 +45,17 @@ outer:
 	for i := range remove {
 		nb, err := builder.GetNotebook(perspToNotebook[remove[i].perspective])
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get perspective notebook", "error", err)
 			continue
 		}
 
 		for ipage := 0; ipage < nb.GetNPages(); ipage++ {
 			page, err := nb.GetNthPage(ipage)
 			if err != nil {
-				log.Warn(err)
+				slog.With(
+					"page", ipage,
+					"error", err,
+				).Warn("Failed to get page from notebook")
 				continue
 			}
 			header, _ := nb.GetTabLabel(page)
@@ -70,7 +73,10 @@ outer:
 	for persp, pls := range store.PerspectiveToPlaylists {
 		nb, err := builder.GetNotebook(perspToNotebook[persp])
 		if err != nil {
-			log.Error(err)
+			slog.With(
+				"notebook", perspToNotebook[persp],
+				"error", err,
+			).Error("Failed to get notebook from builder")
 			continue
 		}
 
@@ -93,20 +99,20 @@ outer:
 
 			vbox, err := tab.setTabContent()
 			if err != nil {
-				log.Error(err)
+				slog.Error("Failed to set tab content", "error", err)
 				continue mid
 			}
 
 			hbox, err := tab.setTabHeader()
 			if err != nil {
-				log.Error(err)
+				slog.Error("Failed to set tab header", "error", err)
 				continue mid
 			}
 
 			nb.AppendPage(vbox, hbox)
 
 			if err = tab.createContextMenus(); err != nil {
-				log.Error(err)
+				slog.Error("Failed to create context menus", "error", err)
 				continue mid
 			}
 
@@ -274,10 +280,10 @@ func (ot *onTab) dblClicked(tv *gtk.TreeView, path *gtk.TreePath,
 		},
 	)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get tree-view's tree-path values", "error", err)
 		return
 	}
-	log.Debugf("Doouble-clicked column values: %v", values)
+	slog.Debug("Doouble-clicked column values", "values", values)
 
 	pos := values[store.TColPosition].(int)
 
@@ -288,7 +294,7 @@ func (ot *onTab) dblClicked(tv *gtk.TreeView, path *gtk.TreePath,
 	}
 
 	if err := dialer.ExecutePlaybarAction(req); err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute playbar action", "error", err)
 		return
 	}
 }
@@ -300,7 +306,7 @@ func (ot *onTab) doClose(btn *gtk.Button) {
 	}
 
 	if err := dialer.ExecutePlaybarAction(req); err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute playbar action", "error", err)
 	}
 }
 
@@ -467,7 +473,7 @@ func (ot *onTab) setTreeView() (err error) {
 func (ot *onTab) updateLabel() (err error) {
 	pl := store.BData.GetOpenPlaylist(ot.id)
 	if pl == nil {
-		log.WithField("id", ot.id).Warn("Playlist no longer available")
+		slog.Warn("Playlist no longer available", "ID", ot.id)
 		return
 	}
 	name := cases.Title(language.English).String(pl.Name)

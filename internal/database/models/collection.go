@@ -2,18 +2,19 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -89,26 +90,36 @@ type Collection struct {
 	Perspective    Perspective `json:"-" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Create implements DataCreator interface.
+// Create implements Creator interface.
 func (c *Collection) Create() error {
-	return db.Create(c).Error
+	return c.CreateTx(db)
 }
 
-// Delete implements DataDeleter interface.
+// CreateTx implements Creator interface.
+func (c *Collection) CreateTx(tx *gorm.DB) error {
+	return tx.Create(c).Error
+}
+
+// Delete implements Deleter interface.
 func (c *Collection) Delete() (err error) {
-	log.Info("Deleting collection")
+	return c.DeleteTx(db)
+}
+
+// DeleteTx implements Deleter interface.
+func (c *Collection) DeleteTx(tx *gorm.DB) (err error) {
+	slog.Info("Deleting collection")
 
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
 
 	c.Disabled = true
 	if err = c.Save(); err != nil {
-		log.Error(err)
+		slog.Error("Failed to save collection", "error", err)
 		return
 	}
 
 	s := []Track{}
-	if err = db.Where("collection_id = ?", c.ID).Find(&s).Error; err != nil {
+	if err = tx.Where("collection_id = ?", c.ID).Find(&s).Error; err != nil {
 		return
 	}
 
@@ -117,50 +128,60 @@ func (c *Collection) Delete() (err error) {
 	for i := 0; i < nTrack; i++ {
 		err := DeleteDanglingTrack(&s[i], c, true)
 		if err != nil {
-			log.Warn(err)
+			slog.With(
+				"collection", c.Name,
+				"track", s[i],
+				"error", err,
+			).Warn("Failed to delete dangling track")
 			doNotDelete++
 			continue
 		}
 		if i%100 == 0 {
 			c.Scanned = int((float32(nTrack-i) / float32(nTrack)) * 100)
-			db.Save(c)
+			tx.Save(c)
 		}
 	}
 
 	if doNotDelete > 0 {
-		log.WithFields(log.Fields{
-			"collectionId":           c.ID,
-			"tracksStillInColletion": doNotDelete,
-		}).Warnf(
-			"Collection with ID=%v could not be deleted; %v tracks were left behind",
-			c.ID,
-			doNotDelete,
-		)
+		slog.With(
+			"collection_id", c.ID,
+			"tracks-still-in-colletion", doNotDelete,
+		).Warn("Collection could not be deleted")
 		return
 	}
 
 	// delete collection
-	err = db.Delete(c).Error
+	err = tx.Delete(c).Error
 	return
 }
 
-// Read implements DataReader interface.
+// Read implements Reader interface.
 func (c *Collection) Read(id int64) error {
-	return db.Joins("Perspective").
+	return c.ReadTx(db, id)
+}
+
+// ReadTx implements Reader interface.
+func (c *Collection) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.Joins("Perspective").
 		First(c, id).
 		Error
 }
 
-// Save implements DataUpdater interface.
+// Save implements Saver interface.
 func (c *Collection) Save() error {
-	return db.Save(c).Error
+	return c.SaveTx(db)
+}
+
+// SaveTx implements Saver interface.
+func (c *Collection) SaveTx(tx *gorm.DB) error {
+	return tx.Save(c).Error
 }
 
 // ToProtobuf implements ProtoOut interface.
 func (c *Collection) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(c)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to marshal collection", "error", err)
 		return &m3uetcpb.Collection{}
 	}
 
@@ -231,7 +252,7 @@ func (c *Collection) CountTracks() {
 		return
 	}
 
-	log.Info("Counting tracks in collection")
+	slog.Info("Counting tracks in collection", "collection", *c)
 
 	var tracks int64
 	err := db.Model(&Track{}).
@@ -246,17 +267,17 @@ func (c *Collection) CountTracks() {
 
 // Scan adds tracks to collection.
 func (c *Collection) Scan(withTags bool) {
-	entry := log.WithFields(log.Fields{
-		"c":        *c,
-		"withTags": withTags,
-	})
+	logw := slog.With(
+		"c", *c,
+		"with_tags", withTags,
+	)
 
 	if c.Disabled {
-		entry.Info("Cannot scan collection while disabled")
+		logw.Info("Cannot scan collection while disabled")
 		return
 	}
 
-	entry.Info("Scanning collection")
+	logw.Info("Scanning collection")
 
 	storageGuard <- struct{}{}
 	defer func() { <-storageGuard }()
@@ -272,12 +293,12 @@ func (c *Collection) Scan(withTags bool) {
 
 	rootDir, err := urlstr.URLToPath(c.Location)
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to convert URL to path", "error", err)
 		return
 	}
 
-	if _, err = os.Stat(rootDir); os.IsNotExist(err) {
-		entry.Warn(err)
+	if _, err = os.Stat(rootDir); errors.Is(err, os.ErrNotExist) {
+		logw.Warn("Failed to stat collection's location", "error", err)
 		return
 	}
 
@@ -296,7 +317,9 @@ func (c *Collection) Scan(withTags bool) {
 		nTrack++
 		return nil
 	})
-	onerror.WithEntry(entry).Warn(err)
+
+	onerrorw := onerror.NewRecorder(logw)
+	onerrorw.Warn(err)
 
 	if nTrack == 0 {
 		return
@@ -314,11 +337,11 @@ func (c *Collection) Scan(withTags bool) {
 
 		if !base.IsSupportedFile(path) {
 			if !base.IsIgnoredFile(path) {
-				entry.WithFields(log.Fields{
-					"path":      path,
-					"extension": filepath.Ext(path),
-				}).
-					Info("Unsupported file:")
+				logw.With(
+					"path", path,
+					"extension", filepath.Ext(path),
+				).
+					Info("Unsupported file")
 
 				unsupp++
 			}
@@ -328,38 +351,38 @@ func (c *Collection) Scan(withTags bool) {
 		iTrack++
 
 		if _, err = c.addTrackFromPath(tx, path, withTags); err != nil {
-			entry.Warn(err)
+			logw.Warn("Failed to add track from path", "error", err)
 			scanErr++
 			return nil
 		}
 
 		if iTrack%100 == 0 {
 			c.Scanned = int((float32(iTrack) / float32(nTrack)) * 100)
-			onerror.WithEntry(entry).Log(c.Save())
+			onerrorw.Log(c.Save())
 		}
 
 		return nil
 	})
-	onerror.WithEntry(entry).Warn(err)
-	entry = entry.WithFields(log.Fields{
-		"tracksExpected":      nTrack,
-		"tracksFound":         iTrack,
-		"unsupportedTracks":   unsupp,
-		"scanningErrorsCount": scanErr,
-	})
-	entry.Info("ScanCollection Summary")
+	onerrorw.Warn(err)
+	logw = logw.With(
+		"tracks-expected", nTrack,
+		"tracks-found", iTrack,
+		"unsupported-tracks", unsupp,
+		"scanning-errors-count", scanErr,
+	)
+	logw.Info("ScanCollection Summary")
 
 	c.Scanned = 100
-	onerror.WithEntry(entry).Log(c.Save())
+	onerror.NewRecorder(logw).Log(c.Save())
 }
 
 // Verify removes tracks that do not exist in the collection anymore.
 func (c *Collection) Verify() {
-	entry := log.WithField("c", *c)
-	entry.Info("Verifying collection")
+	logw := slog.With("c", *c)
+	logw.Info("Verifying collection")
 
 	if c.Disabled {
-		entry.Info("Cannot verify collection while disabled")
+		logw.Info("Cannot verify collection while disabled")
 		return
 	}
 
@@ -380,7 +403,7 @@ func (c *Collection) Verify() {
 func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string,
 	withTags bool) (t *Track, err error) {
 
-	entry := log.WithField("location", location)
+	logw := slog.With("location", location)
 
 	doTag := false
 	newt := &Track{}
@@ -403,9 +426,9 @@ func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string,
 				err = fmt.Errorf("Track already belongs to another collection")
 				return
 			}
-			entry.Infof("Track already in `%v` collection", c.Name)
+			logw.Info("Track already in a collection", "collection", c.Name)
 		} else {
-			entry.Info("Reusing transient track")
+			logw.Info("Reusing transient track")
 			newt.CollectionID = c.ID
 		}
 	}
@@ -415,7 +438,7 @@ func (c *Collection) addTrackFromLocation(tx *gorm.DB, location string,
 	if withTags || doTag {
 		err2 := t.updateTags()
 		if err2 != nil {
-			entry.Warn(err2)
+			logw.Warn("Failed to update tags", "error", err2)
 		}
 	}
 
@@ -440,7 +463,7 @@ func GetAllCollections() []*Collection {
 	s := []Collection{}
 	err := db.Where("hidden = 0").Find(&s).Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find all collections in database", "error", err)
 		return []*Collection{}
 	}
 	return pointers.FromSlice(s)

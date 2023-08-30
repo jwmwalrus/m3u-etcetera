@@ -1,14 +1,14 @@
 package dialer
 
 import (
+	"log/slog"
 	"sync"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -30,12 +30,12 @@ func SetForceExit() {
 
 // Subscribe start subscriptions to the server.
 func Subscribe() {
-	onerror.Panic(store.PbData.SetPlaybackUI())
-	onerror.Panic(store.PerspData.SetPerspectiveUI())
+	onerror.Fatal(store.PbData.SetPlaybackUI())
+	onerror.Fatal(store.PerspData.SetPerspectiveUI())
 
-	onerror.Panic(sanityCheck())
+	onerror.Fatal(sanityCheck())
 
-	log.Info("Subscribing")
+	slog.Info("Subscribing")
 
 	wg.Add(6)
 
@@ -58,14 +58,14 @@ func Subscribe() {
 	go subscribeToPerspective()
 
 	wg.Wait()
-	log.Info("Done subscribing")
+	slog.Info("Done subscribing")
 }
 
 // Unsubscribe finish all subscriptions to the server.
 func Unsubscribe() {
 	sanityCheck()
 
-	log.Info("Unubscribing")
+	slog.Info("Unubscribing")
 
 	unsubscribeFromPlayback()
 	unsubscribeFromQueueStore()
@@ -86,7 +86,7 @@ func Unsubscribe() {
 		alive.WithNoWait(!forceExit),
 	)
 
-	log.Info("Done unsubscribing")
+	slog.Info("Done unsubscribing")
 }
 
 func getClientConn() (*grpc.ClientConn, error) {
@@ -103,12 +103,12 @@ func getClientConn1() (*grpc.ClientConn, error) {
 }
 
 func sanityCheck() (err error) {
-	log.Info("Checking server status")
+	slog.Info("Checking server status")
 	err = alive.CheckServerStatus()
 	switch err.(type) {
 	case *alive.ServerAlreadyRunning,
 		*alive.ServerStarted:
-		log.Info(err)
+		slog.Info(err.Error())
 		err = nil
 	default:
 	}

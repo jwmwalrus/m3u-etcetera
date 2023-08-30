@@ -1,15 +1,15 @@
 package gtkui
 
 import (
+	"log/slog"
 	"strings"
 
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/pane"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 )
 
 func addPerspectives(signals *map[string]interface{}) (err error) {
-	log.Info("Adding perspectives")
+	slog.Info("Adding perspectives")
 
 	_, err = builder.GetComboBoxText("perspective")
 	if err != nil {
@@ -47,8 +47,8 @@ func addPerspectives(signals *map[string]interface{}) (err error) {
 
 func onPerspectiveChanged(cbt *gtk.ComboBoxText) {
 	text := cbt.GetActiveText()
-	entry := log.WithField("activeText", text)
-	entry.Info("Perspective changed")
+	logw := slog.With("activeText", text)
+	logw.Info("Perspective changed")
 
 	text = strings.ToUpper(cbt.GetActiveText())
 	if idx, ok := m3uetcpb.Perspective_value[text]; ok {
@@ -59,6 +59,6 @@ func onPerspectiveChanged(cbt *gtk.ComboBoxText) {
 		req := &m3uetcpb.SetActivePerspectiveRequest{
 			Perspective: m3uetcpb.Perspective(m3uetcpb.Perspective_value[strings.ToUpper(text)]),
 		}
-		onerror.WithEntry(entry).Log(dialer.SetActivePerspective(req))
+		onerror.NewRecorder(logw).Log(dialer.SetActivePerspective(req))
 	}()
 }

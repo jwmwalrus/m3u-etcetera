@@ -1,9 +1,10 @@
 package musicpane
 
 import (
+	"log/slog"
+
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -16,7 +17,7 @@ var (
 
 // Setup sets the music pane.
 func Setup(signals *map[string]interface{}) (err error) {
-	log.Info("Setting up music")
+	slog.Info("Setting up music")
 
 	musicCollectionsSignals, err = createMusicCollections()
 	if err != nil {

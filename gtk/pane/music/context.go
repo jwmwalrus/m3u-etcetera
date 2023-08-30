@@ -1,10 +1,11 @@
 package musicpane
 
 import (
+	"log/slog"
+
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
-	log "github.com/sirupsen/logrus"
 )
 
 type contextType int
@@ -25,7 +26,7 @@ func (oc *onContext) getSelection(keep ...bool) (ids []int64) {
 	if oc.selection == nil {
 		sel, err := oc.view.GetSelection()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get selection", "error", err)
 			return
 		}
 		oc.selChanged(sel)
@@ -33,13 +34,13 @@ func (oc *onContext) getSelection(keep ...bool) (ids []int64) {
 
 	value, ok := oc.selection.(string)
 	if !ok {
-		log.Debug("There is no selection available for context")
+		slog.Debug("There is no selection available for context")
 		return
 	}
 
 	ids, err := util.StringToIDList(value)
 	if err != nil {
-		log.Errorf("Error parsing selection IDs for context: %v", err)
+		slog.Error("Failed to parse selection IDs for context", "error", err)
 	}
 
 	reset := true
@@ -58,7 +59,7 @@ func (oc *onContext) getSelectionValues(keep ...bool) (
 	if oc.selection == nil {
 		sel, err := oc.view.GetSelection()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get selection", "error", err)
 			return
 		}
 		oc.selChanged(sel)
@@ -100,8 +101,8 @@ func (oc *onContext) selChanged(sel *gtk.TreeSelection) {
 		)
 	}
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get single tree selection", "error", err)
 		return
 	}
-	log.Debugf("Selected context entry: %v", oc.selection)
+	slog.Debug("Selected context entry", "entry", oc.selection)
 }

@@ -2,13 +2,13 @@ package store
 
 import (
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	log "github.com/sirupsen/logrus"
 )
 
 type queryData struct {
@@ -124,7 +124,7 @@ func (qyd *queryData) UpdateQueryByResults(res *m3uetcpb.QueryByResponse) int {
 }
 
 func (qyd *queryData) updateQueryResults() bool {
-	log.Info("Updating query results")
+	slog.Info("Updating query results")
 
 	model := queryResultsModel
 	if model == nil {
@@ -206,7 +206,7 @@ func (qyd *queryData) updateQueryResults() bool {
 			},
 		)
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to set query results values", "error", err)
 			return false
 		}
 	}
@@ -225,7 +225,7 @@ func ClearQueryResults() {
 
 // CreateQueryResultsModel creates a query model.
 func CreateQueryResultsModel() (model *gtk.ListStore, err error) {
-	log.Info("Creating query model")
+	slog.Info("Creating query model")
 
 	queryResultsModel, err = gtk.ListStoreNew(TColumns.getTypes()...)
 	if err != nil {
@@ -256,7 +256,7 @@ func GetQueryResultsSelections() (ids []int64, err error) {
 			[]ModelColumn{TColTrackID, TColToggleSelect},
 		)
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get tree-model values", "error", err)
 			return
 		}
 		selected := values[TColToggleSelect].(bool)
@@ -270,7 +270,7 @@ func GetQueryResultsSelections() (ids []int64, err error) {
 
 // ToggleQueryResultsSelection inverts the query results selection.
 func ToggleQueryResultsSelection() {
-	log.Info("Toggling query results selection")
+	slog.Info("Toggling query results selection")
 
 	model := queryResultsModel
 
@@ -279,13 +279,13 @@ func ToggleQueryResultsSelection() {
 	for ok {
 		gval, err := model.GetValue(iter, int(TColToggleSelect))
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get query result selection toggle", "error", err)
 			return
 		}
 
 		value, err := gval.GoValue()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to obtain Go value", "error", err)
 			return
 		}
 

@@ -2,16 +2,16 @@ package store
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 )
 
 // CollectionOptions for the collections dialog.
@@ -94,7 +94,7 @@ func (cd *collectionData) GetCollectionActionsChanges() (toScan, toRemove []int6
 			},
 		)
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get tree-model values", "error", err)
 			return
 		}
 		id := row[CColCollectionID].(int64)
@@ -345,7 +345,7 @@ func (cd *collectionData) updateCollectionModel() bool {
 		return false
 	}
 
-	log.Info("Updating collection model")
+	slog.Info("Updating collection model")
 
 	cd.mu.RLock()
 	defer cd.mu.RUnlock()
@@ -421,7 +421,7 @@ func (cd *collectionData) updateCollectionNamesMap() {
 
 func (cd *collectionData) updateScanningProgress() bool {
 	if cProgress == nil {
-		log.Error("Collections progress bar is unavailable")
+		slog.Error("Collections progress bar is unavailable")
 		return false
 	}
 
@@ -446,7 +446,7 @@ func (cd *collectionData) updateScanningProgress() bool {
 
 // CreateCollectionModel creates a collection model.
 func CreateCollectionModel() (model *gtk.ListStore, err error) {
-	log.Info("Creating collection model")
+	slog.Info("Creating collection model")
 
 	collectionModel, err = gtk.ListStoreNew(CColumns.getTypes()...)
 	if err != nil {
@@ -461,8 +461,8 @@ func CreateCollectionModel() (model *gtk.ListStore, err error) {
 func CreateCollectionTreeModel(h collectionTreeHierarchy) (
 	model *gtk.TreeStore, err error) {
 
-	entry := log.WithField("hierarchy", h)
-	entry.Info("Creating collection tree model")
+	logw := slog.With("hierarchy", h)
+	logw.Info("Creating collection tree model")
 
 	model, err = gtk.TreeStoreNew(CTreeColumn.getTypes()...)
 	if err != nil {
@@ -477,7 +477,7 @@ func CreateCollectionTreeModel(h collectionTreeHierarchy) (
 	cProgress, errp = builder.GetProgressBar("collections_scanning_progress")
 	if errp != nil {
 		cProgress = nil
-		entry.Error(errp)
+		logw.Error("Failed to get progress bar from builder", "error", errp)
 	}
 	return
 }

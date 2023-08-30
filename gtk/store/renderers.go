@@ -2,10 +2,10 @@ package store
 
 import (
 	"fmt"
+	"log/slog"
+	"slices"
 
 	"github.com/gotk3/gotk3/gtk"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 )
 
 // Renderer defines a gtk.ICellRenderer generator.
@@ -66,19 +66,19 @@ func onBoolColumnToggled(model *gtk.ListStore, col ModelColumn,
 
 	iter, err := model.GetIterFromString(pathString)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get iter from string", "error", err)
 		return
 	}
 
 	gval, err := model.GetValue(iter, int(col))
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get value from model", "error", err)
 		return
 	}
 
 	value, err := gval.GoValue()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get Go value", "error", err)
 		return
 	}
 
@@ -90,7 +90,7 @@ func onTextColumnEdited(model *gtk.ListStore, col ModelColumn,
 
 	iter, err := model.GetIterFromString(pathString)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get iter from string", "error", err)
 		return
 	}
 

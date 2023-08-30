@@ -27,7 +27,7 @@ func SetupTest(t *testing.T, tc TestCase) *gorm.DB {
 func TeardownTest(t *testing.T) {
 	closeTestDatabase()
 
-	if _, err := os.Stat(database.Path()); !os.IsNotExist(err) {
+	if _, err := os.Stat(database.Path()); err == nil {
 		if err = os.Remove(database.Path()); err != nil {
 			panic(err)
 		}
@@ -37,7 +37,7 @@ func TeardownTest(t *testing.T) {
 func getTestDataDir() string {
 	path := filepath.Join(".", testData)
 	for {
-		if _, err := os.Stat(path); !os.IsNotExist(err) {
+		if _, err := os.Stat(path); err == nil {
 			path, _ = filepath.Abs(path)
 			return path
 		}

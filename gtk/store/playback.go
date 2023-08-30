@@ -15,7 +15,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	log "github.com/sirupsen/logrus"
+	rtc "github.com/jwmwalrus/rtcycler"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -161,7 +161,7 @@ func (pbd *playbackData) setCover() bool {
 
 			for _, v := range coverFiles {
 				dirfile := filepath.Join(pbd.lastDir, v)
-				if _, err := os.Stat(dirfile); !os.IsNotExist(err) {
+				if _, err := os.Stat(dirfile); err == nil {
 					fp = dirfile
 					break
 				}
@@ -169,7 +169,7 @@ func (pbd *playbackData) setCover() bool {
 
 			if fp == "" && trackCover != "" {
 				trackCover = filepath.Join(base.CoversDir(), trackCover)
-				if _, err := os.Stat(trackCover); !os.IsNotExist(err) {
+				if _, err := os.Stat(trackCover); err == nil {
 					fp = trackCover
 				}
 			}
@@ -194,7 +194,7 @@ func (pbd *playbackData) setCover() bool {
 }
 
 func (pbd *playbackData) updatePlayback() bool {
-	log.Trace("Updating playback")
+	rtc.Trace("Updating playback")
 
 	iconName := "media-playback-pause"
 

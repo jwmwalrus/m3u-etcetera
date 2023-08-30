@@ -4,25 +4,25 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dhowden/tag"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/discover"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // Track defines a track row.
@@ -60,28 +60,42 @@ type Track struct {
 	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`
 }
 
-// Create implements the DataCreator interface.
-func (t *Track) Create() (err error) {
-	err = db.Create(t).Error
-	return
+// Create implements the Creator interface.
+func (t *Track) Create() error {
+	return t.CreateTx(db)
 }
 
-// Delete implements the DataDeleter interface.
+// CreateTx implements the Creator interface.
+func (t *Track) CreateTx(tx *gorm.DB) error {
+	return tx.Create(t).Error
+}
+
+// Delete implements the Deleter interface.
 func (t *Track) Delete() error {
-	return db.Delete(t).Error
+	return t.DeleteTx(db)
 }
 
-// Read implements the DataReader interface.
+// DeleteTx implements the Deleter interface.
+func (t *Track) DeleteTx(tx *gorm.DB) error {
+	return tx.Delete(t).Error
+}
+
+// Read implements the Reader interface.
 func (t *Track) Read(id int64) error {
-	return db.First(t, id).Error
+	return t.ReadTx(db, id)
 }
 
-// Save implements the DataUpdater interface.
+// ReadTx implements the Reader interface.
+func (t *Track) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.First(t, id).Error
+}
+
+// Save implements the Saver interface.
 func (t *Track) Save() error {
-	return db.Save(t).Error
+	return t.SaveTx(db)
 }
 
-// SaveTx implements the DataUpdaterTx interface.
+// SaveTx implements the SaverTx interface.
 func (t *Track) SaveTx(tx *gorm.DB) error {
 	return tx.Save(t).Error
 }
@@ -90,7 +104,7 @@ func (t *Track) SaveTx(tx *gorm.DB) error {
 func (t *Track) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(t)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to marshal track", "error", err)
 		return &m3uetcpb.Track{}
 	}
 
@@ -102,7 +116,7 @@ func (t *Track) ToProtobuf() proto.Message {
 	if !t.Remote {
 		path, err := urlstr.URLToPath(t.Location)
 		if err == nil {
-			if _, err = os.Stat(path); os.IsNotExist(err) {
+			if _, err = os.Stat(path); errors.Is(err, os.ErrNotExist) {
 				out.Dangling = true
 			}
 		}
@@ -178,15 +192,15 @@ func (t *Track) createTransient(tx *gorm.DB, raw map[string]interface{}) (err er
 }
 
 func (t *Track) discoverDuration() {
-	log.WithField("location", t.Location).Debug("Discovering duration")
+	slog.Debug("Discovering duration", "location", t.Location)
 	info, err := discover.Execute(t.Location)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute `discover`", "error", err)
 		return
 	}
 
 	t.Duration = info.Duration
-	log.WithField("duration", time.Duration(t.Duration)*time.Nanosecond).Debug("discovered duration")
+	slog.Debug("discovered duration", "duration", time.Duration(t.Duration)*time.Nanosecond)
 }
 
 func (t *Track) fillMissingTags(raw map[string]interface{}) {
@@ -302,13 +316,15 @@ func (t *Track) savePicture(p *tag.Picture, sum string) {
 		if fn == "" {
 			fn = sum + "." + p.Ext
 		}
+		logw := slog.With("file", fn)
+
 		file := filepath.Join(base.CoversDir(), fn)
 		err := os.WriteFile(file, p.Data, 0644)
 		if err != nil {
-			log.Error(err)
+			logw.Error("Failed to write picture info file", "error", err)
 			return
 		}
-		log.Debugf("Picture info saved as %v", fn)
+		logw.Debug("Picture info saved")
 		t.Cover = fn
 	}
 }
@@ -320,21 +336,29 @@ func (t *Track) updateTags() (err error) {
 	var path string
 	path, err = urlstr.URLToPath(t.Location)
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"location", t.Location,
+			"error", err,
+		).Error("Failed to convert URL to path")
 		return
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"path", path,
+			"error", err,
+		).Error("Failed to open path")
 		return
 	}
 	defer f.Close()
 
 	m, err2 := tag.ReadFrom(f)
 	if err2 != nil {
-		log.WithField("location", t.Location).
-			Error(err2)
+		slog.With(
+			"location", t.Location,
+			"error", err2,
+		).Error("Failed to read tags from file")
 	}
 
 	raw := map[string]interface{}{}
@@ -414,11 +438,14 @@ func DeleteDanglingTrackByID(id int64, withRemote bool) error {
 func DeleteLocalTrackIfDangling(id int64, location string) {
 	path, err := urlstr.URLToPath(location)
 	if err != nil {
-		log.Warn(err)
+		slog.With(
+			"location", location,
+			"error", err,
+		).Warn("Failed to convert URL to path")
 		return
 	}
 
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
+	if _, err := os.Stat(path); err == nil {
 		return
 	}
 
@@ -431,13 +458,16 @@ func DeleteTrackIfTransient(id int64) {
 	t := Track{}
 	err := t.Read(id)
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"id", id,
+			"error", err,
+		).Error("Failed to read track")
 		return
 	}
 
 	trc, err := TransientCollection.Get()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get transient collection", "error", err)
 		return
 	}
 
@@ -461,7 +491,10 @@ func FindTracksIn(ids []int64) (ts []*Track, notFound []int64) {
 	list := []Track{}
 	err := db.Where("id in ?", ids).Find(&list).Error
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"ids", ids,
+			"error", err,
+		).Error("Failed to find tracks in database")
 		return
 	}
 

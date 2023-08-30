@@ -2,23 +2,23 @@ package dialer
 
 import (
 	"context"
+	"log/slog"
+	"slices"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 )
 
 // AddCollection adds a collection.
 func AddCollection(req *m3uetcpb.AddCollectionRequest) (
 	res *m3uetcpb.AddCollectionResponse, err error) {
 
-	log.Info("Adding collection")
+	slog.Info("Adding collection")
 
 	cc, err := getClientConn1()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -30,17 +30,17 @@ func AddCollection(req *m3uetcpb.AddCollectionRequest) (
 
 // ApplyCollectionChanges applies collection changes.
 func ApplyCollectionChanges(o ...store.CollectionOptions) {
-	entry := log.WithField("collectionOptions", o)
-	entry.Info("Applying collection changes")
+	logw := slog.With("collection_options", o)
+	logw.Info("Applying collection changes")
 
 	requests, err := store.CData.GetUpdateCollectionRequests()
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to get updated collection requests", "error", err)
 	}
 
 	cc, err := getClientConn1()
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to get client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -48,21 +48,21 @@ func ApplyCollectionChanges(o ...store.CollectionOptions) {
 
 	for _, req := range requests {
 		_, err := cl.UpdateCollection(context.Background(), req)
-		onerror.WithEntry(entry).Log(err)
+		onerror.NewRecorder(logw).Log(err)
 	}
 
 	applyCollectionActionsChanges(o...)
 }
 
 func applyCollectionActionsChanges(o ...store.CollectionOptions) {
-	entry := log.WithField("collectionOptions", o)
-	entry.Info("Applying collection actions changes")
+	logw := slog.With("collection_options", o)
+	logw.Info("Applying collection actions changes")
 
 	toScan, toRemove := store.CData.GetCollectionActionsChanges()
 
 	cc, err := getClientConn1()
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to get client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -73,10 +73,11 @@ func applyCollectionActionsChanges(o ...store.CollectionOptions) {
 		opts = o[0]
 	}
 
+	onerrorw := onerror.NewRecorder(logw)
 	for _, id := range toRemove {
 		req := &m3uetcpb.RemoveCollectionRequest{Id: id}
 		_, err := cl.RemoveCollection(context.Background(), req)
-		onerror.WithEntry(entry).Log(err)
+		onerrorw.Log(err)
 	}
 
 	if opts.Discover {
@@ -84,7 +85,7 @@ func applyCollectionActionsChanges(o ...store.CollectionOptions) {
 			context.Background(),
 			&m3uetcpb.Empty{},
 		)
-		onerror.WithEntry(entry).Log(err)
+		onerrorw.Log(err)
 	} else {
 		for _, id := range toScan {
 			if slices.Contains(toRemove, id) {
@@ -95,13 +96,13 @@ func applyCollectionActionsChanges(o ...store.CollectionOptions) {
 				UpdateTags: opts.UpdateTags,
 			}
 			_, err := cl.ScanCollection(context.Background(), req)
-			onerror.WithEntry(entry).Log(err)
+			onerrorw.Log(err)
 		}
 	}
 }
 
 func subscribeToCollectionStore() {
-	log.Info("Subscribing to collection store")
+	slog.Info("Subscribing to collection store")
 
 	defer wgcollection.Done()
 
@@ -109,7 +110,7 @@ func subscribeToCollectionStore() {
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
+		slog.Error("Failed to obtain client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -120,14 +121,14 @@ func subscribeToCollectionStore() {
 		&m3uetcpb.Empty{},
 	)
 	if err != nil {
-		log.Errorf("Error subscribing to collection store: %v", err)
+		slog.Error("Failed to subscribe to collection store", "error", err)
 		return
 	}
 
 	for {
 		res, err := stream.Recv()
 		if err != nil {
-			log.Infof("Subscription closed by server: %v", err)
+			slog.Info("Subscription closed by server", "error", err)
 			break
 		}
 
@@ -141,13 +142,13 @@ func subscribeToCollectionStore() {
 }
 
 func unsubscribeFromCollectionStore() {
-	log.Info("Unsubscribing from collection store")
+	slog.Info("Unsubscribing from collection store")
 
 	id := store.CData.GetSubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
+		slog.Error("Failed to obtain client connection", "error", err)
 		return
 	}
 	defer cc.Close()

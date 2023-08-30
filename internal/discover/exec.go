@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os/exec"
 	"strings"
 
 	"github.com/jwmwalrus/bnp/env"
-	log "github.com/sirupsen/logrus"
 )
 
 // Execute invokes m3uetc-discover for the given location.
 func Execute(location string) (*Info, error) {
-	log.WithField("location", location).Info("Executing discover")
+	slog.Info("Executing discover", "location", location)
 
 	app := "m3u-etcetera"
 	bin := "m3uetc-discover"

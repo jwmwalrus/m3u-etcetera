@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/godbus/dbus/v5"
-	"github.com/jwmwalrus/onerror"
+	"github.com/jwmwalrus/bnp/onerror"
 
 	"github.com/godbus/dbus/v5/introspect"
 	"github.com/godbus/dbus/v5/prop"
@@ -26,7 +26,7 @@ const (
 func New() *Instance {
 	ins := &Instance{Name: serverName}
 	conn, err := dbus.ConnectSessionBus()
-	onerror.Panic(err)
+	onerror.Fatal(err)
 	ins.Conn.Store(conn)
 
 	return ins

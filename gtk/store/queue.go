@@ -2,14 +2,14 @@ package store
 
 import (
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 )
 
 type queueData struct {
@@ -81,7 +81,7 @@ func (qd *queueData) ProcessSubscriptionResponse(res *m3uetcpb.SubscribeToQueueS
 }
 
 func (qd *queueData) updateQueueModels() bool {
-	log.Info("Updating all queue models")
+	slog.Info("Updating all queue models")
 
 	for _, idx := range perspectiveQueuesList {
 		model := GetQueueModel(idx)
@@ -145,7 +145,7 @@ func (qd *queueData) updateQueueModels() bool {
 					},
 				)
 				if err != nil {
-					log.Error(err)
+					slog.Error("Failed to set queue values", "error", err)
 					continue
 				}
 				for _, t := range qd.res.Tracks {
@@ -214,8 +214,7 @@ func (qd *queueData) updateQueueModels() bool {
 func CreateQueueModel(idx m3uetcpb.Perspective) (
 	model *gtk.ListStore, err error) {
 
-	log.WithField("idx", idx).
-		Info("Creating queue model")
+	slog.Info("Creating queue model", "idx", idx)
 
 	model, err = gtk.ListStoreNew(QColumns.getTypes()...)
 	if err != nil {
@@ -235,8 +234,7 @@ func CreateQueueModel(idx m3uetcpb.Perspective) (
 
 // GetQueueModel returns the queue model for the given perspective.
 func GetQueueModel(idx m3uetcpb.Perspective) *gtk.ListStore {
-	log.WithField("idx", idx).
-		Debug("Returning queue model")
+	slog.Debug("Returning queue model", "idx", idx)
 
 	switch idx {
 	case m3uetcpb.Perspective_MUSIC:

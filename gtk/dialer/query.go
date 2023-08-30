@@ -3,11 +3,11 @@ package dialer
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 )
 
@@ -127,7 +127,7 @@ func UpdateQuery(req *m3uetcpb.UpdateQueryRequest) (err error) {
 }
 
 func subscribeToQueryStore() {
-	log.Info("Subscribing to query store")
+	slog.Info("Subscribing to query store")
 
 	defer wgquery.Done()
 
@@ -135,7 +135,7 @@ func subscribeToQueryStore() {
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
+		slog.Error("Failed to get client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -146,14 +146,14 @@ func subscribeToQueryStore() {
 		&m3uetcpb.Empty{},
 	)
 	if err != nil {
-		log.Errorf("Error subscribing to collection store: %v", err)
+		slog.Error("Failed to subscribe to collection store", "error", err)
 		return
 	}
 
 	for {
 		res, err := stream.Recv()
 		if err != nil {
-			log.Infof("Subscription closed by server: %v", err)
+			slog.Info("Subscription closed by server", "error", err)
 			break
 		}
 
@@ -167,13 +167,13 @@ func subscribeToQueryStore() {
 }
 
 func unsubscribeFromQueryStore() {
-	log.Info("Unsubscribing from query store")
+	slog.Info("Unsubscribing from query store")
 
 	id := store.QYData.GetSubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get client connection", "error", err)
 		return
 	}
 	defer cc.Close()

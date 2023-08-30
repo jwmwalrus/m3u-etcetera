@@ -2,10 +2,9 @@ package qparams
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
-
-	"golang.org/x/exp/slices"
 )
 
 // QParam defines a query parameter.

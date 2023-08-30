@@ -13,12 +13,12 @@ type PlaylistQuery struct {
 	Query      Query    `json:"query" gorm:"foreignKey:QueryID"`
 }
 
-// Delete implements the DataDeleter interface.
+// Delete implements the Deleter interface.
 func (pqy *PlaylistQuery) Delete() error {
 	return pqy.DeleteTx(db)
 }
 
-// DeleteTx implements the DataDeleterTx interface.
+// DeleteTx implements the DeleterTx interface.
 func (pqy *PlaylistQuery) DeleteTx(tx *gorm.DB) error {
 	return tx.Delete(pqy).Error
 }

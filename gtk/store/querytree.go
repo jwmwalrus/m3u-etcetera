@@ -1,6 +1,7 @@
 package store
 
 import (
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
-	log "github.com/sirupsen/logrus"
 )
 
 type queryTreeModel struct {
@@ -21,7 +21,7 @@ type queryTreeModel struct {
 }
 
 func (qyt *queryTreeModel) update() bool {
-	log.Info("Updating query model")
+	slog.Info("Updating query model")
 
 	qyt.mu.Lock()
 	defer qyt.mu.Unlock()
@@ -125,7 +125,7 @@ func (qyt *queryTreeModel) update() bool {
 
 // CreateQueryTreeModel creates a query model.
 func CreateQueryTreeModel() (model *gtk.TreeStore, err error) {
-	log.Info("Creating query model")
+	slog.Info("Creating query model")
 
 	queryTree.model, err = gtk.TreeStoreNew(QYTreeColumn.getTypes()...)
 	if err != nil {

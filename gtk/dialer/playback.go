@@ -2,11 +2,11 @@ package dialer
 
 import (
 	"context"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 )
 
 // ExecutePlaybackAction -.
@@ -23,7 +23,7 @@ func ExecutePlaybackAction(req *m3uetcpb.ExecutePlaybackActionRequest) (err erro
 }
 
 func subscribeToPlayback() {
-	log.Info("Subscribing to playback")
+	slog.Info("Subscribing to playback")
 
 	defer wgplayback.Done()
 
@@ -31,7 +31,7 @@ func subscribeToPlayback() {
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
+		slog.Error("Failed to obtain client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -39,14 +39,14 @@ func subscribeToPlayback() {
 	cl := m3uetcpb.NewPlaybackSvcClient(cc)
 	stream, err := cl.SubscribeToPlayback(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
-		log.Errorf("Error subscribing to playback: %v", err)
+		slog.Error("Failed to subscribe to playback", "error", err)
 		return
 	}
 
 	for {
 		res, err := stream.Recv()
 		if err != nil {
-			log.Infof("Subscription closed by server: %v", err)
+			slog.Info("Subscription closed by server", "error", err)
 			break
 		}
 
@@ -60,13 +60,13 @@ func subscribeToPlayback() {
 }
 
 func unsubscribeFromPlayback() {
-	log.Info("Unsubscribing from playback")
+	slog.Info("Unsubscribing from playback")
 
 	id := store.PbData.GetSubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
+		slog.Error("Failed to obtain client connection", "error", err)
 		return
 	}
 	defer cc.Close()

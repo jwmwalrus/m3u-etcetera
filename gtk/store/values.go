@@ -2,9 +2,9 @@ package store
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/gotk3/gotk3/gtk"
-	log "github.com/sirupsen/logrus"
 )
 
 // GetMultipleTreeSelectionValues returns the values of the tree selection for the
@@ -24,13 +24,13 @@ func GetMultipleTreeSelectionValues(sel *gtk.TreeSelection, tv *gtk.TreeView, co
 	glist.Foreach(func(i interface{}) {
 		p, ok := i.(*gtk.TreePath)
 		if !ok {
-			log.Error("Error obtaining tree-path from interface")
+			slog.Error("failed to get tree-path from interface")
 			return
 		}
 
 		iter, err := model.GetIter(p)
 		if err != nil {
-			log.Error("Error obtaining tree-iter")
+			slog.Error("Failed to get tree-iter")
 			return
 		}
 		paths = append(paths, p)
@@ -38,7 +38,7 @@ func GetMultipleTreeSelectionValues(sel *gtk.TreeSelection, tv *gtk.TreeView, co
 		var m map[ModelColumn]interface{}
 		m, err = GetTreeModelValues(model, iter, cols)
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get tree-model", "error", err)
 			return
 		}
 

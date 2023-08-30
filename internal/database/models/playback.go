@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -26,26 +26,41 @@ type Playback struct { // too transient
 	TrackID   int64  `json:"trackId"`
 }
 
-// Create implements the DataCreator interface.
+// Create implements the Creator interface.
 func (pb *Playback) Create() error {
-	return db.Create(pb).Error
+	return pb.CreateTx(db)
 }
 
-// Read implements the DataReader interface.
+// CreateTx implements the Creator interface.
+func (pb *Playback) CreateTx(tx *gorm.DB) error {
+	return tx.Create(pb).Error
+}
+
+// Read implements the Reader interface.
 func (pb *Playback) Read(id int64) error {
-	return db.First(pb, id).Error
+	return pb.ReadTx(db, id)
 }
 
-// Save implements the DataUpdater interface.
+// ReadTx implements the Reader interface.
+func (pb *Playback) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.First(pb, id).Error
+}
+
+// Save implements the Saver interface.
 func (pb *Playback) Save() error {
-	return db.Save(pb).Error
+	return pb.SaveTx(db)
+}
+
+// SaveTx implements the Saver interface.
+func (pb *Playback) SaveTx(tx *gorm.DB) error {
+	return tx.Save(pb).Error
 }
 
 // ToProtobuf implments ProtoOut interface.
 func (pb *Playback) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pb)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to marshal playback", "error", err)
 		return &m3uetcpb.Playback{}
 	}
 
@@ -106,12 +121,12 @@ func (pb *Playback) GetTrack() (t *Track, err error) {
 
 // AddPlaybackLocation adds a playback entry by location.
 func AddPlaybackLocation(location string) (pb *Playback) {
-	entry := log.WithField("location", location)
-	entry.Info("Adding playback entry by location")
+	logw := slog.With("location", location)
+	logw.Info("Adding playback entry by location")
 
 	pb = &Playback{Location: location}
 	if err := pb.Create(); err != nil {
-		entry.Error(err)
+		logw.Error("Failed to create playback", "error", err)
 		return
 	}
 	go func() {
@@ -122,22 +137,22 @@ func AddPlaybackLocation(location string) (pb *Playback) {
 
 // AddPlaybackTrack adds a playback entry by track.
 func AddPlaybackTrack(t *Track) (pb *Playback) {
-	entry := log.WithField("t", t)
-	entry.Info("Adding playback entry by track")
+	logw := slog.With("track", t)
+	logw.Info("Adding playback entry by track")
 
 	pb = &Playback{Location: t.Location, TrackID: t.ID}
-	onerror.WithEntry(entry).Log(pb.Create())
+	onerror.NewRecorder(logw).Log(pb.Create())
 	return
 }
 
 // GetAllPlayback returns all the playback entries.
 func GetAllPlayback() []*Playback {
-	log.Info("Obtaining all playback")
+	slog.Info("Obtaining all playback")
 
 	pbs := []Playback{}
 	err := db.Where("played = 0").Find(&pbs).Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find unplayed placybacks in database", "error", err)
 		return []*Playback{}
 	}
 
@@ -154,15 +169,18 @@ func findPlaybackTrack(ctx context.Context) {
 				pb := Playback{}
 				err := pb.Read(id)
 				if err != nil {
-					log.Error(err)
+					slog.With(
+						"id", id,
+						"error", err,
+					).Error("Failed to read playback")
 					return
 				}
 				if pb.TrackID > 0 {
 					return
 				}
 
-				entry := log.WithField("pb", pb)
-				entry.Info("Finding track for current playback")
+				logw := slog.With("pb", pb)
+				logw.Info("Finding track for current playback")
 
 				t := Track{}
 				err = db.Where("location = ?", pb.Location).First(&t).Error
@@ -170,7 +188,7 @@ func findPlaybackTrack(ctx context.Context) {
 					return
 				}
 				pb.TrackID = t.ID
-				onerror.WithEntry(entry).Log(pb.Save())
+				onerror.NewRecorder(logw).Log(pb.Save())
 			}(id)
 
 		}

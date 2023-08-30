@@ -2,6 +2,7 @@ package playlists
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/gotk3/gotk3/gtk"
@@ -10,7 +11,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	log "github.com/sirupsen/logrus"
 )
 
 // OnQueue handles queue signals.
@@ -22,16 +22,19 @@ type OnQueue struct {
 func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 	oq *OnQueue, err error) {
 
-	entry := log.WithFields(log.Fields{
-		"perspective": p,
-		"queueID":     queueID,
-		"queueMenuID": contextMenuID,
-	})
-	entry.Info("Creating queue view and model")
+	logw := slog.With(
+		"perspective", p,
+		"queueID", queueID,
+		"queueMenuID", contextMenuID,
+	)
+	logw.Info("Creating queue view and model")
 
 	ctxMenu, err := builder.GetMenu(contextMenuID)
 	if err != nil {
-		entry.Error(err)
+		logw.With(
+			"menu-id", contextMenuID,
+			"error", err,
+		).Error("Failed to get context menu")
 		return
 	}
 
@@ -39,7 +42,11 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 	for _, l := range []string{"top", "up", "down", "bottom"} {
 		mi, err := builder.GetMenuItem(contextMenuID + "_" + l)
 		if err != nil {
-			entry.Error(err)
+			logw.With(
+				"menu", contextMenuID,
+				"item", l,
+				"error", err,
+			).Error("Failed to get menu item")
 			continue
 		}
 		mi.SetName(fmt.Sprintf("menuitem-%s-%s", l, miSuffix))
@@ -110,10 +117,10 @@ func (oq *OnQueue) DblClicked(tv *gtk.TreeView,
 		},
 	)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get tree-view's tree-path values", "error", err)
 		return
 	}
-	log.Debugf("Doouble-clicked column values: %v", values)
+	slog.Debug("Doouble-clicked column values", "values", values)
 
 	id := values[store.QColTrackID].(int64)
 	pos := values[store.QColPosition].(int)
@@ -133,7 +140,7 @@ func (oq *OnQueue) DblClicked(tv *gtk.TreeView,
 	time.Sleep(200 * time.Millisecond)
 
 	if err := dialer.ExecutePlaybackAction(req); err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute playback action", "error", err)
 		return
 	}
 
@@ -143,7 +150,7 @@ func (oq *OnQueue) DblClicked(tv *gtk.TreeView,
 	}
 
 	if err := dialer.ExecuteQueueAction(req2); err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute queue action", "error", err)
 		return
 	}
 }

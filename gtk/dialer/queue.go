@@ -2,11 +2,11 @@ package dialer
 
 import (
 	"context"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 )
 
@@ -22,14 +22,14 @@ func ExecuteQueueAction(req *m3uetcpb.ExecuteQueueActionRequest) (err error) {
 	_, err = cl.ExecuteQueueAction(context.Background(), req)
 	if err != nil {
 		s := status.Convert(err)
-		log.Error(s.Message())
+		slog.Error(s.Message())
 		return
 	}
 	return
 }
 
 func subscribeToQueueStore() {
-	log.Info("Subscribing to queue store")
+	slog.Info("Subscribing to queue store")
 
 	defer wgqueue.Done()
 
@@ -37,7 +37,7 @@ func subscribeToQueueStore() {
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
+		slog.Error("Failed to obtain client connection", "error", err)
 		return
 	}
 	defer cc.Close()
@@ -48,14 +48,14 @@ func subscribeToQueueStore() {
 		&m3uetcpb.Empty{},
 	)
 	if err != nil {
-		log.Errorf("Error subscribing to queue store: %v", err)
+		slog.Error("Failed to subscribe to queue store", "error", err)
 		return
 	}
 
 	for {
 		res, err := stream.Recv()
 		if err != nil {
-			log.Infof("Subscription closed by server: %v", err)
+			slog.Info("Subscription closed by server", "error", err)
 			break
 		}
 
@@ -69,13 +69,13 @@ func subscribeToQueueStore() {
 }
 
 func unsubscribeFromQueueStore() {
-	log.Info("Unsuubscribing from queue store")
+	slog.Info("Unsuubscribing from queue store")
 
 	id := store.QData.GetSubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {
-		log.Errorf("Error obtaining client connection: %v", err)
+		slog.Error("Failed to obtain client connection", "error", err)
 		return
 	}
 	defer cc.Close()

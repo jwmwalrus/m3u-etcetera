@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
 
 	"github.com/jwmwalrus/m3u-etcetera/api"
@@ -12,7 +13,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -31,14 +31,14 @@ func main() {
 
 	rtc.RegisterUnloader(playback.StartEngine())
 
-	log.Info("Starting server...")
+	slog.Info("Starting server...")
 
 	port := base.Conf.Server.Port
 	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+		rtc.Fatal("Failed to listen", "error", err)
 	}
-	log.Infof("Listening on port %v", port)
+	slog.Info("Listening on port", "port", port)
 
 	opts := middleware.GetServerOpts()
 	s := grpc.NewServer(opts...)
@@ -66,7 +66,7 @@ func main() {
 
 	go func() {
 		if err := s.Serve(listener); err != nil {
-			log.Fatalf("Failed to serve: %v", err)
+			rtc.Fatal("Failed to serve", "error", err)
 		}
 	}()
 

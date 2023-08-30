@@ -1,11 +1,13 @@
 package models
 
 import (
+	"log/slog"
+
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/poser"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // GetPerspectiveQueue returns the queue associated to the perspective index.
@@ -31,27 +33,31 @@ type Queue struct { // too transient
 	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Read implements the DataReader interface.
-func (q *Queue) Read(id int64) (err error) {
-	err = db.Joins("Perspective").
+// Read implements the Reader interface.
+func (q *Queue) Read(id int64) error {
+	return q.ReadTx(db, id)
+}
+
+// ReadTx implements the Reader interface.
+func (q *Queue) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.Joins("Perspective").
 		// Joins("JOIN perspective ON queue.perspective_id = perspective.id").
 		First(q, id).Error
-	return
 }
 
 // Add adds the given locations/IDs to the end of the queue.
 func (q *Queue) Add(locations []string, ids []int64) {
-	entry := log.WithFields(log.Fields{
-		"locations": locations,
-		"ids":       ids,
-	})
-	entry.Info("Adding payload to queue")
+	logw := slog.With(
+		"locations", locations,
+		"ids", ids,
+	)
+	logw.Info("Adding payload to queue")
 
 	for _, v := range locations {
 		qt := QueueTrack{Location: v}
 
 		if err := q.appendTo(&qt); err != nil {
-			entry.Error(err)
+			logw.Error("Failed to append to queue", "error", err)
 			continue
 		}
 	}
@@ -60,12 +66,12 @@ func (q *Queue) Add(locations []string, ids []int64) {
 		t := Track{}
 
 		if err = t.Read(v); err != nil {
-			entry.Error(err)
+			logw.Error("Failed to read track", "error", err)
 			continue
 		}
 
 		qt := QueueTrack{Location: t.Location, TrackID: v}
-		onerror.WithEntry(entry).Log(q.appendTo(&qt))
+		onerror.NewRecorder(logw).Log(q.appendTo(&qt))
 	}
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
@@ -73,8 +79,8 @@ func (q *Queue) Add(locations []string, ids []int64) {
 
 // Clear removes all entries from the queue.
 func (q *Queue) Clear() {
-	entry := log.WithField("q", *q)
-	entry.Info("Clearing queue")
+	logw := slog.With("q", *q)
+	logw.Info("Clearing queue")
 
 	s := []QueueTrack{}
 	err := db.Where("queue_id = ? AND played = 0", q.ID).Find(&s).Error
@@ -87,7 +93,7 @@ func (q *Queue) Clear() {
 	}
 
 	if err = db.Save(&s).Error; err != nil {
-		entry.Error(err)
+		logw.Error("Failed to save queue tracks", "error", err)
 		return
 	}
 
@@ -96,11 +102,11 @@ func (q *Queue) Clear() {
 
 // DeleteAt deletes the given position from the queue.
 func (q *Queue) DeleteAt(position int) {
-	entry := log.WithFields(log.Fields{
-		"q":        *q,
-		"position": position,
-	})
-	entry.Info("Deleting entry from queue")
+	logw := slog.With(
+		"q", *q,
+		"position", position,
+	)
+	logw.Info("Deleting entry from queue")
 
 	s := []QueueTrack{}
 	err := db.Where("queue_id = ? AND played = 0", q.ID).Order("position ASC").
@@ -115,13 +121,13 @@ func (q *Queue) DeleteAt(position int) {
 
 	if qt != nil && qt.ID > 0 {
 		if err := qt.Save(); err != nil {
-			entry.Error(err)
+			logw.Error("Failed to save queue track", "error", err)
 			return
 		}
 	}
 
 	if err := db.Save(&s).Error; err != nil {
-		entry.Error(err)
+		logw.Error("Failed to save queue tracks", "error", err)
 		return
 	}
 
@@ -130,27 +136,28 @@ func (q *Queue) DeleteAt(position int) {
 
 // InsertAt inserts the given locations and IDs into the queue.
 func (q *Queue) InsertAt(position int, locations []string, ids []int64) {
-	entry := log.WithFields(log.Fields{
-		"q":         q,
-		"position":  position,
-		"locations": locations,
-		"ids":       ids,
-	})
-	entry.Info("Inserting entry into queue")
+	logw := slog.With(
+		"q", *q,
+		"position", position,
+		"locations", locations,
+		"ids", ids,
+	)
+	logw.Info("Inserting entry into queue")
 
+	onerrorw := onerror.NewRecorder(logw)
 	for i := len(ids) - 1; i >= 0; i-- {
 		t := Track{}
 		if err := t.Read(ids[i]); err != nil {
-			entry.Error(err)
+			logw.Error("Failed to read track", "error", err)
 			continue
 		}
 
 		qt := QueueTrack{Location: t.Location, TrackID: ids[i], Position: position}
-		onerror.WithEntry(entry).Log(q.insertInto(&qt))
+		onerrorw.Log(q.insertInto(&qt))
 	}
 	for i := len(locations) - 1; i >= 0; i-- {
 		qt := QueueTrack{Location: locations[i], Position: position}
-		onerror.WithEntry(entry).Log(q.insertInto(&qt))
+		onerrorw.Log(q.insertInto(&qt))
 	}
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
@@ -169,18 +176,18 @@ func (q *Queue) MoveTo(to, from int) {
 		return
 	}
 
-	entry := log.WithFields(log.Fields{
-		"from": from,
-		"to":   to,
-	})
-	entry.Info("Moving queue tracks")
+	logw := slog.With(
+		"from", from,
+		"to", to,
+	)
+	logw.Info("Moving queue tracks")
 
 	s := []QueueTrack{}
 	err := db.Where("queue_id = ? AND played = 0", q.ID).Order("position").
 		Find(&s).
 		Error
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find queue tracks in database", "error", err)
 		return
 	}
 	if len(s) == 0 || from > len(s) {
@@ -191,7 +198,7 @@ func (q *Queue) MoveTo(to, from int) {
 	s = pointers.ToValues(list)
 
 	if err := db.Save(&s).Error; err != nil {
-		entry.Error(err)
+		logw.Error("Failed to save queue tracks", "error", err)
 		return
 	}
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
@@ -199,15 +206,15 @@ func (q *Queue) MoveTo(to, from int) {
 
 // Pop returns the next entry to be played from the queue.
 func (q *Queue) Pop() (qt *QueueTrack) {
-	entry := log.WithField("q", *q)
-	entry.Debug("Popping from queue")
+	logw := slog.With("q", *q)
+	logw.Debug("Popping from queue")
 
 	s := []QueueTrack{}
 	err := db.Where("queue_id = ? AND played = 0", q.ID).Order("position ASC").
 		Find(&s).
 		Error
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find queue tracks in database", "error", err)
 		return
 	}
 
@@ -218,23 +225,23 @@ func (q *Queue) Pop() (qt *QueueTrack) {
 		return
 	}
 
-	entry.Info("Found location to pop from queue:", qt.Location)
+	logw.Info("Found location to pop from queue", "location", qt.Location)
+	onerrorw := onerror.NewRecorder(logw)
 	if len(s) > 0 {
-		onerror.WithEntry(entry).Log(db.Save(&s).Error)
+		onerrorw.Log(db.Save(&s).Error)
 	}
-	onerror.WithEntry(entry).Log(qt.Save())
+	onerrorw.Log(qt.Save())
 
 	subscription.Broadcast(subscription.ToQueueStoreEvent)
 	return
 }
 
 func (q *Queue) QueryIn(qy *Query, qybs []QueryBoundaryTx) {
-	log.WithFields(log.Fields{
-		"q":         *q,
-		"qy":        *qy,
-		"len(qybs)": len(qybs),
-	}).
-		Info("Appending query result tracks to queue")
+	slog.With(
+		"q", *q,
+		"qy", *qy,
+		"len(qybs)", len(qybs),
+	).Info("Appending query result tracks to queue")
 
 	ts := qy.FindTracks(qybs)
 
@@ -247,11 +254,10 @@ func (q *Queue) QueryIn(qy *Query, qybs []QueryBoundaryTx) {
 }
 
 func (q *Queue) appendTo(qt *QueueTrack) (err error) {
-	log.WithFields(log.Fields{
-		"q":  *q,
-		"qt": *qt,
-	}).
-		Info("Appending track to queue")
+	slog.With(
+		"q", *q,
+		"qt", *qt,
+	).Info("Appending track to queue")
 
 	qt.QueueID = q.ID
 	qt.Played = true
@@ -281,11 +287,10 @@ func (q *Queue) appendTo(qt *QueueTrack) (err error) {
 }
 
 func (q *Queue) insertInto(qt *QueueTrack) (err error) {
-	log.WithFields(log.Fields{
-		"q":  *q,
-		"qt": *qt,
-	}).
-		Info("Inserting track into queue")
+	slog.With(
+		"q", *q,
+		"qt", *qt,
+	).Info("Inserting track into queue")
 
 	qt.QueueID = q.ID
 	qt.Played = true

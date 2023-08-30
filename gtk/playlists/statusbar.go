@@ -2,13 +2,13 @@ package playlists
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 )
 
 func setupStatusbar() (err error) {
-	log.Info("Setting up status bar")
+	slog.Info("Setting up status bar")
 
 	statusBar, err = builder.GetStatusBar("status_bar")
 	if err != nil {

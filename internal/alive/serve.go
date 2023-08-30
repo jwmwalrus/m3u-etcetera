@@ -1,14 +1,14 @@
 package alive
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync/atomic"
 	"time"
 
-	"github.com/jwmwalrus/onerror"
+	"github.com/jwmwalrus/bnp/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -51,18 +51,18 @@ func Serve(o ...Option) error {
 
 // readServerAlive reads the server alive flag file.
 func readServerAlive() {
-	log.Debug("Reading server status from file")
+	slog.Debug("Reading server status from file")
 
 	// Last alive check for server
 	info, err := os.Stat(filepath.Join(rtc.DataDir(), serverAliveFilename))
-	if !os.IsNotExist(err) {
+	if err == nil {
 		LastCheck.Store(info.ModTime().Unix())
 	}
 }
 
 // writeServerAliveFile updates the server alive flag file.
 func writeServerAliveFile() {
-	log.Debug("Writing server alive file")
+	slog.Debug("Writing server alive file")
 
 	f, err := os.OpenFile(
 		filepath.Join(rtc.DataDir(), serverAliveFilename),
@@ -70,7 +70,7 @@ func writeServerAliveFile() {
 		0666,
 	)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to open server-alive file", "error", err)
 		return
 	}
 	defer f.Close()

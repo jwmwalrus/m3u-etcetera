@@ -2,11 +2,13 @@ package musicpane
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -15,8 +17,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 )
 
 type onMusicPlaylist struct {
@@ -48,7 +48,7 @@ var (
 )
 
 func createMusicPlaylists() (ompl *onMusicPlaylist, err error) {
-	log.Info("Creating music playlists view and model")
+	slog.Info("Creating music playlists view and model")
 
 	ompl = &onMusicPlaylist{
 		onContext: &onContext{ct: playlistContext},
@@ -142,24 +142,33 @@ func (ompl *onMusicPlaylist) context(tv *gtk.TreeView, event *gdk.Event) {
 
 	menu, err := builder.GetMenu("music_playlists_view_context")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"menu", "music_playlists_view_context",
+			"error", err,
+		).Error("Failed to get menu from builder")
 		return
 	}
 
 	openmi, err := builder.GetMenuItem("music_playlists_view_context_open")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"menu-item", "music_playlists_view_context_open",
+			"error", err,
+		).Error("Failed to get menu item from builder")
 		return
 	}
 	deletemi, err := builder.GetMenuItem("music_playlists_view_context_delete")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"menu-item", "music_playlists_view_context_delete",
+			"error", err,
+		).Error("Failed to get menu item from builder")
 		return
 	}
 
 	pl := store.BData.GetPlaylist(ids[0])
 	if pl == nil {
-		log.WithField("ids", ids).
+		slog.With("IDs", ids).
 			Error("Playlist unavailable during context")
 		return
 	}
@@ -187,7 +196,7 @@ func (ompl *onMusicPlaylist) contextDelete(mi *gtk.MenuItem) {
 func (ompl *onMusicPlaylist) contextEdit(mi *gtk.MenuItem) {
 	ids, _ := ompl.getPlaylistSelections()
 	if len(ids) != 1 {
-		log.Error("Playlist selection vanished?")
+		slog.Error("Playlist selection vanished?")
 		return
 	}
 
@@ -197,7 +206,7 @@ func (ompl *onMusicPlaylist) contextEdit(mi *gtk.MenuItem) {
 func (ompl *onMusicPlaylist) contextExport(mi *gtk.MenuItem) {
 	ids, _ := ompl.getPlaylistSelections()
 	if len(ids) != 1 {
-		log.Error("Playlist selection vanished?")
+		slog.Error("Playlist selection vanished?")
 		return
 	}
 
@@ -240,17 +249,17 @@ func (ompl *onMusicPlaylist) contextExport(mi *gtk.MenuItem) {
 		u := ompl.export.loc.GetURI()
 		name, err := ompl.export.name.GetText()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Faild to get text from export name", "error", err)
 			return
 		}
 		dir, err := urlstr.URLToPath(u)
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to convert URL to path", "error", err)
 			return
 		}
 		loc, err := urlstr.PathToURLUnchecked(filepath.Join(dir, name+format.ext))
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to convert path to URL", "error", err)
 			return
 		}
 		req := &m3uetcpb.ExportPlaylistRequest{
@@ -261,7 +270,7 @@ func (ompl *onMusicPlaylist) contextExport(mi *gtk.MenuItem) {
 
 		err = dialer.ExportPlaylist(req)
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to export playlist", "error", err)
 			return
 		}
 	case gtk.RESPONSE_CANCEL:
@@ -272,7 +281,7 @@ func (ompl *onMusicPlaylist) contextExport(mi *gtk.MenuItem) {
 func (ompl *onMusicPlaylist) contextOpen(mi *gtk.MenuItem) {
 	ids, _ := ompl.getPlaylistSelections()
 	if len(ids) != 1 {
-		log.Error("Query selection vanished?")
+		slog.Error("Query selection vanished?")
 		return
 	}
 
@@ -282,7 +291,7 @@ func (ompl *onMusicPlaylist) contextOpen(mi *gtk.MenuItem) {
 	}
 
 	if err := dialer.ExecutePlaybarAction(req); err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute playbar action", "error", err)
 		return
 	}
 
@@ -298,10 +307,10 @@ func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView,
 		[]store.ModelColumn{store.PLColTree, store.PLColTreeIDList, store.PLColTreeIsGroup},
 	)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get tree-view's tree-path values", "error", err)
 		return
 	}
-	log.Debugf("Doouble-clicked column value: %v", values[store.CColTree])
+	slog.Debug("Doouble-clicked column value", "value", values[store.CColTree])
 
 	if values[store.PLColTreeIsGroup].(bool) {
 		return
@@ -309,12 +318,12 @@ func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView,
 
 	ids, err := util.StringToIDList(values[store.PLColTreeIDList].(string))
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to convert string to ID list", "error", err)
 		return
 	}
 
 	if len(ids) != 1 {
-		log.Errorf("Length of ids is different from 1: %+v", ids)
+		slog.Error("Length of IDs is different from 1", "IDs", ids)
 		return
 	}
 
@@ -324,7 +333,7 @@ func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView,
 	}
 
 	if err := dialer.ExecutePlaybarAction(req); err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute playback action", "error", err)
 		return
 	}
 
@@ -334,7 +343,7 @@ func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView,
 func (ompl *onMusicPlaylist) filtered(se *gtk.SearchEntry) {
 	text, err := se.GetText()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get text from search entry", "error", err)
 		return
 	}
 	store.FilterPlaylistTreeBy(m3uetcpb.Perspective_MUSIC, text)
@@ -350,12 +359,12 @@ func (ompl *onMusicPlaylist) getPlaylistSelections(keep ...bool) (
 
 	idstr, ok := values[store.PLColTreeIDList].(string)
 	if !ok {
-		log.Errorf("This should not happen!!! values:%#v", values)
+		slog.Error("This should not happen!!!", "values", values)
 	}
 
 	isGroup, ok = values[store.PLColTreeIsGroup].(bool)
 	if !ok {
-		log.Errorf("This should not happen!!! values:%#v", values)
+		slog.Error("This should not happen!!!", "values", values)
 	}
 
 	ids, err := util.StringToIDList(idstr)

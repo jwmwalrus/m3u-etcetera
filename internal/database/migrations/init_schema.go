@@ -1,9 +1,9 @@
 package migrations
 
 import (
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/seeds"
-	"github.com/jwmwalrus/onerror"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +34,7 @@ func InitSchema(db *gorm.DB) (err error) {
 		&models.PlaylistQuery{},
 		&models.PlaylistTrack{},
 	)
-	onerror.Panic(err)
+	onerror.Fatal(err)
 
 	seeds.All(db)
 

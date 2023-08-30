@@ -2,12 +2,12 @@ package models
 
 import (
 	"encoding/json"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -47,55 +47,73 @@ type PlaylistGroup struct {
 	Perspective   Perspective `json:"-" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Create implements the DataCreator interface.
-func (pg *PlaylistGroup) Create() (err error) {
-	err = db.Create(pg).Error
-	return
+// Create implements the Creator interface.
+func (pg *PlaylistGroup) Create() error {
+	return pg.CreateTx(db)
 }
 
-// Delete implements the DataDeleter interface.
-func (pg *PlaylistGroup) Delete() (err error) {
+// CreateTx implements the Creator interface.
+func (pg *PlaylistGroup) CreateTx(tx *gorm.DB) error {
+	return tx.Create(pg).Error
+}
+
+// Delete implements the Deleter interface.
+func (pg *PlaylistGroup) Delete() error {
+	return pg.DeleteTx(db)
+}
+
+// DeleteTx implements the Deleter interface.
+func (pg *PlaylistGroup) DeleteTx(tx *gorm.DB) error {
 	pls := []Playlist{}
-	err = db.Where("playlist_group_id = ?", pg.ID).Find(&pls).Error
+	err := tx.Where("playlist_group_id = ?", pg.ID).Find(&pls).Error
 	if err != nil {
-		return
+		return err
 	}
 	if len(pls) > 0 {
 		pgd := PlaylistGroup{}
-		err = db.Where("hidden = 1 and idx > 0 and perspective_id = ?", pg.PerspectiveID).Find(&pgd).Error
+		err = tx.Where("hidden = 1 and idx > 0 and perspective_id = ?", pg.PerspectiveID).Find(&pgd).Error
 		if err != nil {
-			return
+			return err
 		}
 		for i := range pls {
 			pls[i].PlaylistGroupID = pgd.ID
 		}
-		err = db.Save(&pls).Error
+		err = tx.Save(&pls).Error
 		if err != nil {
-			return
+			return err
 		}
 	}
 
-	err = db.Delete(pg).Error
-	return
+	return tx.Delete(pg).Error
 }
 
-// Read implements the DataReader interface.
-func (pg *PlaylistGroup) Read(id int64) (err error) {
-	return db.Joins("Perspective").
+// Read implements the Reader interface.
+func (pg *PlaylistGroup) Read(id int64) error {
+	return pg.ReadTx(db, id)
+}
+
+// ReadTx implements the Reader interface.
+func (pg *PlaylistGroup) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.Joins("Perspective").
 		First(pg, id).
 		Error
 }
 
-// Save implements the DataUpdater interface.
+// Save implements the Saver interface.
 func (pg *PlaylistGroup) Save() error {
-	return db.Save(pg).Error
+	return pg.SaveTx(db)
+}
+
+// SaveTx implements the Saver interface.
+func (pg *PlaylistGroup) SaveTx(tx *gorm.DB) error {
+	return tx.Save(pg).Error
 }
 
 // ToProtobuf implments ProtoOut interface.
 func (pg *PlaylistGroup) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pg)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to marshal playlist group", "error", err)
 		return &m3uetcpb.PlaylistGroup{}
 	}
 

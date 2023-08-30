@@ -3,18 +3,19 @@ package playback
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"sync/atomic"
 	"time"
 
 	"github.com/godbus/dbus/v5"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/mpris"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/jwmwalrus/onerror"
+	rtc "github.com/jwmwalrus/rtcycler"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/tinyzimmer/go-glib/glib"
 	"github.com/tinyzimmer/go-gst/gst"
 )
@@ -71,8 +72,7 @@ func init() {
 }
 
 func (e *engine) addPlaybackFromQueue(qt *models.QueueTrack) (pb *models.Playback) {
-	log.WithField("qt", qt).
-		Info("Adding playback from queue")
+	slog.Info("Adding playback from queue", "qt", qt)
 
 	if qt.TrackID > 0 {
 		t := &models.Track{}
@@ -95,7 +95,7 @@ func (e *engine) clearPendingPlayback() {
 }
 
 func (e *engine) engineLoop() {
-	log.Info("Starting engine loop")
+	slog.Info("Starting engine loop")
 
 	e.lastEvent.Store(loopEvent)
 loop:
@@ -138,7 +138,7 @@ loop:
 			if err != nil {
 				q, _ := models.GetActivePerspectiveIndex().GetPerspectiveQueue()
 				if qt := q.Pop(); qt != nil {
-					log.Debug("Popped successfully")
+					slog.Debug("Popped successfully")
 					pb = e.addPlaybackFromQueue(qt)
 				} else if e.pt.Load() != nil {
 					pb = e.getNextInPlaylist(false)
@@ -148,7 +148,7 @@ loop:
 		}
 
 		if pb != nil && pb.ID > 0 && pb.Location != "" {
-			log.Debug("There is a playback")
+			slog.Debug("There is a playback")
 			e.playStream(pb)
 			go func() {
 				models.TriggerPlaybackChange()
@@ -163,22 +163,22 @@ loop:
 	}
 
 	e.lastEvent.Store(noLoopEvent)
-	log.Infof("Firing the %v event", e.lastEvent.String())
+	slog.Info("Firing event", "event", e.lastEvent)
 }
 
 func (e *engine) getFirstInPlaylist() (pb *models.Playback) {
 	if e.pt.Load() == nil {
-		log.Error("There is no playlist-track available")
+		slog.Error("There is no playlist-track available")
 		return
 	}
 	pl := e.pt.Load().Playlist
 	t := e.pt.Load().Track
 	if pl.ID == 0 || t.ID == 0 {
-		log.Error("There is no list or track to play from")
+		slog.Error("There is no list or track to play from")
 		return
 	}
 
-	log.WithField("pt", *e.pt.Load()).
+	slog.With("pt", *e.pt.Load()).
 		Info("Obtaining first track in playlist")
 
 	pb = models.AddPlaybackTrack(&t)
@@ -187,18 +187,18 @@ func (e *engine) getFirstInPlaylist() (pb *models.Playback) {
 
 func (e *engine) getNextInPlaylist(goingBack bool) (pb *models.Playback) {
 	if e.pt.Load() == nil {
-		log.Info("There is no playlist-track available")
+		slog.Info("There is no playlist-track available")
 		return
 	}
 
-	entry := log.WithField("pt", *e.pt.Load())
-	entry.Info("Obtaining next track in playlist")
+	logw := slog.With("pt", *e.pt.Load())
+	logw.Info("Obtaining next track in playlist")
 
 	newpt, err := e.pt.Load().GetTrackAfter(goingBack)
 	if err != nil {
 		pl := e.pt.Load().Playlist
 		if pl.ID == 0 {
-			entry.Error("There is no list to play from")
+			logw.Error("There is no list to play from")
 			return
 		}
 		bar := models.Playbar{}
@@ -206,7 +206,7 @@ func (e *engine) getNextInPlaylist(goingBack bool) (pb *models.Playback) {
 			bar.DeactivateEntry(&pl)
 		}
 		e.pt.Store(nil)
-		entry.Info(err)
+		logw.Info("Failed to get track after", "error", err)
 		return
 	}
 
@@ -231,19 +231,19 @@ func (e *engine) getPlaybackHint(keep ...bool) (h playbackHint) {
 }
 
 func (e *engine) getPrevInHistory() (pb *models.Playback, err error) {
-	log.Info("Obtaining previous track in history")
+	slog.Info("Obtaining previous track in history")
 
 	h := models.PlaybackHistory{}
 
 	if err = h.ReadLast(); err != nil {
-		log.Error(err)
+		slog.Error("Failed to read last history entry", "error", err)
 		return
 	}
 
 	if h.TrackID > 0 {
 		t := &models.Track{}
 		if err = t.Read(h.TrackID); err != nil {
-			log.Error(err)
+			slog.Error("Failed to read track", "error", err)
 			return
 		}
 		pb = models.AddPlaybackTrack(t)
@@ -258,25 +258,25 @@ func (e *engine) getPrevInHistory() (pb *models.Playback, err error) {
 func (e *engine) handleBusMessage(msg *gst.Message) bool {
 	switch msg.Type() {
 	case gst.MessageEOS:
-		log.Debugf("End of stream: %v", e.pb.Load().Location)
+		slog.Debug("End of stream", "location", e.pb.Load().Location)
 		e.wrapUp()
 		e.mainLoop.Quit()
 	case gst.MessageError:
-		log.Error(msg.String())
+		slog.Error(msg.String())
 		e.wrapUp()
 		e.mainLoop.Quit()
 	case gst.MessageWarning:
-		log.Warning(msg.String())
+		slog.Warn(msg.String())
 	case gst.MessageInfo:
-		log.Trace(msg.String())
+		rtc.Trace(msg.String())
 	case gst.MessageStateChanged:
 		prevState, state := msg.ParseStateChanged()
 		e.prevState.Store(prevState)
 		e.state.Store(state)
-		log.WithFields(log.Fields{
-			"previousState": e.prevState.Load(),
-			"newState":      e.state.Load(),
-		}).
+		slog.With(
+			"previousState", e.prevState.Load(),
+			"newState", e.state.Load(),
+		).
 			Debug("Pipeline state changed")
 
 		e.updateMPRIS(false)
@@ -291,15 +291,15 @@ func (e *engine) handleBusMessage(msg *gst.Message) bool {
 		}
 		onerror.Log(e.playbin.Load().SetState(e.state.Load()))
 	default:
-		log.Trace(msg.String())
+		rtc.Trace(msg.String())
 	}
 
 	return true
 }
 
 func (e *engine) playStream(pb *models.Playback) {
-	entry := log.WithField("pb", *pb)
-	entry.Info("Starting playStream")
+	logw := slog.With("pb", *pb)
+	logw.Info("Starting playStream")
 
 	e.pb.Store(pb)
 	e.terminate.Store(false)
@@ -312,7 +312,7 @@ func (e *engine) playStream(pb *models.Playback) {
 	if e.pb.Load() == nil || pb.Location == "" {
 		return
 	}
-	entry.Debug("Playback is valid")
+	logw.Debug("Playback is valid")
 
 	var err error
 
@@ -321,19 +321,19 @@ func (e *engine) playStream(pb *models.Playback) {
 	playbin, err := gst.NewElementWithName("playbin", "m3uetc-playbin")
 	e.playbin.Store(playbin)
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to create playbin", "error", err)
 		return
 	}
-	entry.Debug("Playbin created")
+	logw.Debug("Playbin created")
 
 	if e.playbin.Load() == nil {
-		entry.Error("Not all elements could be created")
+		logw.Error("Not all elements could be created")
 		return
 	}
 
 	flags, err := e.playbin.Load().GetProperty("flags")
 	if err != nil {
-		entry.Errorf("Unable to get flags: %v", err)
+		logw.Error("Unable to get flags", "error", err)
 	} else {
 		eflags := flags.(uint)
 		eflags = eflags &^ (1 << 0) // no video
@@ -342,12 +342,11 @@ func (e *engine) playStream(pb *models.Playback) {
 		e.playbin.Load().SetArg("flags", strconv.FormatInt(int64(eflags), 10))
 		fflags, _ := e.playbin.Load().GetProperty("flags")
 		if fflags.(uint) != eflags {
-			entry.WithFields(log.Fields{
-				"initialFlags":  flags.(uint),
-				"expectedFlags": eflags,
-				"finalFlags":    fflags,
-			}).
-				Warn("Flags could not be set")
+			logw.With(
+				"initialFlags", flags,
+				"expectedFlags", eflags,
+				"finalFlags", fflags,
+			).Warn("Flags could not be set")
 		}
 	}
 
@@ -360,11 +359,11 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	e.state.Store(gst.StatePlaying)
 	if err := e.playbin.Load().SetState(e.state.Load()); err != nil {
-		entry.Errorf("Unable to start playback: %v", err)
+		logw.Error("Unable to start playback", "error", err)
 		pb.Blacklist()
 		return
 	}
-	entry.Debugf("State changed: %d\n", gst.StatePlaying)
+	logw.Debug("State changed", "state", gst.StatePlaying)
 
 	pqctx, cancelpq := context.WithCancel(context.Background())
 	go e.performQueries(pqctx)
@@ -379,7 +378,7 @@ func (e *engine) playStream(pb *models.Playback) {
 
 	cancelpq()
 
-	entry.Debug("End of playback")
+	logw.Debug("End of playback")
 	e.state.Store(gst.StateNull)
 	e.playbin.Load().SetState(e.state.Load())
 }
@@ -405,7 +404,7 @@ func (e *engine) performQueries(ctx context.Context) {
 			var position int64
 			var ok bool
 			if ok, position = e.playbin.Load().QueryPosition(gst.FormatTime); !ok {
-				log.Warn("Could not query current position")
+				slog.Warn("Could not query current position")
 			}
 
 			if position > 0 {
@@ -417,7 +416,7 @@ func (e *engine) performQueries(ctx context.Context) {
 			if e.duration.Load() == 0 {
 				var duration int64
 				if ok, duration = e.playbin.Load().QueryDuration(gst.FormatTime); !ok {
-					log.Warn("Could not query current duration")
+					slog.Warn("Could not query current duration")
 				}
 				e.duration.Store(duration)
 				broadcastToSubscribers(subscription.ToPlaybackEvent)
@@ -432,11 +431,11 @@ func (e *engine) performQueries(ctx context.Context) {
 					format, seekable, start, end = q.ParseSeeking()
 					e.seekable.Store(seekable)
 					if e.seekable.Load() {
-						log.WithFields(log.Fields{
-							"format": format,
-							"start":  start,
-							"end":    end,
-						}).
+						slog.With(
+							"format", format,
+							"start", start,
+							"end", end,
+						).
 							Debug("Seeking is ENABLED")
 						go func() {
 							if e.pb.Load().Skip > 0 {
@@ -444,10 +443,10 @@ func (e *engine) performQueries(ctx context.Context) {
 							}
 						}()
 					} else {
-						log.Debug("Seeking is DISABLED for this stream")
+						slog.Debug("Seeking is DISABLED for this stream")
 					}
 				} else {
-					log.Debug("Seeking query failed")
+					slog.Debug("Seeking query failed")
 				}
 				e.seekableDone.Store(true)
 			}
@@ -458,7 +457,7 @@ func (e *engine) performQueries(ctx context.Context) {
 func (e *engine) resumeActivePlaylist() {
 	e.pt.Store(models.GetActivePlaylistTrack())
 	if e.pt.Load() != nil {
-		log.Info("Resuming playback for active playlist")
+		slog.Info("Resuming playback for active playlist")
 	}
 }
 
@@ -495,7 +494,7 @@ func (e *engine) updateMPRIS(destroy bool) {
 		mprisInstance := mpris.New()
 		e.mpris = &Player{mprisInstance, PlaybackStatusStopped}
 		if err := mprisInstance.Setup(e.mpris); err != nil {
-			log.Error(err)
+			slog.Error("Failed to setup mpris instance", "error", err)
 			deleteMPRIS()
 		}
 		return

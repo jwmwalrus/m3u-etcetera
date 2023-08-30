@@ -2,11 +2,11 @@ package models
 
 import (
 	"context"
+	"log/slog"
 	"math/rand"
+	"slices"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -27,43 +27,27 @@ var (
 	PlaybackChanged chan struct{} = make(chan struct{}, 1)
 )
 
-// DataCreator defines a DML interface of CRUD to create.
-type DataCreator interface {
+// Creator defines a DML interface of CRUD to create.
+type Creator interface {
 	Create() error
-}
-
-// DataCreatorTx defines a DML interface of CRUD to create, with transactions.
-type DataCreatorTx interface {
 	CreateTx(*gorm.DB) error
 }
 
-// DataDeleter defines a DML interface of CRUD to delete.
-type DataDeleter interface {
+// Deleter defines a DML interface of CRUD to delete.
+type Deleter interface {
 	Delete() error
-}
-
-// DataDeleterTx defines a DML interface of CRUD to delete, with transactions.
-type DataDeleterTx interface {
 	DeleteTx(*gorm.DB) error
 }
 
-// DataReader defines a DML interface of CRUD for reading.
-type DataReader interface {
+// Reader defines a DML interface of CRUD for reading.
+type Reader interface {
 	Read(int64) error
-}
-
-// DataReaderTx defines a DML interface of CRUD for reading, with transactions.
-type DataReaderTx interface {
 	ReadTx(*gorm.DB, int64) error
 }
 
-// DataUpdater defines a DML interface of CRUD to update.
-type DataUpdater interface {
+// Saver defines a DML interface of CRUD to update.
+type Saver interface {
 	Save() error
-}
-
-// DataUpdaterTx defines a DML interface of CRUD to update, with transactions.
-type DataUpdaterTx interface {
 	SaveTx(*gorm.DB) error
 }
 
@@ -93,11 +77,11 @@ func DoInitialCleanup() {
 	for _, pl := range pls {
 		err := tx.Where("playlist_id = ?", pl.ID).Delete(&PlaylistTrack{}).Error
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to delete closed, transient playlists from database", "error", err)
 			continue
 		}
 
-		log.Debugf("Removing delete playlist, ID=%d", pl.ID)
+		slog.Debug("Removing deleted playlist from database", "id", pl.ID)
 		tx.Where("id = ?", pl.ID).Delete(&Playlist{})
 	}
 
@@ -139,9 +123,11 @@ func DoInitialCleanup() {
 				diff = append(diff, id)
 			}
 
-			log.Debugf("Number of transient tracks: %d", len(tset))
-			log.Debugf("Number of transient tracks in use: %d", len(ptset))
-			log.Debugf("Number of unused transient tracks: %d", len(diff))
+			slog.With(
+				"total", len(tset),
+				"in-use", len(ptset),
+				"unused", len(diff),
+			).Debug("Number of transient tracks")
 			if len(diff) == 0 {
 				return
 			}

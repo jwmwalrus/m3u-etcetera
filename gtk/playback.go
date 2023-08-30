@@ -1,17 +1,18 @@
 package gtkui
 
 import (
+	"log/slog"
+
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 )
 
 func setupPlayback(signals *map[string]interface{}) (err error) {
-	log.Info("Setting up playback")
+	slog.Info("Setting up playback")
 
 	(*signals)["on_control_prev_clicked"] = func(btn *gtk.ToolButton) {
 		go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_PREVIOUS)
@@ -36,12 +37,12 @@ func setupPlayback(signals *map[string]interface{}) (err error) {
 }
 
 func onControlClicked(btn *gtk.ToolButton, action m3uetcpb.PlaybackAction) {
-	entry := log.WithField("action", action.String())
-	entry.Info("ToolButton clicked fot playback action")
+	logw := slog.With("action", action.String())
+	logw.Info("ToolButton clicked fot playback action")
 
 	req := &m3uetcpb.ExecutePlaybackActionRequest{Action: action}
 	if err := dialer.ExecutePlaybackAction(req); err != nil {
-		entry.Error(err)
+		logw.Error("Failed to execute playback action", "error", err)
 	}
 }
 

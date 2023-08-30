@@ -4,19 +4,19 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
+	"slices"
 	"strconv"
 
 	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/impexp"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -43,49 +43,52 @@ type Playlist struct {
 	Playbar         Playbar       `json:"playbar" gorm:"foreignKey:PlaybarID"`
 }
 
-// Create implements the DataCreator interface.
+// Create implements the Creator interface.
 func (pl *Playlist) Create() (err error) {
 	return pl.CreateTx(db)
 }
 
-// CreateTx implements the DataCreatorTx interface.
+// CreateTx implements the CreatorTx interface.
 func (pl *Playlist) CreateTx(tx *gorm.DB) (err error) {
 	err = tx.Create(pl).Error
 	return
 }
 
-// Delete implements the DataDeleter interface.
+// Delete implements the Deleter interface.
 func (pl *Playlist) Delete() (err error) {
 	return pl.DeleteTx(db)
 }
 
-// DeleteTx implements the DataDeleterTx interface.
+// DeleteTx implements the DeleterTx interface.
 func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
-	entry := log.WithField("pl", pl)
-	entry.Info("Deleting playlist")
+	logw := slog.With("pl", *pl)
+	logw.Info("Deleting playlist")
 
 	pl.DeleteDynamicTracks(tx)
 
 	pqys := []PlaylistQuery{}
 	if err = tx.Where("playlist_id = ?", pl.ID).Find(&pqys).Error; err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find playlist queries in database", "error", err)
 		return
 	}
 
 	pts := []PlaylistTrack{}
 	if err = tx.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find playlist tracks in database", "error", err)
 		return
 	}
 
 	for i := range pqys {
 		if err := pqys[i].DeleteTx(tx); err != nil {
-			entry.Warn(err)
+			logw.With(
+				"pqy", pqys[i],
+				"error", err,
+			).Warn("Failed to delete playlist query")
 		}
 	}
 
 	for i := range pts {
-		onerror.WithEntry(entry).Log(pts[i].DeleteTx(tx))
+		onerror.NewRecorder(logw).Log(pts[i].DeleteTx(tx))
 	}
 
 	pl.Transient = true
@@ -95,23 +98,33 @@ func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
 	return
 }
 
-// Read implements the DataReader interface.
+// Read implements the Reader interface.
 func (pl *Playlist) Read(id int64) error {
-	return db.Joins("Playbar").
+	return pl.ReadTx(db, id)
+}
+
+// ReadTx implements the Reader interface.
+func (pl *Playlist) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.Joins("Playbar").
 		First(pl, id).
 		Error
 }
 
-// Save implements the DataUpdater interface.
+// Save implements the Saver interface.
 func (pl *Playlist) Save() error {
 	return db.Save(pl).Error
+}
+
+// SaveTx implements the Saver interface.
+func (pl *Playlist) SaveTx(tx *gorm.DB) error {
+	return tx.Save(pl).Error
 }
 
 // ToProtobuf implments ProtoOut interface.
 func (pl *Playlist) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pl)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to marshal playlist", "error", err)
 		return &m3uetcpb.Playlist{}
 	}
 
@@ -197,7 +210,7 @@ func (pl *Playlist) DeleteDynamicTracks(tx *gorm.DB) {
 		Find(&pts).
 		Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find dynamic playlist tracks in database", "error", err)
 		return
 	}
 
@@ -273,7 +286,7 @@ func (pl *Playlist) GetQueries() []*PlaylistQuery {
 		Find(&pqs).
 		Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find playlist queries in database", "error", err)
 		return []*PlaylistQuery{}
 	}
 
@@ -348,7 +361,7 @@ func (pl *Playlist) GetTracks(limit int) ([]*PlaylistTrack, []*Track) {
 	}
 
 	if err := tx.Find(&pts).Error; err != nil {
-		log.Error(err)
+		slog.Error("Failed to find playlist tracks in database", "error", err)
 		return []*PlaylistTrack{}, []*Track{}
 	}
 
@@ -365,7 +378,10 @@ func (pl *Playlist) createTracks(trackIds []int64,
 	for _, id := range trackIds {
 		t := Track{}
 		if err = t.Read(id); err != nil {
-			log.Error(err)
+			slog.With(
+				"id", id,
+				"error", err,
+			).Error("Failed to read track")
 			return
 		}
 		pts = append(pts, PlaylistTrack{PlaylistID: pl.ID, TrackID: id})
@@ -398,7 +414,10 @@ func FindPlaylistsIn(ids []int64) (pls []*Playlist, notFound []int64) {
 		Find(&s).
 		Error
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"ids", ids,
+			"error", err,
+		).Error("Failed to find playlists in database")
 		return
 	}
 
@@ -421,7 +440,7 @@ func GetTransientNameForPlaylist(queryID int64) string {
 	pls := []Playlist{}
 	err := db.Find(&pls).Error
 	if err != nil {
-		log.Warn(err)
+		slog.Warn("Failed to find all playlists in database", "error", err)
 		return "Playlist unknown"
 	}
 	names := []string{}

@@ -2,6 +2,7 @@ package pane
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -10,7 +11,6 @@ import (
 	musicpane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/music"
 	podcastspane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/podcasts"
 	radiopane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/radio"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -56,8 +56,7 @@ func init() {
 func Add(idx m3uetcpb.Perspective, nb *gtk.Notebook,
 	signals *map[string]interface{}) (err error) {
 
-	log.WithField("idx", idx.String()).
-		Info("Adding perspective to notebook")
+	slog.Info("Adding perspective to notebook", "idx", idx.String())
 
 	data, ok := paneList[idx]
 	if !ok {

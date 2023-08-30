@@ -2,13 +2,13 @@ package playlists
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -63,7 +63,7 @@ func Setup(signals *map[string]interface{}) (err error) {
 func GetFocused(p m3uetcpb.Perspective) int64 {
 	nb, err := builder.GetNotebook(perspToNotebook[p])
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get notebook from builder", "error", err)
 		return 0
 	}
 
@@ -92,7 +92,7 @@ func createPlaylist(btn *gtk.Button, p m3uetcpb.Perspective) {
 	}
 	res, err := dialer.ExecutePlaylistAction(req)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to execute playlist action", "error", err)
 		return
 	}
 
@@ -106,7 +106,7 @@ func setFocused() {
 
 	nb, err := builder.GetNotebook(perspToNotebook[focusRequest.p])
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get notebook from builder", "error", err)
 		return
 	}
 
@@ -125,17 +125,18 @@ func setFocused() {
 	}
 
 	if headerName == "" {
-		log.Warnf(
-			"Playlist with ID=%v is not open, so cannot be focused",
-			focusRequest.id,
-		)
+		slog.With("ID", focusRequest.id).
+			Warn("Playlist is not open, so cannot be focused")
 		return
 	}
 
 	for ipage := 0; ipage < nb.GetNPages(); ipage++ {
 		page, err := nb.GetNthPage(ipage)
 		if err != nil {
-			log.Warn(err)
+			slog.With(
+				"page", ipage,
+				"error", err,
+			).Warn("Failed to get page from notebook")
 			continue
 		}
 		header, _ := nb.GetTabLabel(page)

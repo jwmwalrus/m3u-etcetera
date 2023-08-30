@@ -3,18 +3,18 @@ package database
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/go-gormigrate/gormigrate/v2"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/migrations"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
 
-	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -70,7 +70,8 @@ func Instance() *gorm.DB {
 
 // Open creates the application database, if it doesn't exist.
 func Open() *rtc.Unloader {
-	entry := log.WithField("dsn", DSN())
+	logw := slog.With("dsn", DSN())
+	onerrorw := onerror.NewRecorder(logw)
 
 	var err error
 
@@ -83,9 +84,7 @@ func Open() *rtc.Unloader {
 		DryRun: rtc.FlagDry(),
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	onerror.WithEntry(entry).Panic(err)
-
-	// TODO: connect with logrus
+	onerrorw.Fatal(err)
 
 	modelsCtx, modelsCancel = context.WithCancel(context.Background())
 	models.SetUp(modelsCtx, conn)
@@ -94,12 +93,11 @@ func Open() *rtc.Unloader {
 	m := gormigrate.New(conn, gormigrate.DefaultOptions, migrations.All())
 
 	m.InitSchema(migrations.InitSchema)
-	onerror.WithEntry(entry).Panic(m.Migrate())
+	onerrorw.Fatal(m.Migrate())
 
 	go models.DoInitialCleanup()
 
-	log.WithField("dsn", DSN()).
-		Info("Database loaded")
+	logw.Info("Database loaded")
 
 	return unloader
 }
@@ -138,9 +136,9 @@ func backupDatabase() {
 		base.Conf.Server.Database.Backup {
 		path := Path()
 		_, err := os.Stat(path)
-		if !os.IsNotExist(err) {
+		if err == nil {
 			if _, err := exec.LookPath("sqlite3"); err != nil {
-				log.Error(err)
+				slog.Error("Failed to find sqlite3", "error", err)
 				return
 			}
 
@@ -148,7 +146,10 @@ func backupDatabase() {
 				Command("sqlite3", path, ".backup "+path+".bak").
 				CombinedOutput()
 			if err != nil {
-				log.WithField("output", out).Error(err)
+				slog.With(
+					"output", out,
+					"error", err,
+				).Error("Failed to backup database")
 				return
 			}
 		}

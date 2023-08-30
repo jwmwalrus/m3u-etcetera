@@ -2,9 +2,9 @@ package base
 
 import (
 	"path/filepath"
+	"slices"
 
 	"github.com/jwmwalrus/bnp/urlstr"
-	"golang.org/x/exp/slices"
 )
 
 // Playlist extensions.

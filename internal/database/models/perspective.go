@@ -1,10 +1,12 @@
 package models
 
 import (
+	"log/slog"
+
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
+	"gorm.io/gorm"
 )
 
 // PerspectiveIndex defines the perpective index.
@@ -56,8 +58,7 @@ func (idx PerspectiveIndex) Description() string {
 
 // Activate sets the given perspective as active.
 func (idx PerspectiveIndex) Activate() (err error) {
-	log.WithField("idx", idx).
-		Info("Activating perspective")
+	slog.Info("Activating perspective", "idx", idx)
 
 	s := []Perspective{}
 	err = db.Where("active = 1 OR idx = ?", int(idx)).Find(&s).Error
@@ -97,9 +98,14 @@ type Perspective struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
-// Read implements the DataReader interface.
-func (p *Perspective) Read(id int64) (err error) {
-	return db.
+// Read implements the Reader interface.
+func (p *Perspective) Read(id int64) error {
+	return p.ReadTx(db, id)
+}
+
+// ReadTx implements the Reader interface.
+func (p *Perspective) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.
 		First(p, id).
 		Error
 }

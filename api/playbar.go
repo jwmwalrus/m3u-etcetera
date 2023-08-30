@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -9,7 +10,6 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/impexp"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -175,7 +175,10 @@ func (svc *PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 			for i := range pls {
 				bar := models.Playbar{}
 				if err := bar.Read(pls[i].PlaybarID); err != nil {
-					log.Error(err)
+					slog.With(
+						"ID", pls[i].PlaybarID,
+						"error", err,
+					).Error("Failed to read playbar")
 					continue
 				}
 				bar.OpenEntry(pls[i])
@@ -183,14 +186,20 @@ func (svc *PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 		case m3uetcpb.PlaybarAction_BAR_ACTIVATE:
 			bar := models.Playbar{}
 			if err := bar.Read(pls[0].PlaybarID); err != nil {
-				log.Error(err)
+				slog.With(
+					"ID", pls[0].PlaybarID,
+					"error", err,
+				).Error("Failed to read playbar")
 				return
 			}
 			svc.PbEvents.TryPlayingFromBar(pls[0], int(req.Position))
 		case m3uetcpb.PlaybarAction_BAR_DEACTIVATE:
 			bar := models.Playbar{}
 			if err := bar.Read(pls[0].PlaybarID); err != nil {
-				log.Error(err)
+				slog.With(
+					"ID", pls[0].PlaybarID,
+					"error", err,
+				).Error("Failed to read playbar")
 				return
 			}
 			svc.PbEvents.QuitPlayingFromBar(pls[0])
@@ -198,7 +207,10 @@ func (svc *PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 			for i := range pls {
 				bar := models.Playbar{}
 				if err := bar.Read(pls[i].PlaybarID); err != nil {
-					log.Error(err)
+					slog.With(
+						"ID", pls[i].PlaybarID,
+						"error", err,
+					).Error("Failed to read playbar")
 					continue
 				}
 				bar.CloseEntry(pls[i])
@@ -754,7 +766,7 @@ sLoop:
 			case models.PlaybarEventItemRemoved:
 				eout = m3uetcpb.PlaybarEvent_BE_ITEM_REMOVED
 			default:
-				log.Errorf("Ignoring unsupported playbar event: %v", e.Idx)
+				slog.Error("Ignoring unsupported playbar event", "event", e.Idx)
 				continue sLoop
 
 			}
@@ -765,7 +777,10 @@ sLoop:
 			case *models.Playlist:
 				fn = sendPlaylist
 			default:
-				log.Errorf("Ignoring unsupported data for %v: %+v", e.Idx, e.Data)
+				slog.With(
+					"event", e.Idx,
+					"data", e.Data,
+				).Error("Ignoring unsupported data")
 				continue sLoop
 			}
 

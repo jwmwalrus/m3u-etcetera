@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -9,13 +10,12 @@ import (
 	"time"
 
 	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/impexp"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/poser"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -74,26 +74,31 @@ type Playbar struct {
 	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Read implements the DataReader interface.
+// Read implements the Reader interface.
 func (b *Playbar) Read(id int64) error {
-	return db.Joins("Perspective").First(b, id).Error
+	return b.ReadTx(db, id)
+}
+
+// ReadTx implements the Reader interface.
+func (b *Playbar) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.Joins("Perspective").First(b, id).Error
 }
 
 // ActivateEntry activates the given entry in a playbar.
 func (b *Playbar) ActivateEntry(pl *Playlist) {
-	entry := log.WithField("pl", *pl)
-	entry.Info("Activating in playbar")
+	logw := slog.With("pl", *pl)
+	logw.Info("Activating in playbar")
 
 	pl.Open = true
 	if err := pl.Save(); err != nil {
-		entry.Error(err)
+		logw.Error("Failed to save playlist", "error", err)
 		return
 	}
 
 	pls := []Playlist{}
 	err := db.Where("playbar_id = ? and open=1", b.ID).Find(&pls).Error
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find playlists in database", "error", err)
 		return
 	}
 
@@ -104,19 +109,19 @@ func (b *Playbar) ActivateEntry(pl *Playlist) {
 		}
 		pls[i].Active = false
 	}
-	onerror.WithEntry(entry).Log(db.Save(&pls).Error)
+	onerror.NewRecorder(logw).Log(db.Save(&pls).Error)
 }
 
 // AppendToPlaylist -.
 func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 	locations []string) {
 
-	entry := log.WithFields(log.Fields{
-		"pl":        *pl,
-		"trackIds":  trackIds,
-		"locations": locations,
-	})
-	entry.Info("Appending tracks/locations to playlist")
+	logw := slog.With(
+		"pl", *pl,
+		"track_ids", trackIds,
+		"locations", locations,
+	)
+	logw.Info("Appending tracks/locations to playlist")
 
 	tx := db.Session(&gorm.Session{SkipHooks: true})
 
@@ -125,20 +130,20 @@ func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 		Find(&pts).
 		Error
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find playlist tracks in database", "error", err)
 		return
 	}
 
 	s, err := pl.createTracks(trackIds, locations)
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to create tracks", "error", err)
 		return
 	}
 
 	list := poser.AppendTo(pointers.FromSlice(pts), pointers.FromSlice(s)...)
 	pts = pointers.ToValues(list)
 	err = tx.Save(&pts).Error
-	onerror.WithEntry(entry).Log(err)
+	onerror.NewRecorder(logw).Log(err)
 
 	if pl.Open {
 		broadcastOpenPlaylist(pl.ID)
@@ -147,12 +152,12 @@ func (b *Playbar) AppendToPlaylist(pl *Playlist, trackIds []int64,
 
 // ClearPlaylist -.
 func (b *Playbar) ClearPlaylist(pl *Playlist) {
-	entry := log.WithField("pl", *pl)
-	entry.Info("Clearing tracks/locations in playlist")
+	logw := slog.With("pl", *pl)
+	logw.Info("Clearing tracks/locations in playlist")
 
 	pts := []PlaylistTrack{}
 	if err := db.Where("playlist_id = ?", pl.ID).Find(&pts).Error; err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find playlist tracks in database", "error", err)
 		return
 	}
 
@@ -161,7 +166,7 @@ func (b *Playbar) ClearPlaylist(pl *Playlist) {
 			Where("id > 0").
 			Delete(&pts).
 			Error
-		onerror.WithEntry(entry).Log(err)
+		onerror.NewRecorder(logw).Log(err)
 
 		broadcastOpenPlaylist(pl.ID)
 	}
@@ -235,18 +240,18 @@ func (b *Playbar) DeactivateEntry(pl *Playlist) {
 
 // DeleteFromPlaylist -.
 func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
-	entry := log.WithFields(log.Fields{
-		"pl":       *pl,
-		"position": position,
-	})
-	entry.Info("Deleting position in playlist")
+	logw := slog.With(
+		"pl", *pl,
+		"position", position,
+	)
+	logw.Info("Deleting position in playlist")
 
 	pts := []PlaylistTrack{}
 	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
 		Find(&pts).
 		Error
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find playlist tracks in database", "error", err)
 		return
 	}
 	list, pt := poser.DeleteAt(pointers.FromSlice(pts), position)
@@ -254,11 +259,11 @@ func (b *Playbar) DeleteFromPlaylist(pl *Playlist, position int) {
 
 	if pt != nil && pt.ID > 0 {
 		if err := pt.Delete(); err != nil {
-			entry.Error(err)
+			logw.Error("Failed to delete playlist track", "error", err)
 			return
 		}
 	}
-	onerror.WithEntry(entry).Log(db.Save(&pts).Error)
+	onerror.NewRecorder(logw).Log(db.Save(&pts).Error)
 }
 
 // DestroyEntry deletes a playlist.
@@ -299,7 +304,7 @@ func (b *Playbar) GetAllGroups(limit int) []*PlaylistGroup {
 	}
 	err := tx.Find(&pgs).Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find all playlist groups in database", "error", err)
 		return []*PlaylistGroup{}
 	}
 
@@ -388,26 +393,26 @@ func (b *Playbar) ImportPlaylist(location string, asTransient bool) (pl *Playlis
 func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 	trackIds []int64, locations []string) {
 
-	entry := log.WithFields(log.Fields{
-		"pl":        *pl,
-		"position":  position,
-		"trackIds":  trackIds,
-		"locations": locations,
-	})
-	entry.Info("Inserting tracks/locations into playlist")
+	logw := slog.With(
+		"pl", *pl,
+		"position", position,
+		"track_ids", trackIds,
+		"locations", locations,
+	)
+	logw.Info("Inserting tracks/locations into playlist")
 
 	pts := []PlaylistTrack{}
 	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
 		Find(&pts).
 		Error
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find playlist tracks in database", "error", err)
 		return
 	}
 
 	s, err := pl.createTracks(trackIds, locations)
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to create tracks", "error", err)
 		return
 	}
 
@@ -417,7 +422,7 @@ func (b *Playbar) InsertIntoPlaylist(pl *Playlist, position int,
 	err = db.Session(&gorm.Session{SkipHooks: true}).
 		Save(&pts).
 		Error
-	onerror.WithEntry(entry).Log(err)
+	onerror.NewRecorder(logw).Log(err)
 
 	broadcastOpenPlaylist(pl.ID)
 }
@@ -458,31 +463,31 @@ func (b *Playbar) MovePlaylistTrack(pl *Playlist, to, from int) {
 		return
 	}
 
-	entry := log.WithFields(log.Fields{
-		"pl":   *pl,
-		"to":   to,
-		"from": from,
-	})
-	entry.Info("Moving track in playlist")
+	logw := slog.With(
+		"pl", *pl,
+		"to", to,
+		"from", from,
+	)
+	logw.Info("Moving track in playlist")
 
 	pts := []PlaylistTrack{}
 	err := db.Where("playlist_id = ?", pl.ID).Order("position ASC").
 		Find(&pts).
 		Error
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find playlist tracks in database", "error", err)
 		return
 	}
 
 	list := poser.MoveTo(pointers.FromSlice(pts), to, from)
 	moved := pointers.ToValues(list)
-	onerror.WithEntry(entry).Log(db.Save(&moved).Error)
+	onerror.NewRecorder(logw).Log(db.Save(&moved).Error)
 }
 
 // OpenEntry opens the given playbar entry.
 func (b *Playbar) OpenEntry(pl *Playlist) {
 	if pl.Transient && !pl.Open {
-		log.Warn("Ignoring attempt to reopen transient playlist marked for deletiion")
+		slog.Warn("Ignoring attempt to reopen transient playlist marked for deletiion")
 		return
 	}
 	pl.Open = true
@@ -497,12 +502,12 @@ func (b *Playbar) PrependToPlaylist(pl *Playlist, trackIds []int64,
 
 // QueryInPlaylist -.
 func (bar *Playbar) QueryInPlaylist(qy *Query, qybs []QueryBoundaryTx, pl *Playlist) {
-	entry := log.WithFields(log.Fields{
-		"pl":        *pl,
-		"qy":        *qy,
-		"len(qybs)": len(qybs),
-	})
-	entry.Info("Appending query result tracks to playlist")
+	logw := slog.With(
+		"pl", *pl,
+		"qy", *qy,
+		"len(qybs)", len(qybs),
+	)
+	logw.Info("Appending query result tracks to playlist")
 
 	var lpf []int64
 	var ts []*Track
@@ -529,7 +534,7 @@ func (bar *Playbar) QueryInPlaylist(qy *Query, qybs []QueryBoundaryTx, pl *Playl
 
 	err := tx.Where("playlist_id = ?", pl.ID).Find(&pts).Error
 	if err != nil {
-		log.Error(err)
+		logw.Error("Failed to find playlist tracks in database", "error", err)
 		return
 	}
 
@@ -540,7 +545,7 @@ func (bar *Playbar) QueryInPlaylist(qy *Query, qybs []QueryBoundaryTx, pl *Playl
 	list := poser.AppendTo(pointers.FromSlice(pts), pointers.FromSlice(s)...)
 	pts = pointers.ToValues(list)
 	err = tx.Save(&pts).Error
-	onerror.WithEntry(entry).Log(err)
+	onerror.NewRecorder(logw).Log(err)
 
 	if pl.Open {
 		broadcastOpenPlaylist(pl.ID)
@@ -628,7 +633,10 @@ func (b *Playbar) UpdateGroup(pg *PlaylistGroup, name, descr string,
 func (b *Playbar) getPerspectiveIndex() (idx PerspectiveIndex) {
 	p := Perspective{}
 	if err := p.Read(b.PerspectiveID); err != nil {
-		log.Error(err)
+		slog.With(
+			"perspective_id", b.PerspectiveID,
+			"error", err,
+		).Error("Failed to read perspective")
 		return
 	}
 	idx = PerspectiveIndex(p.Idx)
@@ -705,7 +713,7 @@ func DeactivatePlaybars() {
 		Find(&pls).
 		Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find active playlists in database", "error", err)
 		return
 	}
 
@@ -736,7 +744,7 @@ func GetOpenEntries() (pls []*Playlist, pts []*PlaylistTrack, ts []*Track) {
 	plsaux := []Playlist{}
 	err := db.Where("open = 1").Find(&plsaux).Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find all open playlists in database", "error", err)
 		return
 	}
 
@@ -748,7 +756,7 @@ func GetOpenEntries() (pls []*Playlist, pts []*PlaylistTrack, ts []*Track) {
 		Find(&ptsaux).
 		Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find all open playlists in database", "error", err)
 		return
 	}
 	tsaux := []Track{}
@@ -784,7 +792,7 @@ func GetPlaybarStore() (
 		Find(&pgsaux).
 		Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find all public playlists groups in database", "error", err)
 		return
 	}
 
@@ -794,7 +802,7 @@ func GetPlaybarStore() (
 		Find(&plsaux).
 		Error
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to find all playlists in database", "error", err)
 		return
 	}
 

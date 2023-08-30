@@ -3,12 +3,12 @@ package models
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/onerror"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -26,28 +26,41 @@ type QueueTrack struct { // too transient
 	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`
 }
 
-// Create implements the DataCreator interface.
-func (qt *QueueTrack) Create() (err error) {
-	err = db.Create(qt).Error
-	return
+// Create implements the Creator interface.
+func (qt *QueueTrack) Create() error {
+	return qt.CreateTx(db)
 }
 
-// Read implements the DataReader interface.
+// CreateTx implements the Creator interface.
+func (qt *QueueTrack) CreateTx(tx *gorm.DB) error {
+	return tx.Create(qt).Error
+}
+
+// Read implements the Reader interface.
 func (qt *QueueTrack) Read(id int64) error {
-	return db.First(qt, id).Error
+	return qt.ReadTx(db, id)
 }
 
-// Save implements the DataUpdater interface.
-func (qt *QueueTrack) Save() (err error) {
-	err = db.Save(qt).Error
-	return
+// ReadTx implements the Reader interface.
+func (qt *QueueTrack) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.First(qt, id).Error
+}
+
+// Save implements the Saver interface.
+func (qt *QueueTrack) Save() error {
+	return qt.SaveTx(db)
+}
+
+// SaveTx implements the Saver interface.
+func (qt *QueueTrack) SaveTx(tx *gorm.DB) error {
+	return tx.Save(qt).Error
 }
 
 // ToProtobuf implements the ProtoOut interface.
 func (qt *QueueTrack) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(qt)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to marshal queue track", "error", err)
 		return &m3uetcpb.QueueTrack{}
 	}
 
@@ -97,15 +110,15 @@ func (qt *QueueTrack) SetIgnore(ignore bool) {
 // GetAllQueueTracks returns all queue tracks for the given perspective,
 // constrained by a limit.
 func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts []*Track) {
-	entry := log.WithFields(log.Fields{
-		"idx":   idx,
-		"limit": limit,
-	})
-	entry.Info("Getting all queue tracks")
+	logw := slog.With(
+		"idx", idx,
+		"limit", limit,
+	)
+	logw.Info("Getting all queue tracks")
 
 	q, err := idx.GetPerspectiveQueue()
 	if err != nil {
-		entry.Error(err)
+		logw.Error("Failed to get perspective queue", "error", err)
 		return
 	}
 
@@ -121,7 +134,7 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts [
 	ts = []*Track{}
 	s := []QueueTrack{}
 	if err = tx.Find(&s).Error; err != nil {
-		entry.Error(err)
+		logw.Error("Failed to find queue tracks in database", "error", err)
 		return
 	}
 
@@ -149,7 +162,7 @@ func GetAllQueueTracks(idx PerspectiveIndex, limit int) (qts []*QueueTrack, ts [
 
 // GetQueueStore returns all queue tracks for all perspectives.
 func GetQueueStore() (qs []*QueueTrack, ts []*Track, dig []*PerspectiveDigest) {
-	log.Info("Getting queue store")
+	slog.Info("Getting queue store")
 
 	dig = []*PerspectiveDigest{}
 
@@ -177,22 +190,25 @@ func findQueueTrack(ctx context.Context) {
 				qt := QueueTrack{}
 				err := qt.Read(id)
 				if err != nil {
-					log.Error(err)
+					slog.With(
+						"id", id,
+						"error", err,
+					).Error("Failed to read queue track")
 					return
 				}
 				if qt.TrackID > 0 {
 					return
 				}
 
-				entry := log.WithField("qt", qt)
-				entry.Info("Finding track for queue entry")
+				logw := slog.With("qt", qt)
+				logw.Info("Finding track for queue entry")
 
 				t := Track{}
 				if err := db.Where("location = ?", qt.Location).First(&t).Error; err != nil {
 					return
 				}
 				qt.TrackID = t.ID
-				onerror.WithEntry(entry).Log(qt.Save())
+				onerror.NewRecorder(logw).Log(qt.Save())
 			}(id)
 		}
 	}

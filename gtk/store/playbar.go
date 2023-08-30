@@ -2,7 +2,9 @@ package store
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -10,10 +12,8 @@ import (
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 )
 
 type playlistModelRow struct {
@@ -82,8 +82,7 @@ func (bd *playbarData) GetActiveID() int64 {
 
 // GetOpenPlaylist returns the open playlist for the given id.
 func (bd *playbarData) GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
-	log.WithField("id", id).
-		Info("Returning open playlist")
+	slog.Info("Returning open playlist", "id", id)
 
 	bd.mu.RLock()
 	defer bd.mu.RUnlock()
@@ -98,7 +97,7 @@ func (bd *playbarData) GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 
 // GetOpenPlaylists returns the list of open playlists.
 func (bd *playbarData) GetOpenPlaylists() []*m3uetcpb.Playlist {
-	log.Info("Returning open playlists")
+	slog.Info("Returning open playlists")
 
 	bd.mu.RLock()
 	defer bd.mu.RUnlock()
@@ -108,7 +107,7 @@ func (bd *playbarData) GetOpenPlaylists() []*m3uetcpb.Playlist {
 
 // GetPlaylist returns the playlist for the given id.
 func (bd *playbarData) GetPlaylist(id int64) *m3uetcpb.Playlist {
-	log.WithField("id", id).
+	slog.With("ID", id).
 		Info("Returning playlist")
 
 	bd.mu.RLock()
@@ -124,8 +123,7 @@ func (bd *playbarData) GetPlaylist(id int64) *m3uetcpb.Playlist {
 
 // GetPlaylistGroup returns the playlist group for the given id.
 func (bd *playbarData) GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
-	log.WithField("id", id).
-		Info("Returning playlist group")
+	slog.Info("Returning playlist group", "id", id)
 
 	bd.mu.RLock()
 	defer bd.mu.RUnlock()
@@ -157,7 +155,7 @@ func (bd *playbarData) GetPlaylistGroupActionsChanges() (toRemove []int64) {
 			},
 		)
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get tree-model values", "error", err)
 			return
 		}
 		id := row[PGColPlaylistGroupID].(int64)
@@ -558,7 +556,7 @@ func (bd *playbarData) updatePlaybarMaps() {
 	bd.mu.Lock()
 	defer bd.mu.Unlock()
 
-	log.Info("Updating playbar maps")
+	slog.Info("Updating playbar maps")
 
 	sort.SliceStable(bd.openPlaylistTrack, func(i, j int) bool {
 		if bd.openPlaylistTrack[i].PlaylistId !=
@@ -609,7 +607,7 @@ func (bd *playbarData) updatePlaybarModel() bool {
 		return false
 	}
 
-	log.Info("Updating playbar model")
+	slog.Info("Updating playbar model")
 
 	bd.updatePlaybarMaps()
 
@@ -631,7 +629,7 @@ func (bd *playbarData) updatePlaybarModel() bool {
 			var err error
 			model, rows, err = createPlaylistModel(pl.Id)
 			if err != nil {
-				log.Error(err)
+				slog.Error("Failed to create playlist model", "error", err)
 				return false
 			}
 		}
@@ -674,7 +672,7 @@ func (bd *playbarData) updatePlaybarModel() bool {
 					// change weight
 					iter, err := model.GetIterFromString(r.path)
 					if err != nil {
-						log.Errorf("Error changing weight: %v", err)
+						slog.Error("Failed to change weight", "error", err)
 						continue
 					}
 					err = model.Set(
@@ -683,7 +681,7 @@ func (bd *playbarData) updatePlaybarModel() bool {
 						[]interface{}{weight},
 					)
 					if err != nil {
-						log.Errorf("Error changing weight: %v", err)
+						slog.Error("Failed to change weight", "error", err)
 					}
 					continue
 				}
@@ -691,12 +689,12 @@ func (bd *playbarData) updatePlaybarModel() bool {
 				// remove
 				iter, err := model.GetIterFromString(r.path)
 				if err != nil {
-					log.Errorf("Error removing row: %v", err)
+					slog.Error("Failed to remove row", "error", err)
 					continue
 				}
 				if !model.Remove(iter) {
-					log.WithField("path", r.path).
-						Error("Error removing playlist row")
+					slog.With("path", r.path).
+						Error("Failed to remove playlist row")
 				}
 				delete(rows, int(pt.Position))
 			}
@@ -720,7 +718,7 @@ func (bd *playbarData) updatePlaybarModel() bool {
 						var err error
 						prev, err = model.GetIterFromString(r.path)
 						if err != nil {
-							log.Errorf("Error inserting after: %v", err)
+							slog.Error("Failed to get iter from string", "error", err)
 							continue ptLoop
 						}
 						break
@@ -810,13 +808,13 @@ func (bd *playbarData) updatePlaybarModel() bool {
 				},
 			)
 			if err != nil {
-				log.Errorf("Error setting row values: %v", err)
+				slog.Error("Failed to set row values", "error", err)
 			}
 
 			var ps string
 			path, err := model.GetPath(iter)
 			if err != nil {
-				log.Errorf("Error getting iter-path: %v", err)
+				slog.Error("Failed to get iter-path", "error", err)
 			} else {
 				ps = path.String()
 			}
@@ -828,11 +826,11 @@ func (bd *playbarData) updatePlaybarModel() bool {
 			if p > nTracks {
 				iter, err := model.GetIterFromString(r.path)
 				if err != nil {
-					log.Error(err)
+					slog.Error("Failed to get iter from string", "error", err)
 					continue
 				}
 				if !model.Remove(iter) {
-					log.Error("Error removing residual row")
+					slog.Error("Failed to remove residual row")
 				}
 				continue
 			}
@@ -852,7 +850,7 @@ func (bd *playbarData) updatePlaylistGroupModel() bool {
 		return false
 	}
 
-	log.Info("Updating playlist-group model")
+	slog.Info("Updating playlist-group model")
 
 	model := playlistGroupsModel
 	if model == nil {
@@ -899,7 +897,7 @@ func (bd *playbarData) updatePlaylistGroupModel() bool {
 
 // CreatePlaylistModel creates a playlist model.
 func CreatePlaylistModel(id int64) (model *gtk.ListStore, err error) {
-	log.Info("Creating a playlist model")
+	slog.Info("Creating a playlist model")
 
 	model, _, err = createPlaylistModel(id)
 	return
@@ -907,7 +905,7 @@ func CreatePlaylistModel(id int64) (model *gtk.ListStore, err error) {
 
 // CreatePlaylistGroupsModel creates a playlist model.
 func CreatePlaylistGroupsModel() (model *gtk.ListStore, err error) {
-	log.Info("Creating a playlist model")
+	slog.Info("Creating a playlist model")
 
 	playlistGroupsModel, err = gtk.ListStoreNew(PGColumns.getTypes()...)
 	if err != nil {
@@ -922,7 +920,7 @@ func CreatePlaylistGroupsModel() (model *gtk.ListStore, err error) {
 func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (
 	model *gtk.TreeStore, err error) {
 
-	log.Info("Creating playlists model")
+	slog.Info("Creating playlists model")
 
 	model, err = gtk.TreeStoreNew(PLTreeColumn.getTypes()...)
 	if err != nil {
@@ -935,7 +933,7 @@ func CreatePlaylistsTreeModel(p m3uetcpb.Perspective) (
 
 // DestroyPlaylistModel destroy a playlist model.
 func DestroyPlaylistModel(id int64) (err error) {
-	log.Info("Destroying a playlist model")
+	slog.Info("Destroying a playlist model")
 
 	n := len(playlists)
 	for i := range playlists {
@@ -959,7 +957,7 @@ func FilterPlaylistTreeBy(p m3uetcpb.Perspective, val string) {
 
 // GetPlaylistModel returns the playlist model for the given ID.
 func GetPlaylistModel(id int64) *gtk.ListStore {
-	log.Info("Returning playlist model")
+	slog.Info("Returning playlist model")
 
 	model, _ := getPlaylistModel(id)
 	return model
@@ -979,7 +977,7 @@ func SetUpdatePlaybarViewFn(fn func()) {
 func createPlaylistModel(id int64) (model *gtk.ListStore,
 	rows map[int]playlistModelRow, err error) {
 
-	log.Info("Creating a playlist model")
+	slog.Info("Creating a playlist model")
 
 	model, rows = getPlaylistModel(id)
 	if model != nil {
@@ -998,7 +996,7 @@ func createPlaylistModel(id int64) (model *gtk.ListStore,
 }
 
 func getPlaylistModel(id int64) (*gtk.ListStore, map[int]playlistModelRow) {
-	log.Info("Returning playlist model")
+	slog.Info("Returning playlist model")
 
 	for _, pl := range playlists {
 		if pl.id == id {

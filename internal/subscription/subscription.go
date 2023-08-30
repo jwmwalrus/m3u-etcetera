@@ -1,11 +1,11 @@
 package subscription
 
 import (
+	"log/slog"
 	"sync"
 
 	"github.com/jwmwalrus/bnp/ing2"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 )
 
 // Type defines the subscription type.
@@ -72,8 +72,7 @@ var (
 
 // Subscribe subscribes a client to the given event|store|model.
 func Subscribe(st Type) (*Subscriber, string) {
-	log.WithField("st", st).
-		Info("Subscribing")
+	slog.Info("Subscribing", "st", st)
 
 	rl, _ := ing2.GetRandomLetters(16)
 	s := Subscriber{
@@ -94,11 +93,7 @@ func Subscribe(st Type) (*Subscriber, string) {
 
 // Broadcast sends data to all subscribers.
 func Broadcast(st Type, es ...Event) {
-	log.WithFields(log.Fields{
-		"st": st,
-		"es": es,
-	}).
-		Trace("Broadcasting")
+	rtc.Trace("Broadcasting", "st", st, "es", es)
 
 	if st == ToNone && len(es) > 0 {
 		id, ok := es[0].Data.(string)
@@ -142,8 +137,7 @@ func Broadcast(st Type, es ...Event) {
 
 // MustUnsubscribe checks if the event means unsubscribing.
 func (s *Subscriber) MustUnsubscribe(e Event) bool {
-	log.WithField("e", e).
-		Trace("Checking if must unsubscribe")
+	rtc.Trace("Checking if must unsubscribe", "e", e)
 
 	ud, ok := e.Data.(unsubscribeData)
 	if !ok {
@@ -153,8 +147,7 @@ func (s *Subscriber) MustUnsubscribe(e Event) bool {
 }
 
 func removeSubscription(id string) {
-	log.WithField("id", id).
-		Info("Removing subscription")
+	slog.Info("Removing subscription", "id", id)
 
 	if unloading {
 		return

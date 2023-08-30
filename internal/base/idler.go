@@ -2,15 +2,14 @@ package base
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"os/signal"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
-
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 )
 
 const (
@@ -77,11 +76,10 @@ var (
 func DoTerminate(force bool) {
 	forceExit.Store(force || IsAppIdling())
 
-	log.WithFields(log.Fields{
-		"force":     force,
-		"forceExit": forceExit.Load(),
-	}).
-		Debug("Immediate termination status")
+	slog.With(
+		"force", force,
+		"forceExit", forceExit.Load(),
+	).Debug("Immediate termination status")
 }
 
 // GetBusy registers a process as busy, to prevent idle timeout.
@@ -90,8 +88,7 @@ func GetBusy(is IdleStatus) {
 		return
 	}
 
-	log.WithField("is", is).
-		Debug("server got a lot busier")
+	slog.Debug("server got a lot busier", "is", is)
 
 	idleStatusStack.mu.Lock()
 	idleStatusStack.s = append(idleStatusStack.s, is)
@@ -104,13 +101,13 @@ func GetBusy(is IdleStatus) {
 
 // GetFree registers a process as less busy.
 func GetFree(is IdleStatus) {
-	entry := log.WithField("is", is)
+	logw := slog.With("is", is)
 
 	idleStatusStack.mu.Lock()
 	defer idleStatusStack.mu.Unlock()
 
 	if is != IdleStatusIdle {
-		entry.Debug("server got a little less busy")
+		logw.Debug("server got a little less busy")
 
 		for i := len(idleStatusStack.s) - 1; i >= 0; i-- {
 			if is == idleStatusStack.s[i] {
@@ -121,10 +118,7 @@ func GetFree(is IdleStatus) {
 		}
 	}
 
-	entry.Debugf(
-		"Topmost idle status is %v",
-		idleStatusStack.s[len(idleStatusStack.s)-1],
-	)
+	logw.Debug("Topmost idle status", "status", idleStatusStack.s[len(idleStatusStack.s)-1])
 
 	if len(idleStatusStack.s) == 1 {
 		if !idleGotCalled.Load() {
@@ -138,42 +132,41 @@ func GetFree(is IdleStatus) {
 // processes are pending.
 func Idle(ctx context.Context) {
 	idleStatusStack.mu.RLock()
-	entry := log.WithFields(log.Fields{
-		"forceExit":            forceExit.Load(),
-		"len(idleStatusStack)": len(idleStatusStack.s) - 1,
-	})
+	logw := slog.With(
+		"forceExit", forceExit.Load(),
+		"len(idleStatusStack)", len(idleStatusStack.s)-1,
+	)
 	idleStatusStack.mu.RUnlock()
 
-	entry.Info("Starting Idle checks")
+	logw.Info("Starting Idle checks")
 
 	if !forceExit.Load() {
 		if IsAppBusy() || idleGotCalled.Load() {
-			entry.Info("Server is busy or already idling, so cancelling request")
+			logw.Info("Server is busy or already idling, so cancelling request")
 			<-ctx.Done()
 			return
 		}
 
 		idleGotCalled.Store(true)
-		entry.Info("Entering Idle state")
+		logw.Info("Entering Idle state")
 
 		select {
 		case <-time.After(time.Duration(ServerIdleTimeout) * time.Second):
 			if IsAppBusy() {
-				entry.Info("Server is busy, so cancelling timeout")
+				logw.Info("Server is busy, so cancelling timeout")
 				<-ctx.Done()
 				return
 			}
 			break
 		case <-ctx.Done():
-			entry.Info("idleCancel got called explicitly")
+			logw.Info("idleCancel got called explicitly")
 			idleGotCalled.Store(false)
 			return
 		}
 	}
 
 	if doneEmmitted.Load() > 0 {
-		entry.WithField("doneEmmitted", doneEmmitted.Load()).
-			Warn("ignoring further attempt at ctx.Done()")
+		logw.Warn("ignoring further attempt at ctx.Done()", "doneEmmitted", doneEmmitted.Load())
 
 		doneEmmitted.Add(1)
 		return
@@ -181,7 +174,7 @@ func Idle(ctx context.Context) {
 
 	doneEmmitted.Add(1)
 
-	entry.Info("Server seems to have been Idle for a while, and that's gotta stop!")
+	logw.Info("Server seems to have been Idle for a while, and that's gotta stop!")
 	InterruptSignal <- os.Interrupt
 }
 

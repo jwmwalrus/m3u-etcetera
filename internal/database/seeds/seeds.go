@@ -1,14 +1,15 @@
 package seeds
 
 import (
-	"github.com/jwmwalrus/onerror"
-	"github.com/jwmwalrus/seater"
+	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/quorum/seater"
 	"gorm.io/gorm"
 )
 
 // All seeds all initial data.
 func All(db *gorm.DB) {
-	h := seater.SeedHandlerNew(db)
+	h := seater.New(db)
+
 	h.Add(seater.Seed{
 		Name: "perspective",
 		Run:  SeedPerspective,
@@ -40,5 +41,5 @@ func All(db *gorm.DB) {
 		},
 	})
 
-	onerror.Panic(h.RunAll())
+	onerror.Fatal(h.RunAll())
 }

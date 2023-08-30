@@ -2,13 +2,13 @@ package api
 
 import (
 	"context"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -294,7 +294,7 @@ sLoop:
 			case models.QueryEventItemRemoved:
 				eout = m3uetcpb.QueryEvent_QYE_ITEM_REMOVED
 			default:
-				log.Errorf("Ignoring unsupported query event: %v", e.Idx)
+				slog.Error("Ignoring unsupported query event", "event", e.Idx)
 				continue sLoop
 
 			}

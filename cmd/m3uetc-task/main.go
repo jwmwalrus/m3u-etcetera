@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/task"
 	rtc "github.com/jwmwalrus/rtcycler"
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc/status"
 )
@@ -45,15 +45,15 @@ func main() {
 			if err != nil {
 				s, ok := status.FromError(err)
 				if !ok {
-					log.Error(err)
+					slog.Error("Command finished with error status", "error", err)
 					fmt.Fprintf(c.App.ErrWriter, err.Error()+"\n")
 					return
 				}
 
-				log.WithFields(log.Fields{
-					"code":    s.Code(),
-					"details": s.Details(),
-				}).Error(s.Message())
+				slog.With(
+					"code", s.Code(),
+					"details", s.Details(),
+				).Error(s.Message())
 				fmt.Fprintf(c.App.ErrWriter, s.Message()+"\n")
 			}
 		},

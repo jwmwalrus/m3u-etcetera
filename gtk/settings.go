@@ -2,18 +2,18 @@ package gtkui
 
 import (
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"strings"
 
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -100,7 +100,7 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 
 		_, err := dialer.AddCollection(req)
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to add collection", "error", err)
 			return
 		}
 	case gtk.RESPONSE_CANCEL:
@@ -132,12 +132,12 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 	case gtk.RESPONSE_APPLY:
 		name, err := osm.pg.name.GetText()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get text from playlist group name", "error", err)
 			return
 		}
 		descr, err := osm.pg.descr.GetText()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get text from playlist group description", "error", err)
 			return
 		}
 		ptext := osm.pg.persp.GetActiveText()
@@ -160,7 +160,7 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 }
 
 func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
-	log.Info("Setting up collections dialog")
+	slog.Info("Setting up collections dialog")
 
 	osm.coll.addDlg, err = builder.GetDialog("collections_add_dialog")
 	if err != nil {
@@ -311,7 +311,7 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 				int(v.idx),
 			)
 		} else {
-			log.Error("¿Cómo sabré si es pez o iguana?")
+			slog.Error("¿Cómo sabré si es pez o iguana?")
 			continue
 		}
 		if err != nil {
@@ -426,7 +426,7 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 				int(v.idx),
 			)
 		} else {
-			log.Error("¿Cómo sabré si es pez o iguana?")
+			slog.Error("¿Cómo sabré si es pez o iguana?")
 			continue
 		}
 		if err != nil {
@@ -482,7 +482,10 @@ func (osm *onSettingsMenu) hide() {
 		var err error
 		osm.pm, err = builder.GetPopoverMenu("settings_menu")
 		if err != nil {
-			log.Error(err)
+			slog.With(
+				"menu", "settings_menu",
+				"error", err,
+			).Error("Failed to get popover menu")
 			return
 		}
 	}
@@ -502,13 +505,13 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 		gtk.RESPONSE_CANCEL,
 	)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to create file-chooser-dialog", "error", err)
 		return
 	}
 
 	filter, err := gtk.FileFilterNew()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to create file-filter", "error", err)
 		return
 	}
 	filter.SetName("Playlist files")
@@ -527,7 +530,7 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 
 		locs, err := dlg.GetURIs()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get UIRs", "error", err)
 			return
 		}
 
@@ -537,12 +540,12 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 
 		msgList, err := dialer.ImportPlaylists(req)
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to import playlists", "error", err)
 			return
 		}
 
 		for _, msg := range msgList {
-			log.Error(msg)
+			slog.Error(msg)
 		}
 	case gtk.RESPONSE_CANCEL:
 	default:
@@ -562,14 +565,14 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 		gtk.RESPONSE_CANCEL,
 	)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to create file-chooser-dialog", "error", err)
 		return
 	}
 	defer dlg.Destroy()
 
 	filter, err := gtk.FileFilterNew()
 	if err != nil {
-		log.Error(err)
+		slog.Error("File to create file-filter", "error", err)
 		return
 	}
 	filter.SetName("Music files")
@@ -590,7 +593,7 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 	case gtk.RESPONSE_APPLY:
 		locs, err := dlg.GetURIs()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get UIRs", "error", err)
 			return
 		}
 
@@ -636,12 +639,12 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 
 			msgList, err := dialer.ImportPlaylists(req)
 			if err != nil {
-				log.Error(err)
+				slog.Error("Failed to import playlists", "error", err)
 				return
 			}
 
 			for _, msg := range msgList {
-				log.Error(msg)
+				slog.Error(msg)
 			}
 		}
 	case gtk.RESPONSE_CANCEL:

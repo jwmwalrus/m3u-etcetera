@@ -3,10 +3,10 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
@@ -25,42 +25,56 @@ type PlaylistTrack struct {
 	Track         Track    `json:"track" gorm:"foreignKey:TrackID"`
 }
 
-// Create implements the DataCreator interface.
+// Create implements the Creator interface.
 func (pt *PlaylistTrack) Create() error {
-	return db.Create(pt).Error
+	return pt.CreateTx(db)
 }
 
-// Delete implements the DataDeleter interface.
-func (pt *PlaylistTrack) Delete() (err error) {
+// CreateTx implements the Creator interface.
+func (pt *PlaylistTrack) CreateTx(tx *gorm.DB) error {
+	return tx.Create(pt).Error
+}
+
+// Delete implements the Deleter interface.
+func (pt *PlaylistTrack) Delete() error {
 	return pt.DeleteTx(db)
 }
 
-// DeleteTx implements the DataDeleterTx interface.
-func (pt *PlaylistTrack) DeleteTx(tx *gorm.DB) (err error) {
+// DeleteTx implements the DeleterTx interface.
+func (pt *PlaylistTrack) DeleteTx(tx *gorm.DB) error {
 	defer DeleteTrackIfTransient(pt.TrackID)
 
-	err = tx.Delete(pt).Error
-	return
+	return tx.Delete(pt).Error
 }
 
-// Read implements the DataReader interface.
-func (pt *PlaylistTrack) Read(id int64) (err error) {
-	return db.Joins("Playlist").
+// Read implements the Reader interface.
+func (pt *PlaylistTrack) Read(id int64) error {
+	return pt.ReadTx(db, id)
+}
+
+// ReadTx implements the Reader interface.
+func (pt *PlaylistTrack) ReadTx(tx *gorm.DB, id int64) error {
+	return tx.Joins("Playlist").
 		Joins("Track").
 		First(pt, id).
 		Error
 }
 
-// Save implements the DataUpdater interface.
+// Save implements the Saver interface.
 func (pt *PlaylistTrack) Save() error {
-	return db.Save(pt).Error
+	return pt.SaveTx(db)
+}
+
+// SaveTx implements the Saver interface.
+func (pt *PlaylistTrack) SaveTx(tx *gorm.DB) error {
+	return tx.Save(pt).Error
 }
 
 // ToProtobuf implments ProtoOut interface.
 func (pt *PlaylistTrack) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pt)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to marshal playlist track", "error", err)
 		return &m3uetcpb.PlaylistTrack{}
 	}
 

@@ -2,20 +2,20 @@ package musicpane
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
-	"github.com/jwmwalrus/onerror"
-	log "github.com/sirupsen/logrus"
 )
 
 type onMusicQuery struct {
@@ -29,7 +29,7 @@ type onMusicQuery struct {
 }
 
 func createMusicQueries() (omqy *onMusicQuery, err error) {
-	log.Info("Creating music queries view and model")
+	slog.Info("Creating music queries view and model")
 
 	omqy = &onMusicQuery{
 		onContext: &onContext{ct: queryContext},
@@ -85,7 +85,10 @@ func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
 
 	menu, err := builder.GetMenu("queries_view_context")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"menu", "queries_view_context",
+			"error", err,
+		).Error("Failed to get menu from builder")
 		return
 	}
 
@@ -93,21 +96,30 @@ func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
 
 	miEdit, err := builder.GetMenuItem("queries_view_context_edit")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"menu-item", "queries_view_context_edit",
+			"error", err,
+		).Error("Failed to get menu item from builder")
 		return
 	}
 	miEdit.SetSensitive(!qy.ReadOnly)
 
 	miDelete, err := builder.GetMenuItem("queries_view_context_delete")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"menu-item", "queries_view_context_delete",
+			"error", err,
+		).Error("Failed to get menu item from builder")
 		return
 	}
 	miDelete.SetSensitive(!qy.ReadOnly)
 
 	miToPl, err := builder.GetMenuItem("queries_view_context_to_playlist")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"menu-item", "queries_view_context_to_playlist",
+			"error", err,
+		).Error("Failed to get menu item from builder")
 		return
 	}
 	id := playlists.GetFocused(m3uetcpb.Perspective_MUSIC)
@@ -119,7 +131,7 @@ func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
 func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
 	ids := omqy.getSelection()
 	if len(ids) != 1 {
-		log.Error("Query selection vanished?")
+		slog.Error("Query selection vanished?")
 		return
 	}
 
@@ -131,7 +143,7 @@ func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
 		}
 
 		if _, err := dialer.QueryInPlaylist(req); err != nil {
-			log.Error(err)
+			slog.Error("Failed to get query in playlist", "error", err)
 		}
 		return
 	}
@@ -141,14 +153,14 @@ func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
 	}
 
 	if err := dialer.QueryInQueue(req); err != nil {
-		log.Error(err)
+		slog.Error("Failed to get query in queue", "error", err)
 	}
 }
 
 func (omqy *onMusicQuery) contextDelete(mi *gtk.MenuItem) {
 	ids := omqy.getSelection()
 	if len(ids) != 1 {
-		log.Error("Query selection vanished?")
+		slog.Error("Query selection vanished?")
 		return
 	}
 
@@ -157,19 +169,19 @@ func (omqy *onMusicQuery) contextDelete(mi *gtk.MenuItem) {
 	}
 
 	if err := dialer.RemoveQuery(req); err != nil {
-		log.Error(err)
+		slog.Error("Failed to remove query", "error", err)
 	}
 }
 
 func (omqy *onMusicQuery) contextEdit(mi *gtk.MenuItem) {
 	ids := omqy.getSelection()
 	if len(ids) != 1 {
-		log.Error("Query selection vanished?")
+		slog.Error("Query selection vanished?")
 		return
 	}
 
 	if err := omqy.edit(ids[0]); err != nil {
-		log.Errorf("Error while editing query: %v", err)
+		slog.Error("Failed to edit query", "error", err)
 		return
 	}
 }
@@ -177,17 +189,17 @@ func (omqy *onMusicQuery) contextEdit(mi *gtk.MenuItem) {
 func (omqy *onMusicQuery) contextNewPlaylist(mi *gtk.MenuItem) {
 	ids := omqy.getSelection()
 	if len(ids) != 1 {
-		log.Error("Query selection vanished?")
+		slog.Error("Query selection vanished?")
 		return
 	}
 
 	if err := omqy.newPlaylist(ids[0]); err != nil {
-		log.Errorf("Error while creating playlist from query: %v", err)
+		slog.Error("Failed to create playlist from query", "error", err)
 	}
 }
 
 func (omqy *onMusicQuery) createDialog() (err error) {
-	log.Info("Creating query dialog")
+	slog.Info("Creating query dialog")
 
 	err = builder.AddFromFile("ui/pane/query-dialog.ui")
 	if err != nil {
@@ -253,7 +265,7 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 				int(v.idx),
 			)
 		} else {
-			log.Error("¿Cómo sabré si es pez o iguana?")
+			slog.Error("¿Cómo sabré si es pez o iguana?")
 			continue
 		}
 		if err != nil {
@@ -267,55 +279,85 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 
 	omqy.name, err = builder.GetEntry("query_dialog_name")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_name",
+			"error", err,
+		).Error("Failed to get entry from builder")
 		return
 	}
 	omqy.id, err = builder.GetEntry("query_dialog_id")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_id",
+			"error", err,
+		).Error("Failed to get entry from builder")
 		return
 	}
 	omqy.descr, err = builder.GetEntry("query_dialog_description")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_description",
+			"error", err,
+		).Error("Failed to get entry from builder")
 		return
 	}
 	omqy.params, err = builder.GetEntry("query_dialog_params")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_params",
+			"error", err,
+		).Error("Failed to get entry from builder")
 		return
 	}
 	omqy.from, err = builder.GetEntry("query_dialog_from")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_from",
+			"error", err,
+		).Error("Failed to get entry from builder")
 		return
 	}
 	omqy.to, err = builder.GetEntry("query_dialog_to")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_to",
+			"error", err,
+		).Error("Failed to get entry from builder")
 		return
 	}
 
 	omqy.rating, err = builder.GetSpinButton("query_dialog_rating")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_rating",
+			"error", err,
+		).Error("Failed to get spin button from builder")
 		return
 	}
 	omqy.limit, err = builder.GetSpinButton("query_dialog_limit")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_limit",
+			"error", err,
+		).Error("Failed to get spin button from builder")
 		return
 	}
 
 	omqy.random, err = builder.GetCheckButton("query_dialog_random")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_random",
+			"error", err,
+		).Error("Failed to get check button from builder")
 		return
 	}
 
 	omqy.resultsLabel, err = builder.GetLabel("query_dialog_results_count")
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"entry", "query_dialog_results_count",
+			"error", err,
+		).Error("Failed to get check button from builder")
 		return
 	}
 	omqy.resultsLabel.SetVisible(false)
@@ -332,24 +374,24 @@ func (omqy *onMusicQuery) dblClicked(tv *gtk.TreeView,
 		[]store.ModelColumn{store.QYColTree, store.QYColTreeIDList},
 	)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get tree-view's tree-path values", "error", err)
 		return
 	}
-	log.Debugf("Doouble-clicked column value: %v", values[store.CColTree])
+	slog.Debug("Doouble-clicked column value", "value", values[store.CColTree])
 
 	ids, err := util.StringToIDList(values[store.QYColTreeIDList].(string))
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to convert string to ID list", "error", err)
 		return
 	}
 
 	if len(ids) != 1 {
-		log.Errorf("Length of ids is different from 1: %+v", ids)
+		slog.Error("Length of ids is different from 1", "IDs", ids)
 		return
 	}
 
 	if err := omqy.newPlaylist(ids[0]); err != nil {
-		log.Errorf("Error while editing query: %v", err)
+		slog.Error("Failed to edit query", "error", err)
 		return
 	}
 }
@@ -364,7 +406,7 @@ func (omqy *onMusicQuery) defineQuery(btn *gtk.ToolButton) {
 	case gtk.RESPONSE_APPLY:
 		qy, err := omqy.getQuery()
 		if err != nil {
-			log.Error(err)
+			slog.Error("Failed to get query", "error", err)
 		} else {
 			req := &m3uetcpb.AddQueryRequest{Query: qy}
 			dialer.AddQuery(req)
@@ -378,14 +420,14 @@ func (omqy *onMusicQuery) defineQuery(btn *gtk.ToolButton) {
 func (omqy *onMusicQuery) doSearch(btn *gtk.Button) {
 	qy, err := omqy.getQuery()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get query", "error", err)
 		return
 	}
 	qy.Name = ""
 	req := &m3uetcpb.QueryByRequest{Query: qy}
 	count, err := dialer.QueryBy(req)
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to query-by", "error", err)
 		return
 	}
 
@@ -396,7 +438,7 @@ func (omqy *onMusicQuery) doSearch(btn *gtk.Button) {
 func (omqy *onMusicQuery) edit(id int64) (err error) {
 	qy := store.QYData.GetQuery(id)
 	if qy == nil {
-		log.Errorf("Query returned from store is nil")
+		slog.Error("Query returned from store is nil")
 		return
 	}
 
@@ -423,7 +465,7 @@ func (omqy *onMusicQuery) edit(id int64) (err error) {
 func (omqy *onMusicQuery) filtered(se *gtk.SearchEntry) {
 	text, err := se.GetText()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get search entry text", "error", err)
 		return
 	}
 	store.FilterQueryTreeBy(text)
@@ -433,17 +475,17 @@ func (omqy *onMusicQuery) filtered(se *gtk.SearchEntry) {
 func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 	name, err := omqy.name.GetText()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get query name's text", "error", err)
 		return
 	}
 	descr, err := omqy.descr.GetText()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get query description's text", "error", err)
 		return
 	}
 	params, err := omqy.params.GetText()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get query param's text", "error", err)
 		return
 	}
 	ids, err := store.GetQueryResultsSelections()
@@ -457,12 +499,15 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 
 	idTxt, err := omqy.id.GetText()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get query ID's text", "error", err)
 		return
 	}
 	id, err := strconv.ParseInt(idTxt, 10, 64)
 	if err != nil {
-		log.Error(err)
+		slog.With(
+			"ID", idTxt,
+			"error", err,
+		).Error("Failed to parse query ID")
 		return
 	}
 
@@ -470,14 +515,17 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 
 	fromTxt, err := omqy.from.GetText()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get query `from`'s text", "error", err)
 		return
 	}
 	if fromTxt != "" && fromTxt != "0" {
 		var ft time.Time
 		ft, err = time.Parse("2006/01/02", fromTxt+"/01/01")
 		if err != nil {
-			log.Error(err)
+			slog.With(
+				"from", fromTxt,
+				"error", err,
+			).Error("Failed to parse query `from`")
 		} else {
 			from = ft.UnixNano()
 		}
@@ -485,14 +533,17 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 
 	toTxt, err := omqy.to.GetText()
 	if err != nil {
-		log.Error(err)
+		slog.Error("Failed to get query `to`'s text", "error", err)
 		return
 	}
 	if toTxt != "" && toTxt != "0" {
 		var tt time.Time
 		tt, err = time.Parse("2006/01/02", toTxt+"/01/01")
 		if err != nil {
-			log.Error(err)
+			slog.With(
+				"to", toTxt,
+				"error", err,
+			).Error("Failed to parse query `to`")
 		} else {
 			to = tt.UnixNano()
 		}
@@ -520,7 +571,7 @@ func (omqy *onMusicQuery) newPlaylist(id int64) error {
 	var playlistID int64
 	var err error
 	if playlistID, err = dialer.QueryInPlaylist(req); err != nil {
-		log.Error(err)
+		slog.Error("failed to get query in playlist", "error", err)
 
 		reqbar := &m3uetcpb.ExecutePlaybarActionRequest{
 			Action: m3uetcpb.PlaybarAction_BAR_CLOSE,

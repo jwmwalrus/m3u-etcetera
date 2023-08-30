@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
-	log "github.com/sirupsen/logrus"
 )
 
 // collectionTree defines the collection-tree hierarchy.
@@ -349,7 +349,7 @@ func (tree *collectionTree) rebuild() {
 	for i := range root {
 		root[i].appendNode(tree.model, nil)
 	}
-	log.Infof("Tree built in %v", time.Since(start))
+	slog.Info("Tree built", "took", time.Since(start))
 }
 
 func (tree *collectionTree) setFilterVal(val string) *collectionTree {

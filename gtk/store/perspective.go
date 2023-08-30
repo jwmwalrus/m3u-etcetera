@@ -1,6 +1,7 @@
 package store
 
 import (
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -8,7 +9,6 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
-	log "github.com/sirupsen/logrus"
 )
 
 // GetActivePerspective returns the active perspective.
@@ -49,7 +49,7 @@ func (pd *perspectiveData) SetPerspectiveUI() (err error) {
 }
 
 func (pd *perspectiveData) updateActivePerspective() bool {
-	log.Debug("Updating active perspective")
+	slog.Debug("Updating active perspective")
 
 	pd.mu.RLock()
 	defer pd.mu.RUnlock()
@@ -58,7 +58,7 @@ func (pd *perspectiveData) updateActivePerspective() bool {
 
 	id := strings.ToLower(active.String()) + "_perspective"
 	if !pd.combo.SetActiveID(id) {
-		log.Error("Error setting active perspective")
+		slog.Error("Error setting active perspective")
 	}
 
 	return false
