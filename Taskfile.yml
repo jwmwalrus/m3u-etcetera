@@ -191,6 +191,11 @@ tasks:
     cmds:
       - bumpy tag
 
+  changelog:
+    desc: Show the list of changes since the last tag
+    cmds:
+      - git log $(git describe --tags --abbrev=0)..HEAD --oneline
+
   ## protobuf commands
 
   proto:
