@@ -9,6 +9,16 @@ This project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.21.0] 2023-10-27
+
+Adapt to dependencies' changes
+
+### Updated
+
+* Adapt to rtcycler changes
+* Rework middleware code
+* Update dependencies, cleanup comments
+
 ## [0.20.0] 2023-05-22
 
 Twenty percent
