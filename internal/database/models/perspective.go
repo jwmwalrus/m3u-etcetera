@@ -98,12 +98,10 @@ type Perspective struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
-// Read implements the Reader interface.
 func (p *Perspective) Read(id int64) error {
 	return p.ReadTx(db, id)
 }
 
-// ReadTx implements the Reader interface.
 func (p *Perspective) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.
 		First(p, id).

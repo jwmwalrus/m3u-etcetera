@@ -13,12 +13,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// QuerySvc defines the query service.
+// QuerySvc implemets the m3uetcpb.QuerySvcServer interface.
 type QuerySvc struct {
 	m3uetcpb.UnimplementedQuerySvcServer
 }
 
-// GetQuery implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) GetQuery(_ context.Context,
 	req *m3uetcpb.GetQueryRequest) (*m3uetcpb.GetQueryResponse, error) {
 
@@ -36,7 +35,6 @@ func (*QuerySvc) GetQuery(_ context.Context,
 	return &m3uetcpb.GetQueryResponse{Query: out}, nil
 }
 
-// GetQueries implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) GetQueries(_ context.Context,
 	req *m3uetcpb.GetQueriesRequest) (*m3uetcpb.GetQueriesResponse, error) {
 
@@ -52,7 +50,6 @@ func (*QuerySvc) GetQueries(_ context.Context,
 	return &m3uetcpb.GetQueriesResponse{Queries: out}, nil
 }
 
-// AddQuery implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) AddQuery(_ context.Context,
 	req *m3uetcpb.AddQueryRequest) (*m3uetcpb.AddQueryResponse, error) {
 
@@ -77,7 +74,6 @@ func (*QuerySvc) AddQuery(_ context.Context,
 	return &m3uetcpb.AddQueryResponse{Id: qy.ID}, nil
 }
 
-// UpdateQuery implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) UpdateQuery(_ context.Context,
 	req *m3uetcpb.UpdateQueryRequest) (*m3uetcpb.Empty, error) {
 
@@ -107,7 +103,6 @@ func (*QuerySvc) UpdateQuery(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// RemoveQuery implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) RemoveQuery(_ context.Context,
 	req *m3uetcpb.RemoveQueryRequest) (*m3uetcpb.Empty, error) {
 	qy := models.Query{}
@@ -125,7 +120,6 @@ func (*QuerySvc) RemoveQuery(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// QueryBy implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) QueryBy(_ context.Context,
 	req *m3uetcpb.QueryByRequest) (*m3uetcpb.QueryByResponse, error) {
 	qy := models.FromProtobuf(req.Query)
@@ -154,7 +148,6 @@ func (*QuerySvc) QueryBy(_ context.Context,
 	return &m3uetcpb.QueryByResponse{Tracks: out}, nil
 }
 
-// QueryInPlaylist implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) QueryInPlaylist(_ context.Context,
 	req *m3uetcpb.QueryInPlaylistRequest) (*m3uetcpb.QueryInPlaylistResponse, error) {
 
@@ -194,7 +187,6 @@ func (*QuerySvc) QueryInPlaylist(_ context.Context,
 	return &m3uetcpb.QueryInPlaylistResponse{PlaylistId: pl.ID}, nil
 }
 
-// QueryInQueue implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) QueryInQueue(_ context.Context,
 	req *m3uetcpb.QueryInQueueRequest) (*m3uetcpb.Empty, error) {
 
@@ -222,7 +214,6 @@ func (*QuerySvc) QueryInQueue(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// SubscribeToQueryStore implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) SubscribeToQueryStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.QuerySvc_SubscribeToQueryStoreServer) error {
 
@@ -307,10 +298,8 @@ sLoop:
 		}
 	}
 	return nil
-
 }
 
-// UnsubscribeFromQueryStore implements m3uetcpb.QuerySvcServer.
 func (*QuerySvc) UnsubscribeFromQueryStore(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromQueryStoreRequest) (*m3uetcpb.Empty, error) {
 	if req.SubscriptionId == "" {

@@ -16,6 +16,7 @@ import (
 	"github.com/dhowden/tag"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/urlstr"
+	"github.com/jwmwalrus/gear-pieces/idler"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/discover"
@@ -60,47 +61,38 @@ type Track struct {
 	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`
 }
 
-// Create implements the Creator interface.
 func (t *Track) Create() error {
 	return t.CreateTx(db)
 }
 
-// CreateTx implements the Creator interface.
 func (t *Track) CreateTx(tx *gorm.DB) error {
 	return tx.Create(t).Error
 }
 
-// Delete implements the Deleter interface.
 func (t *Track) Delete() error {
 	return t.DeleteTx(db)
 }
 
-// DeleteTx implements the Deleter interface.
 func (t *Track) DeleteTx(tx *gorm.DB) error {
 	return tx.Delete(t).Error
 }
 
-// Read implements the Reader interface.
 func (t *Track) Read(id int64) error {
 	return t.ReadTx(db, id)
 }
 
-// ReadTx implements the Reader interface.
 func (t *Track) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.First(t, id).Error
 }
 
-// Save implements the Saver interface.
 func (t *Track) Save() error {
 	return t.SaveTx(db)
 }
 
-// SaveTx implements the SaverTx interface.
 func (t *Track) SaveTx(tx *gorm.DB) error {
 	return tx.Save(t).Error
 }
 
-// ToProtobuf implements the ProtoOut interface.
 func (t *Track) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(t)
 	if err != nil {
@@ -330,8 +322,8 @@ func (t *Track) savePicture(p *tag.Picture, sum string) {
 }
 
 func (t *Track) updateTags() (err error) {
-	base.GetBusy(base.IdleStatusFileOperations)
-	defer base.GetFree(base.IdleStatusFileOperations)
+	idler.GetBusy(idler.StatusFileOperations)
+	defer idler.GetFree(idler.StatusFileOperations)
 
 	var path string
 	path, err = urlstr.URLToPath(t.Location)

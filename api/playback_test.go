@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-gst/go-gst/gst"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/tests"
 	"github.com/stretchr/testify/assert"
-	"github.com/tinyzimmer/go-gst/gst"
 )
 
 func TestGetPlayback(t *testing.T) {

@@ -12,7 +12,7 @@ service RootSvc {
 }
 
 message StatusResponse {
-    bool alive = 1;
+    bool healthy = 1;
 }
 
 message OffRequest {

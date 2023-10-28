@@ -14,13 +14,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// PlaybarSvc defines the playbar service.
+// PlaybarSvc implements the m3uetcpb.PlaybarSvcServer interface.
 type PlaybarSvc struct {
 	PbEvents playback.IEvents
 	m3uetcpb.UnimplementedPlaybarSvcServer
 }
 
-// GetPlaybar implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) GetPlaybar(_ context.Context,
 	req *m3uetcpb.GetPlaybarRequest) (*m3uetcpb.GetPlaybarResponse, error) {
 
@@ -46,7 +45,6 @@ func (*PlaybarSvc) GetPlaybar(_ context.Context,
 	return res, nil
 }
 
-// GetPlaylist implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) GetPlaylist(_ context.Context,
 	req *m3uetcpb.GetPlaylistRequest) (*m3uetcpb.GetPlaylistResponse, error) {
 	if req.Id < 1 {
@@ -77,7 +75,6 @@ func (*PlaybarSvc) GetPlaylist(_ context.Context,
 	return res, nil
 }
 
-// GetAllPlaylists implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) GetAllPlaylists(_ context.Context,
 	req *m3uetcpb.GetAllPlaylistsRequest) (*m3uetcpb.GetAllPlaylistsResponse, error) {
 
@@ -101,7 +98,6 @@ func (*PlaybarSvc) GetAllPlaylists(_ context.Context,
 	return res, nil
 }
 
-// GetPlaylistGroup implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) GetPlaylistGroup(_ context.Context,
 	req *m3uetcpb.GetPlaylistGroupRequest) (*m3uetcpb.GetPlaylistGroupResponse, error) {
 
@@ -121,7 +117,6 @@ func (*PlaybarSvc) GetPlaylistGroup(_ context.Context,
 	return res, nil
 }
 
-// GetAllPlaylistGroups implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) GetAllPlaylistGroups(_ context.Context,
 	req *m3uetcpb.GetAllPlaylistGroupsRequest) (*m3uetcpb.GetAllPlaylistGroupsResponse, error) {
 
@@ -145,7 +140,6 @@ func (*PlaybarSvc) GetAllPlaylistGroups(_ context.Context,
 	return res, nil
 }
 
-// ExecutePlaybarAction implements m3uetcpb.PlaybarSvcServer.
 func (svc *PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 	req *m3uetcpb.ExecutePlaybarActionRequest) (*m3uetcpb.Empty, error) {
 
@@ -221,7 +215,6 @@ func (svc *PlaybarSvc) ExecutePlaybarAction(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// ExecutePlaylistAction implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 	req *m3uetcpb.ExecutePlaylistActionRequest) (
 	*m3uetcpb.ExecutePlaylistActionResponse, error) {
@@ -326,7 +319,6 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 	return &m3uetcpb.ExecutePlaylistActionResponse{Id: pl.ID}, nil
 }
 
-// ExecutePlaylistGroupAction implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 	req *m3uetcpb.ExecutePlaylistGroupActionRequest) (
 	*m3uetcpb.ExecutePlaylistGroupActionResponse, error) {
@@ -385,7 +377,6 @@ func (*PlaybarSvc) ExecutePlaylistGroupAction(_ context.Context,
 	return &m3uetcpb.ExecutePlaylistGroupActionResponse{Id: pg.ID}, nil
 }
 
-// ExecutePlaylistTrackAction implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) ExecutePlaylistTrackAction(_ context.Context,
 	req *m3uetcpb.ExecutePlaylistTrackActionRequest) (*m3uetcpb.Empty, error) {
 
@@ -430,7 +421,6 @@ func (*PlaybarSvc) ExecutePlaylistTrackAction(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// ImportPlaylists implements m3uetcpb.PlaybarSvcServer.
 func (svc *PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest,
 	stream m3uetcpb.PlaybarSvc_ImportPlaylistsServer) error {
 
@@ -476,7 +466,6 @@ func (svc *PlaybarSvc) ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest,
 	return nil
 }
 
-// ExportPlaylist implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) ExportPlaylist(_ context.Context,
 	req *m3uetcpb.ExportPlaylistRequest) (*m3uetcpb.Empty, error) {
 
@@ -514,7 +503,6 @@ func (*PlaybarSvc) ExportPlaylist(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// SubscribeToPlaybarStore implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) SubscribeToPlaybarStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.PlaybarSvc_SubscribeToPlaybarStoreServer) error {
 
@@ -794,7 +782,6 @@ sLoop:
 	return nil
 }
 
-// UnsubscribeFromPlaybarStore implements m3uetcpb.PlaybarSvcServer.
 func (*PlaybarSvc) UnsubscribeFromPlaybarStore(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromPlaybarStoreRequest) (*m3uetcpb.Empty, error) {
 

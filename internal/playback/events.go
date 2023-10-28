@@ -5,12 +5,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/go-gst/go-gst/gst"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	rtc "github.com/jwmwalrus/rtcycler"
-	"github.com/tinyzimmer/go-gst/gst"
 )
 
 type engineEvent struct {
@@ -139,7 +139,6 @@ var (
 	instance *events
 )
 
-// GetPlayback implements the IEvents interface.
 func (et *events) GetPlayback() (pb *models.Playback, t *models.Track) {
 	if et.eng.pb.Load() == nil {
 		return
@@ -182,12 +181,10 @@ func (et *events) GetPlayback() (pb *models.Playback, t *models.Track) {
 	return
 }
 
-// GetState implements the IEvents interface.
 func (et *events) GetState() gst.State {
 	return et.eng.state.Load()
 }
 
-// HasNextStream implements the IEvents interface.
 func (et *events) HasNextStream() bool {
 	pb := &models.Playback{}
 	if pb.GetNextToPlay() != nil {
@@ -208,32 +205,26 @@ func (et *events) HasNextStream() bool {
 	return false
 }
 
-// IsPaused implements the IEvents interface.
 func (et *events) IsPaused() bool {
 	return et.eng.playbin.Load() != nil && et.eng.state.Load() == gst.StatePaused
 }
 
-// IsPlaying implements the IEvents interface.
 func (et *events) IsPlaying() bool {
 	return et.eng.playbin.Load() != nil && et.eng.state.Load() == gst.StatePlaying
 }
 
-// IsReady implements the IEvents interface.
 func (et *events) IsReady() bool {
 	return et.eng.playbin.Load() != nil && et.eng.state.Load() == gst.StateReady
 }
 
-// IsStreaming implements the IEvents interface.
 func (et *events) IsStreaming() bool {
 	return et.IsPaused() || et.IsPlaying()
 }
 
-// IsStopped checks implements the IEvents interface.
 func (et *events) IsStopped() bool {
 	return et.eng.lastEvent.Load() == stopAllEvent
 }
 
-// NextStream plays the next stream in playlist.
 func (et *events) NextStream() (err error) {
 	et.eng.lastEvent.Store(nextEvent)
 
@@ -247,7 +238,6 @@ func (et *events) NextStream() (err error) {
 	return
 }
 
-// PauseStream implements the IEvents interface.
 func (et *events) PauseStream(off bool) (err error) {
 	if et.eng.playbin.Load() == nil {
 		if !et.IsStopped() {
@@ -278,7 +268,6 @@ func (et *events) PauseStream(off bool) (err error) {
 	return
 }
 
-// PlayStreams implements the IEvents interface.
 func (et *events) PlayStreams(force bool, locations []string, ids []int64) {
 	et.eng.lastEvent.Store(playEvent)
 
@@ -309,7 +298,6 @@ func (et *events) PlayStreams(force bool, locations []string, ids []int64) {
 	}
 }
 
-// PreviousStream implements the IEvents interface.
 func (et *events) PreviousStream() {
 	if time.Duration(et.eng.lastPosition.Load())*time.Nanosecond >=
 		time.Duration(base.PlaybackPlayedThreshold)*time.Second {
@@ -336,7 +324,6 @@ func (et *events) PreviousStream() {
 	models.TriggerPlaybackChange()
 }
 
-// QuitPlayingFromBar implements the IEvents interface.
 func (et *events) QuitPlayingFromBar(pl *models.Playlist) {
 	et.eng.lastEvent.Store(stopPlaybarEvent)
 	slog.Info("Quit playing from bar", "pl", *pl)
@@ -350,7 +337,6 @@ func (et *events) QuitPlayingFromBar(pl *models.Playlist) {
 	et.quitPlayingFromList()
 }
 
-// SeekInStream implements the IEvents interface.
 func (et *events) SeekInStream(pos int64) {
 	et.eng.lastEvent.Store(seekEvent)
 
@@ -375,7 +361,6 @@ func (et *events) SeekInStream(pos int64) {
 	}
 }
 
-// StopAll implements the IEvents interface.
 func (et *events) StopAll() {
 	et.eng.lastEvent.Store(stopAllEvent)
 
@@ -383,7 +368,6 @@ func (et *events) StopAll() {
 	et.StopStream()
 }
 
-// StopStream stops the current stream.
 func (et *events) StopStream() {
 	slog.Info("Stopping current playback")
 
@@ -406,7 +390,6 @@ func (et *events) StopStream() {
 	et.eng.mainLoop.Quit()
 }
 
-// TryPlayingFromBar implements the IEvents interface.
 func (et *events) TryPlayingFromBar(pl *models.Playlist, position int) {
 	et.eng.lastEvent.Store(playbarEvent)
 

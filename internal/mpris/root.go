@@ -47,58 +47,47 @@ func (mp2 *MediaPlayer2) properties() map[string]*prop.Prop {
 	}
 }
 
-// Quit implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) Quit() *dbus.Error {
 	// TODO: implement
 	return nil
 }
 
-// Raise implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) Raise() *dbus.Error {
 	return nil
 }
 
-// CanQuit implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) CanQuit() bool {
 	return true
 }
 
-// Fullscreen implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) Fullscreen(b bool) (bool, *dbus.Error) {
 	return false, nil
 }
 
-// CanSetFullscreen implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) CanSetFullscreen() bool {
 	return false
 }
 
-// CanRaise implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) CanRaise() bool {
 	return false
 }
 
-// HasTrackList implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) HasTrackList() bool {
 	return false
 }
 
-// Identity implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) Identity() string {
 	return base.AppName
 }
 
-// DesktopEntry implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) DesktopEntry() string {
 	return "m3uetc-server"
 }
 
-// SupportedUriSchemes implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) SupportedUriSchemes() []string {
 	return base.SupportedURISchemes
 }
 
-// SupportedMimeTypes implements the org.mpris.MediaPlayer2 root interface.
 func (*MediaPlayer2) SupportedMimeTypes() []string {
 	return base.SupportedMIMETypes
 }

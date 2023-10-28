@@ -14,13 +14,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// PlaybackSvc defines the playback service.
+// PlaybackSvc implements the m3uetcpb.PlaybackSvcServer interface.
 type PlaybackSvc struct {
 	PbEvents playback.IEvents
 	m3uetcpb.UnimplementedPlaybackSvcServer
 }
 
-// GetPlayback implements m3uetcpb.PlaybackSvcServer.
 func (svc *PlaybackSvc) GetPlayback(_ context.Context,
 	_ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackResponse, error) {
 
@@ -44,7 +43,6 @@ func (svc *PlaybackSvc) GetPlayback(_ context.Context,
 	return res, nil
 }
 
-// GetPlaybackList implements m3uetcpb.PlaybackSvcServer.
 func (*PlaybackSvc) GetPlaybackList(_ context.Context,
 	_ *m3uetcpb.Empty) (*m3uetcpb.GetPlaybackListResponse, error) {
 
@@ -60,7 +58,6 @@ func (*PlaybackSvc) GetPlaybackList(_ context.Context,
 	return res, nil
 }
 
-// ExecutePlaybackAction implements m3uetcpb.PlaybackSvcServer.
 func (svc *PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 	req *m3uetcpb.ExecutePlaybackActionRequest) (*m3uetcpb.Empty, error) {
 
@@ -132,7 +129,6 @@ func (svc *PlaybackSvc) ExecutePlaybackAction(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// SubscribeToPlayback implements m3uetcpb.PlaybackSvcServer.
 func (svc *PlaybackSvc) SubscribeToPlayback(_ *m3uetcpb.Empty,
 	stream m3uetcpb.PlaybackSvc_SubscribeToPlaybackServer) error {
 
@@ -185,7 +181,6 @@ sLoop:
 	return nil
 }
 
-// UnsubscribeFromPlayback implements m3uetcpb.PlaybackSvcServer.
 func (*PlaybackSvc) UnsubscribeFromPlayback(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromPlaybackRequest) (*m3uetcpb.Empty, error) {
 

@@ -11,6 +11,7 @@ import (
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/bnp/urlstr"
+	"github.com/jwmwalrus/gear-pieces/idler"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
@@ -90,22 +91,18 @@ type Collection struct {
 	Perspective    Perspective `json:"-" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Create implements Creator interface.
 func (c *Collection) Create() error {
 	return c.CreateTx(db)
 }
 
-// CreateTx implements Creator interface.
 func (c *Collection) CreateTx(tx *gorm.DB) error {
 	return tx.Create(c).Error
 }
 
-// Delete implements Deleter interface.
 func (c *Collection) Delete() (err error) {
 	return c.DeleteTx(db)
 }
 
-// DeleteTx implements Deleter interface.
 func (c *Collection) DeleteTx(tx *gorm.DB) (err error) {
 	slog.Info("Deleting collection")
 
@@ -155,29 +152,24 @@ func (c *Collection) DeleteTx(tx *gorm.DB) (err error) {
 	return
 }
 
-// Read implements Reader interface.
 func (c *Collection) Read(id int64) error {
 	return c.ReadTx(db, id)
 }
 
-// ReadTx implements Reader interface.
 func (c *Collection) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.Joins("Perspective").
 		First(c, id).
 		Error
 }
 
-// Save implements Saver interface.
 func (c *Collection) Save() error {
 	return c.SaveTx(db)
 }
 
-// SaveTx implements Saver interface.
 func (c *Collection) SaveTx(tx *gorm.DB) error {
 	return tx.Save(c).Error
 }
 
-// ToProtobuf implements ProtoOut interface.
 func (c *Collection) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(c)
 	if err != nil {
@@ -302,8 +294,8 @@ func (c *Collection) Scan(withTags bool) {
 		return
 	}
 
-	base.GetBusy(base.IdleStatusDbOperations)
-	defer func() { base.GetFree(base.IdleStatusDbOperations) }()
+	idler.GetBusy(idler.StatusDbOperations)
+	defer func() { idler.GetFree(idler.StatusDbOperations) }()
 
 	var iTrack, nTrack, unsupp, scanErr int
 	err = filepath.Walk(rootDir, func(path string, i os.FileInfo, err error) error {

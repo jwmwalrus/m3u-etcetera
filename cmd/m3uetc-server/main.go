@@ -5,9 +5,10 @@ import (
 	"log/slog"
 	"net"
 
+	"github.com/jwmwalrus/gear-pieces/idler"
+	"github.com/jwmwalrus/gear-pieces/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/api"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database"
 	"github.com/jwmwalrus/m3u-etcetera/internal/playback"
@@ -25,7 +26,7 @@ func main() {
 		DataSubdirs: []string{base.CoversDirname},
 	})
 
-	base.StartIdler()
+	idler.Start()
 
 	rtc.RegisterUnloader(database.Open())
 
@@ -72,7 +73,7 @@ func main() {
 
 	rtc.RegisterUnloader(subscription.Unloader)
 
-	<-base.InterruptSignal
+	<-idler.InterruptSignal
 
 	rtc.Unload()
 

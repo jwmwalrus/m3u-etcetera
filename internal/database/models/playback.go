@@ -8,8 +8,8 @@ import (
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
+	"github.com/jwmwalrus/gear-pieces/idler"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -26,37 +26,30 @@ type Playback struct { // too transient
 	TrackID   int64  `json:"trackId"`
 }
 
-// Create implements the Creator interface.
 func (pb *Playback) Create() error {
 	return pb.CreateTx(db)
 }
 
-// CreateTx implements the Creator interface.
 func (pb *Playback) CreateTx(tx *gorm.DB) error {
 	return tx.Create(pb).Error
 }
 
-// Read implements the Reader interface.
 func (pb *Playback) Read(id int64) error {
 	return pb.ReadTx(db, id)
 }
 
-// ReadTx implements the Reader interface.
 func (pb *Playback) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.First(pb, id).Error
 }
 
-// Save implements the Saver interface.
 func (pb *Playback) Save() error {
 	return pb.SaveTx(db)
 }
 
-// SaveTx implements the Saver interface.
 func (pb *Playback) SaveTx(tx *gorm.DB) error {
 	return tx.Save(pb).Error
 }
 
-// ToProtobuf implments ProtoOut interface.
 func (pb *Playback) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pb)
 	if err != nil {
@@ -75,7 +68,7 @@ func (pb *Playback) ToProtobuf() proto.Message {
 func (pb *Playback) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if !rtc.FlagTestMode() &&
-			!base.IsAppBusyBy(base.IdleStatusEngineLoop) {
+			!idler.IsAppBusyBy(idler.StatusEngineLoop) {
 			TriggerPlaybackChange()
 		}
 	}()

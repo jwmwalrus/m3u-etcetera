@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/jwmwalrus/bnp/onerror"
-	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
+	"github.com/jwmwalrus/gear-pieces/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"

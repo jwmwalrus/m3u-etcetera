@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/chars"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/bnp/urlstr"
@@ -43,23 +43,19 @@ type Playlist struct {
 	Playbar         Playbar       `json:"playbar" gorm:"foreignKey:PlaybarID"`
 }
 
-// Create implements the Creator interface.
 func (pl *Playlist) Create() (err error) {
 	return pl.CreateTx(db)
 }
 
-// CreateTx implements the CreatorTx interface.
 func (pl *Playlist) CreateTx(tx *gorm.DB) (err error) {
 	err = tx.Create(pl).Error
 	return
 }
 
-// Delete implements the Deleter interface.
 func (pl *Playlist) Delete() (err error) {
 	return pl.DeleteTx(db)
 }
 
-// DeleteTx implements the DeleterTx interface.
 func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
 	logw := slog.With("pl", *pl)
 	logw.Info("Deleting playlist")
@@ -92,35 +88,30 @@ func (pl *Playlist) DeleteTx(tx *gorm.DB) (err error) {
 	}
 
 	pl.Transient = true
-	rl, _ := ing2.GetRandomLetters(8)
+	rl, _ := chars.GetRandomLetters(8)
 	pl.Name += fmt.Sprintf(" (deleted %v)", rl)
 	err = tx.Save(pl).Error
 	return
 }
 
-// Read implements the Reader interface.
 func (pl *Playlist) Read(id int64) error {
 	return pl.ReadTx(db, id)
 }
 
-// ReadTx implements the Reader interface.
 func (pl *Playlist) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.Joins("Playbar").
 		First(pl, id).
 		Error
 }
 
-// Save implements the Saver interface.
 func (pl *Playlist) Save() error {
 	return db.Save(pl).Error
 }
 
-// SaveTx implements the Saver interface.
 func (pl *Playlist) SaveTx(tx *gorm.DB) error {
 	return tx.Save(pl).Error
 }
 
-// ToProtobuf implments ProtoOut interface.
 func (pl *Playlist) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pl)
 	if err != nil {

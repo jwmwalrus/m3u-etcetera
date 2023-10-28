@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-gst/go-gst/gst"
+	"github.com/go-gst/go-gst/gst/pbutils"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/internal/discover"
-	"github.com/tinyzimmer/go-gst/gst"
-	"github.com/tinyzimmer/go-gst/gst/pbutils"
 )
 
 func main() {
@@ -63,7 +63,7 @@ func main() {
 
 // run invokes pbutils.DiscoverURI for the given location.
 func run(location string) (*discover.Info, error) {
-	discoverer, err := pbutils.NewDiscoverer(time.Second * 15)
+	discoverer, err := pbutils.NewDiscoverer(gst.ClockTime(time.Second * 15))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discoverer: %w", err)
 	}
@@ -79,7 +79,7 @@ func run(location string) (*discover.Info, error) {
 	// info.GetStreamInfo()
 	// info.GetStreamList()
 	return &discover.Info{
-		Duration: int64(info.GetDuration() * time.Nanosecond),
+		Duration: int64(info.GetDuration()),
 		Live:     info.GetLive(),
 		Seekable: info.GetSeekable(),
 		URI:      info.GetURI(),

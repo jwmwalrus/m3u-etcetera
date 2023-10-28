@@ -10,7 +10,7 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/chars"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -242,14 +242,14 @@ func (pbd *playbackData) updatePlayback() bool {
 		}
 
 		maxLen := 45
-		subtitle := ing2.TruncateText(title, maxLen)
+		subtitle := chars.TruncateText(title, maxLen)
 		if title == "" {
 			title = "Not Playing"
 		}
 		if artist != "" {
 			artist = "by " + artist
 			if subtitle != "" {
-				subtitle += " (" + ing2.TruncateText(artist, maxLen) + ")"
+				subtitle += " (" + chars.TruncateText(artist, maxLen) + ")"
 			}
 		}
 		if album != "" {
@@ -267,11 +267,11 @@ func (pbd *playbackData) updatePlayback() bool {
 			pbd.headerbar.SetSubtitle(defaultSubtitle)
 		}
 
-		pbd.title.SetText(ing2.TruncateText(title, maxLen))
+		pbd.title.SetText(chars.TruncateText(title, maxLen))
 		pbd.title.SetTooltipText(title)
-		pbd.artist.SetText(ing2.TruncateText(artist, maxLen))
+		pbd.artist.SetText(chars.TruncateText(artist, maxLen))
 		pbd.artist.SetTooltipText(artist)
-		pbd.source.SetText(ing2.TruncateText(location, maxLen))
+		pbd.source.SetText(chars.TruncateText(location, maxLen))
 		pbd.source.SetTooltipText(location)
 	}
 	pbd.mu.Unlock()

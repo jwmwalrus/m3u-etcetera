@@ -10,14 +10,14 @@ import (
 
 	"github.com/godbus/dbus/v5"
 	"github.com/jwmwalrus/bnp/onerror"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
+	"github.com/jwmwalrus/gear-pieces/idler"
 	"github.com/jwmwalrus/m3u-etcetera/internal/database/models"
 	"github.com/jwmwalrus/m3u-etcetera/internal/mpris"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	rtc "github.com/jwmwalrus/rtcycler"
 
-	"github.com/tinyzimmer/go-glib/glib"
-	"github.com/tinyzimmer/go-gst/gst"
+	"github.com/go-gst/go-glib/glib"
+	"github.com/go-gst/go-gst/gst"
 )
 
 const (
@@ -305,8 +305,8 @@ func (e *engine) playStream(pb *models.Playback) {
 	e.terminate.Store(false)
 	defer e.reset()
 
-	base.GetBusy(base.IdleStatusEngineLoop)
-	defer func() { base.GetFree(base.IdleStatusEngineLoop) }()
+	idler.GetBusy(idler.StatusEngineLoop)
+	defer func() { idler.GetFree(idler.StatusEngineLoop) }()
 
 	// check if playback is valid
 	if e.pb.Load() == nil || pb.Location == "" {

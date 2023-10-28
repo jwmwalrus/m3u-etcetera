@@ -25,34 +25,28 @@ type PlaylistTrack struct {
 	Track         Track    `json:"track" gorm:"foreignKey:TrackID"`
 }
 
-// Create implements the Creator interface.
 func (pt *PlaylistTrack) Create() error {
 	return pt.CreateTx(db)
 }
 
-// CreateTx implements the Creator interface.
 func (pt *PlaylistTrack) CreateTx(tx *gorm.DB) error {
 	return tx.Create(pt).Error
 }
 
-// Delete implements the Deleter interface.
 func (pt *PlaylistTrack) Delete() error {
 	return pt.DeleteTx(db)
 }
 
-// DeleteTx implements the DeleterTx interface.
 func (pt *PlaylistTrack) DeleteTx(tx *gorm.DB) error {
 	defer DeleteTrackIfTransient(pt.TrackID)
 
 	return tx.Delete(pt).Error
 }
 
-// Read implements the Reader interface.
 func (pt *PlaylistTrack) Read(id int64) error {
 	return pt.ReadTx(db, id)
 }
 
-// ReadTx implements the Reader interface.
 func (pt *PlaylistTrack) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.Joins("Playlist").
 		Joins("Track").
@@ -60,17 +54,14 @@ func (pt *PlaylistTrack) ReadTx(tx *gorm.DB, id int64) error {
 		Error
 }
 
-// Save implements the Saver interface.
 func (pt *PlaylistTrack) Save() error {
 	return pt.SaveTx(db)
 }
 
-// SaveTx implements the Saver interface.
 func (pt *PlaylistTrack) SaveTx(tx *gorm.DB) error {
 	return tx.Save(pt).Error
 }
 
-// ToProtobuf implments ProtoOut interface.
 func (pt *PlaylistTrack) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pt)
 	if err != nil {

@@ -47,22 +47,18 @@ type PlaylistGroup struct {
 	Perspective   Perspective `json:"-" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Create implements the Creator interface.
 func (pg *PlaylistGroup) Create() error {
 	return pg.CreateTx(db)
 }
 
-// CreateTx implements the Creator interface.
 func (pg *PlaylistGroup) CreateTx(tx *gorm.DB) error {
 	return tx.Create(pg).Error
 }
 
-// Delete implements the Deleter interface.
 func (pg *PlaylistGroup) Delete() error {
 	return pg.DeleteTx(db)
 }
 
-// DeleteTx implements the Deleter interface.
 func (pg *PlaylistGroup) DeleteTx(tx *gorm.DB) error {
 	pls := []Playlist{}
 	err := tx.Where("playlist_group_id = ?", pg.ID).Find(&pls).Error
@@ -87,29 +83,24 @@ func (pg *PlaylistGroup) DeleteTx(tx *gorm.DB) error {
 	return tx.Delete(pg).Error
 }
 
-// Read implements the Reader interface.
 func (pg *PlaylistGroup) Read(id int64) error {
 	return pg.ReadTx(db, id)
 }
 
-// ReadTx implements the Reader interface.
 func (pg *PlaylistGroup) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.Joins("Perspective").
 		First(pg, id).
 		Error
 }
 
-// Save implements the Saver interface.
 func (pg *PlaylistGroup) Save() error {
 	return pg.SaveTx(db)
 }
 
-// SaveTx implements the Saver interface.
 func (pg *PlaylistGroup) SaveTx(tx *gorm.DB) error {
 	return tx.Save(pg).Error
 }
 
-// ToProtobuf implments ProtoOut interface.
 func (pg *PlaylistGroup) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(pg)
 	if err != nil {

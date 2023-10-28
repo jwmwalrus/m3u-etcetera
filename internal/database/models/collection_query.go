@@ -18,27 +18,22 @@ type CollectionQuery struct {
 	Query        Query      `json:"query" gorm:"foreignKey:QueryID"`
 }
 
-// Save implements the Saver interface.
 func (cq *CollectionQuery) Save() error {
 	return cq.SaveTx(db)
 }
 
-// SaveTx implements the Saver interface.
 func (cq *CollectionQuery) SaveTx(tx *gorm.DB) error {
 	return tx.Save(cq).Error
 }
 
-// Delete implements the Deleter interface.
 func (cq *CollectionQuery) Delete() error {
 	return cq.DeleteTx(db)
 }
 
-// DeleteTx implements the Deleter interface.
 func (cq *CollectionQuery) DeleteTx(tx *gorm.DB) error {
 	return tx.Delete(cq).Error
 }
 
-// FindTracksTx implements QueryBoundaryTx interface.
 func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) []*Track {
 	ts := []Track{}
 
@@ -59,7 +54,6 @@ func (cq *CollectionQuery) FindTracksTx(tx *gorm.DB) []*Track {
 	return pointers.FromSlice(ts)
 }
 
-// GetQueryID implements QueryBoundaryID interface.
 func (cq *CollectionQuery) GetQueryID() int64 {
 	return cq.QueryID
 }

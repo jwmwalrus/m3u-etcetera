@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/jwmwalrus/bnp/urlstr"
+	"github.com/jwmwalrus/gear-pieces/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"

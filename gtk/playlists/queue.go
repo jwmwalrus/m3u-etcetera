@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/chars"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
@@ -38,7 +38,7 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 		return
 	}
 
-	miSuffix, _ := ing2.GetRandomLetters(6)
+	miSuffix, _ := chars.GetRandomLetters(6)
 	for _, l := range []string{"top", "up", "down", "bottom"} {
 		mi, err := builder.GetMenuItem(contextMenuID + "_" + l)
 		if err != nil {

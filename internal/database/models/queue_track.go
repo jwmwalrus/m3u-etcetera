@@ -6,8 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/jwmwalrus/gear-pieces/idler"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
@@ -26,37 +26,30 @@ type QueueTrack struct { // too transient
 	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`
 }
 
-// Create implements the Creator interface.
 func (qt *QueueTrack) Create() error {
 	return qt.CreateTx(db)
 }
 
-// CreateTx implements the Creator interface.
 func (qt *QueueTrack) CreateTx(tx *gorm.DB) error {
 	return tx.Create(qt).Error
 }
 
-// Read implements the Reader interface.
 func (qt *QueueTrack) Read(id int64) error {
 	return qt.ReadTx(db, id)
 }
 
-// ReadTx implements the Reader interface.
 func (qt *QueueTrack) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.First(qt, id).Error
 }
 
-// Save implements the Saver interface.
 func (qt *QueueTrack) Save() error {
 	return qt.SaveTx(db)
 }
 
-// SaveTx implements the Saver interface.
 func (qt *QueueTrack) SaveTx(tx *gorm.DB) error {
 	return tx.Save(qt).Error
 }
 
-// ToProtobuf implements the ProtoOut interface.
 func (qt *QueueTrack) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(qt)
 	if err != nil {
@@ -80,7 +73,7 @@ func (qt *QueueTrack) ToProtobuf() proto.Message {
 func (qt *QueueTrack) AfterCreate(tx *gorm.DB) error {
 	go func() {
 		if !rtc.FlagTestMode() &&
-			!base.IsAppBusyBy(base.IdleStatusEngineLoop) {
+			!idler.IsAppBusyBy(idler.StatusEngineLoop) {
 			TriggerPlaybackChange()
 		}
 	}()

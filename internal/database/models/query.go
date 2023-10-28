@@ -124,33 +124,27 @@ type Query struct {
 	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
-// Read implements Reader interface.
 func (qy *Query) Read(id int64) error {
 	return qy.ReadTx(db, id)
 }
 
-// ReadTx implements Reader interface.
 func (qy *Query) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.First(qy, id).Error
 }
 
-// Save implements Saver interface.
 func (qy *Query) Save() error {
 	return qy.SaveTx(db)
 }
 
-// SaveTx implements Saver interface.
 func (qy *Query) SaveTx(tx *gorm.DB) error {
 	qy.ProvideName()
 	return tx.Save(qy).Error
 }
 
-// FromProtobuf implements ProtoIn interface.
 func (qy *Query) FromProtobuf(in proto.Message) {
 	protobufToQuery(in.(*m3uetcpb.Query), qy)
 }
 
-// ToProtobuf implements ProtoOut interface.
 func (qy *Query) ToProtobuf() proto.Message {
 	bv, err := json.Marshal(qy)
 	if err != nil {

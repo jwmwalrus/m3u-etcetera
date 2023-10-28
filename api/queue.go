@@ -12,12 +12,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// QueueSvc defines the queue server.
+// QueueSvc implements m3uetcpb.QueueSvcServer interface.
 type QueueSvc struct {
 	m3uetcpb.UnimplementedQueueSvcServer
 }
 
-// GetQueue implements m3uetcpb.QueueSvcServer.
 func (*QueueSvc) GetQueue(_ context.Context,
 	req *m3uetcpb.GetQueueRequest) (*m3uetcpb.GetQueueResponse, error) {
 
@@ -45,7 +44,6 @@ func (*QueueSvc) GetQueue(_ context.Context,
 	return res, nil
 }
 
-// ExecuteQueueAction implements m3uetcpb.QueueSvcServer.
 func (*QueueSvc) ExecuteQueueAction(_ context.Context,
 	req *m3uetcpb.ExecuteQueueActionRequest) (*m3uetcpb.Empty, error) {
 
@@ -95,7 +93,6 @@ func (*QueueSvc) ExecuteQueueAction(_ context.Context,
 	return &m3uetcpb.Empty{}, nil
 }
 
-// SubscribeToQueueStore implements m3uetcpb.QueueSvcServer.
 func (*QueueSvc) SubscribeToQueueStore(_ *m3uetcpb.Empty,
 	stream m3uetcpb.QueueSvc_SubscribeToQueueStoreServer) error {
 
@@ -149,7 +146,6 @@ sLoop:
 	return nil
 }
 
-// UnsubscribeFromQueueStore implements m3uetcpb.QueueSvcServer.
 func (*QueueSvc) UnsubscribeFromQueueStore(_ context.Context,
 	req *m3uetcpb.UnsubscribeFromQueueStoreRequest) (*m3uetcpb.Empty, error) {
 

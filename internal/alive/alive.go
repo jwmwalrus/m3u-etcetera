@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/jwmwalrus/bnp/env"
+	"github.com/jwmwalrus/gear-pieces/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/jwmwalrus/m3u-etcetera/api/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/grpc"
@@ -184,8 +184,8 @@ func isServerAlive() bool {
 		s := status.Convert(err)
 		if s.Code() != codes.Unavailable {
 			slog.With(
-				"error", err,
 				"authority", auth,
+				"error", err,
 			).Info("Failed to dial server")
 		}
 		return false
@@ -195,11 +195,11 @@ func isServerAlive() bool {
 	slog.With("authority", auth).Debug("Dialing was successful")
 
 	c := m3uetcpb.NewRootSvcClient(cc)
-	res, err := c.Status(context.Background(), &m3uetcpb.Empty{})
+	_, err = c.Status(context.Background(), &m3uetcpb.Empty{})
 	if err != nil {
 		slog.Debug("Failed to obtain server status", "error", err)
 		return false
 	}
 
-	return res.GetAlive()
+	return true
 }

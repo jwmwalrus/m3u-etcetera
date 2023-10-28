@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/chars"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
 	"github.com/jwmwalrus/bnp/urlstr"
@@ -74,12 +74,10 @@ type Playbar struct {
 	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
 }
 
-// Read implements the Reader interface.
 func (b *Playbar) Read(id int64) error {
 	return b.ReadTx(db, id)
 }
 
-// ReadTx implements the Reader interface.
 func (b *Playbar) ReadTx(tx *gorm.DB, id int64) error {
 	return tx.Joins("Perspective").First(b, id).Error
 }
@@ -348,7 +346,7 @@ func (b *Playbar) ImportPlaylist(location string, asTransient bool) (pl *Playlis
 		}
 
 		if !asTransient {
-			rl, _ := ing2.GetRandomLetters(8)
+			rl, _ := chars.GetRandomLetters(8)
 			name = strings.Join([]string{
 				strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
 				rl,

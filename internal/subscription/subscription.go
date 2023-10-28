@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/jwmwalrus/bnp/ing2"
+	"github.com/jwmwalrus/bnp/chars"
 	rtc "github.com/jwmwalrus/rtcycler"
 )
 
@@ -74,7 +74,7 @@ var (
 func Subscribe(st Type) (*Subscriber, string) {
 	slog.Info("Subscribing", "st", st)
 
-	rl, _ := ing2.GetRandomLetters(16)
+	rl, _ := chars.GetRandomLetters(16)
 	s := Subscriber{
 		st:    st,
 		id:    rl,

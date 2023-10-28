@@ -19,12 +19,10 @@ type PlaybackHistory struct {
 	TrackID   int64  `json:"trackId" gorm:"index:idx_playback_history_track_id"`
 }
 
-// Create implements the Creator interface.
 func (h *PlaybackHistory) Create() error {
 	return h.CreateTx(db)
 }
 
-// CreateTx implements the Creator interface.
 func (h *PlaybackHistory) CreateTx(tx *gorm.DB) error {
 	return tx.Create(h).Error
 }
