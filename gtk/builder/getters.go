@@ -3,19 +3,19 @@ package builder
 import (
 	"fmt"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 )
 
 // GetButton -.
 func GetButton(id string) (btn *gtk.Button, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get button: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get button")
 		return
 	}
-	btn, ok := obj.(*gtk.Button)
+	btn, ok := obj.Cast().(*gtk.Button)
 	if !ok {
-		err = fmt.Errorf("Unable to create button: %v", err)
+		err = fmt.Errorf("Unable to create button")
 		return
 	}
 	return
@@ -23,14 +23,14 @@ func GetButton(id string) (btn *gtk.Button, err error) {
 
 // GetCheckButton -.
 func GetCheckButton(id string) (c *gtk.CheckButton, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get check-button: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get check-button")
 		return
 	}
-	c, ok := obj.(*gtk.CheckButton)
+	c, ok := obj.Cast().(*gtk.CheckButton)
 	if !ok {
-		err = fmt.Errorf("Unable to create check-button: %v", err)
+		err = fmt.Errorf("Unable to create check-button")
 		return
 	}
 	return
@@ -38,14 +38,14 @@ func GetCheckButton(id string) (c *gtk.CheckButton, err error) {
 
 // GetComboBoxText -.
 func GetComboBoxText(id string) (cbt *gtk.ComboBoxText, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get combo-box-text: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get combo-box-text")
 		return
 	}
-	cbt, ok := obj.(*gtk.ComboBoxText)
+	cbt, ok := obj.Cast().(*gtk.ComboBoxText)
 	if !ok {
-		err = fmt.Errorf("Unable to create combo-box-text: %v", err)
+		err = fmt.Errorf("Unable to create combo-box-text")
 		return
 	}
 	return
@@ -53,14 +53,14 @@ func GetComboBoxText(id string) (cbt *gtk.ComboBoxText, err error) {
 
 // GetDialog -.
 func GetDialog(id string) (dlg *gtk.Dialog, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get dialog: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get dialog")
 		return
 	}
-	dlg, ok := obj.(*gtk.Dialog)
+	dlg, ok := obj.Cast().(*gtk.Dialog)
 	if !ok {
-		err = fmt.Errorf("Unable to create dialog: %v", err)
+		err = fmt.Errorf("Unable to create dialog")
 		return
 	}
 	return
@@ -68,15 +68,15 @@ func GetDialog(id string) (dlg *gtk.Dialog, err error) {
 
 // GetEntry -.
 func GetEntry(id string) (e *gtk.Entry, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get entry object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get entry object")
 		return
 	}
 
-	e, ok := obj.(*gtk.Entry)
+	e, ok := obj.Cast().(*gtk.Entry)
 	if !ok {
-		err = fmt.Errorf("Unable to create entry: %v", err)
+		err = fmt.Errorf("Unable to create entry")
 		return
 	}
 	return
@@ -84,15 +84,15 @@ func GetEntry(id string) (e *gtk.Entry, err error) {
 
 // GetFileChooserButton -.
 func GetFileChooserButton(id string) (fcb *gtk.FileChooserButton, err error) {
-	obj, err := app.GetObject(id)
+	obj := app.GetObject(id)
 	if err != nil {
-		err = fmt.Errorf("Unable to get file-chooser-button object: %v", err)
+		err = fmt.Errorf("Unable to get file-chooser-button object")
 		return
 	}
 
-	fcb, ok := obj.(*gtk.FileChooserButton)
+	fcb, ok := obj.Cast().(*gtk.FileChooserButton)
 	if !ok {
-		err = fmt.Errorf("Unable to create file-chooser-button: %v", err)
+		err = fmt.Errorf("Unable to create file-chooser-button")
 		return
 	}
 	return
@@ -100,15 +100,15 @@ func GetFileChooserButton(id string) (fcb *gtk.FileChooserButton, err error) {
 
 // GetHeaderBar -.
 func GetHeaderBar(id string) (hb *gtk.HeaderBar, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get header-bar object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get header-bar object")
 		return
 	}
 
-	hb, ok := obj.(*gtk.HeaderBar)
+	hb, ok := obj.Cast().(*gtk.HeaderBar)
 	if !ok {
-		err = fmt.Errorf("Unable to create header-bar: %v", err)
+		err = fmt.Errorf("Unable to create header-bar")
 		return
 	}
 
@@ -117,15 +117,15 @@ func GetHeaderBar(id string) (hb *gtk.HeaderBar, err error) {
 
 // GetImage -.
 func GetImage(id string) (im *gtk.Image, err error) {
-	obj, err := app.GetObject(id)
+	obj := app.GetObject(id)
 	if err != nil {
 		err = fmt.Errorf("Unable to get image object: %v", err)
 		return
 	}
 
-	im, ok := obj.(*gtk.Image)
+	im, ok := obj.Cast().(*gtk.Image)
 	if !ok {
-		err = fmt.Errorf("Unable to create image: %v", err)
+		err = fmt.Errorf("Unable to create image")
 		return
 	}
 	return
@@ -133,15 +133,15 @@ func GetImage(id string) (im *gtk.Image, err error) {
 
 // GetLabel -.
 func GetLabel(id string) (l *gtk.Label, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get label object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get label object")
 		return
 	}
 
-	l, ok := obj.(*gtk.Label)
+	l, ok := obj.Cast().(*gtk.Label)
 	if !ok {
-		err = fmt.Errorf("Unable to create label: %v", err)
+		err = fmt.Errorf("Unable to create label")
 		return
 	}
 	return
@@ -149,15 +149,15 @@ func GetLabel(id string) (l *gtk.Label, err error) {
 
 // GetListStore -.
 func GetListStore(id string) (s *gtk.ListStore, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get list-store object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get list-store object")
 		return
 	}
 
-	s, ok := obj.(*gtk.ListStore)
+	s, ok := obj.Cast().(*gtk.ListStore)
 	if !ok {
-		err = fmt.Errorf("Unable to create list-store: %v", err)
+		err = fmt.Errorf("Unable to create list-store")
 		return
 	}
 	return
@@ -165,14 +165,14 @@ func GetListStore(id string) (s *gtk.ListStore, err error) {
 
 // GetMenu -.
 func GetMenu(id string) (m *gtk.Menu, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get menu: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get menu")
 		return
 	}
-	m, ok := obj.(*gtk.Menu)
+	m, ok := obj.Cast().(*gtk.Menu)
 	if !ok {
-		err = fmt.Errorf("Unable to create menu: %v", err)
+		err = fmt.Errorf("Unable to create menu")
 		return
 	}
 
@@ -181,14 +181,14 @@ func GetMenu(id string) (m *gtk.Menu, err error) {
 
 // GetMenuItem -.
 func GetMenuItem(id string) (mi *gtk.MenuItem, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get menu item: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get menu item")
 		return
 	}
-	mi, ok := obj.(*gtk.MenuItem)
+	mi, ok := obj.Cast().(*gtk.MenuItem)
 	if !ok {
-		err = fmt.Errorf("Unable to create menu item: %v", err)
+		err = fmt.Errorf("Unable to create menu item")
 		return
 	}
 
@@ -197,14 +197,14 @@ func GetMenuItem(id string) (mi *gtk.MenuItem, err error) {
 
 // GetNotebook -.
 func GetNotebook(id string) (nb *gtk.Notebook, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get notebook: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get notebook")
 		return
 	}
-	nb, ok := obj.(*gtk.Notebook)
+	nb, ok := obj.Cast().(*gtk.Notebook)
 	if !ok {
-		err = fmt.Errorf("Unable to create notebook: %v", err)
+		err = fmt.Errorf("Unable to create notebook")
 		return
 	}
 	return
@@ -212,15 +212,15 @@ func GetNotebook(id string) (nb *gtk.Notebook, err error) {
 
 // GetPane -.
 func GetPane(id string) (p *gtk.Paned, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get pane: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get pane")
 		return
 	}
 
-	p, ok := obj.(*gtk.Paned)
+	p, ok := obj.Cast().(*gtk.Paned)
 	if !ok {
-		err = fmt.Errorf("Unable to create pane: %v", err)
+		err = fmt.Errorf("Unable to create pane")
 		return
 	}
 	return
@@ -228,15 +228,15 @@ func GetPane(id string) (p *gtk.Paned, err error) {
 
 // GetPopoverMenu -.
 func GetPopoverMenu(id string) (pm *gtk.PopoverMenu, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get popover-menu object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get popover-menu object")
 		return
 	}
 
-	pm, ok := obj.(*gtk.PopoverMenu)
+	pm, ok := obj.Cast().(*gtk.PopoverMenu)
 	if !ok {
-		err = fmt.Errorf("Unable to create popover-menu: %v", err)
+		err = fmt.Errorf("Unable to create popover-menu")
 		return
 	}
 	return
@@ -244,15 +244,15 @@ func GetPopoverMenu(id string) (pm *gtk.PopoverMenu, err error) {
 
 // GetProgressBar -.
 func GetProgressBar(id string) (p *gtk.ProgressBar, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get progress-bar object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get progress-bar object")
 		return
 	}
 
-	p, ok := obj.(*gtk.ProgressBar)
+	p, ok := obj.Cast().(*gtk.ProgressBar)
 	if !ok {
-		err = fmt.Errorf("Unable to create progress bar: %v", err)
+		err = fmt.Errorf("Unable to create progress bar")
 		return
 	}
 	return
@@ -260,15 +260,15 @@ func GetProgressBar(id string) (p *gtk.ProgressBar, err error) {
 
 // GetSpinButton -.
 func GetSpinButton(id string) (sb *gtk.SpinButton, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get spin-button object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get spin-button object")
 		return
 	}
 
-	sb, ok := obj.(*gtk.SpinButton)
+	sb, ok := obj.Cast().(*gtk.SpinButton)
 	if !ok {
-		err = fmt.Errorf("Unable to create spin-button: %v", err)
+		err = fmt.Errorf("Unable to create spin-button")
 		return
 	}
 	return
@@ -276,15 +276,15 @@ func GetSpinButton(id string) (sb *gtk.SpinButton, err error) {
 
 // GetStatusBar -.
 func GetStatusBar(id string) (sb *gtk.Statusbar, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get status-bar object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get status-bar object")
 		return
 	}
 
-	sb, ok := obj.(*gtk.Statusbar)
+	sb, ok := obj.Cast().(*gtk.Statusbar)
 	if !ok {
-		err = fmt.Errorf("Unable to create status-bar: %v", err)
+		err = fmt.Errorf("Unable to create status-bar")
 		return
 	}
 	return
@@ -292,15 +292,15 @@ func GetStatusBar(id string) (sb *gtk.Statusbar, err error) {
 
 // GetTextView -.
 func GetTextView(id string) (tv *gtk.TextView, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get text-view object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get text-view object")
 		return
 	}
 
-	tv, ok := obj.(*gtk.TextView)
+	tv, ok := obj.Cast().(*gtk.TextView)
 	if !ok {
-		err = fmt.Errorf("Unable to create text view: %v", err)
+		err = fmt.Errorf("Unable to create text view")
 		return
 	}
 	return
@@ -308,14 +308,14 @@ func GetTextView(id string) (tv *gtk.TextView, err error) {
 
 // GetToggleButton -.
 func GetToggleButton(id string) (btn *gtk.ToggleButton, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get button: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get button")
 		return
 	}
-	btn, ok := obj.(*gtk.ToggleButton)
+	btn, ok := obj.Cast().(*gtk.ToggleButton)
 	if !ok {
-		err = fmt.Errorf("Unable to create button: %v", err)
+		err = fmt.Errorf("Unable to create button")
 		return
 	}
 	return
@@ -323,14 +323,14 @@ func GetToggleButton(id string) (btn *gtk.ToggleButton, err error) {
 
 // GetToggleToolButton -.
 func GetToggleToolButton(id string) (btn *gtk.ToggleToolButton, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get button: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get button")
 		return
 	}
-	btn, ok := obj.(*gtk.ToggleToolButton)
+	btn, ok := obj.Cast().(*gtk.ToggleToolButton)
 	if !ok {
-		err = fmt.Errorf("Unable to create button: %v", err)
+		err = fmt.Errorf("Unable to create button")
 		return
 	}
 	return
@@ -338,15 +338,15 @@ func GetToggleToolButton(id string) (btn *gtk.ToggleToolButton, err error) {
 
 // GetToolButton -.
 func GetToolButton(id string) (btn *gtk.ToolButton, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get tool-button object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get tool-button object")
 		return
 	}
 
-	btn, ok := obj.(*gtk.ToolButton)
+	btn, ok := obj.Cast().(*gtk.ToolButton)
 	if !ok {
-		err = fmt.Errorf("Unable to create tool-button: %v", err)
+		err = fmt.Errorf("Unable to create tool-button")
 		return
 	}
 	return
@@ -354,15 +354,15 @@ func GetToolButton(id string) (btn *gtk.ToolButton, err error) {
 
 // GetTreeStore -.
 func GetTreeStore(id string) (s *gtk.TreeStore, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get tree-store object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get tree-store object")
 		return
 	}
 
-	s, ok := obj.(*gtk.TreeStore)
+	s, ok := obj.Cast().(*gtk.TreeStore)
 	if !ok {
-		err = fmt.Errorf("Unable to create tree-store: %v", err)
+		err = fmt.Errorf("Unable to create tree-store")
 		return
 	}
 	return
@@ -370,15 +370,15 @@ func GetTreeStore(id string) (s *gtk.TreeStore, err error) {
 
 // GetTreeView -.
 func GetTreeView(id string) (s *gtk.TreeView, err error) {
-	obj, err := app.GetObject(id)
-	if err != nil {
-		err = fmt.Errorf("Unable to get tree-view object: %v", err)
+	obj := app.GetObject(id)
+	if obj == nil {
+		err = fmt.Errorf("Unable to get tree-view object")
 		return
 	}
 
-	s, ok := obj.(*gtk.TreeView)
+	s, ok := obj.Cast().(*gtk.TreeView)
 	if !ok {
-		err = fmt.Errorf("Unable to create tree-view: %v", err)
+		err = fmt.Errorf("Unable to create tree-view")
 		return
 	}
 	return

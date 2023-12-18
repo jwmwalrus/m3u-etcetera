@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 -->
+<!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <object class="GtkMenu" id="collections_view_context">
@@ -11,7 +11,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Append</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_collections_view_context_append_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -20,7 +19,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Prepend</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_collections_view_context_prepend_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -35,7 +33,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Play now</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_collections_view_context_play_now_activate" swapped="no"/>
       </object>
     </child>
   </object>
@@ -75,7 +72,6 @@
                           <item id="genre-artist-album" translatable="yes">Genre &gt; Artist &gt; Album</item>
                           <item id="year-artist-album" translatable="yes">Year &gt; Artist &gt; Album</item>
                         </items>
-                        <signal name="changed" handler="on_collections_hierarchy_changed" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -92,7 +88,6 @@
                         <property name="receives-default">True</property>
                         <property name="tooltip-text" translatable="yes">Group by collection</property>
                         <property name="margin-start">6</property>
-                        <signal name="toggled" handler="on_collections_hierarchy_grouped_toggled" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -115,7 +110,6 @@
                     <property name="primary-icon-name">edit-find-symbolic</property>
                     <property name="primary-icon-activatable">False</property>
                     <property name="primary-icon-sensitive">False</property>
-                    <signal name="search-changed" handler="on_collections_filter_search_changed" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -139,12 +133,8 @@
                   <object class="GtkTreeView" id="collections_view">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
-                    <signal name="button-press-event" handler="on_collections_view_button_press_event" swapped="no"/>
-                    <signal name="row-activated" handler="on_collections_view_row_activated" swapped="no"/>
                     <child internal-child="selection">
-                      <object class="GtkTreeSelection" id="collections_sel">
-                        <signal name="changed" handler="on_collections_sel_changed" swapped="no"/>
-                      </object>
+                      <object class="GtkTreeSelection" id="collections_sel"/>
                     </child>
                   </object>
                 </child>
@@ -208,7 +198,6 @@
                     <property name="primary-icon-name">edit-find-symbolic</property>
                     <property name="primary-icon-activatable">False</property>
                     <property name="primary-icon-sensitive">False</property>
-                    <signal name="search-changed" handler="on_music_playlists_filter_search_changed" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -232,12 +221,8 @@
                   <object class="GtkTreeView" id="music_playlists_view">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
-                    <signal name="button-press-event" handler="on_music_playlists_view_button_press_event" swapped="no"/>
-                    <signal name="row-activated" handler="on_music_playlists_view_row_activated" swapped="no"/>
                     <child internal-child="selection">
-                      <object class="GtkTreeSelection" id="music_playlists_sel">
-                        <signal name="changed" handler="on_music_playlists_sel_changed" swapped="no"/>
-                      </object>
+                      <object class="GtkTreeSelection" id="music_playlists_sel"/>
                     </child>
                   </object>
                 </child>
@@ -287,7 +272,6 @@
                         <property name="label" translatable="yes">Add</property>
                         <property name="use-underline">True</property>
                         <property name="icon-name">list-add</property>
-                        <signal name="clicked" handler="on_queries_add_clicked" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -331,12 +315,8 @@
                   <object class="GtkTreeView" id="queries_view">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
-                    <signal name="button-press-event" handler="on_queries_view_button_press_event" swapped="no"/>
-                    <signal name="row-activated" handler="on_queries_view_row_activated" swapped="no"/>
                     <child internal-child="selection">
-                      <object class="GtkTreeSelection" id="queries_sel">
-                        <signal name="changed" handler="on_queries_sel_changed" swapped="no"/>
-                      </object>
+                      <object class="GtkTreeSelection" id="queries_sel"/>
                     </child>
                   </object>
                 </child>
@@ -400,7 +380,6 @@
         <property name="visible">True</property>
         <property name="can-focus">True</property>
         <property name="scrollable">True</property>
-        <signal name="switch-page" handler="on_music_playbar_switch_page" swapped="no"/>
         <child>
           <object class="GtkBox" id="music_queue">
             <property name="visible">True</property>
@@ -415,13 +394,9 @@
                   <object class="GtkTreeView" id="music_queue_view">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
-                    <signal name="button-press-event" handler="on_music_queue_view_button_press_event" swapped="no"/>
-                    <signal name="key-press-event" handler="on_music_queue_view_key_press_event" swapped="no"/>
-                    <signal name="row-activated" handler="on_music_queue_view_row_activated" swapped="no"/>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="music_queue_sel">
                         <property name="mode">multiple</property>
-                        <signal name="changed" handler="on_music_queue_sel_changed" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -453,7 +428,6 @@
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
             <property name="tooltip-text" translatable="yes">New playlist</property>
-            <signal name="clicked" handler="on_music_playlist_new_clicked" swapped="no"/>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
@@ -484,7 +458,6 @@
         <property name="tooltip-text" translatable="yes">Open playlist</property>
         <property name="label" translatable="yes">Open</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_playlists_view_context_open_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -494,7 +467,6 @@
         <property name="tooltip-text" translatable="yes">Edit playlist properties</property>
         <property name="label" translatable="yes">Edit properties</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_playlists_view_context_edit_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -510,7 +482,6 @@
         <property name="tooltip-text" translatable="yes">Export playlist as...</property>
         <property name="label" translatable="yes">Export...</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_playlists_view_context_export_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -526,22 +497,18 @@
         <property name="tooltip-text" translatable="yes">Delete playlist</property>
         <property name="label" translatable="yes">Delete</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_playlists_view_context_delete_activate" swapped="no"/>
       </object>
     </child>
   </object>
   <object class="GtkMenu" id="music_queue_view_context">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <signal name="hide" handler="on_music_queue_view_context_hide" swapped="no"/>
-    <signal name="popped-up" handler="on_music_queue_view_context_popped_up" swapped="no"/>
     <child>
       <object class="GtkMenuItem" id="music_queue_view_context_play_now">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Play now</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_queue_view_context_play_now_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -550,7 +517,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Enqueue</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_queue_view_context_enqueue_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -565,7 +531,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Move to top</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_queue_view_context_top_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -574,7 +539,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Move up</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_queue_view_context_up_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -583,7 +547,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Move down</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_queue_view_context_down_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -592,7 +555,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Move to bottom</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_queue_view_context_bottom_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -607,7 +569,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Remove from queue</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_queue_view_context_delete_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -622,7 +583,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Clear queue</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_music_queue_view_context_clear_activate" swapped="no"/>
       </object>
     </child>
   </object>
@@ -635,7 +595,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Open as playlist</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_queries_view_context_new_playlist_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -650,7 +609,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Add to queue</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_queries_view_context_to_queue_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -659,7 +617,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Add to playlist</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_queries_view_context_to_playlist_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -674,7 +631,6 @@
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Edit</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_queries_view_context_edit_activate" swapped="no"/>
       </object>
     </child>
     <child>
@@ -690,7 +646,6 @@
         <property name="tooltip-text" translatable="yes">Delete query</property>
         <property name="label" translatable="yes">Delete</property>
         <property name="use-underline">True</property>
-        <signal name="activate" handler="on_queries_view_context_delete_activate" swapped="no"/>
       </object>
     </child>
   </object>

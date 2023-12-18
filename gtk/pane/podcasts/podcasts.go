@@ -2,6 +2,7 @@ package podcastspane
 
 import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 )
 
@@ -10,7 +11,7 @@ var (
 )
 
 // Setup sets the podcasts pane.
-func Setup(signals *map[string]interface{}) (err error) {
+func Setup(signals *builder.Signals) (err error) {
 
 	podcastsQueueSignals, err = playlists.CreateQueue(
 		m3uetcpb.Perspective_PODCASTS,
@@ -20,16 +21,61 @@ func Setup(signals *map[string]interface{}) (err error) {
 	if err != nil {
 		return
 	}
-	(*signals)["on_podcasts_queue_sel_changed"] = podcastsQueueSignals.SelChanged
-	(*signals)["on_podcasts_queue_view_row_activated"] = podcastsQueueSignals.DblClicked
-	(*signals)["on_podcasts_queue_view_button_press_event"] = podcastsQueueSignals.Context
-	(*signals)["on_podcasts_queue_view_context_play_now_activate"] = podcastsQueueSignals.ContextPlayNow
-	(*signals)["on_podcasts_queue_view_context_enqueue_activate"] = podcastsQueueSignals.ContextEnqueue
-	(*signals)["on_podcasts_queue_view_context_top_activate"] = podcastsQueueSignals.ContextMove
-	(*signals)["on_podcasts_queue_view_context_up_activate"] = podcastsQueueSignals.ContextMove
-	(*signals)["on_podcasts_queue_view_context_down_activate"] = podcastsQueueSignals.ContextMove
-	(*signals)["on_podcasts_queue_view_context_bottom_activate"] = podcastsQueueSignals.ContextMove
-	(*signals)["on_podcasts_queue_view_context_delete_activate"] = podcastsQueueSignals.ContextDelete
-	(*signals)["on_podcasts_queue_view_context_clear_activate"] = podcastsQueueSignals.ContextClear
+
+	(*signals).AddDetail(
+		"podcasts_queue_sel",
+		"changed",
+		podcastsQueueSignals.SelChanged,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view",
+		"row-activated",
+		podcastsQueueSignals.DblClicked,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view",
+		"button-press-event",
+		podcastsQueueSignals.Context,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view_context_play_now",
+		"activate",
+		podcastsQueueSignals.ContextPlayNow,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view_context_enqueue",
+		"activate",
+		podcastsQueueSignals.ContextEnqueue,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view_context_top",
+		"activate",
+		podcastsQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view_context_up",
+		"activate",
+		podcastsQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view_context_down",
+		"activate",
+		podcastsQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view_context_bottom",
+		"activate",
+		podcastsQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view_context_delete",
+		"activate",
+		podcastsQueueSignals.ContextDelete,
+	)
+	(*signals).AddDetail(
+		"podcasts_queue_view_context_clear",
+		"activate",
+		podcastsQueueSignals.ContextClear,
+	)
 	return
 }

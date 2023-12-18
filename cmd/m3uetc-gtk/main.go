@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gio/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/onerror"
 	gtkui "github.com/jwmwalrus/m3u-etcetera/gtk"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -20,10 +20,8 @@ var (
 	appID     string
 	app       *gtk.Application
 	window    *gtk.ApplicationWindow
-	b         *gtk.Builder
 	activated bool
 
-	//nolint: typecheck // pre-buid step
 	//go:embed ui images
 	data embed.FS
 )
@@ -39,8 +37,8 @@ func main() {
 
 	appID = "com.github.jwmwalrus." + rtc.AppInstance()
 
-	app, err = gtk.ApplicationNew(appID, glib.APPLICATION_FLAGS_NONE)
-	if err != nil {
+	app = gtk.NewApplication(appID, gio.ApplicationFlagsNone)
+	if app == nil {
 		rtc.Fatal("Unable to create application", "error", err)
 	}
 
@@ -53,7 +51,7 @@ func main() {
 		slog.Info("Activating primary instance", "instance", appID)
 
 		activated = true
-		if b, err = builder.Setup(&data); err != nil {
+		if _, err = builder.Setup(&data); err != nil {
 			rtc.Fatal("Unable to create builder", "error", err)
 		}
 
@@ -76,12 +74,12 @@ func main() {
 			app.Quit()
 		})
 
-		signals := make(map[string]interface{})
+		signals := make(builder.Signals)
 
 		err = gtkui.Setup(window, &signals)
 		onerror.Fatal(err)
 
-		builder.ConnectSignals(signals)
+		builder.ConnectSignals(&signals)
 
 		dialer.Subscribe()
 

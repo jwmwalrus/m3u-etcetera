@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -17,21 +17,26 @@ var (
 	notebook         *gtk.Notebook
 )
 
-func addPerspectives(signals *map[string]interface{}) (err error) {
+func addPerspectives(signals *builder.Signals) (err error) {
 	slog.Info("Adding perspectives")
 
 	_, err = builder.GetComboBoxText("perspective")
 	if err != nil {
 		return
 	}
-	(*signals)["on_perspective_changed"] = onPerspectiveChanged
+
+	(*signals).AddDetail(
+		"perspective",
+		"changed",
+		onPerspectiveChanged,
+	)
 
 	notebook, err = builder.GetNotebook("perspective_panes")
 	if err != nil {
 		return
 	}
 
-	for i := 0; i < notebook.GetNPages(); i++ {
+	for i := 0; i < notebook.NPages(); i++ {
 		notebook.RemovePage(0)
 	}
 
@@ -46,11 +51,12 @@ func addPerspectives(signals *map[string]interface{}) (err error) {
 }
 
 func onPerspectiveChanged(cbt *gtk.ComboBoxText) {
-	text := cbt.GetActiveText()
+	text := cbt.ActiveText()
+
 	logw := slog.With("activeText", text)
 	logw.Info("Perspective changed")
 
-	text = strings.ToUpper(cbt.GetActiveText())
+	text = strings.ToUpper(cbt.ActiveText())
 	if idx, ok := m3uetcpb.Perspective_value[text]; ok {
 		notebook.SetCurrentPage(int(idx))
 	}

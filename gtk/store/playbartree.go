@@ -8,7 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 )
@@ -51,16 +52,16 @@ func (te *playlistTreeEntry) appendNode(model *gtk.TreeStore, iter *gtk.TreeIter
 	}
 
 	pliter := model.Append(iter)
-	path, _ := model.GetPath(pliter)
+	path := model.Path(pliter)
 	te.path = path.String()
 
 	model.SetValue(
 		pliter,
 		int(PLColTree),
-		te.label+suffix,
+		glib.NewValue(te.label+suffix),
 	)
-	model.SetValue(pliter, int(PLColTreeIDList), util.IDListToString(te.ids))
-	model.SetValue(pliter, int(PLColTreeIsGroup), te.et == playlistGroupEntry)
+	model.SetValue(pliter, int(PLColTreeIDList), util.IDListToGValue(te.ids))
+	model.SetValue(pliter, int(PLColTreeIsGroup), glib.NewValue(te.et == playlistGroupEntry))
 
 	for i := range te.child {
 		te.child[i].appendNode(model, pliter)
@@ -194,14 +195,14 @@ func (bt *playbarTree) update() bool {
 			continue
 		}
 
-		if tree.model.GetNColumns() == 0 {
+		if tree.model.NColumns() == 0 {
 			continue
 		}
 		start := time.Now()
 
 		guide := map[int]playlistEntryType{1: playlistGroupEntry, 2: playlistEntry}
 
-		_, ok := tree.model.GetIterFirst()
+		_, ok := tree.model.IterFirst()
 		if ok {
 			tree.model.Clear()
 		}

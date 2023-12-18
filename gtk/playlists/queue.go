@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/chars"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -65,10 +65,7 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 		return
 	}
 
-	renderer, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return
-	}
+	renderer := gtk.NewCellRendererText()
 
 	qcols := []int{
 		int(store.QColPosition),
@@ -80,17 +77,15 @@ func CreateQueue(p m3uetcpb.Perspective, queueID, contextMenuID string) (
 	}
 
 	for _, i := range qcols {
-		var col *gtk.TreeViewColumn
-		col, err = gtk.TreeViewColumnNewWithAttribute(
-			store.QColumns[i].Name,
+		col := gtk.NewTreeViewColumn()
+		col.SetTitle(store.QColumns[i].Name)
+		col.PackStart(renderer, true)
+		col.AddAttribute(
 			renderer,
 			"text",
 			i,
 		)
-		if err != nil {
-			return
-		}
-		col.SetSizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+		col.SetSizing(gtk.TreeViewColumnAutosize)
 		col.SetResizable(true)
 		oq.view.InsertColumn(col, -1)
 	}

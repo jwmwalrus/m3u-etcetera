@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 )
 
@@ -130,11 +130,11 @@ func (qyd *queryData) updateQueryResults() bool {
 	if model == nil {
 		return false
 	}
-	if model.GetNColumns() == 0 {
+	if model.NColumns() == 0 {
 		return false
 	}
 
-	_, ok := model.GetIterFirst()
+	_, ok := model.IterFirst()
 	if ok {
 		model.Clear()
 	}
@@ -146,7 +146,7 @@ func (qyd *queryData) updateQueryResults() bool {
 	for i, t := range qyd.tracks {
 		iter = model.Append()
 		dur := time.Duration(t.Duration) * time.Nanosecond
-		err := model.Set(
+		model.Set(
 			iter,
 			[]int{
 				int(TColTrackID),
@@ -176,39 +176,35 @@ func (qyd *queryData) updateQueryResults() bool {
 				int(TColNumber),
 				int(TColToggleSelect),
 			},
-			[]interface{}{
-				t.Id,
-				t.CollectionId,
-				t.Format,
-				t.Type,
-				t.Title,
-				t.Album,
-				t.Artist,
-				t.Albumartist,
-				t.Composer,
-				t.Genre,
+			[]glib.Value{
+				*glib.NewValue(t.Id),
+				*glib.NewValue(t.CollectionId),
+				*glib.NewValue(t.Format),
+				*glib.NewValue(t.Type),
+				*glib.NewValue(t.Title),
+				*glib.NewValue(t.Album),
+				*glib.NewValue(t.Artist),
+				*glib.NewValue(t.Albumartist),
+				*glib.NewValue(t.Composer),
+				*glib.NewValue(t.Genre),
 
-				int(t.Year),
-				int(t.Tracknumber),
-				int(t.Tracktotal),
-				int(t.Discnumber),
-				int(t.Disctotal),
-				t.Lyrics,
-				t.Comment,
-				int(t.Playcount),
+				*glib.NewValue(int(t.Year)),
+				*glib.NewValue(int(t.Tracknumber)),
+				*glib.NewValue(int(t.Tracktotal)),
+				*glib.NewValue(int(t.Discnumber)),
+				*glib.NewValue(int(t.Disctotal)),
+				*glib.NewValue(t.Lyrics),
+				*glib.NewValue(t.Comment),
+				*glib.NewValue(int(t.Playcount)),
 
-				int(t.Rating),
-				fmt.Sprint(dur.Truncate(time.Second)),
-				t.Remote,
-				time.Unix(0, t.Lastplayed).Format(lastPlayedLayout),
-				i + 1,
-				false,
+				*glib.NewValue(int(t.Rating)),
+				*glib.NewValue(fmt.Sprint(dur.Truncate(time.Second))),
+				*glib.NewValue(t.Remote),
+				*glib.NewValue(time.Unix(0, t.Lastplayed).Format(lastPlayedLayout)),
+				*glib.NewValue(i + 1),
+				*glib.NewValue(false),
 			},
 		)
-		if err != nil {
-			slog.Error("Failed to set query results values", "error", err)
-			return false
-		}
 	}
 	return false
 }
@@ -217,7 +213,7 @@ func (qyd *queryData) updateQueryResults() bool {
 func ClearQueryResults() {
 	model := queryResultsModel
 
-	_, ok := model.GetIterFirst()
+	_, ok := model.IterFirst()
 	if ok {
 		model.Clear()
 	}
@@ -227,8 +223,9 @@ func ClearQueryResults() {
 func CreateQueryResultsModel() (model *gtk.ListStore, err error) {
 	slog.Info("Creating query model")
 
-	queryResultsModel, err = gtk.ListStoreNew(TColumns.getTypes()...)
-	if err != nil {
+	queryResultsModel = gtk.NewListStore(TColumns.getTypes())
+	if queryResultsModel == nil {
+		err = fmt.Errorf("failed to create list-store")
 		return
 	}
 
@@ -243,15 +240,15 @@ func GetQueryResultsSelections() (ids []int64, err error) {
 		return
 	}
 
-	if model.GetNColumns() == 0 {
+	if model.NColumns() == 0 {
 		return
 	}
 
-	iter, ok := model.GetIterFirst()
+	iter, ok := model.IterFirst()
 	for ok {
 		var values map[ModelColumn]interface{}
 		values, err = GetTreeModelValues(
-			model.ToTreeModel(),
+			&model.TreeModel,
 			iter,
 			[]ModelColumn{TColTrackID, TColToggleSelect},
 		)
@@ -274,22 +271,13 @@ func ToggleQueryResultsSelection() {
 
 	model := queryResultsModel
 
-	iter, ok := model.GetIterFirst()
+	iter, ok := model.IterFirst()
 
 	for ok {
-		gval, err := model.GetValue(iter, int(TColToggleSelect))
-		if err != nil {
-			slog.Error("Failed to get query result selection toggle", "error", err)
-			return
-		}
+		gval := model.Value(iter, int(TColToggleSelect))
+		value := gval.GoValue()
 
-		value, err := gval.GoValue()
-		if err != nil {
-			slog.Error("Failed to obtain Go value", "error", err)
-			return
-		}
-
-		model.SetValue(iter, int(TColToggleSelect), !value.(bool))
+		model.SetValue(iter, int(TColToggleSelect), glib.NewValue(!value.(bool)))
 
 		ok = model.IterNext(iter)
 	}

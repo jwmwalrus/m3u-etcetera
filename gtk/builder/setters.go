@@ -11,9 +11,9 @@ func SetTextView(id, val string) (err error) {
 		return
 	}
 
-	buf, err := tv.GetBuffer()
-	if err != nil {
-		err = fmt.Errorf("Unable to get buffer from text view: %v", err)
+	buf := tv.Buffer()
+	if buf == nil {
+		err = fmt.Errorf("Unable to get buffer from text view")
 		return
 	}
 

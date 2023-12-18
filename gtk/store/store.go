@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/gotk3/gotk3/glib"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
 )
 
 const (
@@ -224,129 +224,129 @@ var (
 
 func init() {
 	CTreeColumn = storeColumns{
-		columnDef{Name: "Tree", colType: glib.TYPE_STRING},
-		columnDef{Name: "ID List", colType: glib.TYPE_STRING},
-		columnDef{Name: "Keywords", colType: glib.TYPE_STRING},
+		columnDef{Name: "Tree", colType: glib.TypeString},
+		columnDef{Name: "ID List", colType: glib.TypeString},
+		columnDef{Name: "Keywords", colType: glib.TypeString},
 	}
 
 	CColumns = make(storeColumns, CColsN)
-	CColumns[CColCollectionID] = columnDef{Name: "ID", colType: glib.TYPE_INT64}
-	CColumns[CColName] = columnDef{Name: "Name", colType: glib.TYPE_STRING, editable: true}
-	CColumns[CColDescription] = columnDef{Name: "Description", colType: glib.TYPE_STRING, editable: true}
-	CColumns[CColLocation] = columnDef{Name: "Location", colType: glib.TYPE_STRING}
-	CColumns[CColRemoteLocation] = columnDef{Name: "Remote Location", colType: glib.TYPE_STRING, editable: true}
-	CColumns[CColPerspective] = columnDef{Name: "Perspective", colType: glib.TYPE_STRING}
-	CColumns[CColDisabled] = columnDef{Name: "Disabled", colType: glib.TYPE_BOOLEAN, activatable: true}
-	CColumns[CColRemote] = columnDef{Name: "Remote", colType: glib.TYPE_BOOLEAN, activatable: true}
-	CColumns[CColScanned] = columnDef{Name: "Scanned", colType: glib.TYPE_INT, activatable: true}
-	CColumns[CColTracks] = columnDef{Name: "# Tracks", colType: glib.TYPE_INT64}
+	CColumns[CColCollectionID] = columnDef{Name: "ID", colType: glib.TypeInt64}
+	CColumns[CColName] = columnDef{Name: "Name", colType: glib.TypeString, editable: true}
+	CColumns[CColDescription] = columnDef{Name: "Description", colType: glib.TypeString, editable: true}
+	CColumns[CColLocation] = columnDef{Name: "Location", colType: glib.TypeString}
+	CColumns[CColRemoteLocation] = columnDef{Name: "Remote Location", colType: glib.TypeString, editable: true}
+	CColumns[CColPerspective] = columnDef{Name: "Perspective", colType: glib.TypeString}
+	CColumns[CColDisabled] = columnDef{Name: "Disabled", colType: glib.TypeBoolean, activatable: true}
+	CColumns[CColRemote] = columnDef{Name: "Remote", colType: glib.TypeBoolean, activatable: true}
+	CColumns[CColScanned] = columnDef{Name: "Scanned", colType: glib.TypeInt, activatable: true}
+	CColumns[CColTracks] = columnDef{Name: "# Tracks", colType: glib.TypeInt64}
 
-	CColumns[CColTracksView] = columnDef{Name: "# Tracks", colType: glib.TYPE_STRING}
+	CColumns[CColTracksView] = columnDef{Name: "# Tracks", colType: glib.TypeString}
 
-	CColumns[CColActionRescan] = columnDef{Name: "ACTION: Re-scan", colType: glib.TYPE_BOOLEAN, activatable: true}
-	CColumns[CColActionRemove] = columnDef{Name: "ACTION: Remove", colType: glib.TYPE_BOOLEAN, activatable: true}
+	CColumns[CColActionRescan] = columnDef{Name: "ACTION: Re-scan", colType: glib.TypeBoolean, activatable: true}
+	CColumns[CColActionRemove] = columnDef{Name: "ACTION: Remove", colType: glib.TypeBoolean, activatable: true}
 
 	TColumns = make(storeColumns, TColsN)
-	TColumns[TColTrackID] = columnDef{Name: "ID", colType: glib.TYPE_INT64}
-	TColumns[TColCollectionID] = columnDef{Name: "Collection ID", colType: glib.TYPE_INT64}
-	TColumns[TColLocation] = columnDef{Name: "Location", colType: glib.TYPE_STRING}
-	TColumns[TColFormat] = columnDef{Name: "Format", colType: glib.TYPE_STRING}
-	TColumns[TColType] = columnDef{Name: "Type", colType: glib.TYPE_STRING}
-	TColumns[TColTitle] = columnDef{Name: "Title", colType: glib.TYPE_STRING}
-	TColumns[TColAlbum] = columnDef{Name: "Album", colType: glib.TYPE_STRING}
-	TColumns[TColArtist] = columnDef{Name: "Artist", colType: glib.TYPE_STRING}
-	TColumns[TColAlbumartist] = columnDef{Name: "Album Artist", colType: glib.TYPE_STRING}
-	TColumns[TColComposer] = columnDef{Name: "Composer", colType: glib.TYPE_STRING}
-	TColumns[TColGenre] = columnDef{Name: "Genre", colType: glib.TYPE_STRING}
+	TColumns[TColTrackID] = columnDef{Name: "ID", colType: glib.TypeInt64}
+	TColumns[TColCollectionID] = columnDef{Name: "Collection ID", colType: glib.TypeInt64}
+	TColumns[TColLocation] = columnDef{Name: "Location", colType: glib.TypeString}
+	TColumns[TColFormat] = columnDef{Name: "Format", colType: glib.TypeString}
+	TColumns[TColType] = columnDef{Name: "Type", colType: glib.TypeString}
+	TColumns[TColTitle] = columnDef{Name: "Title", colType: glib.TypeString}
+	TColumns[TColAlbum] = columnDef{Name: "Album", colType: glib.TypeString}
+	TColumns[TColArtist] = columnDef{Name: "Artist", colType: glib.TypeString}
+	TColumns[TColAlbumartist] = columnDef{Name: "Album Artist", colType: glib.TypeString}
+	TColumns[TColComposer] = columnDef{Name: "Composer", colType: glib.TypeString}
+	TColumns[TColGenre] = columnDef{Name: "Genre", colType: glib.TypeString}
 
-	TColumns[TColYear] = columnDef{Name: "Year", colType: glib.TYPE_INT}
-	TColumns[TColTracknumber] = columnDef{Name: "Track Number", colType: glib.TYPE_INT}
-	TColumns[TColTracktotal] = columnDef{Name: "Track Total", colType: glib.TYPE_INT}
-	TColumns[TColTrackNumberOverTotal] = columnDef{Name: "Track # / Total", colType: glib.TYPE_STRING}
-	TColumns[TColDiscnumber] = columnDef{Name: "Disc Number", colType: glib.TYPE_INT}
-	TColumns[TColDisctotal] = columnDef{Name: "Disc Total", colType: glib.TYPE_INT}
-	TColumns[TColDiscNumberOverTotal] = columnDef{Name: "Disc # / Total", colType: glib.TYPE_STRING}
-	TColumns[TColLyrics] = columnDef{Name: "Lyrics", colType: glib.TYPE_STRING}
-	TColumns[TColComment] = columnDef{Name: "Comment", colType: glib.TYPE_STRING}
-	TColumns[TColPlaycount] = columnDef{Name: "Play Count", colType: glib.TYPE_INT}
+	TColumns[TColYear] = columnDef{Name: "Year", colType: glib.TypeInt}
+	TColumns[TColTracknumber] = columnDef{Name: "Track Number", colType: glib.TypeInt}
+	TColumns[TColTracktotal] = columnDef{Name: "Track Total", colType: glib.TypeInt}
+	TColumns[TColTrackNumberOverTotal] = columnDef{Name: "Track # / Total", colType: glib.TypeString}
+	TColumns[TColDiscnumber] = columnDef{Name: "Disc Number", colType: glib.TypeInt}
+	TColumns[TColDisctotal] = columnDef{Name: "Disc Total", colType: glib.TypeInt}
+	TColumns[TColDiscNumberOverTotal] = columnDef{Name: "Disc # / Total", colType: glib.TypeString}
+	TColumns[TColLyrics] = columnDef{Name: "Lyrics", colType: glib.TypeString}
+	TColumns[TColComment] = columnDef{Name: "Comment", colType: glib.TypeString}
+	TColumns[TColPlaycount] = columnDef{Name: "Play Count", colType: glib.TypeInt}
 
-	TColumns[TColRating] = columnDef{Name: "Rating", colType: glib.TYPE_INT}
-	TColumns[TColDuration] = columnDef{Name: "Duration", colType: glib.TYPE_STRING}
-	TColumns[TColPlayedOverDuration] = columnDef{Name: "(Played / ) Duration", colType: glib.TYPE_STRING}
-	TColumns[TColRemote] = columnDef{Name: "Remote (T)", colType: glib.TYPE_BOOLEAN}
-	TColumns[TColLastplayed] = columnDef{Name: "Last Played", colType: glib.TYPE_STRING}
-	TColumns[TColNumber] = columnDef{Name: "#", colType: glib.TYPE_INT}
-	TColumns[TColToggleSelect] = columnDef{Name: "Select", colType: glib.TYPE_BOOLEAN, activatable: true}
-	TColumns[TColPosition] = columnDef{Name: "#", colType: glib.TYPE_INT}
-	TColumns[TColLastPosition] = columnDef{Name: "#", colType: glib.TYPE_INT}
-	TColumns[TColDynamic] = columnDef{Name: "Dynamic", colType: glib.TYPE_BOOLEAN}
-	TColumns[TColFontWeight] = columnDef{Name: "Font weight", colType: glib.TYPE_INT}
+	TColumns[TColRating] = columnDef{Name: "Rating", colType: glib.TypeInt}
+	TColumns[TColDuration] = columnDef{Name: "Duration", colType: glib.TypeString}
+	TColumns[TColPlayedOverDuration] = columnDef{Name: "(Played / ) Duration", colType: glib.TypeString}
+	TColumns[TColRemote] = columnDef{Name: "Remote (T)", colType: glib.TypeBoolean}
+	TColumns[TColLastplayed] = columnDef{Name: "Last Played", colType: glib.TypeString}
+	TColumns[TColNumber] = columnDef{Name: "#", colType: glib.TypeInt}
+	TColumns[TColToggleSelect] = columnDef{Name: "Select", colType: glib.TypeBoolean, activatable: true}
+	TColumns[TColPosition] = columnDef{Name: "#", colType: glib.TypeInt}
+	TColumns[TColLastPosition] = columnDef{Name: "#", colType: glib.TypeInt}
+	TColumns[TColDynamic] = columnDef{Name: "Dynamic", colType: glib.TypeBoolean}
+	TColumns[TColFontWeight] = columnDef{Name: "Font weight", colType: glib.TypeInt}
 
 	QColumns = make(storeColumns, QColsN)
-	QColumns[QColQueueTrackID] = columnDef{Name: "ID", colType: glib.TYPE_INT64}
-	QColumns[QColPosition] = columnDef{Name: "Position", colType: glib.TYPE_INT}
-	QColumns[QColLastPosition] = columnDef{Name: "Last Position", colType: glib.TYPE_INT}
-	QColumns[QColPlayed] = columnDef{Name: "Played", colType: glib.TYPE_BOOLEAN}
-	QColumns[QColLocation] = columnDef{Name: "Location (QT)", colType: glib.TYPE_STRING}
-	QColumns[QColPerspective] = columnDef{Name: "Perspective", colType: glib.TYPE_INT}
-	QColumns[QColTrackID] = columnDef{Name: "Track ID", colType: glib.TYPE_INT64}
+	QColumns[QColQueueTrackID] = columnDef{Name: "ID", colType: glib.TypeInt64}
+	QColumns[QColPosition] = columnDef{Name: "Position", colType: glib.TypeInt}
+	QColumns[QColLastPosition] = columnDef{Name: "Last Position", colType: glib.TypeInt}
+	QColumns[QColPlayed] = columnDef{Name: "Played", colType: glib.TypeBoolean}
+	QColumns[QColLocation] = columnDef{Name: "Location (QT)", colType: glib.TypeString}
+	QColumns[QColPerspective] = columnDef{Name: "Perspective", colType: glib.TypeInt}
+	QColumns[QColTrackID] = columnDef{Name: "Track ID", colType: glib.TypeInt64}
 
-	QColumns[QColTrackLocation] = columnDef{Name: "Location", colType: glib.TYPE_STRING}
-	QColumns[QColFormat] = columnDef{Name: "Format", colType: glib.TYPE_STRING}
-	QColumns[QColType] = columnDef{Name: "Type", colType: glib.TYPE_STRING}
-	QColumns[QColTitle] = columnDef{Name: "Title", colType: glib.TYPE_STRING}
-	QColumns[QColAlbum] = columnDef{Name: "Album", colType: glib.TYPE_STRING}
-	QColumns[QColArtist] = columnDef{Name: "Artist", colType: glib.TYPE_STRING}
-	QColumns[QColAlbumartist] = columnDef{Name: "Album Artist", colType: glib.TYPE_STRING}
-	QColumns[QColComposer] = columnDef{Name: "Composer", colType: glib.TYPE_STRING}
-	QColumns[QColGenre] = columnDef{Name: "Genre", colType: glib.TYPE_STRING}
+	QColumns[QColTrackLocation] = columnDef{Name: "Location", colType: glib.TypeString}
+	QColumns[QColFormat] = columnDef{Name: "Format", colType: glib.TypeString}
+	QColumns[QColType] = columnDef{Name: "Type", colType: glib.TypeString}
+	QColumns[QColTitle] = columnDef{Name: "Title", colType: glib.TypeString}
+	QColumns[QColAlbum] = columnDef{Name: "Album", colType: glib.TypeString}
+	QColumns[QColArtist] = columnDef{Name: "Artist", colType: glib.TypeString}
+	QColumns[QColAlbumartist] = columnDef{Name: "Album Artist", colType: glib.TypeString}
+	QColumns[QColComposer] = columnDef{Name: "Composer", colType: glib.TypeString}
+	QColumns[QColGenre] = columnDef{Name: "Genre", colType: glib.TypeString}
 
-	QColumns[QColYear] = columnDef{Name: "Year", colType: glib.TYPE_INT}
-	QColumns[QColTracknumber] = columnDef{Name: "Track Number", colType: glib.TYPE_INT}
-	QColumns[QColTracktotal] = columnDef{Name: "Track Total", colType: glib.TYPE_INT}
-	QColumns[QColDiscnumber] = columnDef{Name: "Disc Number", colType: glib.TYPE_INT}
-	QColumns[QColDisctotal] = columnDef{Name: "Disc Total", colType: glib.TYPE_INT}
-	QColumns[QColLyrics] = columnDef{Name: "Lyrics", colType: glib.TYPE_STRING}
-	QColumns[QColComment] = columnDef{Name: "Comment", colType: glib.TYPE_STRING}
-	QColumns[QColPlaycount] = columnDef{Name: "Play Count", colType: glib.TYPE_INT}
+	QColumns[QColYear] = columnDef{Name: "Year", colType: glib.TypeInt}
+	QColumns[QColTracknumber] = columnDef{Name: "Track Number", colType: glib.TypeInt}
+	QColumns[QColTracktotal] = columnDef{Name: "Track Total", colType: glib.TypeInt}
+	QColumns[QColDiscnumber] = columnDef{Name: "Disc Number", colType: glib.TypeInt}
+	QColumns[QColDisctotal] = columnDef{Name: "Disc Total", colType: glib.TypeInt}
+	QColumns[QColLyrics] = columnDef{Name: "Lyrics", colType: glib.TypeString}
+	QColumns[QColComment] = columnDef{Name: "Comment", colType: glib.TypeString}
+	QColumns[QColPlaycount] = columnDef{Name: "Play Count", colType: glib.TypeInt}
 
-	QColumns[QColRating] = columnDef{Name: "Rating", colType: glib.TYPE_INT}
-	QColumns[QColDuration] = columnDef{Name: "Duration", colType: glib.TYPE_STRING}
-	QColumns[QColRemote] = columnDef{Name: "Remote (T)", colType: glib.TYPE_BOOLEAN}
-	QColumns[QColLastplayed] = columnDef{Name: "Last Played", colType: glib.TYPE_STRING}
+	QColumns[QColRating] = columnDef{Name: "Rating", colType: glib.TypeInt}
+	QColumns[QColDuration] = columnDef{Name: "Duration", colType: glib.TypeString}
+	QColumns[QColRemote] = columnDef{Name: "Remote (T)", colType: glib.TypeBoolean}
+	QColumns[QColLastplayed] = columnDef{Name: "Last Played", colType: glib.TypeString}
 
 	QYTreeColumn = storeColumns{
-		columnDef{Name: "Tree", colType: glib.TYPE_STRING},
-		columnDef{Name: "ID List", colType: glib.TYPE_STRING},
-		columnDef{Name: "Keywords", colType: glib.TYPE_STRING},
-		columnDef{Name: "Sort", colType: glib.TYPE_INT},
+		columnDef{Name: "Tree", colType: glib.TypeString},
+		columnDef{Name: "ID List", colType: glib.TypeString},
+		columnDef{Name: "Keywords", colType: glib.TypeString},
+		columnDef{Name: "Sort", colType: glib.TypeInt},
 	}
 
 	// NOTE: Will I ever use this?.
 	QYColumns = make(storeColumns, QYColsN)
-	QYColumns[QYColQueryID] = columnDef{Name: "ID", colType: glib.TYPE_INT64}
-	QYColumns[QYColName] = columnDef{Name: "Name", colType: glib.TYPE_STRING}
-	QYColumns[QYColDescription] = columnDef{Name: "Description", colType: glib.TYPE_STRING}
-	QYColumns[QYColRandom] = columnDef{Name: "Random", colType: glib.TYPE_BOOLEAN}
-	QYColumns[QYColRating] = columnDef{Name: "Rating", colType: glib.TYPE_INT}
-	QYColumns[QYColLimit] = columnDef{Name: "Limit", colType: glib.TYPE_INT64}
-	QYColumns[QYColParams] = columnDef{Name: "Params", colType: glib.TYPE_STRING}
-	QYColumns[QYColFrom] = columnDef{Name: "From", colType: glib.TYPE_INT64}
-	QYColumns[QYColTo] = columnDef{Name: "To", colType: glib.TYPE_INT64}
-	QYColumns[QYColCollectionIDs] = columnDef{Name: "Collection IDs", colType: glib.TYPE_INT64}
+	QYColumns[QYColQueryID] = columnDef{Name: "ID", colType: glib.TypeInt64}
+	QYColumns[QYColName] = columnDef{Name: "Name", colType: glib.TypeString}
+	QYColumns[QYColDescription] = columnDef{Name: "Description", colType: glib.TypeString}
+	QYColumns[QYColRandom] = columnDef{Name: "Random", colType: glib.TypeBoolean}
+	QYColumns[QYColRating] = columnDef{Name: "Rating", colType: glib.TypeInt}
+	QYColumns[QYColLimit] = columnDef{Name: "Limit", colType: glib.TypeInt64}
+	QYColumns[QYColParams] = columnDef{Name: "Params", colType: glib.TypeString}
+	QYColumns[QYColFrom] = columnDef{Name: "From", colType: glib.TypeInt64}
+	QYColumns[QYColTo] = columnDef{Name: "To", colType: glib.TypeInt64}
+	QYColumns[QYColCollectionIDs] = columnDef{Name: "Collection IDs", colType: glib.TypeInt64}
 
 	PLTreeColumn = storeColumns{
-		columnDef{Name: "Tree", colType: glib.TYPE_STRING},
-		columnDef{Name: "ID List", colType: glib.TYPE_STRING},
-		columnDef{Name: "Keywords", colType: glib.TYPE_STRING},
-		columnDef{Name: "Is Group", colType: glib.TYPE_BOOLEAN},
+		columnDef{Name: "Tree", colType: glib.TypeString},
+		columnDef{Name: "ID List", colType: glib.TypeString},
+		columnDef{Name: "Keywords", colType: glib.TypeString},
+		columnDef{Name: "Is Group", colType: glib.TypeBoolean},
 	}
 
 	PGColumns = make(storeColumns, PGColsN)
-	PGColumns[PGColPlaylistGroupID] = columnDef{Name: "ID", colType: glib.TYPE_INT64}
-	PGColumns[PGColName] = columnDef{Name: "Name", colType: glib.TYPE_STRING, editable: true}
-	PGColumns[PGColDescription] = columnDef{Name: "Description", colType: glib.TYPE_STRING, editable: true}
-	PGColumns[PGColPerspective] = columnDef{Name: "Perspective", colType: glib.TYPE_STRING}
-	PGColumns[PGColActionRemove] = columnDef{Name: "ACTION: Remove", colType: glib.TYPE_BOOLEAN, activatable: true}
+	PGColumns[PGColPlaylistGroupID] = columnDef{Name: "ID", colType: glib.TypeInt64}
+	PGColumns[PGColName] = columnDef{Name: "Name", colType: glib.TypeString, editable: true}
+	PGColumns[PGColDescription] = columnDef{Name: "Description", colType: glib.TypeString, editable: true}
+	PGColumns[PGColPerspective] = columnDef{Name: "Perspective", colType: glib.TypeString}
+	PGColumns[PGColActionRemove] = columnDef{Name: "ACTION: Remove", colType: glib.TypeBoolean, activatable: true}
 
 }

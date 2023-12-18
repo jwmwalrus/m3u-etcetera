@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gdk/v3"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
@@ -43,26 +43,21 @@ func createMusicCollections() (omc *onMusicCollections, err error) {
 		return
 	}
 
-	renderer, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return
-	}
+	renderer := gtk.NewCellRendererText()
 
 	qcols := []int{
 		int(store.CColTree),
 	}
 
 	for _, i := range qcols {
-		var col *gtk.TreeViewColumn
-		col, err = gtk.TreeViewColumnNewWithAttribute(
-			store.CTreeColumn[i].Name,
+		col := gtk.NewTreeViewColumn()
+		col.SetTitle(store.CTreeColumn[i].Name)
+		col.PackStart(renderer, true)
+		col.AddAttribute(
 			renderer,
 			"text",
 			i,
 		)
-		if err != nil {
-			return
-		}
 		omc.view.InsertColumn(col, -1)
 	}
 
@@ -76,7 +71,7 @@ func createMusicCollections() (omc *onMusicCollections, err error) {
 }
 
 func (omc *onMusicCollections) context(tv *gtk.TreeView, event *gdk.Event) {
-	btn := gdk.EventButtonNewFromEvent(event)
+	btn := event.AsButton()
 	if btn.Button() == gdk.BUTTON_SECONDARY {
 		menu, err := builder.GetMenu("collections_view_context")
 		if err != nil {
@@ -100,7 +95,7 @@ func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
 
 	if plID > 0 {
 		action := m3uetcpb.PlaylistTrackAction_PT_APPEND
-		if strings.Contains(mi.GetLabel(), "Prepend") {
+		if strings.Contains(mi.Label(), "Prepend") {
 			action = m3uetcpb.PlaylistTrackAction_PT_PREPEND
 		}
 		req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
@@ -115,7 +110,7 @@ func (omc *onMusicCollections) contextAppend(mi *gtk.MenuItem) {
 		}
 	} else {
 		action := m3uetcpb.QueueAction_Q_APPEND
-		if strings.Contains(mi.GetLabel(), "Prepend") {
+		if strings.Contains(mi.Label(), "Prepend") {
 			action = m3uetcpb.QueueAction_Q_PREPEND
 		}
 		req := &m3uetcpb.ExecuteQueueActionRequest{
@@ -195,20 +190,16 @@ func (omc *onMusicCollections) dblClicked(tv *gtk.TreeView,
 }
 
 func (omc *onMusicCollections) filtered(se *gtk.SearchEntry) {
-	text, err := se.GetText()
-	if err != nil {
-		slog.Error("Failed to get search entry text", "error", err)
-		return
-	}
+	text := se.Text()
 	store.FilterCollectionTreeBy(text)
 }
 
 func (omc *onMusicCollections) hierarchyChanged(cbt *gtk.ComboBoxText) {
-	id := cbt.GetActiveID()
+	id := cbt.ActiveID()
 	slog.With("activeText", id).
 		Info("Collection hierarchy changed")
 
-	grouped := omc.hierarchyGrouped.GetActive()
+	grouped := omc.hierarchyGrouped.Active()
 
 	go func() {
 		store.CData.SwitchHierarchyTo(id, grouped)
@@ -216,11 +207,11 @@ func (omc *onMusicCollections) hierarchyChanged(cbt *gtk.ComboBoxText) {
 }
 
 func (omc *onMusicCollections) hierarchyGroupToggled(cb *gtk.ToggleButton) {
-	grouped := cb.GetActive()
+	grouped := cb.Active()
 	slog.With("grouped", grouped).
 		Info("Collection hierarchy group toggled")
 
-	id := omc.hierarchy.GetActiveID()
+	id := omc.hierarchy.ActiveID()
 
 	go func() {
 		store.CData.SwitchHierarchyTo(id, grouped)

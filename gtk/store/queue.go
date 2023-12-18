@@ -6,9 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
-	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 )
 
@@ -89,7 +88,7 @@ func (qd *queueData) updateQueueModels() bool {
 			continue
 		}
 
-		_, ok := model.GetIterFirst()
+		_, ok := model.IterFirst()
 		if ok {
 			model.Clear()
 		}
@@ -105,7 +104,7 @@ func (qd *queueData) updateQueueModels() bool {
 				continue
 			}
 
-			if model.GetNColumns() == 0 {
+			if model.NColumns() == 0 {
 				continue
 			}
 
@@ -123,7 +122,7 @@ func (qd *queueData) updateQueueModels() bool {
 					continue
 				}
 				iter = model.Append()
-				err := model.Set(
+				model.Set(
 					iter,
 					[]int{
 						int(QColQueueTrackID),
@@ -134,24 +133,20 @@ func (qd *queueData) updateQueueModels() bool {
 						int(QColPerspective),
 						int(QColTrackID),
 					},
-					[]interface{}{
-						qt.Id,
-						int(qt.Position),
-						count,
-						qt.Played,
-						qt.Location,
-						int(qt.Perspective),
-						qt.TrackId,
+					[]glib.Value{
+						*glib.NewValue(qt.Id),
+						*glib.NewValue(int(qt.Position)),
+						*glib.NewValue(count),
+						*glib.NewValue(qt.Played),
+						*glib.NewValue(qt.Location),
+						*glib.NewValue(int(qt.Perspective)),
+						*glib.NewValue(qt.TrackId),
 					},
 				)
-				if err != nil {
-					slog.Error("Failed to set queue values", "error", err)
-					continue
-				}
 				for _, t := range qd.res.Tracks {
 					if qt.Location == t.Location {
 						dur := time.Duration(t.Duration) * time.Nanosecond
-						err := model.Set(
+						model.Set(
 							iter,
 							[]int{
 								int(QColFormat),
@@ -176,31 +171,30 @@ func (qd *queueData) updateQueueModels() bool {
 								int(QColRemote),
 								int(QColLastplayed),
 							},
-							[]interface{}{
-								t.Format,
-								t.Type,
-								t.Title,
-								t.Album,
-								t.Artist,
-								t.Albumartist,
-								t.Composer,
-								t.Genre,
-								int(t.Year),
-								int(t.Tracknumber),
+							[]glib.Value{
+								*glib.NewValue(t.Format),
+								*glib.NewValue(t.Type),
+								*glib.NewValue(t.Title),
+								*glib.NewValue(t.Album),
+								*glib.NewValue(t.Artist),
+								*glib.NewValue(t.Albumartist),
+								*glib.NewValue(t.Composer),
+								*glib.NewValue(t.Genre),
+								*glib.NewValue(int(t.Year)),
+								*glib.NewValue(int(t.Tracknumber)),
 
-								int(t.Tracktotal),
-								int(t.Discnumber),
-								int(t.Disctotal),
-								t.Lyrics,
-								t.Comment,
-								int(t.Playcount),
-								int(t.Rating),
-								fmt.Sprint(dur.Truncate(time.Second)),
-								t.Remote,
-								time.Unix(0, t.Lastplayed).Format(lastPlayedLayout),
+								*glib.NewValue(int(t.Tracktotal)),
+								*glib.NewValue(int(t.Discnumber)),
+								*glib.NewValue(int(t.Disctotal)),
+								*glib.NewValue(t.Lyrics),
+								*glib.NewValue(t.Comment),
+								*glib.NewValue(int(t.Playcount)),
+								*glib.NewValue(int(t.Rating)),
+								*glib.NewValue(fmt.Sprint(dur.Truncate(time.Second))),
+								*glib.NewValue(t.Remote),
+								*glib.NewValue(time.Unix(0, t.Lastplayed).Format(lastPlayedLayout)),
 							},
 						)
-						onerror.Log(err)
 						break
 					}
 				}
@@ -216,8 +210,9 @@ func CreateQueueModel(idx m3uetcpb.Perspective) (
 
 	slog.Info("Creating queue model", "idx", idx)
 
-	model, err = gtk.ListStoreNew(QColumns.getTypes()...)
-	if err != nil {
+	model = gtk.NewListStore(QColumns.getTypes())
+	if model == nil {
+		err = fmt.Errorf("failed to create list-store")
 		return
 	}
 

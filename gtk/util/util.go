@@ -3,7 +3,14 @@ package util
 import (
 	"strconv"
 	"strings"
+
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
 )
+
+// IDListToGValue converts an ID list to a glib.Value.
+func IDListToGValue(ids []int64) *glib.Value {
+	return glib.NewValue(IDListToString(ids))
+}
 
 // IDListToString converts an ID list to a comma-separaterd string.
 func IDListToString(ids []int64) (s string) {

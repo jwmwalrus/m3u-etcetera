@@ -4,12 +4,12 @@ go 1.21.0
 
 require (
 	github.com/dhowden/tag v0.0.0-20230630033851-978a0926ee25
+	github.com/diamondburned/gotk4/pkg v0.0.5
 	github.com/go-gormigrate/gormigrate/v2 v2.1.1
 	github.com/go-gst/go-glib v0.0.0-20230906175327-b2d34240bcb4
 	github.com/go-gst/go-gst v0.0.0-20231025155306-bebb75b005a0
 	github.com/go-testfixtures/testfixtures/v3 v3.6.1
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/gotk3/gotk3 v0.6.2
 	github.com/jwmwalrus/bnp v1.21.0
 	github.com/jwmwalrus/gear-pieces v0.10.1
 	github.com/jwmwalrus/quorum v0.11.3
@@ -39,7 +39,9 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230221090011-e4bae7ad2296 // indirect
 	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231016165738-49dd2c1f3d0b // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect

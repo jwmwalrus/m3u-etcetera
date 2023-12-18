@@ -3,8 +3,9 @@ package playlists
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
@@ -31,15 +32,23 @@ func init() {
 }
 
 // Setup kickstarts playlists.
-func Setup(signals *map[string]interface{}) (err error) {
+func Setup(signals *builder.Signals) (err error) {
 	store.SetUpdatePlaybarViewFn(updatePlaybarView)
 
-	(*signals)["on_music_playlist_new_clicked"] = func(btn *gtk.Button) {
-		createPlaylist(btn, m3uetcpb.Perspective_MUSIC)
-	}
-	(*signals)["on_music_playbar_switch_page"] = func(nb *gtk.Notebook) {
-		go UpdateStatusBar(statusBarDigest)
-	}
+	(*signals).AddDetail(
+		"music_playlist_new",
+		"clicked",
+		func(btn *gtk.Button) {
+			createPlaylist(btn, m3uetcpb.Perspective_MUSIC)
+		},
+	)
+	(*signals).AddDetail(
+		"music_playbar",
+		"switch-page",
+		func(nb *gtk.Notebook) {
+			go UpdateStatusBar(statusBarDigest)
+		},
+	)
 
 	if err = builder.AddFromFile("ui/pane/playlist-dialog.ui"); err != nil {
 		err = fmt.Errorf("Unable to add playlist-dialog file to builder: %v", err)
@@ -67,9 +76,9 @@ func GetFocused(p m3uetcpb.Perspective) int64 {
 		return 0
 	}
 
-	page, _ := nb.GetNthPage(nb.GetCurrentPage())
-	header, _ := nb.GetTabLabel(page)
-	pageName, _ := header.ToWidget().GetName()
+	page := nb.NthPage(nb.CurrentPage())
+	header := nb.TabLabel(page)
+	pageName := gtk.BaseWidget(header).Name()
 	for _, t := range tabsList {
 		if t.headerName == pageName {
 			return t.id
@@ -94,6 +103,18 @@ func createPlaylist(btn *gtk.Button, p m3uetcpb.Perspective) {
 	if err != nil {
 		slog.Error("Failed to execute playlist action", "error", err)
 		return
+	}
+
+	for waitCount := 0; waitCount < 15; waitCount++ {
+		if store.BData.PlaylistIsOpen(res.Id) {
+			break
+		}
+
+		slog.With(
+			"id", res.Id,
+			"wait-count", waitCount+1,
+		).Debug("Waiting for playlist to be open")
+		time.Sleep(1 * time.Second)
 	}
 
 	RequestFocus(p, res.Id)
@@ -125,22 +146,18 @@ func setFocused() {
 	}
 
 	if headerName == "" {
-		slog.With("ID", focusRequest.id).
-			Warn("Playlist is not open, so cannot be focused")
+		slog.Warn("Playlist is not open, so cannot be focused", "id", focusRequest.id)
 		return
 	}
 
-	for ipage := 0; ipage < nb.GetNPages(); ipage++ {
-		page, err := nb.GetNthPage(ipage)
-		if err != nil {
-			slog.With(
-				"page", ipage,
-				"error", err,
-			).Warn("Failed to get page from notebook")
+	for ipage := 0; ipage < nb.NPages(); ipage++ {
+		page := nb.NthPage(ipage)
+		if page == nil {
+			slog.Warn("Failed to get page from notebook", "page", ipage)
 			continue
 		}
-		header, _ := nb.GetTabLabel(page)
-		pageName, _ := header.ToWidget().GetName()
+		header := nb.TabLabel(page)
+		pageName := gtk.BaseWidget(header).Name()
 		if headerName == pageName {
 			nb.SetCurrentPage(ipage)
 			focusRequest.id = -1

@@ -5,7 +5,8 @@ import (
 	"log/slog"
 	"slices"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 )
 
 // Renderer defines a gtk.ICellRenderer generator.
@@ -15,19 +16,13 @@ type Renderer struct {
 }
 
 // GetActivatable returns an activatable cell renderer.
-func (r *Renderer) GetActivatable(col ModelColumn) (gtk.ICellRenderer, error) {
+func (r *Renderer) GetActivatable(col ModelColumn) (gtk.CellRendererer, error) {
 	if !slices.Contains(r.Columns.GetActivatableColumns(), col) {
 		return nil, fmt.Errorf("The provided column is not activatable: %v", col)
 	}
 
-	renderer, err := gtk.CellRendererToggleNew()
-	if err != nil {
-		return nil, err
-	}
-	err = renderer.Set("activatable", true)
-	if err != nil {
-		return nil, err
-	}
+	renderer := gtk.NewCellRendererToggle()
+	renderer.SetActivatable(true)
 	renderer.Connect(
 		"toggled",
 		func(cell *gtk.CellRendererToggle, pathString string) {
@@ -39,19 +34,12 @@ func (r *Renderer) GetActivatable(col ModelColumn) (gtk.ICellRenderer, error) {
 }
 
 // GetEditable returns an editable cell renderer.
-func (r *Renderer) GetEditable(col ModelColumn) (gtk.ICellRenderer, error) {
+func (r *Renderer) GetEditable(col ModelColumn) (gtk.CellRendererer, error) {
 	if !slices.Contains(r.Columns.GetEditableColumns(), col) {
 		return nil, fmt.Errorf("The provided column is not editable: %v", col)
 	}
 
-	renderer, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return nil, err
-	}
-	err = renderer.Set("editable", true)
-	if err != nil {
-		return nil, err
-	}
+	renderer := gtk.NewCellRendererText()
 	renderer.Connect(
 		"edited",
 		func(cell *gtk.CellRendererText, pathString, newText string) {
@@ -64,35 +52,30 @@ func (r *Renderer) GetEditable(col ModelColumn) (gtk.ICellRenderer, error) {
 func onBoolColumnToggled(model *gtk.ListStore, col ModelColumn,
 	cell *gtk.CellRendererToggle, pathString string) {
 
-	iter, err := model.GetIterFromString(pathString)
-	if err != nil {
-		slog.Error("Failed to get iter from string", "error", err)
+	iter, ok := model.IterFromString(pathString)
+	if !ok {
+		slog.Error("failed to get iter from string")
 		return
 	}
 
-	gval, err := model.GetValue(iter, int(col))
-	if err != nil {
-		slog.Error("Failed to get value from model", "error", err)
+	gval := model.Value(iter, int(col))
+	value := gval.GoValue()
+	if value == nil {
+		slog.Error("Failed to get Go value")
 		return
 	}
 
-	value, err := gval.GoValue()
-	if err != nil {
-		slog.Error("Failed to get Go value", "error", err)
-		return
-	}
-
-	model.SetValue(iter, int(col), !value.(bool))
+	model.SetValue(iter, int(col), glib.NewValue(!value.(bool)))
 }
 
 func onTextColumnEdited(model *gtk.ListStore, col ModelColumn,
 	cell *gtk.CellRendererText, pathString, newText string) {
 
-	iter, err := model.GetIterFromString(pathString)
-	if err != nil {
-		slog.Error("Failed to get iter from string", "error", err)
+	iter, ok := model.IterFromString(pathString)
+	if !ok {
+		slog.Error("Failed to get iter from string")
 		return
 	}
 
-	model.SetValue(iter, int(col), newText)
+	model.SetValue(iter, int(col), glib.NewValue(newText))
 }

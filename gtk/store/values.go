@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 )
 
 // GetMultipleTreeSelectionValues returns the values of the tree selection for the
@@ -12,28 +12,13 @@ import (
 func GetMultipleTreeSelectionValues(sel *gtk.TreeSelection, tv *gtk.TreeView, cols []ModelColumn) (
 	values []map[ModelColumn]interface{}, paths []*gtk.TreePath, err error) {
 
-	paths = []*gtk.TreePath{}
-
-	imodel, err := tv.GetModel()
-	if err != nil {
-		return
-	}
-	model := GetTreeModel(imodel)
-
-	glist := sel.GetSelectedRows(imodel)
-	glist.Foreach(func(i interface{}) {
-		p, ok := i.(*gtk.TreePath)
+	model, paths := sel.SelectedRows()
+	for _, p := range paths {
+		iter, ok := model.Iter(p)
 		if !ok {
-			slog.Error("failed to get tree-path from interface")
-			return
-		}
-
-		iter, err := model.GetIter(p)
-		if err != nil {
 			slog.Error("Failed to get tree-iter")
-			return
+			continue
 		}
-		paths = append(paths, p)
 
 		var m map[ModelColumn]interface{}
 		m, err = GetTreeModelValues(model, iter, cols)
@@ -43,7 +28,7 @@ func GetMultipleTreeSelectionValues(sel *gtk.TreeSelection, tv *gtk.TreeView, co
 		}
 
 		values = append(values, m)
-	})
+	}
 	return
 }
 
@@ -52,9 +37,15 @@ func GetMultipleTreeSelectionValues(sel *gtk.TreeSelection, tv *gtk.TreeView, co
 func GetSingleTreeSelectionValue(sel *gtk.TreeSelection, col ModelColumn) (
 	value interface{}, err error) {
 
-	model, iter, ok := sel.GetSelected()
+	model, iter, ok := sel.Selected()
+	slog.With(
+		"ok", ok,
+		"model-is-nil", model == nil,
+		"iter-is-nil", iter == nil,
+		"col", col,
+	).Debug("GetSingleTreeSelectionValue")
 	if ok {
-		value, err = GetTreeModelValue(model.(*gtk.TreeModel), iter, col)
+		value, err = GetTreeModelValue(model, iter, col)
 	}
 	return
 }
@@ -64,26 +55,32 @@ func GetSingleTreeSelectionValue(sel *gtk.TreeSelection, col ModelColumn) (
 func GetSingleTreeSelectionValues(sel *gtk.TreeSelection, cols []ModelColumn) (
 	values map[ModelColumn]interface{}, err error) {
 
-	model, iter, ok := sel.GetSelected()
+	model, iter, ok := sel.Selected()
+	slog.With(
+		"ok", ok,
+		"model-is-nil", model == nil,
+		"iter-is-nil", iter == nil,
+		"cols", cols,
+	).Debug("GetSingleTreeSelectionValues")
 	if ok {
-		values, err = GetTreeModelValues(model.(*gtk.TreeModel), iter, cols)
+		values, err = GetTreeModelValues(model, iter, cols)
 	}
 	return
 }
 
 // GetTreeModel given a gtk.ITreeModel returns the *gtk.TreeModel.
-func GetTreeModel(imodel gtk.ITreeModel) *gtk.TreeModel {
+func GetTreeModel(imodel gtk.TreeModeller) *gtk.TreeModel {
 	model, ok := imodel.(*gtk.TreeModel)
 	if ok {
 		return model
 	}
 	list, ok := imodel.(*gtk.ListStore)
 	if ok {
-		return list.ToTreeModel()
+		return &list.TreeModel
 	}
 	tree, ok := imodel.(*gtk.TreeStore)
 	if ok {
-		return tree.ToTreeModel()
+		return &tree.TreeModel
 	}
 	return nil
 }
@@ -93,18 +90,10 @@ func GetTreeModel(imodel gtk.ITreeModel) *gtk.TreeModel {
 func GetTreeModelValue(model *gtk.TreeModel, iter *gtk.TreeIter,
 	col ModelColumn) (value interface{}, err error) {
 
-	gval, err := model.GetValue(iter, int(col))
-	if err != nil {
-		return
-	}
-
-	value, err = gval.GoValue()
-	if err != nil {
-		return
-	}
-
+	gval := model.Value(iter, int(col))
+	value = gval.GoValue()
 	if value == nil {
-		err = fmt.Errorf("Unable to get list-store-model value")
+		err = fmt.Errorf("failed to get tree-model-value")
 		return
 	}
 	return
@@ -133,19 +122,15 @@ func GetTreeModelValues(model *gtk.TreeModel, iter *gtk.TreeIter,
 func GetTreeViewTreePathValue(tv *gtk.TreeView, path *gtk.TreePath,
 	col ModelColumn) (value interface{}, err error) {
 
-	imodel, err := tv.GetModel()
-	if err != nil {
-		return
-	}
-
-	model := GetTreeModel(imodel)
+	model := tv.Model()
 	if model == nil {
 		err = fmt.Errorf("Unable to get model from treeview")
 		return
 	}
 
-	iter, err := model.GetIter(path)
-	if err != nil {
+	iter, ok := model.Iter(path)
+	if !ok {
+		err = fmt.Errorf("failed to get model iterator")
 		return
 	}
 
@@ -159,19 +144,15 @@ func GetTreeViewTreePathValue(tv *gtk.TreeView, path *gtk.TreePath,
 func GetTreeViewTreePathValues(tv *gtk.TreeView, path *gtk.TreePath,
 	cols []ModelColumn) (values map[ModelColumn]interface{}, err error) {
 
-	imodel, err := tv.GetModel()
-	if err != nil {
-		return
-	}
-
-	model := GetTreeModel(imodel)
+	model := tv.Model()
 	if model == nil {
-		err = fmt.Errorf("Unable to get model from treeview")
+		err = fmt.Errorf("failed to get model from treeview")
 		return
 	}
 
-	iter, err := model.GetIter(path)
-	if err != nil {
+	iter, ok := model.Iter(path)
+	if !ok {
+		err = fmt.Errorf("failed to get model iterator")
 		return
 	}
 

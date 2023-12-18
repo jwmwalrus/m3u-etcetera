@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gdk/v3"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -89,26 +89,20 @@ func createMusicPlaylists() (ompl *onMusicPlaylist, err error) {
 		return
 	}
 
-	renderer, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return
-	}
+	renderer := gtk.NewCellRendererText()
 
 	plcols := []int{
 		int(store.PLColTree),
 	}
 
 	for _, i := range plcols {
-		var col *gtk.TreeViewColumn
-		col, err = gtk.TreeViewColumnNewWithAttribute(
-			store.PLTreeColumn[i].Name,
-			renderer,
+		col := gtk.NewTreeViewColumn()
+		col.SetTitle(store.PLTreeColumn[i].Name)
+		col.PackStart(renderer, true)
+		col.AddAttribute(renderer,
 			"text",
 			i,
 		)
-		if err != nil {
-			return
-		}
 		ompl.view.InsertColumn(col, -1)
 	}
 
@@ -122,7 +116,7 @@ func createMusicPlaylists() (ompl *onMusicPlaylist, err error) {
 }
 
 func (ompl *onMusicPlaylist) context(tv *gtk.TreeView, event *gdk.Event) {
-	btn := gdk.EventButtonNewFromEvent(event)
+	btn := event.AsButton()
 	if btn.Button() != gdk.BUTTON_SECONDARY {
 		return
 	}
@@ -211,7 +205,7 @@ func (ompl *onMusicPlaylist) contextExport(mi *gtk.MenuItem) {
 	}
 
 	validateExportBtn := func(u, name string) {
-		format := cbtid2format[ompl.export.format.GetActiveID()]
+		format := cbtid2format[ompl.export.format.ActiveID()]
 		dir, _ := urlstr.URLToPath(u)
 		_, err := os.Stat(filepath.Join(dir, name+format.ext))
 		if u == "" || name == "" || !os.IsNotExist(err) {
@@ -229,27 +223,27 @@ func (ompl *onMusicPlaylist) contextExport(mi *gtk.MenuItem) {
 	ompl.export.btn.SetSensitive(false)
 
 	ompl.export.loc.Connect("file-set", func(fcb *gtk.FileChooserButton) {
-		u := fcb.GetURI()
-		name, _ := ompl.export.name.GetText()
+		u := fcb.URI()
+		name := ompl.export.name.Text()
 		validateExportBtn(u, name)
 	})
 
 	ompl.export.name.Connect("changed", func(e *gtk.Entry) {
-		u := ompl.export.loc.GetURI()
-		name, _ := e.GetText()
+		u := ompl.export.loc.URI()
+		name := e.Text()
 		validateExportBtn(u, name)
 	})
 
 	res := ompl.export.dlg.Run()
 	defer ompl.export.dlg.Hide()
 
-	switch res {
-	case gtk.RESPONSE_APPLY:
-		format := cbtid2format[ompl.export.format.GetActiveID()]
-		u := ompl.export.loc.GetURI()
-		name, err := ompl.export.name.GetText()
-		if err != nil {
-			slog.Error("Faild to get text from export name", "error", err)
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply:
+		format := cbtid2format[ompl.export.format.ActiveID()]
+		u := ompl.export.loc.URI()
+		name := ompl.export.name.Text()
+		if name == "" {
+			slog.Warn("Faild to get text from export name")
 			return
 		}
 		dir, err := urlstr.URLToPath(u)
@@ -273,7 +267,7 @@ func (ompl *onMusicPlaylist) contextExport(mi *gtk.MenuItem) {
 			slog.Error("Failed to export playlist", "error", err)
 			return
 		}
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 }
@@ -341,11 +335,7 @@ func (ompl *onMusicPlaylist) dblClicked(tv *gtk.TreeView,
 }
 
 func (ompl *onMusicPlaylist) filtered(se *gtk.SearchEntry) {
-	text, err := se.GetText()
-	if err != nil {
-		slog.Error("Failed to get text from search entry", "error", err)
-		return
-	}
+	text := se.Text()
 	store.FilterPlaylistTreeBy(m3uetcpb.Perspective_MUSIC, text)
 }
 

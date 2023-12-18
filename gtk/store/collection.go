@@ -7,9 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
-	"github.com/jwmwalrus/bnp/onerror"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 )
@@ -81,10 +80,10 @@ func (cd *collectionData) GetCollectionActionsChanges() (toScan, toRemove []int6
 	cd.mu.RLock()
 	defer cd.mu.RUnlock()
 
-	iter, ok := model.GetIterFirst()
+	iter, ok := model.IterFirst()
 	for ok {
 		row, err := GetTreeModelValues(
-			model.ToTreeModel(),
+			&model.TreeModel,
 			iter,
 			[]ModelColumn{
 				CColCollectionID,
@@ -145,10 +144,10 @@ func (cd *collectionData) GetUpdateCollectionRequests() ([]*m3uetcpb.UpdateColle
 	cd.mu.RLock()
 	defer cd.mu.RUnlock()
 
-	iter, ok := model.GetIterFirst()
+	iter, ok := model.IterFirst()
 	for ok {
 		row, err := GetTreeModelValues(
-			model.ToTreeModel(),
+			&model.TreeModel,
 			iter,
 			[]ModelColumn{
 				CColCollectionID,
@@ -355,11 +354,11 @@ func (cd *collectionData) updateCollectionModel() bool {
 		return false
 	}
 
-	if model.GetNColumns() == 0 {
+	if model.NColumns() == 0 {
 		return false
 	}
 
-	_, ok := model.GetIterFirst()
+	_, ok := model.IterFirst()
 	if ok {
 		model.Clear()
 	}
@@ -373,7 +372,7 @@ func (cd *collectionData) updateCollectionModel() bool {
 				tracks = strconv.Itoa(int(c.Scanned)) + "%"
 			}
 			persp := m3uetcpb.Perspective_name[int32(c.Perspective)]
-			err := model.Set(
+			model.Set(
 				iter,
 				[]int{
 					int(CColCollectionID),
@@ -388,21 +387,20 @@ func (cd *collectionData) updateCollectionModel() bool {
 					int(CColActionRescan),
 					int(CColActionRemove),
 				},
-				[]interface{}{
-					c.Id,
-					c.Name,
-					c.Description,
-					c.Location,
-					persp,
-					c.Disabled,
-					c.Remote,
-					c.Tracks,
-					tracks,
-					false,
-					false,
+				[]glib.Value{
+					*glib.NewValue(c.Id),
+					*glib.NewValue(c.Name),
+					*glib.NewValue(c.Description),
+					*glib.NewValue(c.Location),
+					*glib.NewValue(persp),
+					*glib.NewValue(c.Disabled),
+					*glib.NewValue(c.Remote),
+					*glib.NewValue(c.Tracks),
+					*glib.NewValue(tracks),
+					*glib.NewValue(false),
+					*glib.NewValue(false),
 				},
 			)
-			onerror.Log(err)
 		}
 	}
 
@@ -448,8 +446,9 @@ func (cd *collectionData) updateScanningProgress() bool {
 func CreateCollectionModel() (model *gtk.ListStore, err error) {
 	slog.Info("Creating collection model")
 
-	collectionModel, err = gtk.ListStoreNew(CColumns.getTypes()...)
-	if err != nil {
+	collectionModel = gtk.NewListStore(CColumns.getTypes())
+	if collectionModel == nil {
+		err = fmt.Errorf("failed to create list-store")
 		return
 	}
 
@@ -464,8 +463,9 @@ func CreateCollectionTreeModel(h collectionTreeHierarchy) (
 	logw := slog.With("hierarchy", h)
 	logw.Info("Creating collection tree model")
 
-	model, err = gtk.TreeStoreNew(CTreeColumn.getTypes()...)
-	if err != nil {
+	model = gtk.NewTreeStore(CTreeColumn.getTypes())
+	if model == nil {
+		err = fmt.Errorf("fsiled to create tree-store")
 		return
 	}
 

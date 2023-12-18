@@ -2,9 +2,10 @@ package builder
 
 import (
 	"embed"
+	"fmt"
 
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gdkpixbuf/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	rtc "github.com/jwmwalrus/rtcycler"
 )
 
@@ -19,21 +20,17 @@ func AddFromFile(path string) error {
 	if err != nil {
 		return err
 	}
-	return app.AddFromString(string(bv))
-}
-
-// ConnectSignals connects the signals map.
-func ConnectSignals(signals map[string]interface{}) {
-	app.ConnectSignals(signals)
+	_, err = app.AddFromString(string(bv), uint(len(bv)))
+	return err
 }
 
 // GetApplicationWindow returns the main application window.
 func GetApplicationWindow() (window *gtk.ApplicationWindow, err error) {
-	obj, err := app.GetObject("window")
-	if err != nil {
-		rtc.Fatal("Unable to get window", "error", err)
+	obj := app.GetObject("window")
+	if obj == nil {
+		rtc.Fatal("Unable to get window")
 	}
-	window, ok := obj.(*gtk.ApplicationWindow)
+	window, ok := obj.Cast().(*gtk.ApplicationWindow)
 	if !ok {
 		rtc.Fatal("Unable to create window", "error", err)
 	}
@@ -41,25 +38,36 @@ func GetApplicationWindow() (window *gtk.ApplicationWindow, err error) {
 }
 
 // PixbufNewFromFile creates a pixbuf from the given file path.
-func PixbufNewFromFile(path string) (*gdk.Pixbuf, error) {
+func PixbufNewFromFile(path string) (*gdkpixbuf.Pixbuf, error) {
 	bv, err := data.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	return gdk.PixbufNewFromDataOnly(bv)
+	loader := gdkpixbuf.NewPixbufLoader()
+	err = loader.Write(bv)
+	if err != nil {
+		return nil, err
+	}
+	defer loader.Close()
+
+	return loader.Pixbuf(), nil
 }
 
 // Setup -.
 func Setup(fs *embed.FS) (b *gtk.Builder, err error) {
+	const file = "ui/appwindow.ui"
+
 	data = fs
 	var bv []byte
-	if bv, err = data.ReadFile("ui/appwindow.ui"); err != nil {
+	if bv, err = data.ReadFile(file); err != nil {
 		return
 	}
-	app, err = gtk.BuilderNewFromString(string(bv))
-	if err == nil {
-		b = app
+	app = gtk.NewBuilderFromString(string(bv), len(string(bv)))
+	if app == nil {
+		err = fmt.Errorf("failed to create builder from file %s", file)
+		return
 	}
+	b = app
 	return
 }

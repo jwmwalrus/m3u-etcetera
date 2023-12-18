@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
@@ -31,7 +31,7 @@ func init() {
 }
 
 // Setup sets the whole GTK UI.
-func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error) {
+func Setup(w *gtk.ApplicationWindow, signals *builder.Signals) (err error) {
 	settingsMenuSignals.window = w
 
 	err = builder.AddFromFile("ui/collections-add-dialog.ui")
@@ -73,20 +73,51 @@ func Setup(w *gtk.ApplicationWindow, signals *map[string]interface{}) (err error
 		err = fmt.Errorf("Unable to setup collections-dialog: %v", err)
 		return
 	}
-	(*signals)["on_settings_collections_add_clicked"] = settingsMenuSignals.addCollection
-	(*signals)["on_settings_collections_edit_clicked"] = settingsMenuSignals.editCollections
+	(*signals).AddDetail(
+		"settings_collections_add",
+		"clicked",
+		settingsMenuSignals.addCollection,
+	)
+	(*signals).AddDetail(
+		"settings_collections_edit",
+		"clicked",
+		settingsMenuSignals.editCollections,
+	)
 
 	if err = settingsMenuSignals.createPlaylistGroupDialogs(); err != nil {
 		err = fmt.Errorf("Unable to setup playlist group dialogs: %v", err)
 		return
 	}
-	(*signals)["on_settings_playlist_groups_add_clicked"] = settingsMenuSignals.addPlaylistGroup
-	(*signals)["on_settings_playlist_groups_edit_clicked"] = settingsMenuSignals.editPlaylistGroups
-
-	(*signals)["on_settings_quit_all_clicked"] = settingsMenuSignals.quitAll
-	(*signals)["on_settings_open_files_clicked"] = settingsMenuSignals.openFiles
-	(*signals)["on_settings_open_url_clicked"] = settingsMenuSignals.openURL
-	(*signals)["on_settings_import_playlist_clicked"] = settingsMenuSignals.importPlaylist
+	(*signals).AddDetail(
+		"settings_playlist_groups_add",
+		"clicked",
+		settingsMenuSignals.addPlaylistGroup,
+	)
+	(*signals).AddDetail(
+		"settings_playlist_groups_edit",
+		"clicked",
+		settingsMenuSignals.editPlaylistGroups,
+	)
+	(*signals).AddDetail(
+		"settings_quit_all",
+		"clicked",
+		settingsMenuSignals.quitAll,
+	)
+	(*signals).AddDetail(
+		"settings_open_files",
+		"clicked",
+		settingsMenuSignals.openFiles,
+	)
+	(*signals).AddDetail(
+		"settings_open_url",
+		"clicked",
+		settingsMenuSignals.openURL,
+	)
+	(*signals).AddDetail(
+		"settings_import_playlist",
+		"clicked",
+		settingsMenuSignals.importPlaylist,
+	)
 
 	if err = setupPlayback(signals); err != nil {
 		return

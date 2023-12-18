@@ -3,7 +3,7 @@ package musicpane
 import (
 	"log/slog"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 )
@@ -24,9 +24,9 @@ type onContext struct {
 
 func (oc *onContext) getSelection(keep ...bool) (ids []int64) {
 	if oc.selection == nil {
-		sel, err := oc.view.GetSelection()
-		if err != nil {
-			slog.Error("Failed to get selection", "error", err)
+		sel := oc.view.Selection()
+		if sel == nil {
+			slog.Error("Failed to get selection")
 			return
 		}
 		oc.selChanged(sel)
@@ -57,9 +57,9 @@ func (oc *onContext) getSelectionValues(keep ...bool) (
 	values map[store.ModelColumn]interface{}) {
 
 	if oc.selection == nil {
-		sel, err := oc.view.GetSelection()
-		if err != nil {
-			slog.Error("Failed to get selection", "error", err)
+		sel := oc.view.Selection()
+		if sel == nil {
+			slog.Error("Failed to get selection")
 			return
 		}
 		oc.selChanged(sel)

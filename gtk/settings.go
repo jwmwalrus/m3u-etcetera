@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -55,7 +55,7 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 	osm.coll.addBtn.SetSensitive(false)
 
 	osm.coll.loc.Connect("file-set", func(fcb *gtk.FileChooserButton) {
-		u := fcb.GetURI()
+		u := fcb.URI()
 		if u == "" {
 			osm.coll.addBtn.SetSensitive(false)
 			return
@@ -64,8 +64,8 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 	})
 
 	osm.coll.name.Connect("changed", func(e *gtk.Entry) {
-		loc := osm.coll.loc.GetURI()
-		name, _ := e.GetText()
+		loc := osm.coll.loc.URI()
+		name := e.Text()
 		if loc == "" || name == "" {
 			osm.coll.addBtn.SetSensitive(false)
 			return
@@ -79,12 +79,12 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 	res := osm.coll.addDlg.Run()
 	defer osm.coll.addDlg.Hide()
 
-	switch res {
-	case gtk.RESPONSE_APPLY:
-		loc := osm.coll.loc.GetURI()
-		name, _ := osm.coll.name.GetText()
-		descr, _ := osm.coll.descr.GetText()
-		perspid := osm.coll.persp.GetActive()
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply:
+		loc := osm.coll.loc.URI()
+		name := osm.coll.name.Text()
+		descr := osm.coll.descr.Text()
+		perspid := osm.coll.persp.Active()
 		persp := m3uetcpb.Perspective_MUSIC
 		if perspid != 0 {
 			persp = m3uetcpb.Perspective_AUDIOBOOKS
@@ -94,8 +94,8 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 			Description: descr,
 			Location:    loc,
 			Perspective: persp,
-			Disabled:    osm.coll.disabled.GetActive(),
-			Remote:      osm.coll.remote.GetActive(),
+			Disabled:    osm.coll.disabled.Active(),
+			Remote:      osm.coll.remote.Active(),
 		}
 
 		_, err := dialer.AddCollection(req)
@@ -103,7 +103,7 @@ func (osm *onSettingsMenu) addCollection(btn *gtk.Button) {
 			slog.Error("Failed to add collection", "error", err)
 			return
 		}
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 }
@@ -117,7 +117,7 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 	osm.pg.addBtn.SetSensitive(false)
 
 	osm.pg.name.Connect("changed", func(e *gtk.Entry) {
-		name, _ := e.GetText()
+		name := e.Text()
 		if name == "" {
 			osm.pg.addBtn.SetSensitive(false)
 			return
@@ -128,19 +128,11 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 	res := osm.pg.addDlg.Run()
 	defer osm.pg.addDlg.Hide()
 
-	switch res {
-	case gtk.RESPONSE_APPLY:
-		name, err := osm.pg.name.GetText()
-		if err != nil {
-			slog.Error("Failed to get text from playlist group name", "error", err)
-			return
-		}
-		descr, err := osm.pg.descr.GetText()
-		if err != nil {
-			slog.Error("Failed to get text from playlist group description", "error", err)
-			return
-		}
-		ptext := osm.pg.persp.GetActiveText()
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply:
+		name := osm.pg.name.Text()
+		descr := osm.pg.descr.Text()
+		ptext := osm.pg.persp.ActiveText()
 		newPersp := m3uetcpb.Perspective_value[strings.ToUpper(ptext)]
 		action := m3uetcpb.PlaylistGroupAction_PG_CREATE
 		req := &m3uetcpb.ExecutePlaylistGroupActionRequest{
@@ -152,9 +144,9 @@ func (osm *onSettingsMenu) addPlaylistGroup(btn *gtk.Button) {
 		if descr == "" {
 			req.ResetDescription = true
 		}
-		_, err = dialer.ExecutePlaylistGroupAction(req)
+		_, err := dialer.ExecutePlaylistGroupAction(req)
 		onerror.Log(err)
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 }
@@ -231,10 +223,7 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		return
 	}
 
-	textro, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return
-	}
+	textro := gtk.NewCellRendererText()
 
 	cr := store.Renderer{Model: model, Columns: store.CColumns}
 
@@ -275,7 +264,7 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 
 	cols := []struct {
 		idx       store.ModelColumn
-		r         gtk.ICellRenderer
+		r         gtk.CellRendererer
 		canModify bool
 	}{
 		{store.CColName, namerw, true},
@@ -291,21 +280,22 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 	}
 
 	for _, v := range cols {
-		var col *gtk.TreeViewColumn
 		var suffix string
 		if v.canModify {
 			suffix = modifiableColumnHeaderSuffix
 		}
+		col := gtk.NewTreeViewColumn()
+		col.SetTitle(store.CColumns[v.idx].Name + suffix)
 		if renderer, ok := v.r.(*gtk.CellRendererToggle); ok {
-			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.CColumns[v.idx].Name+suffix,
+			col.PackStart(renderer, true)
+			col.AddAttribute(
 				renderer,
 				"active",
 				int(v.idx),
 			)
 		} else if renderer, ok := v.r.(*gtk.CellRendererText); ok {
-			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.CColumns[v.idx].Name+suffix,
+			col.PackStart(renderer, true)
+			col.AddAttribute(
 				renderer,
 				"text",
 				int(v.idx),
@@ -313,9 +303,6 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 		} else {
 			slog.Error("¿Cómo sabré si es pez o iguana?")
 			continue
-		}
-		if err != nil {
-			return
 		}
 		view.InsertColumn(col, -1)
 	}
@@ -374,10 +361,7 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 
 	pgr := store.Renderer{Model: model, Columns: store.PGColumns}
 
-	textro, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return
-	}
+	textro := gtk.NewCellRendererText()
 
 	namerw, err := pgr.GetEditable(store.PGColName)
 	if err != nil {
@@ -396,7 +380,7 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 
 	cols := []struct {
 		idx       store.ModelColumn
-		r         gtk.ICellRenderer
+		r         gtk.CellRendererer
 		canModify bool
 	}{
 		{store.PGColName, namerw, true},
@@ -406,21 +390,22 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 	}
 
 	for _, v := range cols {
-		var col *gtk.TreeViewColumn
 		var suffix string
 		if v.canModify {
 			suffix = modifiableColumnHeaderSuffix
 		}
+		col := gtk.NewTreeViewColumn()
+		col.SetTitle(store.PGColumns[v.idx].Name + suffix)
 		if renderer, ok := v.r.(*gtk.CellRendererToggle); ok {
-			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.PGColumns[v.idx].Name+suffix,
+			col.PackStart(renderer, true)
+			col.AddAttribute(
 				renderer,
 				"active",
 				int(v.idx),
 			)
 		} else if renderer, ok := v.r.(*gtk.CellRendererText); ok {
-			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.PGColumns[v.idx].Name+suffix,
+			col.PackStart(renderer, true)
+			col.AddAttribute(
 				renderer,
 				"text",
 				int(v.idx),
@@ -428,9 +413,6 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 		} else {
 			slog.Error("¿Cómo sabré si es pez o iguana?")
 			continue
-		}
-		if err != nil {
-			return
 		}
 		view.InsertColumn(col, -1)
 	}
@@ -447,10 +429,10 @@ func (osm *onSettingsMenu) editCollections(btn *gtk.Button) {
 	res := osm.coll.editDlg.Run()
 	defer osm.coll.editDlg.Hide()
 
-	switch res {
-	case gtk.RESPONSE_APPLY:
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply:
 		dialer.ApplyCollectionChanges(osm.getCollectionsToggles())
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 }
@@ -461,10 +443,10 @@ func (osm *onSettingsMenu) editPlaylistGroups(btn *gtk.Button) {
 	res := osm.pg.editDlg.Run()
 	defer osm.pg.editDlg.Hide()
 
-	switch res {
-	case gtk.RESPONSE_APPLY:
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply:
 		dialer.ApplyPlaylistGroupChanges()
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 }
@@ -472,8 +454,8 @@ func (osm *onSettingsMenu) editPlaylistGroups(btn *gtk.Button) {
 func (osm *onSettingsMenu) getCollectionsToggles() (
 	opts store.CollectionOptions) {
 
-	opts.Discover = osm.coll.discoverBtn.GetActive()
-	opts.UpdateTags = osm.coll.updateTagsBtn.GetActive()
+	opts.Discover = osm.coll.discoverBtn.Active()
+	opts.UpdateTags = osm.coll.updateTagsBtn.Active()
 	return
 }
 
@@ -495,25 +477,19 @@ func (osm *onSettingsMenu) hide() {
 func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 	osm.hide()
 
-	dlg, err := gtk.FileChooserDialogNewWith2Buttons(
+	dlg := gtk.NewFileChooserNative(
 		"Import playlist",
-		osm.window,
-		gtk.FILE_CHOOSER_ACTION_OPEN,
+		&osm.window.Window,
+		gtk.FileChooserActionOpen,
 		"Import",
-		gtk.RESPONSE_APPLY,
 		"Cancel",
-		gtk.RESPONSE_CANCEL,
 	)
-	if err != nil {
-		slog.Error("Failed to create file-chooser-dialog", "error", err)
+	if dlg == nil {
+		slog.Error("Failed to create file-chooser-dialog")
 		return
 	}
 
-	filter, err := gtk.FileFilterNew()
-	if err != nil {
-		slog.Error("Failed to create file-filter", "error", err)
-		return
-	}
+	filter := gtk.NewFileFilter()
 	filter.SetName("Playlist files")
 
 	for _, v := range base.SupportedPlaylistExtensions {
@@ -521,18 +497,12 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 	}
 	dlg.SetSelectMultiple(true)
 	dlg.AddFilter(filter)
-	dlg.ShowAll()
 	res := dlg.Run()
 	defer dlg.Destroy()
 
-	switch res {
-	case gtk.RESPONSE_APPLY:
-
-		locs, err := dlg.GetURIs()
-		if err != nil {
-			slog.Error("Failed to get UIRs", "error", err)
-			return
-		}
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply, gtk.ResponseAccept:
+		locs := dlg.URIs()
 
 		req := &m3uetcpb.ImportPlaylistsRequest{
 			Locations: locs,
@@ -547,7 +517,7 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 		for _, msg := range msgList {
 			slog.Error(msg)
 		}
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 }
@@ -555,26 +525,20 @@ func (osm *onSettingsMenu) importPlaylist(btn *gtk.Button) {
 func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 	osm.hide()
 
-	dlg, err := gtk.FileChooserDialogNewWith2Buttons(
+	dlg := gtk.NewFileChooserNative(
 		"Open files",
-		osm.window,
-		gtk.FILE_CHOOSER_ACTION_OPEN,
+		&osm.window.Window,
+		gtk.FileChooserActionOpen,
 		"Open",
-		gtk.RESPONSE_APPLY,
 		"Cancel",
-		gtk.RESPONSE_CANCEL,
 	)
-	if err != nil {
-		slog.Error("Failed to create file-chooser-dialog", "error", err)
+	if dlg == nil {
+		slog.Error("Failed to create file-chooser-dialog")
 		return
 	}
 	defer dlg.Destroy()
 
-	filter, err := gtk.FileFilterNew()
-	if err != nil {
-		slog.Error("File to create file-filter", "error", err)
-		return
-	}
+	filter := gtk.NewFileFilter()
 	filter.SetName("Music files")
 
 	fileExts := base.SupportedFileExtensions
@@ -586,16 +550,11 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 
 	dlg.SetSelectMultiple(true)
 	dlg.AddFilter(filter)
-	dlg.ShowAll()
 	res := dlg.Run()
 
-	switch res {
-	case gtk.RESPONSE_APPLY:
-		locs, err := dlg.GetURIs()
-		if err != nil {
-			slog.Error("Failed to get UIRs", "error", err)
-			return
-		}
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply, gtk.ResponseAccept:
+		locs := dlg.URIs()
 
 		var mmLocs, plLocs []string
 		for i := range locs {
@@ -647,7 +606,7 @@ func (osm *onSettingsMenu) openFiles(btn *gtk.Button) {
 				slog.Error(msg)
 			}
 		}
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 }

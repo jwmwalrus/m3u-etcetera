@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 )
 
@@ -16,74 +17,246 @@ var (
 )
 
 // Setup sets the music pane.
-func Setup(signals *map[string]interface{}) (err error) {
+func Setup(signals *builder.Signals) (err error) {
 	slog.Info("Setting up music")
 
 	musicCollectionsSignals, err = createMusicCollections()
 	if err != nil {
 		return
 	}
-	(*signals)["on_collections_sel_changed"] = musicCollectionsSignals.selChanged
-	(*signals)["on_collections_view_button_press_event"] = musicCollectionsSignals.context
-	(*signals)["on_collections_view_context_append_activate"] = musicCollectionsSignals.contextAppend
-	(*signals)["on_collections_view_context_prepend_activate"] = musicCollectionsSignals.contextAppend
-	(*signals)["on_collections_view_context_play_now_activate"] = musicCollectionsSignals.contextPlayNow
-	(*signals)["on_collections_view_row_activated"] = musicCollectionsSignals.dblClicked
-	(*signals)["on_collections_filter_search_changed"] = musicCollectionsSignals.filtered
-	(*signals)["on_collections_hierarchy_changed"] = musicCollectionsSignals.hierarchyChanged
-	(*signals)["on_collections_hierarchy_grouped_toggled"] = musicCollectionsSignals.hierarchyGroupToggled
+	(*signals).AddDetail(
+		"collections_sel",
+		"changed",
+		musicCollectionsSignals.selChanged,
+	)
+	(*signals).AddDetail(
+		"collections_view",
+		"button-press-event",
+		musicCollectionsSignals.context,
+	)
+	(*signals).AddDetail(
+		"collections_view_context_append",
+		"activate",
+		musicCollectionsSignals.contextAppend,
+	)
+	(*signals).AddDetail(
+		"collections_view_context_prepend",
+		"activate",
+		musicCollectionsSignals.contextAppend,
+	)
+	(*signals).AddDetail(
+		"collections_view_context_play_now",
+		"activate",
+		musicCollectionsSignals.contextPlayNow,
+	)
+	(*signals).AddDetail(
+		"collections_view",
+		"row-activated",
+		musicCollectionsSignals.dblClicked,
+	)
+	(*signals).AddDetail(
+		"collections_filter",
+		"search-changed",
+		musicCollectionsSignals.filtered,
+	)
+	(*signals).AddDetail(
+		"collections_hierarchy",
+		"changed",
+		musicCollectionsSignals.hierarchyChanged,
+	)
+	(*signals).AddDetail(
+		"collections_hierarchy_grouped",
+		"toggled",
+		musicCollectionsSignals.hierarchyGroupToggled,
+	)
 
 	musicQueueSignals, err = playlists.CreateQueue(m3uetcpb.Perspective_MUSIC, "music_queue_view", "music_queue_view_context")
 	if err != nil {
 		return
 	}
-	(*signals)["on_music_queue_sel_changed"] = musicQueueSignals.SelChanged
-	(*signals)["on_music_queue_view_row_activated"] = musicQueueSignals.DblClicked
-	(*signals)["on_music_queue_view_button_press_event"] = musicQueueSignals.Context
-	(*signals)["on_music_queue_view_key_press_event"] = musicQueueSignals.Key
-	(*signals)["on_music_queue_view_context_play_now_activate"] = musicQueueSignals.ContextPlayNow
-	(*signals)["on_music_queue_view_context_enqueue_activate"] = musicQueueSignals.ContextEnqueue
-	(*signals)["on_music_queue_view_context_top_activate"] = musicQueueSignals.ContextMove
-	(*signals)["on_music_queue_view_context_up_activate"] = musicQueueSignals.ContextMove
-	(*signals)["on_music_queue_view_context_down_activate"] = musicQueueSignals.ContextMove
-	(*signals)["on_music_queue_view_context_bottom_activate"] = musicQueueSignals.ContextMove
-	(*signals)["on_music_queue_view_context_delete_activate"] = musicQueueSignals.ContextDelete
-	(*signals)["on_music_queue_view_context_clear_activate"] = musicQueueSignals.ContextClear
-	(*signals)["on_music_queue_view_context_popped_up"] = musicQueueSignals.ContextPoppedUp
-	(*signals)["on_music_queue_view_context_hide"] = musicQueueSignals.ContextHide
+	(*signals).AddDetail(
+		"music_queue_sel",
+		"changed",
+		musicQueueSignals.SelChanged,
+	)
+	(*signals).AddDetail(
+		"music_queue_view",
+		"row-activated",
+		musicQueueSignals.DblClicked,
+	)
+	(*signals).AddDetail(
+		"music_queue_view",
+		"button-press-event",
+		musicQueueSignals.Context,
+	)
+	(*signals).AddDetail(
+		"music_queue_view",
+		"key-press-event",
+		musicQueueSignals.Key,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context_play_now",
+		"activate",
+		musicQueueSignals.ContextPlayNow,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context_enqueue",
+		"activate",
+		musicQueueSignals.ContextEnqueue,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context_top",
+		"activate",
+		musicQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context_up",
+		"activate",
+		musicQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context_down",
+		"activate",
+		musicQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context_bottom",
+		"activate",
+		musicQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context_delete",
+		"activate",
+		musicQueueSignals.ContextDelete,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context_clear",
+		"activate",
+		musicQueueSignals.ContextClear,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context",
+		"popped-up",
+		musicQueueSignals.ContextPoppedUp,
+	)
+	(*signals).AddDetail(
+		"music_queue_view_context",
+		"hide",
+		musicQueueSignals.ContextHide,
+	)
 
 	musicQuerySignals, err = createMusicQueries()
 	if err != nil {
 		return
 	}
-	(*signals)["on_queries_sel_changed"] = musicQuerySignals.selChanged
-	(*signals)["on_queries_view_button_press_event"] = musicQuerySignals.context
-	(*signals)["on_queries_view_context_edit_activate"] = musicQuerySignals.contextEdit
-	(*signals)["on_queries_view_context_to_queue_activate"] = musicQuerySignals.contextAppend
-	(*signals)["on_queries_view_context_to_playlist_activate"] = musicQuerySignals.contextAppend
-	(*signals)["on_queries_view_context_new_playlist_activate"] = musicQuerySignals.contextNewPlaylist
-	(*signals)["on_queries_view_context_delete_activate"] = musicQuerySignals.contextDelete
-	(*signals)["on_queries_view_row_activated"] = musicQuerySignals.dblClicked
-	(*signals)["on_queries_filter_search_changed"] = musicQuerySignals.filtered
+	(*signals).AddDetail(
+		"queries_sel",
+		"changed",
+		musicQuerySignals.selChanged,
+	)
+	(*signals).AddDetail(
+		"queries_view",
+		"button-press-event",
+		musicQuerySignals.context,
+	)
+	(*signals).AddDetail(
+		"queries_view_context_edit",
+		"activate",
+		musicQuerySignals.contextEdit,
+	)
+	(*signals).AddDetail(
+		"queries_view_context_to_queue",
+		"activate",
+		musicQuerySignals.contextAppend,
+	)
+	(*signals).AddDetail(
+		"queries_view_context_to_playlist",
+		"activate",
+		musicQuerySignals.contextAppend,
+	)
+	(*signals).AddDetail(
+		"queries_view_context_new_playlist",
+		"activate",
+		musicQuerySignals.contextNewPlaylist,
+	)
+	(*signals).AddDetail(
+		"queries_view_context_delete",
+		"activate",
+		musicQuerySignals.contextDelete,
+	)
+	(*signals).AddDetail(
+		"queries_view",
+		"row-activated",
+		musicQuerySignals.dblClicked,
+	)
+	(*signals).AddDetail(
+		"queries_filter",
+		"search-changed",
+		musicQuerySignals.filtered,
+	)
 
 	if err = musicQuerySignals.createDialog(); err != nil {
 		return
 	}
-	(*signals)["on_queries_add_clicked"] = musicQuerySignals.defineQuery
-	(*signals)["on_query_dialog_search_clicked"] = musicQuerySignals.doSearch
-	(*signals)["on_query_dialog_toggle_selection_clicked"] = musicQuerySignals.toggleSelection
+	(*signals).AddDetail(
+		"queries_add",
+		"clicked",
+		musicQuerySignals.defineQuery,
+	)
+	(*signals).AddDetail(
+		"query_dialog_search",
+		"clicked",
+		musicQuerySignals.doSearch,
+	)
+	(*signals).AddDetail(
+		"query_dialog_toggle_selection",
+		"clicked",
+		musicQuerySignals.toggleSelection,
+	)
 
 	musicPlaylistSignals, err = createMusicPlaylists()
 	if err != nil {
 		return
 	}
-	(*signals)["on_music_playlists_filter_search_changed"] = musicPlaylistSignals.filtered
-	(*signals)["on_music_playlists_view_row_activated"] = musicPlaylistSignals.dblClicked
-	(*signals)["on_music_playlists_view_button_press_event"] = musicPlaylistSignals.context
-	(*signals)["on_music_playlists_sel_changed"] = musicPlaylistSignals.selChanged
-	(*signals)["on_music_playlists_view_context_delete_activate"] = musicPlaylistSignals.contextDelete
-	(*signals)["on_music_playlists_view_context_edit_activate"] = musicPlaylistSignals.contextEdit
-	(*signals)["on_music_playlists_view_context_open_activate"] = musicPlaylistSignals.contextOpen
-	(*signals)["on_music_playlists_view_context_export_activate"] = musicPlaylistSignals.contextExport
+	(*signals).AddDetail(
+		"music_playlists_filter",
+		"search-changed",
+		musicPlaylistSignals.filtered,
+	)
+	(*signals).AddDetail(
+		"music_playlists_view",
+		"row-activated",
+		musicPlaylistSignals.dblClicked,
+	)
+	(*signals).AddDetail(
+		"music_playlists_view",
+		"button-press-event",
+		musicPlaylistSignals.context,
+	)
+	(*signals).AddDetail(
+		"music_playlists_sel",
+		"changed",
+		musicPlaylistSignals.selChanged,
+	)
+	(*signals).AddDetail(
+		"music_playlists_view_context_delete",
+		"activate",
+		musicPlaylistSignals.contextDelete,
+	)
+	(*signals).AddDetail(
+		"music_playlists_view_context_edit",
+		"activate",
+		musicPlaylistSignals.contextEdit,
+	)
+	(*signals).AddDetail(
+		"music_playlists_view_context_open",
+		"activate",
+		musicPlaylistSignals.contextOpen,
+	)
+	(*signals).AddDetail(
+		"music_playlists_view_context_export",
+		"activate",
+		musicPlaylistSignals.contextExport,
+	)
 	return
 }

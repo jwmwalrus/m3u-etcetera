@@ -2,6 +2,7 @@ package audiobookspane
 
 import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 )
 
@@ -10,7 +11,7 @@ var (
 )
 
 // Setup sets the audiobooks pane.
-func Setup(signals *map[string]interface{}) (err error) {
+func Setup(signals *builder.Signals) (err error) {
 	audiobooksQueueSignals, err = playlists.CreateQueue(
 		m3uetcpb.Perspective_AUDIOBOOKS,
 		"audiobooks_queue_view",
@@ -19,16 +20,60 @@ func Setup(signals *map[string]interface{}) (err error) {
 	if err != nil {
 		return
 	}
-	(*signals)["on_audiobooks_queue_sel_changed"] = audiobooksQueueSignals.SelChanged
-	(*signals)["on_audiobooks_queue_view_row_activated"] = audiobooksQueueSignals.DblClicked
-	(*signals)["on_audiobooks_queue_view_button_press_event"] = audiobooksQueueSignals.Context
-	(*signals)["on_audiobooks_queue_view_context_play_now_activate"] = audiobooksQueueSignals.ContextPlayNow
-	(*signals)["on_audiobooks_queue_view_context_enqueue_activate"] = audiobooksQueueSignals.ContextEnqueue
-	(*signals)["on_audiobooks_queue_view_context_top_activate"] = audiobooksQueueSignals.ContextMove
-	(*signals)["on_audiobooks_queue_view_context_up_activate"] = audiobooksQueueSignals.ContextMove
-	(*signals)["on_audiobooks_queue_view_context_down_activate"] = audiobooksQueueSignals.ContextMove
-	(*signals)["on_audiobooks_queue_view_context_bottom_activate"] = audiobooksQueueSignals.ContextMove
-	(*signals)["on_audiobooks_queue_view_context_delete_activate"] = audiobooksQueueSignals.ContextDelete
-	(*signals)["on_audiobooks_queue_view_context_clear_activate"] = audiobooksQueueSignals.ContextClear
+	(*signals).AddDetail(
+		"audiobooks_queue_sel",
+		"changed",
+		audiobooksQueueSignals.SelChanged,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view",
+		"row_activated",
+		audiobooksQueueSignals.DblClicked,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view",
+		"button_press_event",
+		audiobooksQueueSignals.Context,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view_context_play_now",
+		"activate",
+		audiobooksQueueSignals.ContextPlayNow,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view_context_enqueue",
+		"activate",
+		audiobooksQueueSignals.ContextEnqueue,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view_context_top",
+		"activate",
+		audiobooksQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view_context_up",
+		"activate",
+		audiobooksQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view_context_down",
+		"activate",
+		audiobooksQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view_context_bottom",
+		"activate",
+		audiobooksQueueSignals.ContextMove,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view_context_delete",
+		"activate",
+		audiobooksQueueSignals.ContextDelete,
+	)
+	(*signals).AddDetail(
+		"audiobooks_queue_view_context_clear",
+		"activate",
+		audiobooksQueueSignals.ContextClear,
+	)
 	return
 }

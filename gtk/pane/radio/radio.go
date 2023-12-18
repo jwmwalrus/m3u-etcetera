@@ -1,4 +1,6 @@
 package radiopane
 
+import "github.com/jwmwalrus/m3u-etcetera/gtk/builder"
+
 // Setup sets the radio pane.
-func Setup(signals *map[string]interface{}) (err error) { return }
+func Setup(signals *builder.Signals) (err error) { return }

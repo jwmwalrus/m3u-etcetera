@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gdk/v3"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
@@ -28,8 +28,11 @@ type onContext struct {
 }
 
 func (oc *onContext) Context(tv *gtk.TreeView, event *gdk.Event) {
-	btn := gdk.EventButtonNewFromEvent(event)
+	logw := slog.With("context-id", oc.id)
+
+	btn := event.AsButton()
 	if btn.Button() != gdk.BUTTON_SECONDARY {
+		logw.Debug("Playlist context event does not correspond to a button")
 		return
 	}
 
@@ -37,6 +40,8 @@ func (oc *onContext) Context(tv *gtk.TreeView, event *gdk.Event) {
 	if len(values) == 0 {
 		return
 	}
+
+	logw.Info("Creating popup menu for playlist context event")
 
 	sensitive := map[string]bool{
 		"top":     false,
@@ -62,40 +67,43 @@ func (oc *onContext) Context(tv *gtk.TreeView, event *gdk.Event) {
 		sensitive["bottom"] = !(pos == lastpos)
 		sensitive["playnow"] = true
 	}
-	oc.ctxMenu.GetChildren().Foreach(func(item interface{}) {
-		w, ok := item.(*gtk.Widget)
-		if !ok {
-			return
-		}
+	for _, item := range oc.ctxMenu.Children() {
+		w := gtk.BaseWidget(item)
 
-		l, _ := w.GetName()
+		l := w.Name()
 		for k, v := range sensitive {
 			if strings.Contains(l, k) {
 				w.SetSensitive(v)
 				break
 			}
 		}
-	})
+	}
 	oc.ctxMenu.PopupAtPointer(event)
 }
 
 func (oc *onContext) ContextClear(mi *gtk.MenuItem) {
+	logw := slog.With("context-id", oc.id)
+	onerrorw := onerror.With("context-id", oc.id)
+
 	if oc.id > 0 {
+		logw.Info("Clearing playlist")
+
 		req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
 			PlaylistId: oc.id,
 			Action:     m3uetcpb.PlaylistTrackAction_PT_CLEAR,
 		}
 
-		onerror.Log(dialer.ExecutePlaylistTrackAction(req))
+		onerrorw.Log(dialer.ExecutePlaylistTrackAction(req))
 		return
 	}
 
+	logw.Info("Clearing queue")
 	req := &m3uetcpb.ExecuteQueueActionRequest{
 		Perspective: oc.perspective,
 		Action:      m3uetcpb.QueueAction_Q_CLEAR,
 	}
 
-	onerror.Log(dialer.ExecuteQueueAction(req))
+	onerrorw.Log(dialer.ExecuteQueueAction(req))
 }
 
 func (oc *onContext) ContextDelete(mi *gtk.MenuItem) {
@@ -103,6 +111,8 @@ func (oc *onContext) ContextDelete(mi *gtk.MenuItem) {
 	if len(values) == 0 {
 		return
 	}
+
+	slog.With("Deleting playlist rows", "queue-context", oc.id == 0)
 
 	oc.DeleteRows(values)
 }
@@ -117,6 +127,8 @@ func (oc *onContext) ContextEnqueue(mi *gtk.MenuItem) {
 		Action: m3uetcpb.QueueAction_Q_APPEND,
 	}
 
+	logw := slog.With("context-id", oc.id)
+	logw.Info("Adding playlist track to queue")
 	if oc.id > 0 {
 		for _, m := range values {
 			req.Ids = append(req.Ids, m[store.TColTrackID].(int64))
@@ -128,7 +140,7 @@ func (oc *onContext) ContextEnqueue(mi *gtk.MenuItem) {
 	}
 
 	if err := dialer.ExecuteQueueAction(req); err != nil {
-		slog.Error("Failed to execute queue action", "error", err)
+		logw.Error("Failed to execute queue action", "error", err)
 		return
 	}
 }
@@ -143,6 +155,9 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 		return
 	}
 
+	logw := slog.With("context-id", oc.id)
+	logw.Info("Moving playlist track")
+
 	var rowPosition, lastPosition store.ModelColumn
 
 	if oc.id > 0 {
@@ -153,7 +168,7 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 		lastPosition = store.QColLastPosition
 	}
 
-	label := mi.GetLabel()
+	label := mi.Label()
 	fromPos := values[0][rowPosition].(int)
 	var pos int
 	if strings.Contains(label, "top") {
@@ -171,9 +186,11 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 			return
 		}
 	} else {
-		slog.Error("Invalid playlist/queue move")
+		logw.Error("Invalid playlist/queue move")
 		return
 	}
+
+	onerrorw := onerror.With("context-id", oc.id)
 
 	if oc.id > 0 {
 		req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
@@ -183,7 +200,7 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 			FromPosition: int32(fromPos),
 		}
 
-		onerror.Log(dialer.ExecutePlaylistTrackAction(req))
+		onerrorw.Log(dialer.ExecutePlaylistTrackAction(req))
 		return
 	}
 
@@ -193,7 +210,7 @@ func (oc *onContext) ContextMove(mi *gtk.MenuItem) {
 		FromPosition: int32(fromPos),
 	}
 
-	onerror.Log(dialer.ExecuteQueueAction(req))
+	onerrorw.Log(dialer.ExecuteQueueAction(req))
 }
 
 func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
@@ -201,6 +218,11 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 	if len(values) != 1 {
 		return
 	}
+
+	logw := slog.With("context-id", oc.id)
+	logw.Info("Playing track now")
+
+	onerrorw := onerror.With("context-id", oc.id)
 
 	if oc.id > 0 {
 		pos := values[0][store.TColPosition].(int)
@@ -211,7 +233,7 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 			Ids:      []int64{oc.id},
 		}
 
-		onerror.Log(dialer.ExecutePlaybarAction(req))
+		onerrorw.Log(dialer.ExecutePlaybarAction(req))
 		return
 	}
 
@@ -230,7 +252,7 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 	}
 
 	if err := dialer.ExecutePlaybackAction(reqbar); err != nil {
-		slog.Error("Failed to execute playback action", "error", err)
+		logw.Error("Failed to execute playback action", "error", err)
 		return
 	}
 
@@ -239,12 +261,12 @@ func (oc *onContext) ContextPlayNow(mi *gtk.MenuItem) {
 		Position: int32(pos),
 	}
 
-	onerror.Log(dialer.ExecuteQueueAction(reqq))
+	onerrorw.Log(dialer.ExecuteQueueAction(reqq))
 }
 
 func (oc *onContext) ContextPoppedUp(m *gtk.Menu) {
 	glib.IdleAdd(func() bool {
-		sel, _ := oc.view.GetSelection()
+		sel := oc.view.Selection()
 		if oc.selection.keep && oc.selection.paths != nil {
 			for i := range oc.selection.paths {
 				if sel.PathIsSelected(oc.selection.paths[i]) {
@@ -268,6 +290,7 @@ func (oc *onContext) DeleteRows(values []map[store.ModelColumn]interface{}) {
 			values[j][colPosition].(int)
 	})
 
+	onerrorw := onerror.With("context-id", oc.id)
 	if oc.id > 0 {
 		for i := len(values) - 1; i >= 0; i-- {
 			req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
@@ -276,7 +299,7 @@ func (oc *onContext) DeleteRows(values []map[store.ModelColumn]interface{}) {
 				Position:   int32(values[i][store.TColPosition].(int)),
 			}
 
-			onerror.Log(dialer.ExecutePlaylistTrackAction(req))
+			onerrorw.Log(dialer.ExecutePlaylistTrackAction(req))
 		}
 		return
 	}
@@ -287,13 +310,13 @@ func (oc *onContext) DeleteRows(values []map[store.ModelColumn]interface{}) {
 			Position: int32(values[i][store.QColPosition].(int)),
 		}
 
-		onerror.Log(dialer.ExecuteQueueAction(req))
+		onerrorw.Log(dialer.ExecuteQueueAction(req))
 	}
 }
 
 func (oc *onContext) Key(tv *gtk.TreeView, event *gdk.Event) {
-	key := gdk.EventKeyNewFromEvent(event)
-	if key.KeyVal() != gdk.KEY_Delete {
+	key := event.AsKey()
+	if key.Keyval() != gdk.KEY_Delete {
 		return
 	}
 
@@ -306,8 +329,11 @@ func (oc *onContext) Key(tv *gtk.TreeView, event *gdk.Event) {
 }
 
 func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {
+	logw := slog.With("context-id", oc.id)
+	logw.Debug("Playlist selection changed")
+
 	if oc.selection.keep {
-		slog.Info("Ignoring selection change")
+		logw.Debug("Ignoring selection change")
 		return
 	}
 	var err error
@@ -328,20 +354,23 @@ func (oc *onContext) SelChanged(sel *gtk.TreeSelection) {
 
 	oc.selection.values, oc.selection.paths, err = store.GetMultipleTreeSelectionValues(sel, oc.view, cols)
 	if err != nil {
-		slog.Error("Failed to get tree selection values", "error", err)
+		logw.Error("Failed to get tree selection values", "error", err)
 		return
 	}
 
-	slog.Debug("Selected context entres", "entries", oc.selection)
+	logw.Debug("Selected context entries", "entries", oc.selection)
 }
 
 func (oc *onContext) getSelection(keep ...bool) (
 	values []map[store.ModelColumn]interface{}) {
 
+	logw := slog.With("context-id", oc.id)
+	logw.Debug("Getting playlist selection")
+
 	if oc.selection.values == nil {
-		sel, err := oc.view.GetSelection()
-		if err != nil {
-			slog.Error("Failed to get selection", "error", err)
+		sel := oc.view.Selection()
+		if sel == nil {
+			logw.Error("Failed to get selection")
 			return
 		}
 		oc.SelChanged(sel)
@@ -349,7 +378,7 @@ func (oc *onContext) getSelection(keep ...bool) (
 
 	values, ok := oc.selection.values.([]map[store.ModelColumn]interface{})
 	if !ok {
-		slog.Debug("There is no selection available for context")
+		logw.Debug("There is no selection available for context")
 		values = []map[store.ModelColumn]interface{}{}
 		return
 	}

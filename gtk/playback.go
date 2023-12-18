@@ -3,36 +3,57 @@ package gtkui
 import (
 	"log/slog"
 
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gdk/v3"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 )
 
-func setupPlayback(signals *map[string]interface{}) (err error) {
+func setupPlayback(signals *builder.Signals) (err error) {
 	slog.Info("Setting up playback")
 
-	(*signals)["on_control_prev_clicked"] = func(btn *gtk.ToolButton) {
-		go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_PREVIOUS)
-	}
-	(*signals)["on_control_play_clicked"] = func(btn *gtk.ToolButton) {
-		action := m3uetcpb.PlaybackAction_PB_PLAY
+	(*signals).AddDetail(
+		"control_prev",
+		"clicked",
+		func(btn *gtk.ToolButton) {
+			go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_PREVIOUS)
+		},
+	)
+	(*signals).AddDetail(
+		"control_play",
+		"clicked",
+		func(btn *gtk.ToolButton) {
+			action := m3uetcpb.PlaybackAction_PB_PLAY
 
-		name := btn.GetIconName()
-		if name == "media-playback-pause" {
-			action = m3uetcpb.PlaybackAction_PB_PAUSE
-		}
-		go onControlClicked(btn, action)
-	}
-	(*signals)["on_control_stop_clicked"] = func(btn *gtk.ToolButton) {
-		go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_STOP)
-	}
-	(*signals)["on_control_next_clicked"] = func(btn *gtk.ToolButton) {
-		go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_NEXT)
-	}
-	(*signals)["on_progress_eb_button_press_event"] = onProgressBarClicked
+			name := btn.IconName()
+			if name == "media-playback-pause" {
+				action = m3uetcpb.PlaybackAction_PB_PAUSE
+			}
+			go onControlClicked(btn, action)
+		},
+	)
+	(*signals).AddDetail(
+		"control_stop",
+		"clicked",
+		func(btn *gtk.ToolButton) {
+			go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_STOP)
+		},
+	)
+	(*signals).AddDetail(
+		"control_next",
+		"clicked",
+		func(btn *gtk.ToolButton) {
+			go onControlClicked(btn, m3uetcpb.PlaybackAction_PB_NEXT)
+		},
+	)
+	(*signals).AddDetail(
+		"progress_eb",
+		"button-press-event",
+		onProgressBarClicked,
+	)
 	return
 }
 
@@ -55,9 +76,9 @@ func onProgressBarClicked(eb *gtk.EventBox, event *gdk.Event) {
 		return
 	}
 
-	btn := gdk.EventButtonNewFromEvent(event)
-	x, _ := btn.MotionVal()
-	width := eb.Widget.GetAllocatedWidth()
+	btn := event.AsButton()
+	x := btn.X()
+	width := eb.Widget.AllocatedWidth()
 	seek := int64(x * float64(duration) / float64(width))
 
 	go func() {

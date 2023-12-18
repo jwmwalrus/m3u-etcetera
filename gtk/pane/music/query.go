@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gdk/v3"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -40,26 +40,21 @@ func createMusicQueries() (omqy *onMusicQuery, err error) {
 		return
 	}
 
-	renderer, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return
-	}
+	renderer := gtk.NewCellRendererText()
 
 	qcols := []int{
 		int(store.QYColTree),
 	}
 
 	for _, i := range qcols {
-		var col *gtk.TreeViewColumn
-		col, err = gtk.TreeViewColumnNewWithAttribute(
-			store.QYTreeColumn[i].Name,
+		col := gtk.NewTreeViewColumn()
+		col.SetTitle(store.QYTreeColumn[i].Name)
+		col.PackStart(renderer, true)
+		col.AddAttribute(
 			renderer,
 			"text",
 			i,
 		)
-		if err != nil {
-			return
-		}
 		omqy.view.InsertColumn(col, -1)
 	}
 
@@ -73,7 +68,7 @@ func createMusicQueries() (omqy *onMusicQuery, err error) {
 }
 
 func (omqy *onMusicQuery) context(tv *gtk.TreeView, event *gdk.Event) {
-	btn := gdk.EventButtonNewFromEvent(event)
+	btn := event.AsButton()
 	if btn.Button() != gdk.BUTTON_SECONDARY {
 		return
 	}
@@ -135,7 +130,7 @@ func (omqy *onMusicQuery) contextAppend(mi *gtk.MenuItem) {
 		return
 	}
 
-	label := mi.GetLabel()
+	label := mi.Label()
 	if strings.Contains(label, "playlist") {
 		req := &m3uetcpb.QueryInPlaylistRequest{
 			Id:         ids[0],
@@ -224,10 +219,7 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 
 	qyr := store.Renderer{Model: model, Columns: store.TColumns}
 
-	textro, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return
-	}
+	textro := gtk.NewCellRendererText()
 
 	togglerw, err := qyr.GetActivatable(store.TColToggleSelect)
 	if err != nil {
@@ -236,7 +228,7 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 
 	cols := []struct {
 		idx  store.ModelColumn
-		rend gtk.ICellRenderer
+		rend gtk.CellRendererer
 		rsz  bool
 	}{
 		{store.TColNumber, textro, false},
@@ -249,17 +241,18 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 	}
 
 	for _, v := range cols {
-		var col *gtk.TreeViewColumn
+		col := gtk.NewTreeViewColumn()
+		col.SetTitle(store.TColumns[v.idx].Name)
 		if renderer, ok := v.rend.(*gtk.CellRendererToggle); ok {
-			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.TColumns[v.idx].Name,
+			col.PackStart(renderer, true)
+			col.AddAttribute(
 				renderer,
 				"active",
 				int(v.idx),
 			)
 		} else if renderer, ok := v.rend.(*gtk.CellRendererText); ok {
-			col, err = gtk.TreeViewColumnNewWithAttribute(
-				store.TColumns[v.idx].Name,
+			col.PackStart(renderer, true)
+			col.AddAttribute(
 				renderer,
 				"text",
 				int(v.idx),
@@ -267,9 +260,6 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 		} else {
 			slog.Error("¿Cómo sabré si es pez o iguana?")
 			continue
-		}
-		if err != nil {
-			return
 		}
 		col.SetResizable(v.rsz)
 		view.InsertColumn(col, -1)
@@ -402,8 +392,8 @@ func (omqy *onMusicQuery) defineQuery(btn *gtk.ToolButton) {
 	omqy.id.SetText("0")
 
 	res := omqy.dlg.Run()
-	switch res {
-	case gtk.RESPONSE_APPLY:
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply:
 		qy, err := omqy.getQuery()
 		if err != nil {
 			slog.Error("Failed to get query", "error", err)
@@ -411,7 +401,7 @@ func (omqy *onMusicQuery) defineQuery(btn *gtk.ToolButton) {
 			req := &m3uetcpb.AddQueryRequest{Query: qy}
 			dialer.AddQuery(req)
 		}
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 	omqy.dlg.Hide()
@@ -448,46 +438,29 @@ func (omqy *onMusicQuery) edit(id int64) (err error) {
 
 	res := omqy.dlg.Run()
 	defer omqy.dlg.Hide()
-	switch res {
-	case gtk.RESPONSE_APPLY:
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply:
 		qy, err = omqy.getQuery()
 		if err != nil {
 			return
 		}
 		req := &m3uetcpb.UpdateQueryRequest{Query: qy}
 		dialer.UpdateQuery(req)
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 	return
 }
 
 func (omqy *onMusicQuery) filtered(se *gtk.SearchEntry) {
-	text, err := se.GetText()
-	if err != nil {
-		slog.Error("Failed to get search entry text", "error", err)
-		return
-	}
+	text := se.Text()
 	store.FilterQueryTreeBy(text)
-
 }
 
 func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
-	name, err := omqy.name.GetText()
-	if err != nil {
-		slog.Error("Failed to get query name's text", "error", err)
-		return
-	}
-	descr, err := omqy.descr.GetText()
-	if err != nil {
-		slog.Error("Failed to get query description's text", "error", err)
-		return
-	}
-	params, err := omqy.params.GetText()
-	if err != nil {
-		slog.Error("Failed to get query param's text", "error", err)
-		return
-	}
+	name := omqy.name.Text()
+	descr := omqy.descr.Text()
+	params := omqy.params.Text()
 	ids, err := store.GetQueryResultsSelections()
 	onerror.Log(err)
 	if len(ids) > 0 {
@@ -497,11 +470,7 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 		params += "id=" + util.IDListToString(ids)
 	}
 
-	idTxt, err := omqy.id.GetText()
-	if err != nil {
-		slog.Error("Failed to get query ID's text", "error", err)
-		return
-	}
+	idTxt := omqy.id.Text()
 	id, err := strconv.ParseInt(idTxt, 10, 64)
 	if err != nil {
 		slog.With(
@@ -513,11 +482,7 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 
 	var from, to int64
 
-	fromTxt, err := omqy.from.GetText()
-	if err != nil {
-		slog.Error("Failed to get query `from`'s text", "error", err)
-		return
-	}
+	fromTxt := omqy.from.Text()
 	if fromTxt != "" && fromTxt != "0" {
 		var ft time.Time
 		ft, err = time.Parse("2006/01/02", fromTxt+"/01/01")
@@ -531,11 +496,7 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 		}
 	}
 
-	toTxt, err := omqy.to.GetText()
-	if err != nil {
-		slog.Error("Failed to get query `to`'s text", "error", err)
-		return
-	}
+	toTxt := omqy.to.Text()
 	if toTxt != "" && toTxt != "0" {
 		var tt time.Time
 		tt, err = time.Parse("2006/01/02", toTxt+"/01/01")
@@ -556,9 +517,9 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 		Params:      params,
 		From:        from,
 		To:          to,
-		Rating:      int32(omqy.rating.GetValue()),
-		Limit:       int32(omqy.limit.GetValue()),
-		Random:      omqy.random.GetActive(),
+		Rating:      int32(omqy.rating.Value()),
+		Limit:       int32(omqy.limit.Value()),
+		Random:      omqy.random.Active(),
 	}
 	return
 }

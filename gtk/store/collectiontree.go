@@ -9,7 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
 )
@@ -153,15 +154,15 @@ func (te *collectionTreeEntry) appendNode(model *gtk.TreeStore,
 	}
 
 	citer := model.Append(iter)
-	path, _ := model.GetPath(citer)
+	path := model.Path(citer)
 	te.path = path.String()
 
 	model.SetValue(
 		citer,
 		int(CColTree),
-		te.label+suffix,
+		glib.NewValue(te.label+suffix),
 	)
-	model.SetValue(citer, int(CColTreeIDList), util.IDListToString(te.ids))
+	model.SetValue(citer, int(CColTreeIDList), util.IDListToGValue(te.ids))
 
 	for i := range te.child {
 		te.child[i].appendNode(model, citer)
@@ -285,14 +286,14 @@ func (tree *collectionTree) rebuild() {
 		return
 	}
 
-	if tree.model.GetNColumns() == 0 {
+	if tree.model.NColumns() == 0 {
 		return
 	}
 	start := time.Now()
 
 	guide := tree.hierarchy.getGuide(tree.groupByCollection)
 
-	_, ok := tree.model.GetIterFirst()
+	_, ok := tree.model.IterFirst()
 	if ok {
 		tree.model.Clear()
 	}

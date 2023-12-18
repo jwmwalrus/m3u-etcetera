@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 -->
+<!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <object class="GtkPopoverMenu" id="settings_menu">
@@ -19,7 +19,6 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <signal name="clicked" handler="on_settings_open_files_clicked" swapped="no"/>
                 <child>
                   <object class="GtkImage">
                     <property name="visible">True</property>
@@ -41,7 +40,6 @@
                 <property name="sensitive">False</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <signal name="clicked" handler="on_settings_open_url_clicked" swapped="no"/>
                 <child>
                   <object class="GtkImage">
                     <property name="visible">True</property>
@@ -62,7 +60,6 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <signal name="clicked" handler="on_settings_import_playlist_clicked" swapped="no"/>
                 <child>
                   <object class="GtkImage">
                     <property name="visible">True</property>
@@ -124,7 +121,6 @@
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
                     <property name="tooltip-text" translatable="yes">Add collection</property>
-                    <signal name="clicked" handler="on_settings_collections_add_clicked" swapped="no"/>
                     <child>
                       <object class="GtkImage">
                         <property name="visible">True</property>
@@ -145,7 +141,6 @@
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
-                    <signal name="clicked" handler="on_settings_collections_edit_clicked" swapped="no"/>
                     <child>
                       <object class="GtkImage">
                         <property name="visible">True</property>
@@ -202,7 +197,6 @@
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
-                    <signal name="clicked" handler="on_settings_playlist_groups_add_clicked" swapped="no"/>
                     <child>
                       <object class="GtkImage">
                         <property name="visible">True</property>
@@ -223,7 +217,6 @@
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
-                    <signal name="clicked" handler="on_settings_playlist_groups_edit_clicked" swapped="no"/>
                     <child>
                       <object class="GtkImage">
                         <property name="visible">True</property>
@@ -310,7 +303,6 @@
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
             <property name="tooltip-text" translatable="yes">Quit both the server and the GTK interface</property>
-            <signal name="clicked" handler="on_settings_quit_all_clicked" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -431,7 +423,6 @@
                         <property name="label" translatable="yes">Previous</property>
                         <property name="use-underline">True</property>
                         <property name="icon-name">media-seek-backward</property>
-                        <signal name="clicked" handler="on_control_prev_clicked" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -446,7 +437,6 @@
                         <property name="label" translatable="yes">Play</property>
                         <property name="use-underline">True</property>
                         <property name="icon-name">media-playback-start</property>
-                        <signal name="clicked" handler="on_control_play_clicked" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -461,7 +451,6 @@
                         <property name="label" translatable="yes">Stop</property>
                         <property name="use-underline">True</property>
                         <property name="icon-name">media-playback-stop</property>
-                        <signal name="clicked" handler="on_control_stop_clicked" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -476,7 +465,6 @@
                         <property name="label" translatable="yes">Next</property>
                         <property name="use-underline">True</property>
                         <property name="icon-name">media-seek-forward</property>
-                        <signal name="clicked" handler="on_control_next_clicked" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -571,7 +559,6 @@
               <object class="GtkEventBox" id="progress_eb">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <signal name="button-press-event" handler="on_progress_eb_button_press_event" swapped="no"/>
                 <child>
                   <object class="GtkProgressBar" id="progress">
                     <property name="visible">True</property>
@@ -669,7 +656,6 @@
               <item id="podcasts_perspective" translatable="yes">Podcasts</item>
               <item id="audiobooks_perspective" translatable="yes">Audiobooks</item>
             </items>
-            <signal name="changed" handler="on_perspective_changed" swapped="no"/>
           </object>
         </child>
         <child>

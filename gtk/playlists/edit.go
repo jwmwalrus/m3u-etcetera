@@ -3,7 +3,7 @@ package playlists
 import (
 	"strconv"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
@@ -61,7 +61,7 @@ func EditPlaylist(id int64) (err error) {
 
 	updBtn.SetSensitive(nameIn != "")
 	nameent.Connect("changed", func(e *gtk.Entry) {
-		name, _ := e.GetText()
+		name := e.Text()
 		if name == "" {
 			updBtn.SetSensitive(false)
 			return
@@ -76,18 +76,12 @@ func EditPlaylist(id int64) (err error) {
 	res := playlistDlg.Run()
 	defer playlistDlg.Hide()
 
-	switch res {
-	case gtk.RESPONSE_APPLY:
+	switch gtk.ResponseType(res) {
+	case gtk.ResponseApply:
 		var name, descr string
-		name, err = nameent.GetText()
-		if err != nil {
-			return
-		}
-		descr, err = descrent.GetText()
-		if err != nil {
-			return
-		}
-		pgActive := groups.GetActiveID()
+		name = nameent.Text()
+		descr = descrent.Text()
+		pgActive := groups.ActiveID()
 		pgID, err = strconv.ParseInt(pgActive, 10, 64)
 		if err != nil {
 			return
@@ -107,7 +101,7 @@ func EditPlaylist(id int64) (err error) {
 		}
 		_, err = dialer.ExecutePlaylistAction(req)
 		onerror.Log(err)
-	case gtk.RESPONSE_CANCEL:
+	case gtk.ResponseCancel:
 	default:
 	}
 	return

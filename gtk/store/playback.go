@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gdkpixbuf/v2"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/bnp/chars"
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
@@ -29,7 +29,7 @@ type playbackData struct {
 	coverFiles                   []string
 	headerbar                    *gtk.HeaderBar
 	cover                        *gtk.Image
-	logoPixbuf                   *gdk.Pixbuf
+	logoPixbuf                   *gdkpixbuf.Pixbuf
 	playBtn                      *gtk.ToolButton
 	title, artist, source, extra *gtk.Label
 	prog                         *gtk.ProgressBar
@@ -179,7 +179,7 @@ func (pbd *playbackData) setCover() bool {
 				return false
 			}
 
-			pixbuf, err := gdk.PixbufNewFromFileAtScale(fp, 150, 150, true)
+			pixbuf, err := gdkpixbuf.NewPixbufFromFileAtScale(fp, 150, 150, true)
 			if err != nil {
 				return false
 			}

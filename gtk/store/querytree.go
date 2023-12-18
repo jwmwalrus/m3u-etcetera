@@ -1,13 +1,15 @@
 package store
 
 import (
+	"fmt"
 	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
 )
@@ -31,7 +33,7 @@ func (qyt *queryTreeModel) update() bool {
 		return false
 	}
 
-	if model.GetNColumns() == 0 {
+	if model.NColumns() == 0 {
 		return false
 	}
 
@@ -43,7 +45,7 @@ func (qyt *queryTreeModel) update() bool {
 		sort       int
 	}
 
-	_, ok := model.GetIterFirst()
+	_, ok := model.IterFirst()
 	if ok {
 		model.Clear()
 	}
@@ -112,13 +114,13 @@ func (qyt *queryTreeModel) update() bool {
 		if qi.hasCBounds {
 			name += " (C)"
 		}
-		model.SetValue(iter, int(QYColTree), name)
-		model.SetValue(iter, int(QYColTreeIDList), strconv.FormatInt(qi.id, 10))
-		model.SetValue(iter, int(QYColTreeKeywords), qi.kw)
-		model.SetValue(iter, int(QYColTreeSort), qi.sort)
+		model.SetValue(iter, int(QYColTree), glib.NewValue(name))
+		model.SetValue(iter, int(QYColTreeIDList), glib.NewValue(strconv.FormatInt(qi.id, 10)))
+		model.SetValue(iter, int(QYColTreeKeywords), glib.NewValue(qi.kw))
+		model.SetValue(iter, int(QYColTreeSort), glib.NewValue(qi.sort))
 	}
 
-	model.SetSortColumnId(int(QYColTreeSort), gtk.SORT_ASCENDING)
+	model.SetSortColumnID(int(QYColTreeSort), gtk.SortAscending)
 
 	return false
 }
@@ -127,8 +129,9 @@ func (qyt *queryTreeModel) update() bool {
 func CreateQueryTreeModel() (model *gtk.TreeStore, err error) {
 	slog.Info("Creating query model")
 
-	queryTree.model, err = gtk.TreeStoreNew(QYTreeColumn.getTypes()...)
-	if err != nil {
+	queryTree.model = gtk.NewTreeStore(QYTreeColumn.getTypes())
+	if queryTree.model == nil {
+		err = fmt.Errorf("failed to create tree-store")
 		return
 	}
 

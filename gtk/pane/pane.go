@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	audiobookspane "github.com/jwmwalrus/m3u-etcetera/gtk/pane/audiobooks"
@@ -18,7 +18,7 @@ import (
 type paneData struct {
 	id    string
 	path  string
-	setup func(signals *map[string]interface{}) error
+	setup func(signals *builder.Signals) error
 }
 
 type paneMap map[m3uetcpb.Perspective]paneData
@@ -54,7 +54,7 @@ func init() {
 
 // Add adds pane to notebook.
 func Add(idx m3uetcpb.Perspective, nb *gtk.Notebook,
-	signals *map[string]interface{}) (err error) {
+	signals *builder.Signals) (err error) {
 
 	slog.Info("Adding perspective to notebook", "idx", idx.String())
 
@@ -75,9 +75,9 @@ func Add(idx m3uetcpb.Perspective, nb *gtk.Notebook,
 		return
 	}
 
-	label, err := gtk.LabelNew(cases.Title(language.English).String(idx.String()))
-	if err != nil {
-		err = fmt.Errorf("Unable to create %v label: %v", idx, err)
+	label := gtk.NewLabel(cases.Title(language.English).String(idx.String()))
+	if label == nil {
+		err = fmt.Errorf("Unable to create %v label", idx)
 		return
 	}
 
