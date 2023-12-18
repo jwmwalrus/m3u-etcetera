@@ -11,12 +11,10 @@ import (
 
 // PlaybackHistory defines a playback_history row.
 type PlaybackHistory struct {
-	ID        int64  `json:"id" gorm:"primaryKey"`
-	Location  string `json:"location" gorm:"index:idx_playback_history_location, not null"`
-	Duration  int64  `json:"duration"`
-	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
-	TrackID   int64  `json:"trackId" gorm:"index:idx_playback_history_track_id"`
+	Model
+	Location string `json:"location" gorm:"index:idx_playback_history_location, not null"`
+	Duration int64  `json:"duration"`
+	TrackID  int64  `json:"trackId" gorm:"index:idx_playback_history_track_id"`
 }
 
 func (h *PlaybackHistory) Create() error {

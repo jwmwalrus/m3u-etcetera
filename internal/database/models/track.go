@@ -28,7 +28,7 @@ import (
 
 // Track defines a track row.
 type Track struct {
-	ID          int64  `json:"id" gorm:"primaryKey"`
+	Model
 	Location    string `json:"location" gorm:"uniqueIndex:unique_idx_track_location,not null"`
 	Format      string `json:"format"`
 	Type        string `json:"type"`
@@ -55,8 +55,6 @@ type Track struct {
 	Remote       bool       `json:"remote"` // if track is remote but not in a remote collection
 	Lastplayed   int64      `json:"lastplayed"`
 	Tags         string     `json:"tags"`
-	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt    int64      `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	CollectionID int64      `json:"collectionId" gorm:"index:idx_track_collection_id,not null"`
 	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`
 }

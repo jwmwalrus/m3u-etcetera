@@ -27,6 +27,12 @@ var (
 	PlaybackChanged chan struct{} = make(chan struct{}, 1)
 )
 
+type Model struct {
+	ID        int64 `json:"id" gorm:"primaryKey"`
+	CreatedAt int64 `json:"createdAt" gorm:"autoCreateTime:nano"`
+	UpdatedAt int64 `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+}
+
 // Creator defines a DML interface of CRUD to create.
 type Creator interface {
 	Create() error

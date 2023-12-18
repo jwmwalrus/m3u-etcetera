@@ -110,7 +110,7 @@ func CountSupportedParams(qp []qparams.QParam) (n int) {
 
 // Query Defines a query.
 type Query struct {
-	ID          int64  `json:"id" gorm:"primaryKey"`
+	Model
 	Idx         int    `json:"idx" gorm:"not null,default:0"`
 	Name        string `json:"name"`        // query name
 	Description string `json:"description"` // query description
@@ -120,8 +120,6 @@ type Query struct {
 	Params      string `json:"params"`      // patterns to look for in track's indexed columns
 	From        int64  `json:"from"`        // from datetime in range
 	To          int64  `json:"to"`          // to datetime in range
-	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
 func (qy *Query) Read(id int64) error {

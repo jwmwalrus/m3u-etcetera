@@ -26,9 +26,7 @@ func (idx PerspectiveIndex) GetPerspectiveQueue() (q *Queue, err error) {
 
 // Queue defines a queue.
 type Queue struct { // too transient
-	ID            int64       `json:"id" gorm:"primaryKey"`
-	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+	Model
 	PerspectiveID int64       `json:"perspectiveId" gorm:"uniqueIndex:unique_idx_queue_perspective_id,not null"`
 	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
 }

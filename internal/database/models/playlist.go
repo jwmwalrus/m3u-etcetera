@@ -28,15 +28,13 @@ const (
 
 // Playlist defines a playlist.
 type Playlist struct {
-	ID              int64         `json:"id" gorm:"primaryKey"`
+	Model
 	Name            string        `json:"name" gorm:"uniqueIndex:unique_idx_playlist_name,not null"`
 	Description     string        `json:"description"`
 	Open            bool          `json:"open"`
 	Active          bool          `json:"active"`
 	Transient       bool          `json:"transient"`
 	QueryID         int64         `json:"queryId"`
-	CreatedAt       int64         `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt       int64         `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	PlaylistGroupID int64         `json:"playlistGroupId" gorm:"index:idx_playlist_playlist_group_id,not null"`
 	PlaybarID       int64         `json:"playbarId" gorm:"index:idx_playlist_playbar_id,not null"`
 	PlaylistGroup   PlaylistGroup `json:"playlistGroup" gorm:"foreignKey:PlaylistGroupID"`

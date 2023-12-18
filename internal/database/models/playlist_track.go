@@ -13,12 +13,10 @@ import (
 
 // PlaylistTrack defines a track in a playlist.
 type PlaylistTrack struct {
-	ID            int64    `json:"id" gorm:"primaryKey"`
+	Model
 	Position      int      `json:"position"`
 	Dynamic       bool     `json:"dynamic"` // playlist is populated dynamically
 	Lastplayedfor int64    `json:"lastplayedfor"`
-	CreatedAt     int64    `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt     int64    `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	PlaylistID    int64    `json:"playlistId" gorm:"index:idx_playlist_track_playlist_id,not null"`
 	TrackID       int64    `json:"trackId" gorm:"index:idx_playlist_track_track_id,not null"`
 	Playlist      Playlist `json:"playlist" gorm:"foreignKey:PlaylistID"`

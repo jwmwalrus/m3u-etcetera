@@ -15,15 +15,13 @@ import (
 
 // QueueTrack defines a track in the queue.
 type QueueTrack struct { // too transient
-	ID        int64  `json:"id" gorm:"primaryKey"`
-	Position  int    `json:"position"`
-	Played    bool   `json:"played"`
-	Location  string `json:"location" gorm:"not null"`
-	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
-	TrackID   int64  `json:"trackId" gorm:"index:idx_queue_track_track_id"`
-	QueueID   int64  `json:"queueId" gorm:"index:idx_queue_track_queue_id,not null"`
-	Queue     Queue  `json:"queue" gorm:"foreignKey:QueueID"`
+	Model
+	Position int    `json:"position"`
+	Played   bool   `json:"played"`
+	Location string `json:"location" gorm:"not null"`
+	TrackID  int64  `json:"trackId" gorm:"index:idx_queue_track_track_id"`
+	QueueID  int64  `json:"queueId" gorm:"index:idx_queue_track_queue_id,not null"`
+	Queue    Queue  `json:"queue" gorm:"foreignKey:QueueID"`
 }
 
 func (qt *QueueTrack) Create() error {

@@ -90,12 +90,10 @@ func (idx PerspectiveIndex) Get() (p Perspective) {
 
 // Perspective defines a perspective.
 type Perspective struct {
-	ID          int64  `json:"id" gorm:"primaryKey"`
+	Model
 	Idx         int    `json:"idx" gorm:"uniqueIndex:unique_idx_perspective_idx,not null"`
 	Description string `json:"description"`
 	Active      bool   `json:"active"`
-	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt   int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 }
 
 func (p *Perspective) Read(id int64) error {

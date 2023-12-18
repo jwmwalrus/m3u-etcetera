@@ -74,7 +74,7 @@ func (ce CollectionEvent) String() string {
 
 // Collection defines a collection row.
 type Collection struct {
-	ID             int64       `json:"id" gorm:"primaryKey"`
+	Model
 	Idx            int         `json:"idx" gorm:"not null"`
 	Name           string      `json:"name" gorm:"uniqueIndex:unique_idx_collection_name,not null"`
 	Description    string      `json:"description"`
@@ -85,8 +85,6 @@ type Collection struct {
 	Remote         bool        `json:"remote"`
 	Scanned        int         `json:"scanned"`
 	Tracks         int64       `json:"tracks" gorm:"-"`
-	CreatedAt      int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt      int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	PerspectiveID  int64       `json:"perspectiveId" gorm:"index:idx_collection_perspective_id,not null"`
 	Perspective    Perspective `json:"-" gorm:"foreignKey:PerspectiveID"`
 }

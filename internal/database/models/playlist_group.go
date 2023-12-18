@@ -36,13 +36,11 @@ func (idx PlaylistGroupIndex) Get() (plg *PlaylistGroup, err error) {
 
 // PlaylistGroup defines a playlist group.
 type PlaylistGroup struct {
-	ID            int64       `json:"id" gorm:"primaryKey"`
+	Model
 	Idx           int         `json:"idx" gorm:"not null"`
 	Name          string      `json:"name" gorm:"uniqueIndex:unique_idx_playlist_group_name,not null"`
 	Description   string      `json:"description"`
 	Hidden        bool        `json:"hidden"`
-	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
 	PerspectiveID int64       `json:"perspectiveId" gorm:"index:idx_playlist_group_perspective_id,not null"`
 	Perspective   Perspective `json:"-" gorm:"foreignKey:PerspectiveID"`
 }

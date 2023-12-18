@@ -67,9 +67,7 @@ func (ce PlaybarEvent) String() string {
 
 // Playbar defines the playlist bar for each perspective.
 type Playbar struct {
-	ID            int64       `json:"id" gorm:"primaryKey"`
-	CreatedAt     int64       `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt     int64       `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+	Model
 	PerspectiveID int64       `json:"perspectiveId" gorm:"uniqueIndex:unique_idx_playbar_perspective_id,not null"`
 	Perspective   Perspective `json:"perspective" gorm:"foreignKey:PerspectiveID"`
 }

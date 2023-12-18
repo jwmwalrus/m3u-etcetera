@@ -9,9 +9,7 @@ import (
 
 // CollectionQuery Defines a collection query.
 type CollectionQuery struct {
-	ID           int64      `json:"id" gorm:"primaryKey"`
-	CreatedAt    int64      `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt    int64      `json:"updatedAt" gorm:"autoUpdateTime:nano"`
+	Model
 	CollectionID int64      `json:"collectionId" gorm:"index:idx_collection_query_collection_id,not null"`
 	QueryID      int64      `json:"queryId" gorm:"index:idx_collection_query_query_id,not null"`
 	Collection   Collection `json:"collection" gorm:"foreignKey:CollectionID"`

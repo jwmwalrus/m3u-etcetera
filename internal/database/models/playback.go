@@ -17,13 +17,11 @@ import (
 
 // Playback defines a playback row.
 type Playback struct { // too transient
-	ID        int64  `json:"id" gorm:"primaryKey"`
-	Location  string `json:"location" gorm:"not null"`
-	Played    bool   `json:"played"`
-	Skip      int64  `json:"skip"`
-	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:nano"`
-	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:nano"`
-	TrackID   int64  `json:"trackId"`
+	Model
+	Location string `json:"location" gorm:"not null"`
+	Played   bool   `json:"played"`
+	Skip     int64  `json:"skip"`
+	TrackID  int64  `json:"trackId"`
 }
 
 func (pb *Playback) Create() error {
