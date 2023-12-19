@@ -33,7 +33,7 @@ func ApplyCollectionChanges(o ...store.CollectionOptions) {
 	logw := slog.With("collection_options", o)
 	logw.Info("Applying collection changes")
 
-	requests, err := store.CData.GetUpdateCollectionRequests()
+	requests, err := store.CData.FindUpdateCollectionRequests()
 	if err != nil {
 		logw.Error("Failed to get updated collection requests", "error", err)
 	}
@@ -58,7 +58,7 @@ func applyCollectionActionsChanges(o ...store.CollectionOptions) {
 	logw := slog.With("collection_options", o)
 	logw.Info("Applying collection actions changes")
 
-	toScan, toRemove := store.CData.GetCollectionActionsChanges()
+	toScan, toRemove := store.CData.CollectionActionsChanges()
 
 	cc, err := getClientConn1()
 	if err != nil {
@@ -144,7 +144,7 @@ func subscribeToCollectionStore() {
 func unsubscribeFromCollectionStore() {
 	slog.Info("Unsubscribing from collection store")
 
-	id := store.CData.GetSubscriptionID()
+	id := store.CData.SubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

@@ -445,6 +445,6 @@ func (ot *onTab) updateLabel() (err error) {
 	ot.label.SetText(name)
 	ot.label.SetTooltipText(pl.Description)
 
-	ot.img.SetVisible(store.BData.GetActiveID() == ot.id)
+	ot.img.SetVisible(store.BData.ActiveID() == ot.id)
 	return
 }

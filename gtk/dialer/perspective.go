@@ -62,7 +62,7 @@ func subscribeToPerspective() {
 func unsubscribeFromPerspective() {
 	slog.Info("Unsubscribing from perspective")
 
-	id := store.PerspData.GetSubscriptionID()
+	id := store.PerspData.SubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

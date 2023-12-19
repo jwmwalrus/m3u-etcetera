@@ -46,7 +46,7 @@ var (
 	PbData = &playbackData{}
 )
 
-func (pbd *playbackData) GetCurrentPlayback() (pb *m3uetcpb.Playback,
+func (pbd *playbackData) CurrentPlayback() (pb *m3uetcpb.Playback,
 	t *m3uetcpb.Track, duration int64, status map[string]bool) {
 	pbd.mu.RLock()
 	defer pbd.mu.RUnlock()
@@ -64,7 +64,7 @@ func (pbd *playbackData) GetCurrentPlayback() (pb *m3uetcpb.Playback,
 	return
 }
 
-func (pbd *playbackData) GetSubscriptionID() string {
+func (pbd *playbackData) SubscriptionID() string {
 	pbd.mu.RLock()
 	defer pbd.mu.RUnlock()
 

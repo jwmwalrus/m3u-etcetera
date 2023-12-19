@@ -71,7 +71,7 @@ func subscribeToQueueStore() {
 func unsubscribeFromQueueStore() {
 	slog.Info("Unsuubscribing from queue store")
 
-	id := store.QData.GetSubscriptionID()
+	id := store.QData.SubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

@@ -15,9 +15,9 @@ type Renderer struct {
 	Columns storeColumns
 }
 
-// GetActivatable returns an activatable cell renderer.
-func (r *Renderer) GetActivatable(col ModelColumn) (gtk.CellRendererer, error) {
-	if !slices.Contains(r.Columns.GetActivatableColumns(), col) {
+// NewActivatable returns an activatable cell renderer.
+func (r *Renderer) NewActivatable(col ModelColumn) (gtk.CellRendererer, error) {
+	if !slices.Contains(r.Columns.ActivatableColumns(), col) {
 		return nil, fmt.Errorf("The provided column is not activatable: %v", col)
 	}
 
@@ -33,9 +33,9 @@ func (r *Renderer) GetActivatable(col ModelColumn) (gtk.CellRendererer, error) {
 	return renderer, nil
 }
 
-// GetEditable returns an editable cell renderer.
-func (r *Renderer) GetEditable(col ModelColumn) (gtk.CellRendererer, error) {
-	if !slices.Contains(r.Columns.GetEditableColumns(), col) {
+// NewEditable returns an editable cell renderer.
+func (r *Renderer) NewEditable(col ModelColumn) (gtk.CellRendererer, error) {
+	if !slices.Contains(r.Columns.EditableColumns(), col) {
 		return nil, fmt.Errorf("The provided column is not editable: %v", col)
 	}
 

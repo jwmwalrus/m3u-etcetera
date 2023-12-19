@@ -72,7 +72,7 @@ func init() {
 	}
 }
 
-func (bd *playbarData) GetActiveID() int64 {
+func (bd *playbarData) ActiveID() int64 {
 	bd.mu.RLock()
 	defer bd.mu.RUnlock()
 
@@ -141,9 +141,9 @@ func (bd *playbarData) GetPlaylistGroup(id int64) *m3uetcpb.PlaylistGroup {
 	return nil
 }
 
-// GetPlaylistGroupActionsChanges returns the list of playlist group actions
+// PlaylistGroupActionsChanges returns the list of playlist group actions
 // to be applied.
-func (bd *playbarData) GetPlaylistGroupActionsChanges() (toRemove []int64) {
+func (bd *playbarData) PlaylistGroupActionsChanges() (toRemove []int64) {
 	slog.Info("Returning playlist group actions changes")
 
 	model := playlistGroupsModel
@@ -182,7 +182,7 @@ func (bd *playbarData) GetPlaylistGroupActionsChanges() (toRemove []int64) {
 	return
 }
 
-func (bd *playbarData) GetPlaylistGroupNames() map[int64]string {
+func (bd *playbarData) PlaylistGroupNames() map[int64]string {
 	bd.mu.RLock()
 	defer bd.mu.RUnlock()
 
@@ -193,7 +193,7 @@ func (bd *playbarData) GetPlaylistGroupNames() map[int64]string {
 	return out
 }
 
-func (bd *playbarData) GetPlaylistTracksCount(id int64) int64 {
+func (bd *playbarData) PlaylistTracksCount(id int64) int64 {
 	logw := slog.With("id", id)
 	logw.Info("Returning playlist tracks count")
 
@@ -211,7 +211,7 @@ func (bd *playbarData) GetPlaylistTracksCount(id int64) int64 {
 	return count
 }
 
-func (bd *playbarData) GetSubscriptionID() string {
+func (bd *playbarData) SubscriptionID() string {
 	bd.mu.RLock()
 	defer bd.mu.RUnlock()
 
@@ -301,7 +301,7 @@ func (bd *playbarData) PlaylistAlreadyExists(name string) bool {
 }
 
 // PlaylistIsOpen returns true if the playlist with the given
-// id is already open
+// id is already open.
 func (bd *playbarData) PlaylistIsOpen(id int64) bool {
 	bd.mu.RLock()
 	defer bd.mu.RUnlock()

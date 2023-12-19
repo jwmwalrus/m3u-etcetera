@@ -90,6 +90,18 @@ func GetFocused(p m3uetcpb.Perspective) int64 {
 // RequestFocus registers a focus request for the given playlist ID on the
 // given perspective.
 func RequestFocus(p m3uetcpb.Perspective, id int64) {
+	for waitCount := 0; waitCount < 15; waitCount++ {
+		if store.BData.PlaylistIsOpen(id) {
+			break
+		}
+
+		slog.With(
+			"id", id,
+			"wait-count", waitCount+1,
+		).Debug("Waiting for playlist to be open")
+		time.Sleep(1 * time.Second)
+	}
+
 	focusRequest.p = p
 	focusRequest.id = id
 }
@@ -103,18 +115,6 @@ func createPlaylist(btn *gtk.Button, p m3uetcpb.Perspective) {
 	if err != nil {
 		slog.Error("Failed to execute playlist action", "error", err)
 		return
-	}
-
-	for waitCount := 0; waitCount < 15; waitCount++ {
-		if store.BData.PlaylistIsOpen(res.Id) {
-			break
-		}
-
-		slog.With(
-			"id", res.Id,
-			"wait-count", waitCount+1,
-		).Debug("Waiting for playlist to be open")
-		time.Sleep(1 * time.Second)
 	}
 
 	RequestFocus(p, res.Id)

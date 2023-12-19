@@ -31,7 +31,7 @@ var (
 	PerspData = &perspectiveData{}
 )
 
-func (pd *perspectiveData) GetSubscriptionID() string {
+func (pd *perspectiveData) SubscriptionID() string {
 	pd.mu.RLock()
 	defer pd.mu.RUnlock()
 

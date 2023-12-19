@@ -41,7 +41,7 @@ func (qyd *queryData) GetQuery(id int64) *m3uetcpb.Query {
 	return nil
 }
 
-func (qyd *queryData) GetSubscriptionID() string {
+func (qyd *queryData) SubscriptionID() string {
 	qyd.mu.RLock()
 	defer qyd.mu.RUnlock()
 

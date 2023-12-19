@@ -46,7 +46,7 @@ func EditPlaylist(id int64) (err error) {
 	groups.Append("0", "--")
 	activeIdx := 0
 	count := 0
-	pgnames := store.BData.GetPlaylistGroupNames()
+	pgnames := store.BData.PlaylistGroupNames()
 
 	for k, v := range pgnames {
 		groups.Append(strconv.FormatInt(k, 10), v)

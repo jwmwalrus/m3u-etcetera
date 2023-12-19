@@ -62,7 +62,7 @@ func subscribeToPlayback() {
 func unsubscribeFromPlayback() {
 	slog.Info("Unsubscribing from playback")
 
-	id := store.PbData.GetSubscriptionID()
+	id := store.PbData.SubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

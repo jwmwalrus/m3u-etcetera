@@ -169,7 +169,7 @@ func subscribeToQueryStore() {
 func unsubscribeFromQueryStore() {
 	slog.Info("Unsubscribing from query store")
 
-	id := store.QYData.GetSubscriptionID()
+	id := store.QYData.SubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

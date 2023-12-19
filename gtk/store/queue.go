@@ -38,7 +38,7 @@ func init() {
 	}
 }
 
-func (qd *queueData) GetQueueDigest(idx m3uetcpb.Perspective) *m3uetcpb.PerspectiveDigest {
+func (qd *queueData) QueueDigest(idx m3uetcpb.Perspective) *m3uetcpb.PerspectiveDigest {
 	qd.mu.RLock()
 	defer qd.mu.RUnlock()
 
@@ -50,7 +50,7 @@ func (qd *queueData) GetQueueDigest(idx m3uetcpb.Perspective) *m3uetcpb.Perspect
 	return nil
 }
 
-func (qd *queueData) GetQueueTracksCount(idx m3uetcpb.Perspective) int64 {
+func (qd *queueData) QueueTracksCount(idx m3uetcpb.Perspective) int64 {
 	qd.mu.RLock()
 	defer qd.mu.RUnlock()
 
@@ -63,7 +63,7 @@ func (qd *queueData) GetQueueTracksCount(idx m3uetcpb.Perspective) int64 {
 	return count
 }
 
-func (qd *queueData) GetSubscriptionID() string {
+func (qd *queueData) SubscriptionID() string {
 	qd.mu.RLock()
 	defer qd.mu.RUnlock()
 

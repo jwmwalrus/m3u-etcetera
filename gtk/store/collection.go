@@ -74,7 +74,7 @@ func (cd *collectionData) CollectionAlreadyExists(location, name string) bool {
 	return false
 }
 
-func (cd *collectionData) GetCollectionActionsChanges() (toScan, toRemove []int64) {
+func (cd *collectionData) CollectionActionsChanges() (toScan, toRemove []int64) {
 	model := collectionModel
 
 	cd.mu.RLock()
@@ -118,14 +118,14 @@ func (cd *collectionData) GetCollectionActionsChanges() (toScan, toRemove []int6
 	return
 }
 
-func (cd *collectionData) GetSubscriptionID() string {
+func (cd *collectionData) SubscriptionID() string {
 	cd.mu.RLock()
 	defer cd.mu.RUnlock()
 
 	return cd.subscriptionID
 }
 
-func (cd *collectionData) GetTracksTotalCount() int64 {
+func (cd *collectionData) TracksTotalCount() int64 {
 	cd.mu.RLock()
 	defer cd.mu.RUnlock()
 
@@ -136,7 +136,7 @@ func (cd *collectionData) GetTracksTotalCount() int64 {
 	return total
 }
 
-func (cd *collectionData) GetUpdateCollectionRequests() ([]*m3uetcpb.UpdateCollectionRequest, error) {
+func (cd *collectionData) FindUpdateCollectionRequests() ([]*m3uetcpb.UpdateCollectionRequest, error) {
 	requests := []*m3uetcpb.UpdateCollectionRequest{}
 
 	model := GetCollectionModel()

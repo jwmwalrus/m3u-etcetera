@@ -12,7 +12,7 @@ type signalDetail struct {
 }
 type Signals map[string][]signalDetail
 
-// AddDetail adds the given signal to the map
+// AddDetail adds the given signal to the map.
 func (s Signals) AddDetail(id, signal string, handler interface{}) {
 	list, ok := s[id]
 	if ok {

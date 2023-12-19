@@ -165,7 +165,7 @@ func ImportPlaylists(req *m3uetcpb.ImportPlaylistsRequest) (
 func applyplaylistgroupactionschanges() {
 	slog.Info("Applying playlist group actions changes")
 
-	toRemove := store.BData.GetPlaylistGroupActionsChanges()
+	toRemove := store.BData.PlaylistGroupActionsChanges()
 
 	cc, err := getClientConn1()
 	if err != nil {
@@ -226,7 +226,7 @@ func subscribeToPlaybarStore() {
 func unsubscribeFromPlaybarStore() {
 	slog.Info("Unsubscribing from playbar store")
 
-	id := store.BData.GetSubscriptionID()
+	id := store.BData.SubscriptionID()
 
 	cc, err := getClientConn()
 	if err != nil {

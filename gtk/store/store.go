@@ -17,7 +17,7 @@ func (sc storeColumns) getTypes() (s []glib.Type) {
 	return
 }
 
-func (sc storeColumns) GetActivatableColumns() (s []ModelColumn) {
+func (sc storeColumns) ActivatableColumns() (s []ModelColumn) {
 	for k, v := range sc {
 		if !v.activatable {
 			continue
@@ -27,7 +27,7 @@ func (sc storeColumns) GetActivatableColumns() (s []ModelColumn) {
 	return
 }
 
-func (sc storeColumns) GetEditableColumns() (s []ModelColumn) {
+func (sc storeColumns) EditableColumns() (s []ModelColumn) {
 	for k, v := range sc {
 		if !v.editable {
 			continue

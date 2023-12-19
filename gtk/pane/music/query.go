@@ -221,7 +221,7 @@ func (omqy *onMusicQuery) createDialog() (err error) {
 
 	textro := gtk.NewCellRendererText()
 
-	togglerw, err := qyr.GetActivatable(store.TColToggleSelect)
+	togglerw, err := qyr.NewActivatable(store.TColToggleSelect)
 	if err != nil {
 		return
 	}

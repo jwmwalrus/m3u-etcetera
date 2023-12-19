@@ -227,37 +227,37 @@ func (osm *onSettingsMenu) createCollectionDialogs() (err error) {
 
 	cr := store.Renderer{Model: model, Columns: store.CColumns}
 
-	namerw, err := cr.GetEditable(store.CColName)
+	namerw, err := cr.NewEditable(store.CColName)
 	if err != nil {
 		return
 	}
 
-	descriptionrw, err := cr.GetEditable(store.CColDescription)
+	descriptionrw, err := cr.NewEditable(store.CColDescription)
 	if err != nil {
 		return
 	}
 
-	remotelocationrw, err := cr.GetEditable(store.CColRemoteLocation)
+	remotelocationrw, err := cr.NewEditable(store.CColRemoteLocation)
 	if err != nil {
 		return
 	}
 
-	disabledrw, err := cr.GetActivatable(store.CColDisabled)
+	disabledrw, err := cr.NewActivatable(store.CColDisabled)
 	if err != nil {
 		return
 	}
 
-	remoterw, err := cr.GetActivatable(store.CColRemote)
+	remoterw, err := cr.NewActivatable(store.CColRemote)
 	if err != nil {
 		return
 	}
 
-	rescanrw, err := cr.GetActivatable(store.CColActionRescan)
+	rescanrw, err := cr.NewActivatable(store.CColActionRescan)
 	if err != nil {
 		return
 	}
 
-	removerw, err := cr.GetActivatable(store.CColActionRemove)
+	removerw, err := cr.NewActivatable(store.CColActionRemove)
 	if err != nil {
 		return
 	}
@@ -363,17 +363,17 @@ func (osm *onSettingsMenu) createPlaylistGroupDialogs() (err error) {
 
 	textro := gtk.NewCellRendererText()
 
-	namerw, err := pgr.GetEditable(store.PGColName)
+	namerw, err := pgr.NewEditable(store.PGColName)
 	if err != nil {
 		return
 	}
 
-	descriptionrw, err := pgr.GetEditable(store.PGColDescription)
+	descriptionrw, err := pgr.NewEditable(store.PGColDescription)
 	if err != nil {
 		return
 	}
 
-	removerw, err := pgr.GetActivatable(store.PGColActionRemove)
+	removerw, err := pgr.NewActivatable(store.PGColActionRemove)
 	if err != nil {
 		return
 	}
