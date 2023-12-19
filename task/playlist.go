@@ -80,6 +80,14 @@ func Playlist() *cli.Command {
 						Aliases: []string{"rd"},
 						Usage:   "Reset the description to an empty string",
 					},
+					&cli.BoolFlag{
+						Name:  "bucket",
+						Usage: "Sets the playlist as bucket",
+					},
+					&cli.BoolFlag{
+						Name:  "no-bucket",
+						Usage: "Unsets the playlist as bucket",
+					},
 				},
 				Usage:       "playlist update [<flags> ...] ID",
 				Description: "Update the playlist identified by `ID` with values from the given flags",
@@ -242,11 +250,19 @@ func playlistExecuteAction(c *cli.Context) (err error) {
 
 	action := m3uetcpb.PlaylistAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
 
+	var bucket int
+	if c.Bool("bucket") {
+		bucket = 1
+	} else if c.Bool("bucket") {
+		bucket = 2
+	}
+
 	req := &m3uetcpb.ExecutePlaylistActionRequest{
 		Action:      m3uetcpb.PlaylistAction(action),
 		Id:          id,
 		Name:        c.String("name"),
 		Description: c.String("descr"),
+		Bucket:      int32(bucket),
 	}
 
 	if c.Command.Name == "merge" {

@@ -20,6 +20,7 @@ func EditPlaylist(id int64) (err error) {
 	}
 	descrIn := pl.Description
 	pgID := pl.PlaylistGroupId
+	bucketIn := pl.Bucket
 
 	nameent, err := builder.GetEntry("playlist_dialog_name")
 	if err != nil {
@@ -38,6 +39,12 @@ func EditPlaylist(id int64) (err error) {
 	if err != nil {
 		return
 	}
+
+	bucket, err := builder.GetToggleToolButton("playlist_dialog_toggle_bucket")
+	if err != nil {
+		return
+	}
+	bucket.SetActive(bucketIn)
 
 	nameent.SetText(nameIn)
 	descrent.SetText(descrIn)
@@ -89,12 +96,17 @@ func EditPlaylist(id int64) (err error) {
 		if pgID == 0 {
 			pgID = -1
 		}
+		bucketVal := 2
+		if bucket.Active() {
+			bucketVal = 1
+		}
 		req := &m3uetcpb.ExecutePlaylistActionRequest{
 			Action:          m3uetcpb.PlaylistAction_PL_UPDATE,
 			Id:              id,
 			Name:            name,
 			Description:     descr,
 			PlaylistGroupId: pgID,
+			Bucket:          int32(bucketVal),
 		}
 		if descr == "" {
 			req.ResetDescription = true

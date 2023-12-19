@@ -564,6 +564,20 @@
       </object>
     </child>
     <child>
+      <object class="GtkMenuItem" id="music_queue_view_context_add_to_bucket">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Add to bucket</property>
+        <property name="use-underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkMenuItem" id="music_queue_view_context_delete">
         <property name="visible">True</property>
         <property name="can-focus">False</property>

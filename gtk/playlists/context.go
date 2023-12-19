@@ -1,15 +1,19 @@
 package playlists
 
 import (
+	"fmt"
 	"log/slog"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/diamondburned/gotk4/pkg/gdk/v3"
 	"github.com/diamondburned/gotk4/pkg/glib/v2"
 	"github.com/diamondburned/gotk4/pkg/gtk/v3"
+	"github.com/jwmwalrus/bnp/chars"
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
+	"github.com/jwmwalrus/m3u-etcetera/gtk/builder"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/dialer"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 )
@@ -67,6 +71,7 @@ func (oc *onContext) Context(tv *gtk.TreeView, event *gdk.Event) {
 		sensitive["bottom"] = !(pos == lastpos)
 		sensitive["playnow"] = true
 	}
+
 	for _, item := range oc.ctxMenu.Children() {
 		w := gtk.BaseWidget(item)
 
@@ -78,7 +83,13 @@ func (oc *onContext) Context(tv *gtk.TreeView, event *gdk.Event) {
 			}
 		}
 	}
+
+	oc.setBucketsSubmenu()
+
 	oc.ctxMenu.PopupAtPointer(event)
+}
+
+func (oc *onContext) ContextBuckets(mi *gtk.MenuItem) {
 }
 
 func (oc *onContext) ContextClear(mi *gtk.MenuItem) {
@@ -398,4 +409,92 @@ func (oc *onContext) resetSelection() {
 	oc.selection.keep = false
 	oc.selection.values = nil
 	oc.selection.paths = nil
+}
+
+func (oc *onContext) setBucketsSubmenu() {
+	var miBuckets *gtk.MenuItem
+	if oc.id == 0 {
+		var err error
+		miBuckets, err = builder.GetMenuItem("music_queue_view_context_add_to_bucket")
+		if err != nil {
+			slog.Error("Failed to obtain queue's bucket item")
+			return
+		}
+	} else {
+		for _, item := range oc.ctxMenu.Children() {
+			w := gtk.BaseWidget(item)
+
+			if !strings.Contains(w.Name(), "bucket") {
+				continue
+			}
+
+			var ok bool
+			miBuckets, ok = w.Cast().(*gtk.MenuItem)
+			if !ok {
+				slog.Error("Failed to obtain playlist's bucket item")
+				return
+			}
+		}
+	}
+
+	values := oc.getSelection()
+
+	bpls := store.BData.BucketPlaylists()
+
+	list := []*m3uetcpb.Playlist{}
+	for _, pl := range bpls {
+		if pl.Id == oc.id {
+			continue
+		}
+
+		list = append(list, pl)
+	}
+	bpls = list
+
+	if len(bpls) == 0 || len(values) == 0 {
+		miBuckets.SetSensitive(false)
+		return
+	}
+
+	var ids []int64
+	if oc.id == 0 {
+		for _, v := range values {
+			ids = append(ids, v[store.QColTrackID].(int64))
+		}
+	} else {
+		for _, v := range values {
+			ids = append(ids, v[store.TColTrackID].(int64))
+		}
+	}
+
+	bSubmenu := gtk.NewMenu()
+	bSubmenu.SetVisible(true)
+
+	miSuffix, _ := chars.GetRandomLetters(6)
+
+	for _, pl := range bpls {
+		miItem := gtk.NewMenuItemWithLabel(pl.Name)
+		if miItem == nil {
+			slog.Error("Failed to create buckets submenu item", "item", pl.Name)
+			break
+		}
+		miItem.SetVisible(true)
+		miItem.Connect("activate", func(mi *gtk.MenuItem) {
+			action := m3uetcpb.PlaylistTrackAction_PT_APPEND
+			req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
+				PlaylistId: pl.Id,
+				Action:     action,
+				TrackIds:   ids,
+			}
+
+			if err := dialer.ExecutePlaylistTrackAction(req); err != nil {
+				slog.Error("Failed to execute playlist track action", "error", err)
+				return
+			}
+		})
+		miItem.SetName(fmt.Sprintf("menuitem-%s-%s", "item"+strconv.Itoa(int(pl.Id)), miSuffix))
+
+		bSubmenu.Add(miItem)
+	}
+	miBuckets.SetSubmenu(bSubmenu)
 }

@@ -96,6 +96,21 @@ func (bd *playbarData) GetOpenPlaylist(id int64) (pl *m3uetcpb.Playlist) {
 	logw.Debug("No open playlist exists for the given ID")
 	return nil
 }
+func (bd *playbarData) BucketPlaylists() []*m3uetcpb.Playlist {
+	bd.mu.RLock()
+	defer bd.mu.RUnlock()
+
+	list := []*m3uetcpb.Playlist{}
+
+	for _, pl := range bd.playlist {
+		if !pl.Bucket {
+			continue
+		}
+
+		list = append(list, pl)
+	}
+	return list
+}
 
 // GetOpenPlaylists returns the list of open playlists.
 func (bd *playbarData) GetOpenPlaylists() []*m3uetcpb.Playlist {

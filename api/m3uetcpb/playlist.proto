@@ -22,10 +22,11 @@ message Playlist {
     bool open = 4;
     bool active = 5;
     bool transient = 6;
-    int64 query_id = 7;
-    int64 playlist_group_id = 8;
-    int64 duration = 9;
-    Perspective perspective = 10;
+    bool bucket = 7;
+    int64 query_id = 8;
+    int64 playlist_group_id = 9;
+    int64 duration = 10;
+    Perspective perspective = 11;
     int64 created_at = 101;
     int64 updated_at = 102;
 }

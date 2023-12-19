@@ -158,9 +158,9 @@ func (ot *onTab) createContextMenus() (err error) {
 	miEnqueue.SetName(fmt.Sprintf("menuitem-%s-%s", "enqueue", miSuffix))
 	ctxMenu.Add(miEnqueue)
 
-	sep1 := gtk.NewSeparatorMenuItem()
-	sep1.SetVisible(true)
-	ctxMenu.Add(sep1)
+	sepctx1 := gtk.NewSeparatorMenuItem()
+	sepctx1.SetVisible(true)
+	ctxMenu.Add(sepctx1)
 
 	miTop := gtk.NewMenuItemWithLabel("Move to top")
 	if miTop == nil {
@@ -202,9 +202,23 @@ func (ot *onTab) createContextMenus() (err error) {
 	miBottom.SetName(fmt.Sprintf("menuitem-%s-%s", "bottom", miSuffix))
 	ctxMenu.Add(miBottom)
 
-	sep2 := gtk.NewSeparatorMenuItem()
-	sep2.SetVisible(true)
-	ctxMenu.Add(sep2)
+	sepctx2 := gtk.NewSeparatorMenuItem()
+	sepctx2.SetVisible(true)
+	ctxMenu.Add(sepctx2)
+
+	miBuckets := gtk.NewMenuItemWithLabel("Add to bucket")
+	if miBuckets == nil {
+		err = fmt.Errorf("failed to create menu item: add-to-bucket")
+		return
+	}
+	miBuckets.SetVisible(true)
+	miBuckets.Connect("activate", ot.ContextBuckets)
+	miBuckets.SetName(fmt.Sprintf("menuitem-%s-%s", "buckets", miSuffix))
+	ctxMenu.Add(miBuckets)
+
+	sepctx3 := gtk.NewSeparatorMenuItem()
+	sepctx3.SetVisible(true)
+	ctxMenu.Add(sepctx3)
 
 	miDelete := gtk.NewMenuItemWithLabel("Remove from playlist")
 	if miDelete == nil {
@@ -241,9 +255,9 @@ func (ot *onTab) createContextMenus() (err error) {
 	miUpdate.Connect("activate", ot.contextUpdate)
 	pageMenu.Add(miUpdate)
 
-	sep3 := gtk.NewSeparatorMenuItem()
-	sep3.SetVisible(true)
-	pageMenu.Add(sep3)
+	seppg1 := gtk.NewSeparatorMenuItem()
+	seppg1.SetVisible(true)
+	pageMenu.Add(seppg1)
 
 	miClear := gtk.NewMenuItemWithLabel("Clear playlist")
 	if miClear == nil {

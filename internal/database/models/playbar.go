@@ -550,7 +550,7 @@ func (bar *Playbar) QueryInPlaylist(qy *Query, qybs []QueryBoundaryTx, pl *Playl
 
 // UpdateEntry updates a playlist.
 func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64,
-	resetDescr bool) (err error) {
+	resetDescr bool, bucket int) (err error) {
 
 	isTransient := pl.Transient
 	queryID := pl.QueryID
@@ -600,6 +600,13 @@ func (b *Playbar) UpdateEntry(pl *Playlist, name, descr string, groupID int64,
 	pl.Transient = isTransient
 	pl.QueryID = queryID
 	pl.PlaylistGroupID = newGroupID
+
+	switch bucket {
+	case 1:
+		pl.Bucket = true
+	case 2:
+		pl.Bucket = false
+	}
 	err = pl.Save()
 	return
 }

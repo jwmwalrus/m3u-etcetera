@@ -34,6 +34,7 @@ type Playlist struct {
 	Open            bool          `json:"open"`
 	Active          bool          `json:"active"`
 	Transient       bool          `json:"transient"`
+	Bucket          bool          `json:"bucket"`
 	QueryID         int64         `json:"queryId"`
 	PlaylistGroupID int64         `json:"playlistGroupId" gorm:"index:idx_playlist_playlist_group_id,not null"`
 	PlaybarID       int64         `json:"playbarId" gorm:"index:idx_playlist_playbar_id,not null"`

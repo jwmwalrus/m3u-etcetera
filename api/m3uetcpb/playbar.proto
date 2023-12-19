@@ -98,6 +98,7 @@ message ExecutePlaylistActionRequest {
     bool reset_description = 7;
     int64 playlist_group_id = 8;
     int64 query_id = 9;
+    int32 bucket = 10;
 }
 
 message ExecutePlaylistActionResponse {

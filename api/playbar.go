@@ -280,6 +280,7 @@ func (*PlaybarSvc) ExecutePlaylistAction(_ context.Context,
 			req.Description,
 			req.PlaylistGroupId,
 			req.ResetDescription,
+			int(req.Bucket),
 		)
 		if err != nil {
 			return nil,
