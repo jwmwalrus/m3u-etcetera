@@ -18,13 +18,13 @@ func main() {
 		Config:     &base.Conf,
 	})
 
-	cli.VersionFlag = &cli.BoolFlag{
-		Name:  "usage",
-		Usage: "Print application usage",
-	}
 	cli.HelpFlag = &cli.BoolFlag{
+		Name:  "usage",
+		Usage: "print application usage",
+	}
+	cli.VersionFlag = &cli.BoolFlag{
 		Name:  "version",
-		Usage: "Print only the version",
+		Usage: "print only the version",
 	}
 
 	app := &cli.App{
@@ -38,9 +38,8 @@ func main() {
 		},
 		Copyright:   "(c) 2021 WalrusAhead Solutions",
 		HelpName:    "m3uetc-task",
-		Usage:       "Task interface for M3U Etcétera",
-		UsageText:   "m3uetc-task command [subcommand [--flags...] [args...]]",
-		Description: "A playlist-centric music player",
+		Usage:       "CLI interface for M3U Etcétera",
+		Description: "A playlist-centric music player.",
 		ExitErrHandler: func(c *cli.Context, err error) {
 			if err != nil {
 				s, ok := status.FromError(err)

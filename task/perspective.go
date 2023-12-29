@@ -20,14 +20,14 @@ func Perspective() *cli.Command {
 		Aliases:     []string{"persp"},
 		Category:    "Control",
 		Usage:       "Gets or sets the active perspective",
-		UsageText:   "perspective [subcommand] ...",
-		Description: "Control the application's perspective according with the given subcommand. If no subcommand is given, display the active perspective",
+		Description: "Control the application's perspective according with the given subcommand. If no subcommand is given, display the active perspective.",
 		Subcommands: []*cli.Command{
 			{
 				Name:        "activate",
 				Aliases:     []string{"a"},
-				Usage:       "perspective activate PERSPECTIVE",
-				Description: "",
+				Usage:       "Activates perspective",
+				ArgsUsage:   "PERSPECTIVE",
+				Description: "Activates the given PERSPECTIVE (music|radio|podcasts|audiobooks).",
 				Action:      perspectiveActivateAction,
 			},
 		},

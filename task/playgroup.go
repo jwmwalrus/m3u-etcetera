@@ -18,74 +18,76 @@ func Playgroup() *cli.Command {
 		Name:        "playgroup",
 		Aliases:     []string{"pg"},
 		Category:    "Organization",
-		Usage:       "Performs playtrack-related actions",
-		UsageText:   "playtrack [subcommand] ...",
-		Description: "Perform the playtrack-related action on playlist tracks, using the ID given by the --playlist flag, and the subcommand. When no subcommand is given, display all the tracks in the playlist",
-		Subcommands: []*cli.Command{
-			{
-				Name:        "info",
-				Aliases:     []string{"i"},
-				Usage:       "playgroup info ID",
-				Description: "Show information for the playlist group with the given `ID`",
-				Action:      playgroupInfoAction,
-			},
-			{
-				Name: "create",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:    "name",
-						Aliases: []string{"n"},
-						Usage:   "Playlist group name",
-					},
-					&cli.StringFlag{
-						Name:    "descr",
-						Aliases: []string{"d"},
-						Usage:   "Playlist group `DESCRIPTION`",
-					},
-				},
-				Usage:       "playgroup create [<flags> ...]",
-				Description: "Creates a new playlist group with values from the given flags",
-				Action:      playgroupExecuteAction,
-			},
-			{
-				Name: "update",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:    "name",
-						Aliases: []string{"n"},
-						Usage:   "Playlist group name",
-					},
-					&cli.StringFlag{
-						Name:    "descr",
-						Aliases: []string{"d"},
-						Usage:   "Playlist group `DESCRIPTION`",
-					},
-					&cli.BoolFlag{
-						Name:    "reset-descr",
-						Aliases: []string{"rd"},
-						Usage:   "Reset the description to an empty string",
-					},
-				},
-				Aliases:     []string{"upd"},
-				Usage:       "playgroup update [<flags> ...] ID",
-				Description: "Update the playlist group identified by `ID` with values from the given flags",
-				Action:      playgroupExecuteAction,
-			},
-			{
-				Name:        "destroy",
-				Aliases:     []string{"del", "delete"},
-				Usage:       "playgroup destroy ID",
-				Description: "Delete playlist group identified by the given `ID`",
-				Action:      playgroupExecuteAction,
-			},
-		},
-		Before: checkServerStatus,
-		Action: playgroupAction,
+		Usage:       "Performs playlist-group-related actions",
+		Description: "Perform the playlist-group-related action. When no subcommand is given, display all the playlist groups.",
+		Before:      checkServerStatus,
+		Action:      playgroupAction,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "json",
 				Aliases: []string{"j"},
-				Usage:   "Output JSON",
+				Usage:   "output JSON",
+			},
+		},
+		Subcommands: []*cli.Command{
+			{
+				Name:        "info",
+				Aliases:     []string{"i"},
+				Usage:       "Shows playlist group info",
+				ArgsUsage:   "ID",
+				Description: "Show information for the playlist group identified by the given `ID`.",
+				Action:      playgroupInfoAction,
+			},
+			{
+				Name:        "create",
+				Usage:       "Creates playlist group",
+				Description: "Creates a new playlist group, according to the given options.",
+				Action:      playgroupExecuteAction,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "name",
+						Aliases: []string{"n"},
+						Usage:   "playlist group `NAME`",
+					},
+					&cli.StringFlag{
+						Name:    "descr",
+						Aliases: []string{"d"},
+						Usage:   "playlist group `DESCRIPTION`",
+					},
+				},
+			},
+			{
+				Name:        "update",
+				Aliases:     []string{"upd"},
+				Usage:       "Updates playlist group",
+				ArgsUsage:   "ID",
+				Description: "Update the playlist group identified by `ID`, according to the given options.",
+				Action:      playgroupExecuteAction,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "name",
+						Aliases: []string{"n"},
+						Usage:   "playlist group `NAME`",
+					},
+					&cli.StringFlag{
+						Name:    "descr",
+						Aliases: []string{"d"},
+						Usage:   "playlist group `DESCRIPTION`",
+					},
+					&cli.BoolFlag{
+						Name:    "reset-descr",
+						Aliases: []string{"rd"},
+						Usage:   "reset the description to an empty string",
+					},
+				},
+			},
+			{
+				Name:        "destroy",
+				Aliases:     []string{"del", "delete"},
+				Usage:       "Deletes playlist group",
+				ArgsUsage:   "ID",
+				Description: "Delete playlist group identified by the given `ID`",
+				Action:      playgroupExecuteAction,
 			},
 		},
 	}

@@ -21,229 +21,247 @@ func Query() *cli.Command {
 		Name:        "query",
 		Aliases:     []string{"search", "s"},
 		Category:    "Control",
-		Usage:       "Process the queue task",
-		UsageText:   "queue [subtask] ...",
-		Description: "Control the application's queue according to the given subcommand. When no subcommand is given, display current queue",
-		Subcommands: []*cli.Command{
-			{
-				Name:   "add",
-				Action: queryAddAction,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "name",
-						Usage: "Query `NAME`",
-					},
-					&cli.StringFlag{
-						Name:  "descr",
-						Usage: "Query `DESCRIPTION`",
-					},
-					&cli.BoolFlag{
-						Name:  "random",
-						Usage: "Query is random",
-					},
-					&cli.IntFlag{
-						Name:  "rating",
-						Usage: "Query `RATING`",
-					},
-					&cli.IntFlag{
-						Name:  "limit",
-						Usage: "Query `LIMIT`",
-					},
-					&cli.StringFlag{
-						Name:  "params",
-						Usage: "Query `PARAMS` for title,artist,album,genre (e.g.: \"title=thing and genre=[sh]ome or genre=some*other\"",
-					},
-					&cli.Int64Flag{
-						Name:  "from",
-						Usage: "Query's start `TIMESTAMP` (i.e., from the date the track was issued)",
-					},
-					&cli.Int64Flag{
-						Name:  "to",
-						Usage: "Query's end `TIMESTAMP` (i.e., to the date the track was issued)",
-					},
-					&cli.Int64SliceFlag{
-						Name:    "collection-id",
-						Aliases: []string{"coll-id"},
-						Usage:   "`ID` for the collection bounding the query (can appear more than once in the command)",
-					},
-				},
-			},
-			{
-				Name:    "info",
-				Aliases: []string{"i"},
-				Flags: []cli.Flag{
-					&cli.BoolFlag{
-						Name:    "json",
-						Aliases: []string{"j"},
-						Usage:   "Output JSON",
-					},
-				},
-				Action: queryInfoAction,
-			},
-			{
-				Name:    "remove",
-				Aliases: []string{"rem"},
-				Action:  queryRemoveAction,
-			},
-			{
-				Name:    "update",
-				Aliases: []string{"upd"},
-				Flags: []cli.Flag{
-					&cli.Int64Flag{
-						Name:     "id",
-						Usage:    "Query's existing `ID`",
-						Required: true,
-					},
-					&cli.StringFlag{
-						Name:  "name",
-						Usage: "Query `NAME`",
-					},
-					&cli.StringFlag{
-						Name:  "descr",
-						Usage: "Query `DESCRIPTION`",
-					},
-					&cli.BoolFlag{
-						Name:  "random",
-						Usage: "Query is random",
-					},
-					&cli.BoolFlag{
-						Name:  "no-random",
-						Usage: "Query is not random",
-					},
-					&cli.IntFlag{
-						Name:  "rating",
-						Usage: "Query `RATING`",
-					},
-					&cli.IntFlag{
-						Name:  "limit",
-						Usage: "Query `LIMIT`",
-					},
-					&cli.StringFlag{
-						Name:  "params",
-						Usage: "Query `PARAMS` for title,artist,album,genre (e.g.: \"title=thing and genre=[sh]ome or genre=some*other\"",
-					},
-					&cli.Int64Flag{
-						Name:  "from",
-						Usage: "Query's start `TIMESTAMP` (i.e., from the date the track was issued)",
-					},
-					&cli.Int64Flag{
-						Name:  "to",
-						Usage: "Query's end `TIMESTAMP` (i.e., to the date the track was issued)",
-					},
-					&cli.Int64SliceFlag{
-						Name:    "collection-id",
-						Aliases: []string{"coll-id"},
-						Usage:   "`ID` for the collection bounding the query (can appear more than once in the command)",
-					},
-				},
-				Action: queryUpdateAction,
-			},
-			{
-				Name:    "inplaylist",
-				Aliases: []string{"inpl"},
-				Flags: []cli.Flag{
-					&cli.BoolFlag{
-						Name:    "json",
-						Aliases: []string{"j"},
-						Usage:   "Output JSON",
-					},
-					&cli.IntFlag{
-						Name:  "limit",
-						Usage: "Limit the number of tracks shown",
-					},
-					&cli.BoolFlag{
-						Name:  "play",
-						Usage: "Add all playlist tracks to playback instead of listing them",
-					},
-					&cli.BoolFlag{
-						Name:  "force",
-						Usage: "Force playback",
-					},
-					&cli.IntFlag{
-						Name:  "pl",
-						Usage: "Playlist ID",
-					},
-				},
-				Action: queryInPlaylistAction,
-			},
-			{
-				Name:    "inqueue",
-				Aliases: []string{"inq"},
-				Flags: []cli.Flag{
-					&cli.BoolFlag{
-						Name:    "json",
-						Aliases: []string{"j"},
-						Usage:   "Output JSON",
-					},
-				},
-				Action: queryInQueueAction,
-			},
-			{
-				Name: "by",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "persist-as",
-						Usage: "Query `NAME`",
-					},
-					&cli.StringFlag{
-						Name:  "descr",
-						Usage: "Query `DESCRIPTION`",
-					},
-					&cli.BoolFlag{
-						Name:  "random",
-						Usage: "Query is random",
-					},
-					&cli.IntFlag{
-						Name:  "rating",
-						Usage: "Query `RATING`",
-					},
-					&cli.IntFlag{
-						Name:  "limit",
-						Usage: "Query `LIMIT`",
-					},
-					&cli.Int64Flag{
-						Name:  "from",
-						Usage: "Query's start `TIMESTAMP` (i.e., from the date the track was issued)",
-					},
-					&cli.Int64Flag{
-						Name:  "to",
-						Usage: "Query's end `TIMESTAMP` (i.e., to the date the track was issued)",
-					},
-					&cli.BoolFlag{
-						Name:    "json",
-						Aliases: []string{"j"},
-						Usage:   "Output JSON",
-					},
-					&cli.BoolFlag{
-						Name:    "play",
-						Aliases: []string{"pl"},
-						Usage:   "Add tracks to playback instead of listing them",
-					},
-					&cli.BoolFlag{
-						Name:  "force",
-						Usage: "Force playback",
-					},
-				},
-				Action: queryByAction,
-			},
-		},
-		Before: checkServerStatus,
-		Action: queryAction,
+		Usage:       "Queries the database",
+		Description: "Performs query-related actions. When no subcommand is given, display list of queries.",
+		Before:      checkServerStatus,
+		Action:      queryAction,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "json",
 				Aliases: []string{"j"},
-				Usage:   "Output JSON",
+				Usage:   "output JSON",
 			},
 			&cli.IntFlag{
 				Name:  "limit",
-				Usage: "Limit output count",
+				Usage: "limit output count",
 				Value: 0,
 			},
 			&cli.Int64SliceFlag{
 				Name:    "collection-id",
 				Aliases: []string{"coll-id"},
-				Usage:   "Bound to collection ID",
+				Usage:   "bound to collection ID",
+			},
+		},
+		Subcommands: []*cli.Command{
+			{
+				Name:        "add",
+				Usage:       "Adds query",
+				Description: "Add query, according to the given options.",
+				Action:      queryAddAction,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "name",
+						Usage: "query `NAME`",
+					},
+					&cli.StringFlag{
+						Name:  "descr",
+						Usage: "query `DESCRIPTION`",
+					},
+					&cli.BoolFlag{
+						Name:  "random",
+						Usage: "query is random",
+					},
+					&cli.IntFlag{
+						Name:  "rating",
+						Usage: "query `RATING`",
+					},
+					&cli.IntFlag{
+						Name:  "limit",
+						Usage: "query `LIMIT`",
+					},
+					&cli.StringFlag{
+						Name:  "params",
+						Usage: "query `PARAMS` for title,artist,album,genre (e.g.: \"title=thing and genre=[sh]ome or genre=some*other\").",
+					},
+					&cli.Int64Flag{
+						Name:  "from",
+						Usage: "query's start `TIMESTAMP` (i.e., from the date the track was issued)",
+					},
+					&cli.Int64Flag{
+						Name:  "to",
+						Usage: "query's end `TIMESTAMP` (i.e., to the date the track was issued)",
+					},
+					&cli.Int64SliceFlag{
+						Name:    "collection-id",
+						Aliases: []string{"coll-id"},
+						Usage:   "`ID` for the collection bounding the query (can appear more than once in the command line)",
+					},
+				},
+			},
+			{
+				Name:        "info",
+				Aliases:     []string{"i"},
+				Usage:       "Shows query info",
+				ArgsUsage:   "ID",
+				Description: "Show information for the query identified by `ID`.",
+				Action:      queryInfoAction,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "json",
+						Aliases: []string{"j"},
+						Usage:   "output JSON",
+					},
+				},
+			},
+			{
+				Name:        "remove",
+				Aliases:     []string{"rem"},
+				Usage:       "Removes query",
+				ArgsUsage:   "ID",
+				Description: "Remove the query identified by `ID`.",
+				Action:      queryRemoveAction,
+			},
+			{
+				Name:        "update",
+				Aliases:     []string{"upd"},
+				Usage:       "Updates query",
+				Description: "Update query according to the given options.",
+				Action:      queryUpdateAction,
+				Flags: []cli.Flag{
+					&cli.Int64Flag{
+						Name:     "id",
+						Usage:    "query's existing `ID`",
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:  "name",
+						Usage: "query `NAME`",
+					},
+					&cli.StringFlag{
+						Name:  "descr",
+						Usage: "query `DESCRIPTION`",
+					},
+					&cli.BoolFlag{
+						Name:  "random",
+						Usage: "query is random",
+					},
+					&cli.BoolFlag{
+						Name:  "no-random",
+						Usage: "query is not random",
+					},
+					&cli.IntFlag{
+						Name:  "rating",
+						Usage: "query `RATING`",
+					},
+					&cli.IntFlag{
+						Name:  "limit",
+						Usage: "query `LIMIT`",
+					},
+					&cli.StringFlag{
+						Name:  "params",
+						Usage: "query `PARAMS` for title,artist,album,genre (e.g.: \"title=thing and genre=[sh]ome or genre=some*other\"",
+					},
+					&cli.Int64Flag{
+						Name:  "from",
+						Usage: "query's start `TIMESTAMP` (i.e., from the date the track was issued)",
+					},
+					&cli.Int64Flag{
+						Name:  "to",
+						Usage: "query's end `TIMESTAMP` (i.e., to the date the track was issued)",
+					},
+					&cli.Int64SliceFlag{
+						Name:    "collection-id",
+						Aliases: []string{"coll-id"},
+						Usage:   "`ID` for the collection bounding the query (can appear more than once in the command line)",
+					},
+				},
+			},
+			{
+				Name:        "inplaylist",
+				Aliases:     []string{"inpl"},
+				Usage:       "Query in playlist",
+				ArgsUsage:   "ID",
+				Description: "Add the results of the query identified by `ID` to a playlist.",
+				Action:      queryInPlaylistAction,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "json",
+						Aliases: []string{"j"},
+						Usage:   "output JSON",
+					},
+					&cli.IntFlag{
+						Name:  "limit",
+						Usage: "limit the number of tracks shown",
+					},
+					&cli.BoolFlag{
+						Name:  "play",
+						Usage: "add all playlist tracks to playback instead of listing them",
+					},
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "force playback",
+					},
+					&cli.IntFlag{
+						Name:  "pl",
+						Usage: "playlist ID",
+					},
+				},
+			},
+			{
+				Name:        "inqueue",
+				Aliases:     []string{"inq"},
+				Usage:       "Query in queue",
+				ArgsUsage:   "ID",
+				Description: "Add the results of the query identified by `ID` to the current queue.",
+				Action:      queryInQueueAction,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "json",
+						Aliases: []string{"j"},
+						Usage:   "output JSON",
+					},
+				},
+			},
+			{
+				Name:        "by",
+				Usage:       "Query by params",
+				ArgsUsage:   "PARAMS",
+				Description: "Perform a query by the given `PARAMS`.",
+				Action:      queryByAction,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "persist-as",
+						Usage: "persist/save query as `NAME`",
+					},
+					&cli.StringFlag{
+						Name:  "descr",
+						Usage: "query `DESCRIPTION`",
+					},
+					&cli.BoolFlag{
+						Name:  "random",
+						Usage: "query is random",
+					},
+					&cli.IntFlag{
+						Name:  "rating",
+						Usage: "query `RATING`",
+					},
+					&cli.IntFlag{
+						Name:  "limit",
+						Usage: "query `LIMIT`",
+					},
+					&cli.Int64Flag{
+						Name:  "from",
+						Usage: "query's start `TIMESTAMP` (i.e., from the date the track was issued)",
+					},
+					&cli.Int64Flag{
+						Name:  "to",
+						Usage: "query's end `TIMESTAMP` (i.e., to the date the track was issued)",
+					},
+					&cli.BoolFlag{
+						Name:    "json",
+						Aliases: []string{"j"},
+						Usage:   "output JSON",
+					},
+					&cli.BoolFlag{
+						Name:    "play",
+						Aliases: []string{"pl"},
+						Usage:   "add tracks to playback instead of listing them",
+					},
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "force playback",
+					},
+				},
 			},
 		},
 	}

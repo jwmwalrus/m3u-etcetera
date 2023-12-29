@@ -11,20 +11,19 @@ func Serve() *cli.Command {
 		Name:        "serve",
 		Category:    "Server",
 		Usage:       "Controls the server",
-		UsageText:   "serve [--off]",
-		Description: "Starts or stops the m3uetc-server",
+		Description: "Starts or stops the m3uetc-server.",
 		Subcommands: []*cli.Command{
 			{
-				Name: "off",
+				Name:        "off",
+				Usage:       "Terminates the server",
+				Description: "Terminate the server.",
+				Action:      serveOffAction,
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:  "force",
-						Usage: "Force server termination",
+						Usage: "force server termination",
 					},
 				},
-				Usage:       "serve off [--force]",
-				Description: "Terminate server",
-				Action:      serveOffAction,
 			},
 		},
 		Action: serveAction,
