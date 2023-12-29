@@ -25,6 +25,15 @@ func SeedQuery(tx *gorm.DB) (err error) {
 	if err = create(models.TopTracksQuery); err != nil {
 		return
 	}
+	if err = create(models.Gimme20RandomsQuery); err != nil {
+		return
+	}
+	if err = create(models.Gimme50RandomsQuery); err != nil {
+		return
+	}
+	if err = create(models.Gimme100RandomsQuery); err != nil {
+		return
+	}
 
 	return
 }

@@ -29,14 +29,37 @@ const (
 
 	// TopTracksQuery for the top 100 tracks in playback history.
 	TopTracksQuery
+
+	// Gimme20RandomsQuery for 20 random tracks.
+	Gimme20RandomsQuery
+
+	// Gimme50RandomsQuery for 50 random tracks.
+	Gimme50RandomsQuery
+
+	// Gimme100RandomsQuery for 100 random tracks.
+	Gimme100RandomsQuery
 )
 
 func (idx QueryIndex) String() string {
-	return [...]string{"", "\t", "\t\t"}[idx]
+	return [...]string{
+		"",
+		"\t",
+		"\t\t",
+		"\t\t\t",
+		"\t\t\t\t",
+		"\t\t\t\t\t",
+	}[idx]
 }
 
 func (idx QueryIndex) Description() string {
-	return [...]string{"", "Playback History", "Playback Top Tracks"}[idx]
+	return [...]string{
+		"",
+		"Playback History",
+		"Playback Top Tracks",
+		"Gimme 20 Randoms",
+		"Gimme 50 Randoms",
+		"Gimme 100 Randoms",
+	}[idx]
 }
 
 // Get returns the query associated to the index.
@@ -244,6 +267,12 @@ func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
 		return findUniqueHistoryTracks()
 	case TopTracksQuery:
 		return findTopTracks()
+	case Gimme20RandomsQuery:
+		return gimmeRandomTracks(20)
+	case Gimme50RandomsQuery:
+		return gimmeRandomTracks(50)
+	case Gimme100RandomsQuery:
+		return gimmeRandomTracks(100)
 	default:
 	}
 
@@ -318,6 +347,7 @@ func (qy *Query) FindTracks(qybs []QueryBoundaryTx) (ts []*Track) {
 		for k, v := range shuff {
 			newts[k] = ts[v]
 		}
+		ts = newts
 	}
 
 	if len(ts) > limit {
@@ -518,6 +548,27 @@ func findUniqueHistoryTracks() (ts []*Track) {
 	for i := range unique {
 		ts = append(ts, unique[i])
 	}
+	return
+}
+
+func gimmeRandomTracks(limit int) (ts []*Track) {
+	slog.Info("Finding random tracks", "limit", limit)
+
+	if limit == 0 {
+		ts = []*Track{}
+		return
+	}
+
+	tx := db.Session(&gorm.Session{SkipHooks: true})
+	tx = tx.Limit(limit)
+	tx.Order("random()")
+
+	list := []Track{}
+
+	err := tx.Find(&list).Error
+	onerror.Log(err)
+
+	ts = pointers.FromSlice(list)
 	return
 }
 

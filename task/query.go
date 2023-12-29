@@ -305,7 +305,11 @@ func queryAction(c *cli.Context) (err error) {
 		if len(q.CollectionIds) > 0 {
 			b = "C"
 		}
-		tbl.AddRow(q.Id, q.Name, q.Params, q.Limit, q.Random, b)
+		name := q.Name
+		if q.ReadOnly {
+			name = q.Description
+		}
+		tbl.AddRow(q.Id, name, q.Params, q.Limit, q.Random, b)
 	}
 	tbl.Print()
 
