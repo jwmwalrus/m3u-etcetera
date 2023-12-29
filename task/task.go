@@ -22,6 +22,32 @@ var (
 	getClientConn = getClientConnDefault
 )
 
+func DefaultAction(c *cli.Context) error {
+	argsSlice := c.Args().Slice()
+	if len(argsSlice) == 0 {
+		cli.ShowAppHelpAndExit(c, 1)
+		return nil
+	}
+
+	var cmd *cli.Command
+	for i := range c.App.Commands {
+		if c.App.Commands[i].Name == "playback" {
+			cmd = c.App.Commands[i]
+			break
+		}
+	}
+
+	args := []string{"playback", "play"}
+	if base.Conf.Task.ForceDefaultAction {
+		args = append(args, "--force")
+	}
+
+	args = append(args, c.Args().Slice()...)
+
+	c2 := cli.NewContext(c.App, nil, c)
+	return cmd.Run(c2, args...)
+}
+
 func getClientConnDefault() (iClientConn, error) {
 	opts := middleware.GetClientOpts()
 	auth := base.Conf.Server.GetAuthority()

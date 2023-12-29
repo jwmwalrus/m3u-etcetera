@@ -70,6 +70,7 @@ func main() {
 			task.Playgroup(),
 			task.Perspective(),
 		},
+		Action: task.DefaultAction,
 	}
 
 	app.Run(args)

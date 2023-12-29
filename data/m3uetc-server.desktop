@@ -1,9 +1,9 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=M3U Etcétera
+Name=M3U Etcétera (Server)
 GenericName=Music Player
-X-GNOME-FullName=M3U Etcétera Music Player
+X-GNOME-FullName=M3U Etcétera Music Player (Server)
 Comment=A playlist-centric music player
 Icon=m3u-etcetera
 Exec=m3uetc-server
