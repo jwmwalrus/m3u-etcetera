@@ -1,14 +1,13 @@
 package models
 
 import (
-	"encoding/json"
-	"log/slog"
+	"time"
 
-	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 )
 
@@ -100,20 +99,14 @@ func (pg *PlaylistGroup) SaveTx(tx *gorm.DB) error {
 }
 
 func (pg *PlaylistGroup) ToProtobuf() proto.Message {
-	bv, err := json.Marshal(pg)
-	if err != nil {
-		slog.Error("Failed to marshal playlist group", "error", err)
-		return &m3uetcpb.PlaylistGroup{}
+	return &m3uetcpb.PlaylistGroup{
+		Id:          pg.ID,
+		Name:        pg.Name,
+		Description: pg.Description,
+		Perspective: m3uetcpb.Perspective(pg.Perspective.Idx),
+		CreatedAt:   timestamppb.New(time.Unix(0, pg.CreatedAt)),
+		UpdatedAt:   timestamppb.New(time.Unix(0, pg.UpdatedAt)),
 	}
-
-	out := &m3uetcpb.PlaylistGroup{}
-	err = jsonUnmarshaler.Unmarshal(bv, out)
-	onerror.Log(err)
-
-	// Unmatched
-	out.Perspective = m3uetcpb.Perspective(pg.Perspective.Idx)
-
-	return out
 }
 
 // AfterCreate is a GORM hook.

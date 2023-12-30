@@ -125,12 +125,12 @@ func GetActivePerspectiveName() string {
 }
 
 // PerspectiveDigest defines the perspective digest/summary.
+// Implements the ProtoOut interface.
 type PerspectiveDigest struct {
 	Idx      PerspectiveIndex
 	Duration int64
 }
 
-// ToProtobuf implements the ProtoOut interface.
 func (pd *PerspectiveDigest) ToProtobuf() proto.Message {
 	return &m3uetcpb.PerspectiveDigest{
 		Perspective: m3uetcpb.Perspective(pd.Idx),

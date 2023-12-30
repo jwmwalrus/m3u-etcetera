@@ -2,14 +2,15 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
+	"time"
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/gear-pieces/idler"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 )
 
@@ -49,22 +50,18 @@ func (qt *QueueTrack) SaveTx(tx *gorm.DB) error {
 }
 
 func (qt *QueueTrack) ToProtobuf() proto.Message {
-	bv, err := json.Marshal(qt)
-	if err != nil {
-		slog.Error("Failed to marshal queue track", "error", err)
-		return &m3uetcpb.QueueTrack{}
-	}
-
-	out := &m3uetcpb.QueueTrack{}
-	err = jsonUnmarshaler.Unmarshal(bv, out)
-	onerror.Log(err)
-
-	// Unmatched
 	q := Queue{}
 	onerror.Log(q.Read(qt.QueueID))
-	out.Perspective = m3uetcpb.Perspective(q.Perspective.Idx)
 
-	return out
+	return &m3uetcpb.QueueTrack{
+		Id:       qt.ID,
+		Position: int32(qt.Position),
+		Played:   qt.Played, Location: qt.Location,
+		Perspective: m3uetcpb.Perspective(q.Perspective.Idx),
+		TrackId:     qt.TrackID,
+		CreatedAt:   timestamppb.New(time.Unix(0, qt.CreatedAt)),
+		UpdatedAt:   timestamppb.New(time.Unix(0, qt.UpdatedAt)),
+	}
 }
 
 // AfterCreate is a GORM hook.

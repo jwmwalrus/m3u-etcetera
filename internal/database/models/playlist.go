@@ -2,12 +2,12 @@ package models
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/jwmwalrus/bnp/chars"
 	"github.com/jwmwalrus/bnp/onerror"
@@ -18,6 +18,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 )
 
@@ -112,22 +113,23 @@ func (pl *Playlist) SaveTx(tx *gorm.DB) error {
 }
 
 func (pl *Playlist) ToProtobuf() proto.Message {
-	bv, err := json.Marshal(pl)
-	if err != nil {
-		slog.Error("Failed to marshal playlist", "error", err)
-		return &m3uetcpb.Playlist{}
-	}
-
-	out := &m3uetcpb.Playlist{}
-	err = jsonUnmarshaler.Unmarshal(bv, out)
-	onerror.Log(err)
-
-	// Unmatched
-	bar := Playbar{}
+	var bar Playbar
 	bar.Read(pl.PlaybarID)
-	out.Perspective = m3uetcpb.Perspective(bar.getPerspectiveIndex())
-	out.Duration = pl.Duration()
-	return out
+
+	return &m3uetcpb.Playlist{
+		Id:              pl.ID,
+		Name:            pl.Name,
+		Description:     pl.Description,
+		Open:            pl.Open,
+		Active:          pl.Active,
+		Transient:       pl.Transient,
+		Bucket:          pl.Bucket,
+		QueryId:         pl.QueryID,
+		PlaylistGroupId: pl.PlaylistGroupID,
+		Duration:        pl.Duration(), Perspective: m3uetcpb.Perspective(bar.getPerspectiveIndex()),
+		CreatedAt: timestamppb.New(time.Unix(0, pl.CreatedAt)),
+		UpdatedAt: timestamppb.New(time.Unix(0, pl.UpdatedAt)),
+	}
 }
 
 // AfterCreate is a GORM hook.

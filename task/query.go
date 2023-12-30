@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -365,6 +367,18 @@ func queryAddAction(c *cli.Context) (err error) {
 		return
 	}
 
+	var from, to *timestamppb.Timestamp
+
+	ts := c.Int64("from")
+	if ts > 0 {
+		from = timestamppb.New(time.Unix(0, ts))
+	}
+
+	ts = c.Int64("to")
+	if ts > 0 {
+		to = timestamppb.New(time.Unix(0, ts))
+	}
+
 	q := &m3uetcpb.Query{
 		Name:          c.String("name"),
 		Description:   c.String("descr"),
@@ -372,8 +386,8 @@ func queryAddAction(c *cli.Context) (err error) {
 		Rating:        int32(c.Int("rating")),
 		Limit:         int32(c.Int("limit")),
 		Params:        c.String("params"),
-		From:          c.Int64("from"),
-		To:            c.Int64("from"),
+		From:          from,
+		To:            to,
 		CollectionIds: c.Int64Slice("collection-id"),
 	}
 	req := &m3uetcpb.AddQueryRequest{
@@ -476,12 +490,14 @@ func queryUpdateAction(c *cli.Context) (err error) {
 		q.Params = c.String("params")
 	}
 
-	if c.Int64("from") > 0 {
-		q.From = c.Int64("from")
+	ts := c.Int64("from")
+	if ts > 0 {
+		q.From = timestamppb.New(time.Unix(0, ts))
 	}
 
-	if c.Int64("to") > 0 {
-		q.To = c.Int64("to")
+	ts = c.Int64("to")
+	if ts > 0 {
+		q.To = timestamppb.New(time.Unix(0, ts))
 	}
 
 	if len(c.Int64Slice("collection-id")) > 0 {
@@ -503,6 +519,18 @@ func queryUpdateAction(c *cli.Context) (err error) {
 func queryByAction(c *cli.Context) (err error) {
 	rest := c.Args().Slice()
 
+	var from, to *timestamppb.Timestamp
+
+	ts := c.Int64("from")
+	if ts > 0 {
+		from = timestamppb.New(time.Unix(0, ts))
+	}
+
+	ts = c.Int64("to")
+	if ts > 0 {
+		to = timestamppb.New(time.Unix(0, ts))
+	}
+
 	q := &m3uetcpb.Query{
 		Name:        c.String("persist-as"),
 		Description: c.String("descr"),
@@ -510,8 +538,8 @@ func queryByAction(c *cli.Context) (err error) {
 		Rating:      int32(c.Int("rating")),
 		Limit:       int32(c.Int("limit")),
 		Params:      strings.Join(rest, " "),
-		From:        c.Int64("from"),
-		To:          c.Int64("from"),
+		From:        from,
+		To:          to,
 	}
 	req := &m3uetcpb.QueryByRequest{
 		Query: q,

@@ -3,7 +3,6 @@ package models
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"os"
@@ -23,6 +22,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 )
 
@@ -92,27 +92,52 @@ func (t *Track) SaveTx(tx *gorm.DB) error {
 }
 
 func (t *Track) ToProtobuf() proto.Message {
-	bv, err := json.Marshal(t)
-	if err != nil {
-		slog.Error("Failed to marshal track", "error", err)
-		return &m3uetcpb.Track{}
+	var date *timestamppb.Timestamp
+	if t.Date > 0 {
+		date = timestamppb.New(time.Unix(0, t.Date))
 	}
 
-	out := &m3uetcpb.Track{}
-	err = jsonUnmarshaler.Unmarshal(bv, out)
-	onerror.Log(err)
-
-	// Unmatched
+	var dangling bool
 	if !t.Remote {
 		path, err := urlstr.URLToPath(t.Location)
 		if err == nil {
 			if _, err = os.Stat(path); errors.Is(err, os.ErrNotExist) {
-				out.Dangling = true
+				dangling = true
 			}
 		}
 	}
 
-	return out
+	return &m3uetcpb.Track{
+		Id:           t.ID,
+		Location:     t.Location,
+		Format:       t.Format,
+		Type:         t.Type,
+		Title:        t.Title,
+		Album:        t.Album,
+		Artist:       t.Artist,
+		Albumartist:  t.Albumartist,
+		Composer:     t.Composer,
+		Genre:        t.Genre,
+		Comment:      t.Comment,
+		Lyrics:       t.Lyrics,
+		Cover:        t.Cover,
+		Year:         int32(t.Year),
+		Tracknumber:  int32(t.Tracknumber),
+		Tracktotal:   int32(t.Tracktotal),
+		Discnumber:   int32(t.Discnumber),
+		Disctotal:    int32(t.Disctotal),
+		Date:         date,
+		Duration:     t.Duration,
+		Rating:       int32(t.Rating),
+		Playcount:    int32(t.Playcount),
+		Remote:       t.Remote,
+		Lastplayed:   t.Lastplayed,
+		Tags:         t.Tags,
+		CollectionId: t.CollectionID,
+		Dangling:     dangling,
+		CreatedAt:    timestamppb.New(time.Unix(0, t.CreatedAt)),
+		UpdatedAt:    timestamppb.New(time.Unix(0, t.UpdatedAt)),
+	}
 }
 
 // AfterCreate is a GORM hook.

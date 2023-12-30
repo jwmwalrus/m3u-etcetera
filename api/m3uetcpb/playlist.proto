@@ -4,6 +4,8 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
+import "google/protobuf/timestamp.proto";
+
 import 'api/m3uetcpb/perspective.proto';
 
 message PlaylistGroup {
@@ -11,8 +13,8 @@ message PlaylistGroup {
     string name = 2;
     string description = 3;
     Perspective perspective = 4;
-    int64 created_at = 101;
-    int64 updated_at = 102;
+    google.protobuf.Timestamp created_at = 101;
+    google.protobuf.Timestamp updated_at = 102;
 }
 
 message Playlist {
@@ -27,8 +29,8 @@ message Playlist {
     int64 playlist_group_id = 9;
     int64 duration = 10;
     Perspective perspective = 11;
-    int64 created_at = 101;
-    int64 updated_at = 102;
+    google.protobuf.Timestamp created_at = 101;
+    google.protobuf.Timestamp updated_at = 102;
 }
 
 message PlaylistTrack {
@@ -38,8 +40,8 @@ message PlaylistTrack {
     int64 lastplayedfor = 4;
     int64 playlist_id = 5;
     int64 track_id = 6;
-    int64 created_at = 101;
-    int64 updated_at = 102;
+    google.protobuf.Timestamp created_at = 101;
+    google.protobuf.Timestamp updated_at = 102;
 }
 
 enum PlaylistExportFormat {

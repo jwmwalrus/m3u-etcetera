@@ -1,12 +1,12 @@
 package models
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
@@ -17,6 +17,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/subscription"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 )
 
@@ -169,20 +170,20 @@ func (c *Collection) SaveTx(tx *gorm.DB) error {
 }
 
 func (c *Collection) ToProtobuf() proto.Message {
-	bv, err := json.Marshal(c)
-	if err != nil {
-		slog.Error("Failed to marshal collection", "error", err)
-		return &m3uetcpb.Collection{}
+	return &m3uetcpb.Collection{
+		Id:             c.ID,
+		Name:           c.Name,
+		Description:    c.Description,
+		Location:       c.Location,
+		RemoteLocation: c.Remotelocation,
+		Disabled:       c.Disabled,
+		Remote:         c.Remote,
+		Scanned:        int32(c.Scanned),
+		Tracks:         c.Tracks,
+		Perspective:    m3uetcpb.Perspective(c.Perspective.Idx),
+		CreatedAt:      timestamppb.New(time.Unix(0, c.CreatedAt)),
+		UpdatedAt:      timestamppb.New(time.Unix(0, c.UpdatedAt)),
 	}
-
-	out := &m3uetcpb.Collection{}
-	err = jsonUnmarshaler.Unmarshal(bv, out)
-	onerror.Log(err)
-
-	// Unmatched
-	out.Perspective = m3uetcpb.Perspective(c.Perspective.Idx)
-
-	return out
 }
 
 // AfterCreate is a GORM hook.

@@ -16,6 +16,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/gtk/playlists"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/store"
 	"github.com/jwmwalrus/m3u-etcetera/gtk/util"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type onMusicQuery struct {
@@ -480,7 +481,7 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 		return
 	}
 
-	var from, to int64
+	var from, to *timestamppb.Timestamp
 
 	fromTxt := omqy.from.Text()
 	if fromTxt != "" && fromTxt != "0" {
@@ -492,21 +493,21 @@ func (omqy *onMusicQuery) getQuery() (qy *m3uetcpb.Query, err error) {
 				"error", err,
 			).Error("Failed to parse query `from`")
 		} else {
-			from = ft.UnixNano()
+			from = timestamppb.New(ft)
 		}
 	}
 
 	toTxt := omqy.to.Text()
 	if toTxt != "" && toTxt != "0" {
 		var tt time.Time
-		tt, err = time.Parse("2006/01/02", toTxt+"/01/01")
+		tt, err = time.Parse("2006/01/02", toTxt+"/12/31")
 		if err != nil {
 			slog.With(
 				"to", toTxt,
 				"error", err,
 			).Error("Failed to parse query `to`")
 		} else {
-			to = tt.UnixNano()
+			to = timestamppb.New(tt)
 		}
 	}
 
@@ -574,15 +575,15 @@ func (omqy *onMusicQuery) setQuery(qy *m3uetcpb.Query) (err error) {
 	omqy.random.SetActive(qy.Random)
 
 	var from, to string
-	if qy.From > 0 {
-		from = strconv.Itoa(time.UnixMicro(qy.From / 1e3).Year())
+	if qy.From != nil {
+		from = strconv.Itoa(qy.From.AsTime().Local().Year())
 	} else {
 		from = "0"
 	}
 	omqy.from.SetText(from)
 
-	if qy.To > 0 {
-		to = strconv.Itoa(time.UnixMicro(qy.To / 1e3).Year())
+	if qy.To != nil {
+		to = strconv.Itoa(qy.To.AsTime().Local().Year())
 	} else {
 		to = "0"
 	}

@@ -4,6 +4,8 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
+import "google/protobuf/timestamp.proto";
+
 message Track {
     int64 id = 1;
     string location = 2;
@@ -24,7 +26,7 @@ message Track {
     int32 tracktotal = 16;
     int32 discnumber = 17;
     int32 disctotal = 18;
-    int64 date = 19;
+    google.protobuf.Timestamp date = 19;
     int64 duration = 20;
 
     int32 rating = 21;
@@ -35,7 +37,7 @@ message Track {
     int64 collection_id = 26;
     bool dangling = 27;
 
-    int64 created_at = 101;
-    int64 updated_at = 102;
+    google.protobuf.Timestamp created_at = 101;
+    google.protobuf.Timestamp updated_at = 102;
 }
 

@@ -2,9 +2,9 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/jwmwalrus/bnp/onerror"
 	"github.com/jwmwalrus/bnp/pointers"
@@ -12,6 +12,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 )
 
@@ -49,17 +50,15 @@ func (pb *Playback) SaveTx(tx *gorm.DB) error {
 }
 
 func (pb *Playback) ToProtobuf() proto.Message {
-	bv, err := json.Marshal(pb)
-	if err != nil {
-		slog.Error("Failed to marshal playback", "error", err)
-		return &m3uetcpb.Playback{}
+	return &m3uetcpb.Playback{
+		Id:        pb.ID,
+		Location:  pb.Location,
+		Played:    pb.Played,
+		Skip:      pb.Skip,
+		TrackId:   pb.TrackID,
+		CreatedAt: timestamppb.New(time.Unix(0, pb.CreatedAt)),
+		UpdatedAt: timestamppb.New(time.Unix(0, pb.UpdatedAt)),
 	}
-
-	out := &m3uetcpb.Playback{}
-	err = jsonUnmarshaler.Unmarshal(bv, out)
-	onerror.Log(err)
-
-	return out
 }
 
 // AfterCreate is a GORM hook.

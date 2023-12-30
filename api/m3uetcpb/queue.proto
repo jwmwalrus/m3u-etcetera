@@ -4,6 +4,8 @@ package m3uetcpb;
 
 option go_package = './m3uetcpb';
 
+import "google/protobuf/timestamp.proto";
+
 import 'api/m3uetcpb/empty.proto';
 import 'api/m3uetcpb/perspective.proto';
 import 'api/m3uetcpb/track.proto';
@@ -56,8 +58,8 @@ message QueueTrack {
     string location = 4;
     Perspective perspective = 5;
     int64 track_id = 6;
-    int64 created_at = 101;
-    int64 updated_at = 102;
+    google.protobuf.Timestamp created_at = 101;
+    google.protobuf.Timestamp updated_at = 102;
 }
 
 enum QueueAction {

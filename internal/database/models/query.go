@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"log/slog"
 	"slices"
 	"strconv"
@@ -17,6 +16,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/pkg/qparams"
 	rtc "github.com/jwmwalrus/rtcycler"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 )
 
@@ -167,25 +167,35 @@ func (qy *Query) FromProtobuf(in proto.Message) {
 }
 
 func (qy *Query) ToProtobuf() proto.Message {
-	bv, err := json.Marshal(qy)
-	if err != nil {
-		slog.Error("Failed to marshal query", "error", err)
-		return &m3uetcpb.Query{}
+	var from, to *timestamppb.Timestamp
+	if qy.From > 0 {
+		from = timestamppb.New(time.Unix(0, qy.From))
+	}
+	if qy.To > 0 {
+		to = timestamppb.New(time.Unix(0, qy.To))
 	}
 
-	out := &m3uetcpb.Query{}
-	err = jsonUnmarshaler.Unmarshal(bv, out)
-	onerror.Log(err)
-
-	// Unmatched
-	out.ReadOnly = qy.IsReadOnly()
-
+	var collectionIDs []int64
 	cqs := qy.GetCollections()
 	for _, x := range cqs {
-		out.CollectionIds = append(out.CollectionIds, x.CollectionID)
+		collectionIDs = append(collectionIDs, x.CollectionID)
 	}
 
-	return out
+	return &m3uetcpb.Query{
+		Id:            qy.ID,
+		Name:          qy.Name,
+		Description:   qy.Description,
+		Random:        qy.Random,
+		Rating:        int32(qy.Rating),
+		Limit:         int32(qy.Limit),
+		Params:        qy.Params,
+		From:          from,
+		To:            to,
+		ReadOnly:      qy.IsReadOnly(),
+		CollectionIds: collectionIDs,
+		CreatedAt:     timestamppb.New(time.Unix(0, qy.CreatedAt)),
+		UpdatedAt:     timestamppb.New(time.Unix(0, qy.UpdatedAt)),
+	}
 }
 
 // AfterCreate is a GORM hook.
@@ -407,7 +417,6 @@ func (qy *Query) SaveBound(qybs []QueryBoundaryTx) error {
 	})
 }
 
-// FromProtobuf returns a Query type populated from the given m3uetcpb.Query.
 func FromProtobuf(in *m3uetcpb.Query) (qy *Query) {
 	qy = &Query{}
 	protobufToQuery(in, qy)
@@ -573,12 +582,22 @@ func gimmeRandomTracks(limit int) (ts []*Track) {
 }
 
 func protobufToQuery(in *m3uetcpb.Query, out *Query) {
+	var from, to int64
+
+	if in.From != nil {
+		from = in.From.AsTime().UnixNano()
+	}
+
+	if in.To != nil {
+		to = in.To.AsTime().UnixNano()
+	}
+
 	out.Name = in.Name
 	out.Description = in.Description
 	out.Random = in.Random
 	out.Rating = int(in.Rating)
 	out.Limit = int(in.Limit)
 	out.Params = in.Params
-	out.From = in.From
-	out.To = in.To
+	out.From = from
+	out.To = to
 }
