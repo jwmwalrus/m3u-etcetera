@@ -19,12 +19,11 @@ import (
 )
 
 func main() {
-	rtc.Load(rtc.RTCycler{
-		AppDirName:  base.AppDirName,
-		AppName:     base.AppName,
-		Config:      &base.Conf,
-		DataSubdirs: []string{base.CoversDirname},
-	})
+	rtc.Load(&base.Conf,
+		base.AppDirName,
+		rtc.WithAppName(base.AppName),
+		rtc.WithDataSubdirs([]string{base.CoversDirname}),
+	)
 
 	idler.Start()
 

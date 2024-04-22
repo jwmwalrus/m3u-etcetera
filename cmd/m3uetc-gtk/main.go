@@ -29,11 +29,10 @@ var (
 func main() {
 	var err error
 
-	rtc.Load(rtc.RTCycler{
-		AppDirName: base.AppDirName,
-		AppName:    base.AppName,
-		Config:     &base.Conf,
-	})
+	rtc.Load(&base.Conf,
+		base.AppDirName,
+		rtc.WithAppName(base.AppName),
+	)
 
 	appID = "com.github.jwmwalrus." + rtc.AppInstance()
 

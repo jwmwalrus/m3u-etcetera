@@ -12,11 +12,10 @@ import (
 )
 
 func main() {
-	args := rtc.Load(rtc.RTCycler{
-		AppDirName: base.AppDirName,
-		AppName:    base.AppName,
-		Config:     &base.Conf,
-	})
+	args := rtc.Load(&base.Conf,
+		base.AppDirName,
+		rtc.WithAppName(base.AppName),
+	)
 
 	cli.HelpFlag = &cli.BoolFlag{
 		Name:  "usage",
