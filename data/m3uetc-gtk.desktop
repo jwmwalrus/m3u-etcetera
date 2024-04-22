@@ -9,5 +9,6 @@ Icon=m3u-etcetera
 Exec=m3uetc-gtk
 Terminal=false
 StartupWMClass=m3uetc-gtk
-MimeType=audio/x-mp3;application/x-id3;audio/mpeg;audio/x-mpeg;audio/x-mpeg-3;audio/mpeg3;audio/mp3;audio/x-m4a;audio/mpc;audio/x-mpc;audio/mp;audio/x-mp;application/ogg;application/x-ogg;audio/vorbis;audio/x-vorbis;audio/ogg;audio/x-ogg;audio/x-flac;application/x-flac;audio/flac;
+MimeType=audio/x-mp3;audio/mpeg;audio/x-mpeg;audio/x-mpeg-3;audio/mpeg3;audio/mp3;audio/x-m4a;audio/mpc;audio/x-mpc;audio/mp;audio/x-mp;application/ogg;application/x-ogg;audio/vorbis;audio/x-vorbis;audio/ogg;audio/x-ogg;audio/x-flac;application/x-flac;audio/flac;
+Keywords=Music;Player;Library;Collection;MP3;OGG;FLAC;MP4
 Categories=AudioVideo;Audio;Player;GTK;
