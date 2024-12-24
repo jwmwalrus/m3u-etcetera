@@ -242,14 +242,14 @@ func (pbd *playbackData) updatePlayback() bool {
 		}
 
 		maxLen := 45
-		subtitle := chars.TruncateText(title, maxLen)
+		subtitle := chars.Truncate(title, maxLen)
 		if title == "" {
 			title = "Not Playing"
 		}
 		if artist != "" {
 			artist = "by " + artist
 			if subtitle != "" {
-				subtitle += " (" + chars.TruncateText(artist, maxLen) + ")"
+				subtitle += " (" + chars.Truncate(artist, maxLen) + ")"
 			}
 		}
 		if album != "" {
@@ -267,11 +267,11 @@ func (pbd *playbackData) updatePlayback() bool {
 			pbd.headerbar.SetSubtitle(defaultSubtitle)
 		}
 
-		pbd.title.SetText(chars.TruncateText(title, maxLen))
+		pbd.title.SetText(chars.Truncate(title, maxLen))
 		pbd.title.SetTooltipText(title)
-		pbd.artist.SetText(chars.TruncateText(artist, maxLen))
+		pbd.artist.SetText(chars.Truncate(artist, maxLen))
 		pbd.artist.SetTooltipText(artist)
-		pbd.source.SetText(chars.TruncateText(location, maxLen))
+		pbd.source.SetText(chars.Truncate(location, maxLen))
 		pbd.source.SetTooltipText(location)
 	}
 	pbd.mu.Unlock()
