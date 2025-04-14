@@ -20,7 +20,7 @@ func AddFromFile(path string) error {
 	if err != nil {
 		return err
 	}
-	_, err = app.AddFromString(string(bv), uint(len(bv)))
+	_, err = app.AddFromString(string(bv))
 	return err
 }
 
@@ -63,7 +63,7 @@ func Setup(fs *embed.FS) (b *gtk.Builder, err error) {
 	if bv, err = data.ReadFile(file); err != nil {
 		return
 	}
-	app = gtk.NewBuilderFromString(string(bv), len(string(bv)))
+	app = gtk.NewBuilderFromString(string(bv))
 	if app == nil {
 		err = fmt.Errorf("failed to create builder from file %s", file)
 		return
