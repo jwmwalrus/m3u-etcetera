@@ -10,7 +10,7 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var (
@@ -34,7 +34,7 @@ func Collection() *cli.Command {
 				Usage:   "output JSON",
 			},
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "info",
 				Aliases:     []string{"i"},
@@ -147,7 +147,7 @@ func Collection() *cli.Command {
 	}
 }
 
-func collectionAction(c *cli.Context) (err error) {
+func collectionAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
@@ -189,7 +189,7 @@ func collectionAction(c *cli.Context) (err error) {
 	return
 }
 
-func collectionInfoAction(c *cli.Context) (err error) {
+func collectionInfoAction(ctx context.Context, c *cli.Command) (err error) {
 	var id int64
 	if id, err = mustParseSingleID(c); err != nil {
 		return
@@ -233,7 +233,7 @@ func collectionInfoAction(c *cli.Context) (err error) {
 	return
 }
 
-func collectionAddAction(c *cli.Context) (err error) {
+func collectionAddAction(ctx context.Context, c *cli.Command) (err error) {
 	rest := c.Args().Slice()
 	if len(rest) != 2 {
 		err = fmt.Errorf("I need name and path")
@@ -276,7 +276,7 @@ func collectionAddAction(c *cli.Context) (err error) {
 	return
 }
 
-func collectionRemoveAction(c *cli.Context) (err error) {
+func collectionRemoveAction(ctx context.Context, c *cli.Command) (err error) {
 	var id int64
 	if id, err = mustParseSingleID(c); err != nil {
 		return
@@ -300,7 +300,7 @@ func collectionRemoveAction(c *cli.Context) (err error) {
 	return
 }
 
-func collectionUpdateAction(c *cli.Context) (err error) {
+func collectionUpdateAction(ctx context.Context, c *cli.Command) (err error) {
 	var id int64
 	if id, err = mustParseSingleID(c); err != nil {
 		return
@@ -343,7 +343,7 @@ func collectionUpdateAction(c *cli.Context) (err error) {
 	return
 }
 
-func collectionScanAction(c *cli.Context) (err error) {
+func collectionScanAction(ctx context.Context, c *cli.Command) (err error) {
 	var id int64
 	if id, err = mustParseSingleID(c); err != nil {
 		return
@@ -370,7 +370,7 @@ func collectionScanAction(c *cli.Context) (err error) {
 	return
 }
 
-func collectionDiscoverActiion(c *cli.Context) (err error) {
+func collectionDiscoverActiion(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}

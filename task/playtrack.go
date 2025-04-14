@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc/status"
 )
 
@@ -37,7 +37,7 @@ func Playtrack() *cli.Command {
 				Usage: "limit the `NUMBER` of playlists shown",
 			},
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "append",
 				Aliases:     []string{"app"},
@@ -46,7 +46,7 @@ func Playtrack() *cli.Command {
 				Description: "Add track(s) at the end of playlist.",
 				Action:      playtrackExecuteAction,
 				Flags: []cli.Flag{
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:     "playlist",
 						Aliases:  []string{"pl"},
 						Usage:    "use playlist id, `PL`",
@@ -66,7 +66,7 @@ func Playtrack() *cli.Command {
 				Description: "Add track(s) at the beginning of playlist.",
 				Action:      playtrackExecuteAction,
 				Flags: []cli.Flag{
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:     "playlist",
 						Aliases:  []string{"pl"},
 						Usage:    "use playlist id, `PL`",
@@ -86,7 +86,7 @@ func Playtrack() *cli.Command {
 				Description: "Insert track(s) at the given `POSITION` in playlist.",
 				Action:      playtrackExecuteAction,
 				Flags: []cli.Flag{
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:     "playlist",
 						Aliases:  []string{"pl"},
 						Usage:    "use playlist id, `PL`",
@@ -110,7 +110,7 @@ func Playtrack() *cli.Command {
 				Description: "Move playlist track from one position to another.",
 				Action:      playtrackExecuteAction,
 				Flags: []cli.Flag{
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:     "playlist",
 						Aliases:  []string{"pl"},
 						Usage:    "use playlist id, `PL`",
@@ -135,7 +135,7 @@ func Playtrack() *cli.Command {
 				Description: "Delete track at the given `POSITION` in playlist.",
 				Action:      playtrackExecuteAction,
 				Flags: []cli.Flag{
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:     "playlist",
 						Aliases:  []string{"pl"},
 						Usage:    "use playlist id, `PL`",
@@ -154,7 +154,7 @@ func Playtrack() *cli.Command {
 				Description: "Remove all tracks in playlist.",
 				Action:      playtrackExecuteAction,
 				Flags: []cli.Flag{
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:     "playlist",
 						Aliases:  []string{"pl"},
 						Usage:    "use playlist id, `PL`",
@@ -166,7 +166,7 @@ func Playtrack() *cli.Command {
 	}
 }
 
-func playtrackAction(c *cli.Context) (err error) {
+func playtrackAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
@@ -200,53 +200,53 @@ func playtrackAction(c *cli.Context) (err error) {
 		fmt.Printf("There's no active playlist")
 	}
 
-	err = showPlaylist(c, id)
+	err = showPlaylist(ctx, c, id)
 	return
 }
 
-func playtrackExecuteAction(c *cli.Context) (err error) {
+func playtrackExecuteAction(ctx context.Context, c *cli.Command) (err error) {
 	const actionPrefix = "PT_"
 
 	rest := c.Args().Slice()
-	if (c.Command.Name == "move" ||
-		c.Command.Name == "delete" ||
-		c.Command.Name == "clear") &&
+	if (c.Name == "move" ||
+		c.Name == "delete" ||
+		c.Name == "clear") &&
 		len(rest) > 0 {
 		err = fmt.Errorf("Too many values in command")
 		return
 	}
-	if (c.Command.Name == "append" ||
-		c.Command.Name == "prepend" ||
-		c.Command.Name == "insert") && len(rest) < 1 {
+	if (c.Name == "append" ||
+		c.Name == "prepend" ||
+		c.Name == "insert") && len(rest) < 1 {
 		err = fmt.Errorf("I need a list of locations or IDs")
 		return
 	}
 
 	var frompos, topos int
-	if c.Command.Name == "insert" ||
-		c.Command.Name == "delete" {
+	if c.Name == "insert" ||
+		c.Name == "delete" {
 		if c.Int("pos") < 1 {
 			err = fmt.Errorf("I need a position to insert|delete")
 			return
 		}
-		topos = c.Int("pos")
+		topos = int(c.Int("pos"))
 	}
 
-	if c.Command.Name == "move" {
+	if c.Name == "move" {
 		if c.Int("from-pos") < 1 ||
 			c.Int("to-pos") < 1 {
 			err = fmt.Errorf("I need a valid positions to move")
 			return
 		}
-		frompos = c.Int("from-pos")
-		topos = c.Int("to-pos")
+		frompos = int(c.Int("from-pos"))
+		topos = int(c.Int("to-pos"))
 	}
 
-	action := m3uetcpb.PlaylistTrackAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	action := m3uetcpb.PlaylistTrackAction_value[strings.ToUpper(actionPrefix+c.Name)]
 
 	req := &m3uetcpb.ExecutePlaylistTrackActionRequest{
 		Action:       m3uetcpb.PlaylistTrackAction(action),
-		PlaylistId:   c.Int64("playlist"),
+		PlaylistId:   c.Int("playlist"),
 		Position:     int32(topos),
 		FromPosition: int32(frompos),
 	}

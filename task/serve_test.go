@@ -8,7 +8,7 @@ import (
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	rtc "github.com/jwmwalrus/rtcycler"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 func TestServe(t *testing.T) {

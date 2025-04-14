@@ -8,7 +8,7 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc/status"
 )
 
@@ -38,7 +38,7 @@ func Playbar() *cli.Command {
 				Value: "music",
 			},
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "open",
 				Usage:       "Opens playlist",
@@ -83,7 +83,7 @@ func Playbar() *cli.Command {
 	}
 }
 
-func playbarAction(c *cli.Context) (err error) {
+func playbarAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
@@ -123,13 +123,13 @@ func playbarAction(c *cli.Context) (err error) {
 	return
 }
 
-func playbarExecuteAction(c *cli.Context) (err error) {
+func playbarExecuteAction(ctx context.Context, c *cli.Command) (err error) {
 	const actionPrefix = "BAR_"
 
 	rest := c.Args().Slice()
 	if len(rest) != 1 {
-		if c.Command.Name == "activate" ||
-			c.Command.Name == "deactivate" &&
+		if c.Name == "activate" ||
+			c.Name == "deactivate" &&
 				len(rest) > 1 {
 			err = fmt.Errorf("I need one ID to activate/deactuvate")
 			return
@@ -138,12 +138,12 @@ func playbarExecuteAction(c *cli.Context) (err error) {
 		return
 	}
 
-	if c.Command.Name == "activate" && c.Int("pos") < 1 {
+	if c.Name == "activate" && c.Int("pos") < 1 {
 		err = fmt.Errorf("I need a position to activate")
 		return
 	}
 
-	action := m3uetcpb.PlaybarAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	action := m3uetcpb.PlaybarAction_value[strings.ToUpper(actionPrefix+c.Name)]
 
 	req := &m3uetcpb.ExecutePlaybarActionRequest{
 		Action: m3uetcpb.PlaybarAction(action),

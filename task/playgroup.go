@@ -8,7 +8,7 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc/status"
 )
 
@@ -29,7 +29,7 @@ func Playgroup() *cli.Command {
 				Usage:   "output JSON",
 			},
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "info",
 				Aliases:     []string{"i"},
@@ -93,7 +93,7 @@ func Playgroup() *cli.Command {
 	}
 }
 
-func playgroupAction(c *cli.Context) (err error) {
+func playgroupAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
@@ -134,7 +134,7 @@ func playgroupAction(c *cli.Context) (err error) {
 	return
 }
 
-func playgroupInfoAction(c *cli.Context) (err error) {
+func playgroupInfoAction(ctx context.Context, c *cli.Command) (err error) {
 	id, err := mustParseSingleID(c)
 	if err != nil {
 		return
@@ -164,11 +164,11 @@ func playgroupInfoAction(c *cli.Context) (err error) {
 	return
 }
 
-func playgroupExecuteAction(c *cli.Context) (err error) {
+func playgroupExecuteAction(ctx context.Context, c *cli.Command) (err error) {
 	const actionPrefix = "PG_"
 
 	var id int64
-	if c.Command.Name == "create" {
+	if c.Name == "create" {
 		err = mustNotParseExtraArgs(c)
 		if err != nil {
 			return
@@ -180,7 +180,7 @@ func playgroupExecuteAction(c *cli.Context) (err error) {
 		}
 	}
 
-	action := m3uetcpb.PlaylistGroupAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	action := m3uetcpb.PlaylistGroupAction_value[strings.ToUpper(actionPrefix+c.Name)]
 
 	req := &m3uetcpb.ExecutePlaylistGroupActionRequest{
 		Action:      m3uetcpb.PlaylistGroupAction(action),

@@ -1,8 +1,10 @@
 package task
 
 import (
+	"context"
+
 	"github.com/jwmwalrus/m3u-etcetera/internal/alive"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 // Serve serve task.
@@ -12,7 +14,7 @@ func Serve() *cli.Command {
 		Category:    "Server",
 		Usage:       "Controls the server",
 		Description: "Starts or stops the m3uetc-server.",
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "off",
 				Usage:       "Terminates the server",
@@ -30,18 +32,18 @@ func Serve() *cli.Command {
 	}
 }
 
-func checkServerStatus(c *cli.Context) (err error) {
-	err = alive.CheckServerStatus()
+func checkServerStatus(ctx context.Context, c *cli.Command) (context.Context, error) {
+	err := alive.CheckServerStatus()
 	switch err.(type) {
 	case *alive.ServerAlreadyRunning,
 		*alive.ServerStarted:
 		err = nil
 	default:
 	}
-	return
+	return ctx, err
 }
 
-func serveAction(c *cli.Context) (err error) {
+func serveAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
@@ -50,7 +52,7 @@ func serveAction(c *cli.Context) (err error) {
 	return
 }
 
-func serveOffAction(c *cli.Context) (err error) {
+func serveOffAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}

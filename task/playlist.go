@@ -10,7 +10,7 @@ import (
 	"github.com/jwmwalrus/bnp/urlstr"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc/status"
 )
 
@@ -40,7 +40,7 @@ func Playlist() *cli.Command {
 				Usage: "limit the `NUMBER` of playlists shown",
 			},
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "info",
 				Aliases:     []string{"i"},
@@ -175,7 +175,7 @@ func Playlist() *cli.Command {
 	}
 }
 
-func playlistAction(c *cli.Context) (err error) {
+func playlistAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
@@ -216,26 +216,26 @@ func playlistAction(c *cli.Context) (err error) {
 	return
 }
 
-func playlistInfoAction(c *cli.Context) (err error) {
+func playlistInfoAction(ctx context.Context, c *cli.Command) (err error) {
 	id, err := mustParseSingleID(c)
 	if err != nil {
 		return
 	}
 
-	err = showPlaylist(c, id)
+	err = showPlaylist(ctx, c, id)
 	return
 }
 
-func playlistExecuteAction(c *cli.Context) (err error) {
+func playlistExecuteAction(ctx context.Context, c *cli.Command) (err error) {
 	const actionPrefix = "PL_"
 
 	var id, id2 int64
-	if c.Command.Name == "create" {
+	if c.Name == "create" {
 		err = mustNotParseExtraArgs(c)
 		if err != nil {
 			return
 		}
-	} else if c.Command.Name == "merge" {
+	} else if c.Name == "merge" {
 		rest := c.Args().Slice()
 		if len(rest) != 2 {
 			err = fmt.Errorf("I need two playlist IDs")
@@ -253,7 +253,7 @@ func playlistExecuteAction(c *cli.Context) (err error) {
 		}
 	}
 
-	action := m3uetcpb.PlaylistAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	action := m3uetcpb.PlaylistAction_value[strings.ToUpper(actionPrefix+c.Name)]
 
 	var bucket int
 	if c.Bool("bucket") {
@@ -270,7 +270,7 @@ func playlistExecuteAction(c *cli.Context) (err error) {
 		Bucket:      int32(bucket),
 	}
 
-	if c.Command.Name == "merge" {
+	if c.Name == "merge" {
 		req.Id2 = id2
 	}
 
@@ -292,7 +292,7 @@ func playlistExecuteAction(c *cli.Context) (err error) {
 	return
 }
 
-func showPlaylist(c *cli.Context, id int64) (err error) {
+func showPlaylist(ctx context.Context, c *cli.Command, id int64) (err error) {
 	cc, err := getClientConn()
 	if err != nil {
 		return
@@ -346,7 +346,7 @@ func showPlaylist(c *cli.Context, id int64) (err error) {
 	return
 }
 
-func playlistImportAction(c *cli.Context) error {
+func playlistImportAction(ctx context.Context, c *cli.Command) error {
 	rest := c.Args().Slice()
 	if len(rest) < 1 {
 		return fmt.Errorf("I need a list of locations to playlists")
@@ -364,7 +364,7 @@ func playlistImportAction(c *cli.Context) error {
 	return istImportPlaylists(req)
 }
 
-func playlistExportAction(c *cli.Context) (err error) {
+func playlistExportAction(ctx context.Context, c *cli.Command) (err error) {
 
 	rest := c.Args().Slice()
 	if len(rest) != 2 {
@@ -412,7 +412,7 @@ func playlistExportAction(c *cli.Context) (err error) {
 	return
 }
 
-func playlistOpenFromLocationsAction(c *cli.Context) error {
+func playlistOpenFromLocationsAction(ctx context.Context, c *cli.Command) error {
 	rest := c.Args().Slice()
 	if len(rest) < 1 {
 		return fmt.Errorf("I need a list of locations to playlists")

@@ -9,7 +9,7 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -38,13 +38,13 @@ func Query() *cli.Command {
 				Usage: "limit output count",
 				Value: 0,
 			},
-			&cli.Int64SliceFlag{
+			&cli.IntSliceFlag{
 				Name:    "collection-id",
 				Aliases: []string{"coll-id"},
 				Usage:   "bound to collection ID",
 			},
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "add",
 				Usage:       "Adds query",
@@ -75,15 +75,15 @@ func Query() *cli.Command {
 						Name:  "params",
 						Usage: "query `PARAMS` for title,artist,album,genre (e.g.: \"title=thing and genre=[sh]ome or genre=some*other\").",
 					},
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:  "from",
 						Usage: "query's start `TIMESTAMP` (i.e., from the date the track was issued)",
 					},
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:  "to",
 						Usage: "query's end `TIMESTAMP` (i.e., to the date the track was issued)",
 					},
-					&cli.Int64SliceFlag{
+					&cli.IntSliceFlag{
 						Name:    "collection-id",
 						Aliases: []string{"coll-id"},
 						Usage:   "`ID` for the collection bounding the query (can appear more than once in the command line)",
@@ -120,7 +120,7 @@ func Query() *cli.Command {
 				Description: "Update query according to the given options.",
 				Action:      queryUpdateAction,
 				Flags: []cli.Flag{
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:     "id",
 						Usage:    "query's existing `ID`",
 						Required: true,
@@ -153,15 +153,15 @@ func Query() *cli.Command {
 						Name:  "params",
 						Usage: "query `PARAMS` for title,artist,album,genre (e.g.: \"title=thing and genre=[sh]ome or genre=some*other\"",
 					},
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:  "from",
 						Usage: "query's start `TIMESTAMP` (i.e., from the date the track was issued)",
 					},
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:  "to",
 						Usage: "query's end `TIMESTAMP` (i.e., to the date the track was issued)",
 					},
-					&cli.Int64SliceFlag{
+					&cli.IntSliceFlag{
 						Name:    "collection-id",
 						Aliases: []string{"coll-id"},
 						Usage:   "`ID` for the collection bounding the query (can appear more than once in the command line)",
@@ -241,11 +241,11 @@ func Query() *cli.Command {
 						Name:  "limit",
 						Usage: "query `LIMIT`",
 					},
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:  "from",
 						Usage: "query's start `TIMESTAMP` (i.e., from the date the track was issued)",
 					},
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:  "to",
 						Usage: "query's end `TIMESTAMP` (i.e., to the date the track was issued)",
 					},
@@ -269,13 +269,13 @@ func Query() *cli.Command {
 	}
 }
 
-func queryAction(c *cli.Context) (err error) {
+func queryAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
 
 	req := &m3uetcpb.GetQueriesRequest{
-		CollectionIds: c.Int64Slice("collection-id"),
+		CollectionIds: c.IntSlice("collection-id"),
 		Limit:         int32(c.Int("limit")),
 	}
 
@@ -318,7 +318,7 @@ func queryAction(c *cli.Context) (err error) {
 	return
 }
 
-func queryInfoAction(c *cli.Context) (err error) {
+func queryInfoAction(ctx context.Context, c *cli.Command) (err error) {
 	var id int64
 	if id, err = mustParseSingleID(c); err != nil {
 		return
@@ -362,19 +362,19 @@ func queryInfoAction(c *cli.Context) (err error) {
 	return
 }
 
-func queryAddAction(c *cli.Context) (err error) {
+func queryAddAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
 
 	var from, to *timestamppb.Timestamp
 
-	ts := c.Int64("from")
+	ts := c.Int("from")
 	if ts > 0 {
 		from = timestamppb.New(time.Unix(0, ts))
 	}
 
-	ts = c.Int64("to")
+	ts = c.Int("to")
 	if ts > 0 {
 		to = timestamppb.New(time.Unix(0, ts))
 	}
@@ -388,7 +388,7 @@ func queryAddAction(c *cli.Context) (err error) {
 		Params:        c.String("params"),
 		From:          from,
 		To:            to,
-		CollectionIds: c.Int64Slice("collection-id"),
+		CollectionIds: c.IntSlice("collection-id"),
 	}
 	req := &m3uetcpb.AddQueryRequest{
 		Query: q,
@@ -410,7 +410,7 @@ func queryAddAction(c *cli.Context) (err error) {
 	return
 }
 
-func queryRemoveAction(c *cli.Context) (err error) {
+func queryRemoveAction(ctx context.Context, c *cli.Command) (err error) {
 	var id int64
 	if id, err = mustParseSingleID(c); err != nil {
 		return
@@ -436,17 +436,17 @@ func queryRemoveAction(c *cli.Context) (err error) {
 	return
 }
 
-func queryUpdateAction(c *cli.Context) (err error) {
+func queryUpdateAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
 
-	if c.Int64("id") < 1 {
+	if c.Int("id") < 1 {
 		err = fmt.Errorf("I need an ID greater than zero")
 		return
 	}
 
-	req0 := &m3uetcpb.GetQueryRequest{Id: c.Int64("id")}
+	req0 := &m3uetcpb.GetQueryRequest{Id: c.Int("id")}
 
 	cc, err := getClientConn()
 	if err != nil {
@@ -490,18 +490,18 @@ func queryUpdateAction(c *cli.Context) (err error) {
 		q.Params = c.String("params")
 	}
 
-	ts := c.Int64("from")
+	ts := c.Int("from")
 	if ts > 0 {
 		q.From = timestamppb.New(time.Unix(0, ts))
 	}
 
-	ts = c.Int64("to")
+	ts = c.Int("to")
 	if ts > 0 {
 		q.To = timestamppb.New(time.Unix(0, ts))
 	}
 
-	if len(c.Int64Slice("collection-id")) > 0 {
-		q.CollectionIds = c.Int64Slice("collection-id")
+	if len(c.IntSlice("collection-id")) > 0 {
+		q.CollectionIds = c.IntSlice("collection-id")
 	}
 	req := &m3uetcpb.UpdateQueryRequest{
 		Query: q,
@@ -516,17 +516,17 @@ func queryUpdateAction(c *cli.Context) (err error) {
 	return
 }
 
-func queryByAction(c *cli.Context) (err error) {
+func queryByAction(ctx context.Context, c *cli.Command) (err error) {
 	rest := c.Args().Slice()
 
 	var from, to *timestamppb.Timestamp
 
-	ts := c.Int64("from")
+	ts := c.Int("from")
 	if ts > 0 {
 		from = timestamppb.New(time.Unix(0, ts))
 	}
 
-	ts = c.Int64("to")
+	ts = c.Int("to")
 	if ts > 0 {
 		to = timestamppb.New(time.Unix(0, ts))
 	}
@@ -587,7 +587,7 @@ func queryByAction(c *cli.Context) (err error) {
 	return
 }
 
-func queryInPlaylistAction(c *cli.Context) (err error) {
+func queryInPlaylistAction(ctx context.Context, c *cli.Command) (err error) {
 	var id int64
 	if id, err = mustParseSingleID(c); err != nil {
 		return
@@ -613,7 +613,7 @@ func queryInPlaylistAction(c *cli.Context) (err error) {
 	}
 
 	if c.Bool("play") {
-		err = playTracksFromPlaylist(cc, res.PlaylistId, c.Bool("force"), c.Int("limit"))
+		err = playTracksFromPlaylist(cc, res.PlaylistId, c.Bool("force"), int(c.Int("limit")))
 		if err != nil {
 			return
 		}
@@ -621,11 +621,11 @@ func queryInPlaylistAction(c *cli.Context) (err error) {
 		return
 	}
 
-	showPlaylist(c, res.PlaylistId)
+	showPlaylist(ctx, c, res.PlaylistId)
 	return
 }
 
-func queryInQueueAction(c *cli.Context) (err error) {
+func queryInQueueAction(ctx context.Context, c *cli.Command) (err error) {
 	var id int64
 	if id, err = mustParseSingleID(c); err != nil {
 		return

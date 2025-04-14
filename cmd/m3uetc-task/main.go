@@ -1,15 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
 	"github.com/jwmwalrus/m3u-etcetera/task"
 	rtc "github.com/jwmwalrus/rtcycler"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc/status"
 )
+
+type Author struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
 
 func main() {
 	args := rtc.Load(&base.Conf,
@@ -26,25 +32,25 @@ func main() {
 		Usage: "print only the version",
 	}
 
-	app := &cli.App{
+	app := &cli.Command{
 		Name:    "m3uetc-task",
 		Version: "v0.20.0",
-		Authors: []*cli.Author{
-			{
+		Authors: []any{
+			Author{
 				Name:  "John M",
 				Email: "jwmwalrus@gmail.com",
 			},
 		},
-		Copyright:   "(c) 2021 WalrusAhead Solutions",
-		HelpName:    "m3uetc-task",
+		Copyright: "(c) 2021 WalrusAhead Solutions",
+		// HelpName:    "m3uetc-task",
 		Usage:       "CLI interface for M3U Etcétera",
 		Description: "A playlist-centric music player.",
-		ExitErrHandler: func(c *cli.Context, err error) {
+		ExitErrHandler: func(ctx context.Context, c *cli.Command, err error) {
 			if err != nil {
 				s, ok := status.FromError(err)
 				if !ok {
 					slog.Error("Command finished with error status", "error", err)
-					fmt.Fprintf(c.App.ErrWriter, err.Error()+"\n")
+					fmt.Fprintf(c.ErrWriter, err.Error()+"\n")
 					return
 				}
 
@@ -52,10 +58,10 @@ func main() {
 					"code", s.Code(),
 					"details", s.Details(),
 				).Error(s.Message())
-				fmt.Fprintf(c.App.ErrWriter, s.Message()+"\n")
+				fmt.Fprintf(c.ErrWriter, s.Message()+"\n")
 			}
 		},
-		EnableBashCompletion: true,
+		EnableShellCompletion: true,
 		Commands: []*cli.Command{
 			task.Serve(),
 			task.Playback(),
@@ -71,7 +77,7 @@ func main() {
 		Action: task.DefaultAction,
 	}
 
-	app.Run(args)
+	app.Run(context.Background(), args)
 
 	rtc.Unload()
 }

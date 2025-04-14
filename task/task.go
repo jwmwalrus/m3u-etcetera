@@ -1,6 +1,7 @@
 package task
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,7 +10,7 @@ import (
 	"github.com/jwmwalrus/gear-pieces/middleware"
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/jwmwalrus/m3u-etcetera/internal/base"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
 )
 
@@ -22,7 +23,7 @@ var (
 	getClientConn = getClientConnDefault
 )
 
-func DefaultAction(c *cli.Context) error {
+func DefaultAction(ctx context.Context, c *cli.Command) error {
 	argsSlice := c.Args().Slice()
 	if len(argsSlice) == 0 {
 		cli.ShowAppHelpAndExit(c, 1)
@@ -30,9 +31,9 @@ func DefaultAction(c *cli.Context) error {
 	}
 
 	var cmd *cli.Command
-	for i := range c.App.Commands {
-		if c.App.Commands[i].Name == "playback" {
-			cmd = c.App.Commands[i]
+	for i := range c.Commands {
+		if c.Commands[i].Name == "playback" {
+			cmd = c.Commands[i]
 			break
 		}
 	}
@@ -44,8 +45,9 @@ func DefaultAction(c *cli.Context) error {
 
 	args = append(args, c.Args().Slice()...)
 
-	c2 := cli.NewContext(c.App, nil, c)
-	return cmd.Run(c2, args...)
+	// FIXME: how does this work now?
+	// c2 := cli.NewContext(c.App, nil, c)
+	return cmd.Run(context.Background(), args)
 }
 
 func getClientConnDefault() (iClientConn, error) {
@@ -54,7 +56,7 @@ func getClientConnDefault() (iClientConn, error) {
 	return grpc.Dial(auth, opts...)
 }
 
-func getPerspective(c *cli.Context) m3uetcpb.Perspective {
+func getPerspective(c *cli.Command) m3uetcpb.Perspective {
 	return getPerspectiveFromString(c.String("persp"))
 }
 
@@ -72,7 +74,7 @@ func getPerspectiveFromString(s string) (out m3uetcpb.Perspective) {
 	return
 }
 
-func mustNotParseExtraArgs(c *cli.Context) (err error) {
+func mustNotParseExtraArgs(c *cli.Command) (err error) {
 	rest := c.Args().Slice()
 	if len(rest) > 0 {
 		err = fmt.Errorf("Too many values in command")
@@ -81,7 +83,7 @@ func mustNotParseExtraArgs(c *cli.Context) (err error) {
 	return
 }
 
-func mustParseSingleID(c *cli.Context) (id int64, err error) {
+func mustParseSingleID(c *cli.Command) (id int64, err error) {
 	rest := c.Args().Slice()
 	if len(rest) != 1 {
 		err = fmt.Errorf("I need one ID")

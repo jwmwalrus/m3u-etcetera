@@ -10,7 +10,7 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc/status"
 )
 
@@ -35,7 +35,7 @@ func Playback() *cli.Command {
 				Usage:   "Output JSON",
 			},
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "play",
 				Aliases:     []string{"pl"},
@@ -98,7 +98,7 @@ func Playback() *cli.Command {
 	}
 }
 
-func playbackAction(c *cli.Context) (err error) {
+func playbackAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
@@ -161,16 +161,16 @@ func playbackAction(c *cli.Context) (err error) {
 	return
 }
 
-func playbackPlayAction(c *cli.Context) (err error) {
+func playbackPlayAction(ctx context.Context, c *cli.Command) (err error) {
 	const actionPrefix = "PB_"
 
-	action := m3uetcpb.PlaybackAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	action := m3uetcpb.PlaybackAction_value[strings.ToUpper(actionPrefix+c.Name)]
 	req := &m3uetcpb.ExecutePlaybackActionRequest{
 		Action: m3uetcpb.PlaybackAction(action),
 	}
 
 	rest := c.Args().Slice()
-	if c.Command.Name == "play" {
+	if c.Name == "play" {
 		if len(rest) > 0 {
 			if c.Bool("ids") {
 				if req.Ids, err = parseIDs(rest); err != nil {
@@ -208,7 +208,7 @@ func playbackPlayAction(c *cli.Context) (err error) {
 	return
 }
 
-func playbackSeekAction(c *cli.Context) error {
+func playbackSeekAction(ctx context.Context, c *cli.Command) error {
 	rest := c.Args().Slice()
 	if len(rest) < 1 {
 		return fmt.Errorf("I need one POSITION to seek")
@@ -243,7 +243,7 @@ func playbackSeekAction(c *cli.Context) error {
 	return nil
 }
 
-func playbackListAction(c *cli.Context) (err error) {
+func playbackListAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}

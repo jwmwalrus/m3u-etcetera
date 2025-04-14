@@ -9,7 +9,7 @@ import (
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
 	"github.com/rodaine/table"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc/status"
 )
 
@@ -44,7 +44,7 @@ func Queue() *cli.Command {
 				Value: 0,
 			},
 		},
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "append",
 				Aliases:     []string{"app", "add"},
@@ -125,13 +125,13 @@ func Queue() *cli.Command {
 						Usage: "applies to `PERSPECTIVE`",
 						Value: "music",
 					},
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:     "from-pos",
 						Aliases:  []string{"from"},
 						Usage:    "move track at this `POSITION`",
 						Required: true,
 					},
-					&cli.Int64Flag{
+					&cli.IntFlag{
 						Name:     "to-pos",
 						Aliases:  []string{"to"},
 						Usage:    "move to this `POSITION`",
@@ -143,7 +143,7 @@ func Queue() *cli.Command {
 	}
 }
 
-func queueAction(c *cli.Context) (err error) {
+func queueAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
@@ -210,7 +210,7 @@ func queueAction(c *cli.Context) (err error) {
 	return
 }
 
-func queueCreateAction(c *cli.Context) (err error) {
+func queueCreateAction(ctx context.Context, c *cli.Command) (err error) {
 	const actionPrefix = "Q_"
 
 	rest := c.Args().Slice()
@@ -219,12 +219,12 @@ func queueCreateAction(c *cli.Context) (err error) {
 		return
 	}
 
-	if c.Command.Name == "insert" && c.Int("pos") < 1 {
+	if c.Name == "insert" && c.Int("pos") < 1 {
 		err = fmt.Errorf("I need a position to insert")
 		return
 	}
 
-	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Name)]
 	req := &m3uetcpb.ExecuteQueueActionRequest{
 		Action: m3uetcpb.QueueAction(action),
 	}
@@ -261,19 +261,19 @@ func queueCreateAction(c *cli.Context) (err error) {
 	return
 }
 
-func queueDestroyAction(c *cli.Context) (err error) {
+func queueDestroyAction(ctx context.Context, c *cli.Command) (err error) {
 	const actionPrefix = "Q_"
 
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
 
-	if c.Command.Name == "delete" && c.Int("pos") < 1 {
+	if c.Name == "delete" && c.Int("pos") < 1 {
 		err = fmt.Errorf("I need a position to delete")
 		return
 	}
 
-	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Name)]
 	req := &m3uetcpb.ExecuteQueueActionRequest{
 		Action: m3uetcpb.QueueAction(action),
 	}
@@ -298,14 +298,14 @@ func queueDestroyAction(c *cli.Context) (err error) {
 	return
 }
 
-func queueMoveAction(c *cli.Context) (err error) {
+func queueMoveAction(ctx context.Context, c *cli.Command) (err error) {
 	const actionPrefix = "Q_"
 
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
 
-	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Command.Name)]
+	action := m3uetcpb.QueueAction_value[strings.ToUpper(actionPrefix+c.Name)]
 	req := &m3uetcpb.ExecuteQueueActionRequest{
 		Perspective:  getPerspective(c),
 		Action:       m3uetcpb.QueueAction(action),

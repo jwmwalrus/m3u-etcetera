@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jwmwalrus/m3u-etcetera/api/m3uetcpb"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc/status"
 )
 
@@ -21,7 +21,7 @@ func Perspective() *cli.Command {
 		Category:    "Control",
 		Usage:       "Gets or sets the active perspective",
 		Description: "Control the application's perspective according with the given subcommand. If no subcommand is given, display the active perspective.",
-		Subcommands: []*cli.Command{
+		Commands: []*cli.Command{
 			{
 				Name:        "activate",
 				Aliases:     []string{"a"},
@@ -36,7 +36,7 @@ func Perspective() *cli.Command {
 	}
 }
 
-func perspectiveAction(c *cli.Context) (err error) {
+func perspectiveAction(ctx context.Context, c *cli.Command) (err error) {
 	if err = mustNotParseExtraArgs(c); err != nil {
 		return
 	}
@@ -58,7 +58,7 @@ func perspectiveAction(c *cli.Context) (err error) {
 	return
 }
 
-func perspectiveActivateAction(c *cli.Context) error {
+func perspectiveActivateAction(ctx context.Context, c *cli.Command) error {
 	rest := c.Args().Slice()
 	if len(rest) < 1 {
 		return fmt.Errorf("I need one PERSPECTIVE to activate")
